@@ -8,6 +8,17 @@
 //     the code is regenerated.
 //------------------------------------------------------------------------------
 
+namespace Windows {
+    namespace UI {
+        namespace Xaml {
+            namespace Controls {
+                ref class StackPanel;
+                ref class Image;
+                ref class TextBlock;
+            }
+        }
+    }
+}
 
 namespace JPG_Spinner
 {
@@ -21,6 +32,10 @@ namespace JPG_Spinner
     private:
         bool _contentLoaded;
     
+        private: ::Windows::UI::Xaml::Controls::StackPanel^ imagePanel;
+        private: ::Windows::UI::Xaml::Controls::Image^ displayImage;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ filePath;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ OrientationFlag;
     };
 }
 

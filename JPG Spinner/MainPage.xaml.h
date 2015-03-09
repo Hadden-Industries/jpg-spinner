@@ -7,6 +7,9 @@
 
 #include "MainPage.g.h"
 
+HRESULT GetJPEGOrientationFlag(LPCWSTR FileName, USHORT &OrientationFlag, IWICImagingFactory * pIWICImagingFactory);
+HRESULT SetJPEGOrientationFlag(LPCWSTR FileName, const USHORT OrientationFlag, IWICImagingFactory * pIWICImagingFactory);
+
 namespace JPG_Spinner
 {
 	/// <summary>
@@ -17,5 +20,10 @@ namespace JPG_Spinner
 	public:
 		MainPage();
 
+	private:
+		~MainPage();
+		IWICImagingFactory * pIWICImagingFactory;
+		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		Platform::String^ mruToken;
 	};
 }

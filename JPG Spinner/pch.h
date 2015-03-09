@@ -9,3 +9,5 @@
 #include <ppltasks.h>
 
 #include "App.xaml.h"
+#include <wincodec.h> // IWICImagingFactory
+#include <Shcore.h> // CreateStreamOverRandomAccessStream
