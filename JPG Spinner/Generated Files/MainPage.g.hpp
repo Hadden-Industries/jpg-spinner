@@ -30,6 +30,8 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     filePath = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"filePath"));
     // Get the TextBlock named 'OrientationFlag'
     OrientationFlag = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"OrientationFlag"));
+    // Get the TextBlock named 'DebugText'
+    DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
 }
 
 void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target)

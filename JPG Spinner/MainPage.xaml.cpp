@@ -38,6 +38,14 @@ MainPage::MainPage()
 			IID_PPV_ARGS(&pIWICImagingFactory)
 			);
 	}
+
+	//Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
+	//Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
+	//Windows::Storage::StorageFolder^ localFolder = Windows::Storage::ApplicationData::Current->LocalFolder;
+	//Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
+
+	//DebugText->Text = "Installed location:\n" + installedLocation->Path + "\n" + "Local folder:\n" + localFolder->Path;
+	//DebugText->Text = temporaryFolder->Path;
 }
 
 MainPage::~MainPage()
@@ -300,6 +308,272 @@ HRESULT SetJPEGOrientationFlag(IStream * FileStream, const USHORT OrientationFla
 	return hr;
 }
 
+static Platform::String^ GetUUID()
+{
+	GUID result;
+	HRESULT hr = CoCreateGuid(&result);
+
+	if (SUCCEEDED(hr))
+	{
+		Guid gd(result);
+		return gd.ToString();
+	}
+
+	throw Exception::CreateException(hr);
+}
+
+HRESULT ChangeOrientation(
+	Windows::Storage::StorageFile^ originalFile,
+	FILE * fp,
+	USHORT OrientationFlag,
+	IWICImagingFactory * pIWICImagingFactory,
+	BOOL Trim = FALSE,
+	BOOL Progressive = TRUE
+	)
+{
+	struct jpeg_decompress_struct srcinfo;
+	struct jpeg_compress_struct dstinfo;
+	struct jpeg_error_mgr jsrcerr, jdsterr;
+
+	jvirt_barray_ptr * src_coef_arrays;
+	jvirt_barray_ptr * dst_coef_arrays;
+
+	/* We assume all-in-memory processing and can therefore use only a
+	* single file pointer for sequential input and output operation.
+	*/
+
+	jpeg_transform_info transformoption;
+	JCOPY_OPTION copyoption = JCOPYOPT_ALL;
+
+	switch (OrientationFlag) {
+	case 2U:
+	{
+		transformoption.transform = JXFORM_FLIP_H;
+	}
+		break;
+	case 3U:
+	{
+		transformoption.transform = JXFORM_ROT_180;
+	}
+		break;
+	case 4U:
+	{
+		transformoption.transform = JXFORM_FLIP_V;
+	}
+		break;
+	case 5U:
+	{
+		transformoption.transform = JXFORM_TRANSPOSE;
+	}
+		break;
+	case 6U:
+	{
+		transformoption.transform = JXFORM_ROT_90;
+	}
+		break;
+	case 7U:
+	{
+		transformoption.transform = JXFORM_TRANSVERSE;
+	}
+		break;
+	case 8U:
+	{
+		transformoption.transform = JXFORM_ROT_270;
+	}
+		break;
+	default:
+	{
+		transformoption.transform = JXFORM_NONE;
+	}
+		break;
+	}
+
+	transformoption.perfect = (Trim == TRUE) ? FALSE : TRUE;
+	transformoption.trim = (Trim == TRUE) ? TRUE : FALSE;
+	transformoption.force_grayscale = FALSE;
+	transformoption.crop = FALSE;
+
+	// Initialize the JPEG decompression object with default error handling
+	srcinfo.err = jpeg_std_error(&jsrcerr);
+	jpeg_create_decompress(&srcinfo);
+	// Initialize the JPEG compression object with default error handling
+	dstinfo.err = jpeg_std_error(&jdsterr);
+	jpeg_create_compress(&dstinfo);
+
+	if (Progressive)
+	{
+		// Set progressive mode (saves space but is slower)
+		jpeg_simple_progression(&dstinfo);
+	}
+
+	// Note: we assume only the decompression object will have virtual arrays
+
+	dstinfo.optimize_coding = TRUE;
+	dstinfo.err->trace_level = 0;
+	//srcinfo.mem->max_memory_to_use = dstinfo.mem->max_memory_to_use;
+
+	// Specify data source for decompression
+	jpeg_stdio_src(&srcinfo, fp);
+
+	// Enable saving of extra markers that we want to copy
+	jcopy_markers_setup(&srcinfo, copyoption);
+
+	// Read file header
+	(void)jpeg_read_header(&srcinfo, TRUE);
+
+	if (!jtransform_request_workspace(&srcinfo, &transformoption))
+	{
+		fclose(fp);
+		return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+	}
+
+	// Read source file as DCT coefficients
+	src_coef_arrays = jpeg_read_coefficients(&srcinfo);
+
+	// Initialize destination compression parameters from source values
+	jpeg_copy_critical_parameters(&srcinfo, &dstinfo);
+
+	/* Adjust destination parameters if required by transform options;
+	* also find out which set of coefficient arrays will hold the output.
+	*/
+	dst_coef_arrays = jtransform_adjust_parameters(&srcinfo, &dstinfo, src_coef_arrays, &transformoption);
+
+	// Close input file
+	/* Note: we assume that jpeg_read_coefficients consumed all input
+	* until JPEG_REACHED_EOI, and that jpeg_finish_decompress will
+	* only consume more while (! cinfo->inputctl->eoi_reached).
+	* We cannot call jpeg_finish_decompress here since we still need the
+	* virtual arrays allocated from the source object for processing.
+	*/
+	fclose(fp);
+
+	// Creates the new temp file to write to
+	Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
+
+	Platform::String^ tempFileName = temporaryFolder->Path + "\\" + GetUUID();
+
+	HANDLE hTempFile = INVALID_HANDLE_VALUE;
+
+	CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
+	extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
+	extendedParams.dwFileFlags = FILE_FLAG_RANDOM_ACCESS;
+	extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+	extendedParams.lpSecurityAttributes = nullptr;
+	extendedParams.hTemplateFile = nullptr;
+
+	hTempFile = CreateFile2(
+		tempFileName->Data(), // file name 
+		GENERIC_READ | GENERIC_WRITE, // open for read/write 
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		CREATE_ALWAYS,
+		&extendedParams
+		);
+
+	if (INVALID_HANDLE_VALUE == hTempFile)
+	{
+		return HRESULT_FROM_WIN32(GetLastError());
+	}
+
+	// Open the output file from the handle
+	int fd = _open_osfhandle((intptr_t)hTempFile, _O_APPEND | _O_RDONLY);
+
+	if (-1 == fd)
+	{
+		CloseHandle(hTempFile);
+		return E_FAIL;
+	}
+
+	fp = _fdopen(fd, "wb");
+
+	if (0 == fp)
+	{
+		_close(fd); // Also calls CloseHandle()
+		return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
+	}
+
+	// Specify data destination for compression
+	jpeg_stdio_dest(&dstinfo, fp);
+
+	// Start compressor (note no image data is actually written here)
+	jpeg_write_coefficients(&dstinfo, dst_coef_arrays);
+
+	// Copy to the output file any extra markers that we want to preserve
+	jcopy_markers_execute(&srcinfo, &dstinfo, copyoption);
+
+	// Execute image transformation, if any
+	jtransform_execute_transformation(&srcinfo, &dstinfo, src_coef_arrays, &transformoption);
+
+	// Finish compression and release memory
+	jpeg_finish_compress(&dstinfo);
+	jpeg_destroy_compress(&dstinfo);
+	(void)jpeg_finish_decompress(&srcinfo);
+	jpeg_destroy_decompress(&srcinfo);
+
+	// Close output file, also calls _close()
+	fclose(fp);
+
+	auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(tempFileName));
+
+	getFileFromPathAsyncTask.then([pIWICImagingFactory, originalFile](Windows::Storage::StorageFile^ tempFile)
+	{
+		auto openAsyncTask = concurrency::create_task(tempFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
+
+		openAsyncTask.then([tempFile, pIWICImagingFactory, originalFile](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
+		{
+			Microsoft::WRL::ComPtr<IStream> pIStream;
+
+			HRESULT hr = CreateStreamOverRandomAccessStream(
+				reinterpret_cast<IUnknown*>(fileStream),
+				IID_PPV_ARGS(&pIStream)
+				);
+
+			if (SUCCEEDED(hr))
+			{
+				hr = SetJPEGOrientationFlag(pIStream.Get(), 1U, pIWICImagingFactory);
+
+				if (SUCCEEDED(hr))
+				{
+					auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->MoveAndReplaceAsync(originalFile));
+
+					moveAndReplaceAsyncTask.then([]()
+					{
+						return S_OK;
+					});
+				}
+			}
+		});
+	});	
+}
+
+byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer)
+{
+	// Query the IBufferByteAccess interface.
+	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+	reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
+
+	// Retrieve the buffer data.
+	byte* pixels = nullptr;
+	bufferByteAccess->Buffer(&pixels);
+	return pixels;
+}
+
+byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer, unsigned int *length)
+{
+	if (length != nullptr)
+	{
+		*length = buffer->Length;
+	}
+	// Query the IBufferByteAccess interface.
+	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+	reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
+
+	// Retrieve the buffer data.
+	byte* pixels = nullptr;
+	bufferByteAccess->Buffer(&pixels);
+	return pixels;
+}
+
 void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	auto openPicker = ref new Windows::Storage::Pickers::FileOpenPicker();
@@ -314,10 +588,10 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 	// All this work will be done asynchronously on a background thread:
 
 	// Wrap the async call inside a concurrency::task object
-	concurrency::create_task(openPicker->PickSingleFileAsync())
+	auto pickerTask = concurrency::create_task(openPicker->PickSingleFileAsync());
 
 	// Accept the unwrapped return value of previous call as input param
-	.then([this](Windows::Storage::StorageFile^ file)
+	pickerTask.then([this](Windows::Storage::StorageFile^ file)
 	{
 		// file is null if user cancels the file picker.
 		if (file == nullptr)
@@ -331,40 +605,115 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 
 		// Add picked file to MostRecentlyUsedList.
 		mruToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(file);
-		
+
 		// Return the IRandomAccessStream^ object
-		return file->OpenAsync(Windows::Storage::FileAccessMode::Read);
+		auto openingTask = concurrency::create_task(file->OpenAsync(Windows::Storage::FileAccessMode::Read));
 
-	})
-	.then([this](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
-	{
-		Microsoft::WRL::ComPtr<IStream> pIStream;
-
-		auto hr = CreateStreamOverRandomAccessStream(
-			reinterpret_cast<IUnknown*>(fileStream),
-			IID_PPV_ARGS(&pIStream)
-			);
-
-		if (SUCCEEDED(hr))
+		openingTask.then([this, file](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
 		{
-			USHORT OrientationFlagValue = 0U;
+			Microsoft::WRL::ComPtr<IStream> pIStream;
 
-			hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
+			HRESULT hr = CreateStreamOverRandomAccessStream(
+				reinterpret_cast<IUnknown*>(fileStream),
+				IID_PPV_ARGS(&pIStream)
+				);
 
 			if (SUCCEEDED(hr))
 			{
-				OrientationFlag->Text = "Orientation flag: " + OrientationFlagValue;
-			}
-			else
-			{
-				OrientationFlag->Text = "No orientation flag in metadata";
-			}
-		}
-		// Set the stream as source of the bitmap
-		Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
-		bitmapImage->SetSource(fileStream);
+				USHORT OrientationFlagValue = 0U;
 
-		// Set the bitmap as source of the Image control
-		displayImage->Source = bitmapImage;
+				hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
+
+				if (SUCCEEDED(hr))
+				{
+					OrientationFlag->Text = "Orientation flag: " + OrientationFlagValue;
+
+					if ((OrientationFlagValue >= 2 && OrientationFlagValue <= 8))
+					{
+						auto readBufferAsyncTask = concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(file));
+
+						//auto reader = ref new Windows::Storage::Streams::DataReader(fileStream->GetInputStreamAt(0));
+
+						//auto loadAsyncTask = concurrency::create_task(reader->LoadAsync((unsigned int)fileStream->Size));
+
+						//loadAsyncTask.then([this, file, reader, OrientationFlagValue](unsigned int bytesRead)
+						readBufferAsyncTask.then([this, file, fileStream, OrientationFlagValue](Windows::Storage::Streams::IBuffer^ bufferRead)
+						{
+							//auto bufferRead = reader->ReadBuffer(bytesRead);
+
+							byte * bytes = GetPointerToByteData(bufferRead);
+
+							FILE * fp = nullptr;
+
+							CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
+							extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+							extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
+							extendedParams.dwFileFlags = FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_RANDOM_ACCESS;
+							extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+							extendedParams.lpSecurityAttributes = nullptr;
+							extendedParams.hTemplateFile = nullptr;
+
+							Windows::Storage::StorageFolder^ tempFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
+
+							if (nullptr != tempFolder)
+							{
+								HRESULT hr = S_OK;
+
+								Platform::String^ tempFileName = tempFolder->Path + "\\" + GetUUID();
+
+								HANDLE tempFileHandle = CreateFile2(
+									tempFileName->Data(),
+									GENERIC_READ | GENERIC_WRITE | DELETE,
+									FILE_SHARE_READ | FILE_SHARE_WRITE,
+									CREATE_ALWAYS,
+									&extendedParams
+									);
+
+								if (INVALID_HANDLE_VALUE == tempFileHandle)
+								{
+									hr = HRESULT_FROM_WIN32(GetLastError());
+								}
+
+								// Open the output file from the handle
+								int fd = _open_osfhandle((intptr_t)tempFileHandle, _O_RDWR | _O_BINARY);
+
+								if (-1 == fd)
+								{
+									CloseHandle(tempFileHandle);
+									//hr = E_FAIL;
+								}
+
+								fp = _fdopen(fd, "w+b");
+
+								if (NULL == fp)
+								{
+									_close(fd); // Also calls CloseHandle()
+									//hr = HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
+								}
+
+								if (fileStream->Size == fwrite(bytes, sizeof(char), fileStream->Size, fp))
+								{
+									if (0 == fseek(fp, 0, SEEK_SET))
+									{
+										// fclose on fp is the responsibility of ChangeOrientation
+										hr = ChangeOrientation(file, fp, OrientationFlagValue, pIWICImagingFactory);
+									}
+								}
+							}
+						});
+					}
+				}
+				else
+				{
+					OrientationFlag->Text = "No orientation flag in metadata";
+				}
+			}
+			// Set the stream as source of the bitmap
+			Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
+			bitmapImage->SetSource(fileStream);
+
+			// Set the bitmap as source of the Image control
+			displayImage->Source = bitmapImage;
+		});
 	});
 }

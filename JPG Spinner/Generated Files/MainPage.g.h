@@ -36,6 +36,7 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Controls::Image^ displayImage;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ filePath;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ OrientationFlag;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ DebugText;
     };
 }
 

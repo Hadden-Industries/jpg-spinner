@@ -5,9 +5,20 @@
 
 #pragma once
 
+#define MAX_PATH_UNICODE 32767
+
 #include <collection.h>
 #include <ppltasks.h>
 
 #include "App.xaml.h"
 #include <wincodec.h> // IWICImagingFactory
 #include <Shcore.h> // CreateStreamOverRandomAccessStream
+#include <io.h> // _open_osfhandle
+#include <Fcntl.h> // _O_APPEND _O_RDONLY
+#include <robuffer.h> // IBufferByteAccess
+
+extern "C" {
+#include "jpeglib.h" // jpeg_stdio_src
+#include "cdjpeg.h" // Common decls for cjpeg/djpeg applications
+#include "transupp.h" // Support routines for jpegtran
+}
