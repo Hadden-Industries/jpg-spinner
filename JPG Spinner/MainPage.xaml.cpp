@@ -42,10 +42,10 @@ MainPage::MainPage()
 	//Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
 	//Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
 	//Windows::Storage::StorageFolder^ localFolder = Windows::Storage::ApplicationData::Current->LocalFolder;
-	//Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
+	Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
 
 	//DebugText->Text = "Installed location:\n" + installedLocation->Path + "\n" + "Local folder:\n" + localFolder->Path;
-	//DebugText->Text = temporaryFolder->Path;
+	DebugText->Text = temporaryFolder->Path;
 }
 
 MainPage::~MainPage()
@@ -574,6 +574,71 @@ byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer, unsigned 
 	return pixels;
 }
 
+concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile^ storageFile)
+{
+	FILE * filePointer = nullptr;
+
+	return concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(storageFile))
+	.then([storageFile, filePointer](Windows::Storage::Streams::IBuffer^ buffer) mutable -> FILE *
+	{
+		CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
+		extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+		extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
+		extendedParams.dwFileFlags = FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_RANDOM_ACCESS;
+		extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+		extendedParams.lpSecurityAttributes = nullptr;
+		extendedParams.hTemplateFile = nullptr;
+
+		Windows::Storage::StorageFolder^ tempFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
+
+		if (nullptr != tempFolder)
+		{
+			HRESULT hr = S_OK;
+
+			Platform::String^ tempFileName = tempFolder->Path + "\\" + GetUUID();
+
+			HANDLE tempFileHandle = CreateFile2(
+				tempFileName->Data(),
+				GENERIC_READ | GENERIC_WRITE | DELETE,
+				FILE_SHARE_READ | FILE_SHARE_WRITE,
+				CREATE_ALWAYS,
+				&extendedParams
+				);
+
+			if (INVALID_HANDLE_VALUE == tempFileHandle)
+			{
+				hr = HRESULT_FROM_WIN32(GetLastError());
+			}
+
+			// Open the output file from the handle
+			int fd = _open_osfhandle((intptr_t)tempFileHandle, _O_RDWR | _O_BINARY);
+
+			if (-1 == fd)
+			{
+				CloseHandle(tempFileHandle);
+				//hr = E_FAIL;
+			}
+
+			filePointer = _fdopen(fd, "w+b");
+
+			if (NULL == filePointer)
+			{
+				_close(fd); // Also calls CloseHandle()
+				//hr = HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
+			}
+
+			if (buffer->Length == fwrite(GetPointerToByteData(buffer), sizeof(byte), buffer->Length, filePointer))
+			{
+				if (0 == fseek(filePointer, 0, SEEK_SET))
+				{
+					return filePointer;
+				}
+			}
+		}
+		return filePointer;
+	});
+}
+
 void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	auto openPicker = ref new Windows::Storage::Pickers::FileOpenPicker();
@@ -584,6 +649,10 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 	openPicker->FileTypeFilter->Clear();
 	openPicker->FileTypeFilter->Append(".jpg");
 	openPicker->FileTypeFilter->Append(".jpeg");
+	openPicker->FileTypeFilter->Append(".jpe");
+	openPicker->FileTypeFilter->Append(".jif");
+	openPicker->FileTypeFilter->Append(".jfif");
+	openPicker->FileTypeFilter->Append(".jfi");
 
 	// All this work will be done asynchronously on a background thread:
 
@@ -630,76 +699,12 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 
 					if ((OrientationFlagValue >= 2 && OrientationFlagValue <= 8))
 					{
-						auto readBufferAsyncTask = concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(file));
+						auto op = StorageFileToFilePointer(file);
 
-						//auto reader = ref new Windows::Storage::Streams::DataReader(fileStream->GetInputStreamAt(0));
-
-						//auto loadAsyncTask = concurrency::create_task(reader->LoadAsync((unsigned int)fileStream->Size));
-
-						//loadAsyncTask.then([this, file, reader, OrientationFlagValue](unsigned int bytesRead)
-						readBufferAsyncTask.then([this, file, fileStream, OrientationFlagValue](Windows::Storage::Streams::IBuffer^ bufferRead)
+						op.then([this, file, OrientationFlagValue](FILE * filePointer)
 						{
-							//auto bufferRead = reader->ReadBuffer(bytesRead);
-
-							byte * bytes = GetPointerToByteData(bufferRead);
-
-							FILE * fp = nullptr;
-
-							CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
-							extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
-							extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
-							extendedParams.dwFileFlags = FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_RANDOM_ACCESS;
-							extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
-							extendedParams.lpSecurityAttributes = nullptr;
-							extendedParams.hTemplateFile = nullptr;
-
-							Windows::Storage::StorageFolder^ tempFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
-
-							if (nullptr != tempFolder)
-							{
-								HRESULT hr = S_OK;
-
-								Platform::String^ tempFileName = tempFolder->Path + "\\" + GetUUID();
-
-								HANDLE tempFileHandle = CreateFile2(
-									tempFileName->Data(),
-									GENERIC_READ | GENERIC_WRITE | DELETE,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									CREATE_ALWAYS,
-									&extendedParams
-									);
-
-								if (INVALID_HANDLE_VALUE == tempFileHandle)
-								{
-									hr = HRESULT_FROM_WIN32(GetLastError());
-								}
-
-								// Open the output file from the handle
-								int fd = _open_osfhandle((intptr_t)tempFileHandle, _O_RDWR | _O_BINARY);
-
-								if (-1 == fd)
-								{
-									CloseHandle(tempFileHandle);
-									//hr = E_FAIL;
-								}
-
-								fp = _fdopen(fd, "w+b");
-
-								if (NULL == fp)
-								{
-									_close(fd); // Also calls CloseHandle()
-									//hr = HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
-								}
-
-								if (fileStream->Size == fwrite(bytes, sizeof(char), fileStream->Size, fp))
-								{
-									if (0 == fseek(fp, 0, SEEK_SET))
-									{
-										// fclose on fp is the responsibility of ChangeOrientation
-										hr = ChangeOrientation(file, fp, OrientationFlagValue, pIWICImagingFactory);
-									}
-								}
-							}
+							// fclose on filePointer is the responsibility of ChangeOrientation
+							HRESULT hr = ChangeOrientation(file, filePointer, OrientationFlagValue, pIWICImagingFactory);
 						});
 					}
 				}
