@@ -579,16 +579,8 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 	FILE * filePointer = nullptr;
 
 	return concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(storageFile))
-	.then([storageFile, filePointer](Windows::Storage::Streams::IBuffer^ buffer) mutable -> FILE *
+	.then([filePointer](Windows::Storage::Streams::IBuffer^ buffer) mutable
 	{
-		CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
-		extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
-		extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
-		extendedParams.dwFileFlags = FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_RANDOM_ACCESS;
-		extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
-		extendedParams.lpSecurityAttributes = nullptr;
-		extendedParams.hTemplateFile = nullptr;
-
 		Windows::Storage::StorageFolder^ tempFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
 
 		if (nullptr != tempFolder)
@@ -596,6 +588,14 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 			HRESULT hr = S_OK;
 
 			Platform::String^ tempFileName = tempFolder->Path + "\\" + GetUUID();
+
+			CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
+			extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+			extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
+			extendedParams.dwFileFlags = FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_RANDOM_ACCESS;
+			extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+			extendedParams.lpSecurityAttributes = nullptr;
+			extendedParams.hTemplateFile = nullptr;
 
 			HANDLE tempFileHandle = CreateFile2(
 				tempFileName->Data(),
@@ -605,36 +605,49 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 				&extendedParams
 				);
 
-			if (INVALID_HANDLE_VALUE == tempFileHandle)
+			if (INVALID_HANDLE_VALUE != tempFileHandle)
+			{
+				// Open the output file from the handle
+				int fd = _open_osfhandle((intptr_t)tempFileHandle, _O_RDWR | _O_BINARY);
+
+				if (-1 != fd)
+				{
+					_set_errno(0);
+
+					filePointer = _fdopen(fd, "w+b");
+
+					if (nullptr != filePointer)
+					{
+						if (buffer->Length == fwrite(GetPointerToByteData(buffer), sizeof(byte), buffer->Length, filePointer))
+						{
+							if (0 == fseek(filePointer, 0, SEEK_SET))
+							{
+								return filePointer;
+							}
+						}
+					}
+					else
+					{
+						wchar_t errorText[94] = { L'\0' };
+
+						__wcserror_s(errorText, NULL);
+
+						_close(fd); // Also calls CloseHandle()
+					}
+				}
+				else
+				{
+					hr = TYPE_E_IOERROR;
+
+					CloseHandle(tempFileHandle);
+				}
+			}
+			else
 			{
 				hr = HRESULT_FROM_WIN32(GetLastError());
 			}
-
-			// Open the output file from the handle
-			int fd = _open_osfhandle((intptr_t)tempFileHandle, _O_RDWR | _O_BINARY);
-
-			if (-1 == fd)
-			{
-				CloseHandle(tempFileHandle);
-				//hr = E_FAIL;
-			}
-
-			filePointer = _fdopen(fd, "w+b");
-
-			if (NULL == filePointer)
-			{
-				_close(fd); // Also calls CloseHandle()
-				//hr = HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
-			}
-
-			if (buffer->Length == fwrite(GetPointerToByteData(buffer), sizeof(byte), buffer->Length, filePointer))
-			{
-				if (0 == fseek(filePointer, 0, SEEK_SET))
-				{
-					return filePointer;
-				}
-			}
 		}
+
 		return filePointer;
 	});
 }
@@ -657,68 +670,71 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 	// All this work will be done asynchronously on a background thread:
 
 	// Wrap the async call inside a concurrency::task object
-	auto pickerTask = concurrency::create_task(openPicker->PickSingleFileAsync());
+	auto pickerTask = concurrency::create_task(openPicker->PickMultipleFilesAsync());
 
 	// Accept the unwrapped return value of previous call as input param
-	pickerTask.then([this](Windows::Storage::StorageFile^ file)
+	pickerTask.then([this](IVectorView<Windows::Storage::StorageFile^>^ files)
 	{
 		// file is null if user cancels the file picker.
-		if (file == nullptr)
+		if (0 == files->Size)
 		{
 			// Stop work and clean up.
 			concurrency::cancel_current_task();
 		}
 
-		// For data binding text blocks to file properties
-		this->DataContext = file;
-
-		// Add picked file to MostRecentlyUsedList.
-		mruToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(file);
-
-		// Return the IRandomAccessStream^ object
-		auto openingTask = concurrency::create_task(file->OpenAsync(Windows::Storage::FileAccessMode::Read));
-
-		openingTask.then([this, file](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
+		for (unsigned int i = 0U; i < files->Size; ++i)
 		{
-			Microsoft::WRL::ComPtr<IStream> pIStream;
+			// For data binding text blocks to file properties
+			this->DataContext = files->GetAt(i);
 
-			HRESULT hr = CreateStreamOverRandomAccessStream(
-				reinterpret_cast<IUnknown*>(fileStream),
-				IID_PPV_ARGS(&pIStream)
-				);
+			// Add picked file to MostRecentlyUsedList.
+			mruToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));
 
-			if (SUCCEEDED(hr))
+			// Return the IRandomAccessStream^ object
+			auto openingTask = concurrency::create_task(files->GetAt(i)->OpenAsync(Windows::Storage::FileAccessMode::Read));
+
+			openingTask.then([this, files, i](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
 			{
-				USHORT OrientationFlagValue = 0U;
+				Microsoft::WRL::ComPtr<IStream> pIStream;
 
-				hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
+				HRESULT hr = CreateStreamOverRandomAccessStream(
+					reinterpret_cast<IUnknown*>(fileStream),
+					IID_PPV_ARGS(&pIStream)
+					);
 
 				if (SUCCEEDED(hr))
 				{
-					OrientationFlag->Text = "Orientation flag: " + OrientationFlagValue;
+					USHORT OrientationFlagValue = 0U;
 
-					if ((OrientationFlagValue >= 2 && OrientationFlagValue <= 8))
+					hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
+
+					if (SUCCEEDED(hr))
 					{
-						auto op = StorageFileToFilePointer(file);
+						OrientationFlag->Text = "Orientation flag: " + OrientationFlagValue;
 
-						op.then([this, file, OrientationFlagValue](FILE * filePointer)
+						if ((OrientationFlagValue >= 2U && OrientationFlagValue <= 8U))
 						{
-							// fclose on filePointer is the responsibility of ChangeOrientation
-							HRESULT hr = ChangeOrientation(file, filePointer, OrientationFlagValue, pIWICImagingFactory);
-						});
+							auto op = StorageFileToFilePointer(files->GetAt(i));
+
+							op.then([this, files, i, OrientationFlagValue](FILE * filePointer)
+							{
+								// fclose on filePointer is the responsibility of ChangeOrientation
+								HRESULT hr = ChangeOrientation(files->GetAt(i), filePointer, OrientationFlagValue, pIWICImagingFactory);
+							});
+						}
+					}
+					else
+					{
+						OrientationFlag->Text = "No orientation flag in metadata";
 					}
 				}
-				else
-				{
-					OrientationFlag->Text = "No orientation flag in metadata";
-				}
-			}
-			// Set the stream as source of the bitmap
-			Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
-			bitmapImage->SetSource(fileStream);
+				// Set the stream as source of the bitmap
+				Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
+				bitmapImage->SetSource(fileStream);
 
-			// Set the bitmap as source of the Image control
-			displayImage->Source = bitmapImage;
-		});
+				// Set the bitmap as source of the Image control
+				displayImage->Source = bitmapImage;
+			});
+		}
 	});
 }
