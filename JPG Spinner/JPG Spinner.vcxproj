@@ -182,6 +182,7 @@
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Styles.xaml" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -194,6 +195,7 @@
     <Image Include="Assets\SmallLogo.scale-100.png" />
     <Image Include="Assets\StoreLogo.scale-100.png" />
     <Image Include="Assets\SplashScreen.scale-100.png" />
+    <Image Include="Assets\windows-sdk.png" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.xaml.cpp">

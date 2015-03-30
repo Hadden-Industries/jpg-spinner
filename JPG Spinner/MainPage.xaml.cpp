@@ -719,7 +719,7 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 							op.then([this, files, i, OrientationFlagValue](FILE * filePointer)
 							{
 								// fclose on filePointer is the responsibility of ChangeOrientation
-								HRESULT hr = ChangeOrientation(files->GetAt(i), filePointer, OrientationFlagValue, pIWICImagingFactory);
+								HRESULT hr = ChangeOrientation(files->GetAt(i), filePointer, OrientationFlagValue, pIWICImagingFactory, CheckBoxTrim->IsChecked->Value, CheckBoxProgressive->IsChecked->Value);
 							});
 						}
 					}

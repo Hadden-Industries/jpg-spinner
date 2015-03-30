@@ -102,5 +102,11 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />
+    <Page Include="Styles.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\windows-sdk.png">
+      <Filter>Assets</Filter>
+    </Image>
   </ItemGroup>
 </Project>

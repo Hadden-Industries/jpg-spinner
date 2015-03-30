@@ -8,17 +8,63 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Button x:ConnectionId='1' Content="Find file" HorizontalAlignment="Left" Margin="112,88,0,0" VerticalAlignment="Top"                     />
-        <StackPanel x:Name="imagePanel" Margin="115,128,1123,512" Orientation="Horizontal">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"  MinWidth="230" MaxWidth="600"/>
+            <ColumnDefinition Width="8*"/>
+        </Grid.ColumnDefinitions>
+        <Grid x:Name="LeftPane" Background="#FF140044" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="115"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="100"/>
+            </Grid.RowDefinitions>
+            <StackPanel VerticalAlignment="Top" Grid.Row="0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal" Margin="5,20,0,0">
+                    <TextBlock Text="Windows platform app" Foreground="White" Style="{StaticResource TagLineTextStyle}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="5,0,0,0">
+                    <Image Source="Assets/windows-sdk.png" Stretch="None"/>
+                    <TextBlock x:Name="SampleTitle" Foreground="White" Style="{StaticResource SampleHeaderTextStyle}" Margin="10,0,0,0" TextWrapping="Wrap" Text="JPG Spinner"/>
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="1">
+                <StackPanel Orientation="Vertical" Margin="20,10,20,10" VerticalAlignment="Top">
+                    <CheckBox x:Name="CheckBoxTrim" Content="Trim" Margin="0,0,0,0" IsChecked="False"/>
+                    <TextBlock x:Name="TextBlockTrim" Text="Remove edge pixels to preserve lossless rotation if necessary" Foreground="White" FontWeight="Bold" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="0,0,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Orientation="Vertical" Margin="20,10,20,10" VerticalAlignment="Top">
+                    <CheckBox x:Name="CheckBoxProgressive" Content="Progressive" Margin="0,0,0,0" IsChecked="True"/>
+                    <TextBlock x:Name="TextBlockProgressive" Text="Apply progressive encoding to each rotated image" Foreground="White" FontWeight="Bold" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="0,0,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+                <Button x:ConnectionId='1' Content="Pick files" HorizontalAlignment="Center" Margin="0,20,0,0" VerticalAlignment="Top"                     />
+            </StackPanel>
+            <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,10,0,20" VerticalAlignment="Top">
+                <TextBlock Margin="10,0,0,0" Foreground="White" TextWrapping="Wrap" >Status:</TextBlock>
+                <Border x:Name="StatusBorder" Margin="0,0,0,0" Visibility="Collapsed">
+                    <TextBlock x:Name="StatusBlock" Foreground="White" FontWeight="Bold" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="20,10,10,20" TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+            <StackPanel Grid.Row="3" Orientation="Vertical" Margin="10,0,5,10" VerticalAlignment="Bottom" >
+                <Image Source="Assets/microsoft-sdk.png"  Stretch="None" HorizontalAlignment="Left"/>
+                <TextBlock Text="&#xA9; Hadden Industries Ltd. All rights reserved." Foreground="White" Style="{StaticResource CopyrightTextStyle}"/>
+                <StackPanel x:Name="FooterPanel" Orientation="Horizontal" HorizontalAlignment="Left">
+                    <HyperlinkButton Content="Terms" NavigateUri="http://haddenindustries.com/legal.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
+                    <TextBlock Text="|" Style="{StaticResource SeparatorStyle}" VerticalAlignment="Center"/>
+                    <HyperlinkButton Content="Trademarks" NavigateUri="http://haddenindustries.com/attributions.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <!--<Frame Grid.Column="1" x:Name="ScenarioFrame" Margin="30,50,30,0" />-->
+        <StackPanel Grid.Column="1" x:Name="imagePanel" Margin="128,128" Orientation="Horizontal">
             <Image x:Name="displayImage" HorizontalAlignment="Left" Height="256" VerticalAlignment="Top" Width="256" Margin="0,0,0,-125"/>
-            <StackPanel Margin="0,10" Orientation="Vertical" Width="910">
+            <StackPanel Margin="0,10" Orientation="Vertical">
                 <TextBlock x:Name="filePath" HorizontalAlignment="Left" TextWrapping="Wrap" Text="{Binding Path}" VerticalAlignment="Top"/>
                 <TextBlock x:Name="OrientationFlag" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 <TextBlock x:Name="DebugText" TextWrapping="Wrap" Text="DebugText"/>
             </StackPanel>
-
+            <GridView x:Name="GridViewSelection" Width="100"/>
         </StackPanel>
-
     </Grid>
 </Page>
 
