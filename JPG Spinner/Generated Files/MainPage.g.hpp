@@ -24,22 +24,16 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
 
     // Get the Grid named 'LeftPane'
     LeftPane = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"LeftPane"));
-    // Get the StackPanel named 'imagePanel'
-    imagePanel = safe_cast<::Windows::UI::Xaml::Controls::StackPanel^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"imagePanel"));
-    // Get the Image named 'displayImage'
-    displayImage = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"displayImage"));
-    // Get the GridView named 'GridViewSelection'
-    GridViewSelection = safe_cast<::Windows::UI::Xaml::Controls::GridView^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"GridViewSelection"));
-    // Get the TextBlock named 'filePath'
-    filePath = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"filePath"));
-    // Get the TextBlock named 'OrientationFlag'
-    OrientationFlag = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"OrientationFlag"));
-    // Get the TextBlock named 'DebugText'
-    DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
+    // Get the Frame named 'ScenarioFrame'
+    ScenarioFrame = safe_cast<::Windows::UI::Xaml::Controls::Frame^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ScenarioFrame"));
     // Get the StackPanel named 'FooterPanel'
     FooterPanel = safe_cast<::Windows::UI::Xaml::Controls::StackPanel^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"FooterPanel"));
     // Get the Border named 'StatusBorder'
     StatusBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"StatusBorder"));
+    // Get the Border named 'DebugBorder'
+    DebugBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugBorder"));
+    // Get the TextBlock named 'DebugText'
+    DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
     // Get the TextBlock named 'StatusBlock'
     StatusBlock = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"StatusBlock"));
     // Get the CheckBox named 'CheckBoxProgressive'

@@ -31,6 +31,7 @@ using namespace Windows::UI::Xaml::Navigation;
 App::App()
 {
 	InitializeComponent();
+
 	Suspending += ref new SuspendingEventHandler(this, &App::OnSuspending);
 }
 
@@ -122,4 +123,8 @@ void App::OnSuspending(Object^ sender, SuspendingEventArgs^ e)
 void App::OnNavigationFailed(Platform::Object ^sender, Windows::UI::Xaml::Navigation::NavigationFailedEventArgs ^e)
 {
 	throw ref new FailureException("Failed to load Page " + e->SourcePageType.Name);
+}
+
+Item::Item() :_Title(""), _Subtitle(""), _Link(""), _Category(""), _Description(""), _Content(""), _Image(nullptr)
+{
 }

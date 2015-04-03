@@ -13,11 +13,10 @@ namespace Windows {
         namespace Xaml {
             namespace Controls {
                 ref class Grid;
+                ref class Frame;
                 ref class StackPanel;
-                ref class Image;
-                ref class GridView;
-                ref class TextBlock;
                 ref class Border;
+                ref class TextBlock;
                 ref class CheckBox;
             }
         }
@@ -37,14 +36,11 @@ namespace JPG_Spinner
         bool _contentLoaded;
     
         private: ::Windows::UI::Xaml::Controls::Grid^ LeftPane;
-        private: ::Windows::UI::Xaml::Controls::StackPanel^ imagePanel;
-        private: ::Windows::UI::Xaml::Controls::Image^ displayImage;
-        private: ::Windows::UI::Xaml::Controls::GridView^ GridViewSelection;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ filePath;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ OrientationFlag;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ DebugText;
+        private: ::Windows::UI::Xaml::Controls::Frame^ ScenarioFrame;
         private: ::Windows::UI::Xaml::Controls::StackPanel^ FooterPanel;
         private: ::Windows::UI::Xaml::Controls::Border^ StatusBorder;
+        private: ::Windows::UI::Xaml::Controls::Border^ DebugBorder;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ DebugText;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ StatusBlock;
         private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxProgressive;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockProgressive;

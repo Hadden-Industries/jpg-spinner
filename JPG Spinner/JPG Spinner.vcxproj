@@ -157,6 +157,9 @@
   <ItemGroup>
     <ClInclude Include="cderror.h" />
     <ClInclude Include="cdjpeg.h" />
+    <ClInclude Include="ItemViewer.xaml.h">
+      <DependentUpon>ItemViewer.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="jconfig.h" />
     <ClInclude Include="jdct.h" />
     <ClInclude Include="jerror.h" />
@@ -173,15 +176,21 @@
     <ClInclude Include="MainPage.xaml.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Scenario_AfterPick.xaml.h">
+      <DependentUpon>Scenario_AfterPick.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="transupp.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="ItemViewer.xaml" />
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="ScenariosTemplateStyles.xaml" />
+    <Page Include="Scenario_AfterPick.xaml" />
     <Page Include="Styles.xaml" />
   </ItemGroup>
   <ItemGroup>
@@ -214,6 +223,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ItemViewer.xaml.cpp">
+      <DependentUpon>ItemViewer.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="jaricom.c">
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsWinRT>
@@ -869,6 +881,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Scenario_AfterPick.xaml.cpp">
+      <DependentUpon>Scenario_AfterPick.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="transupp.c">
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsWinRT>

@@ -9,11 +9,15 @@
 #include "pch.h"
 #include "XamlTypeInfo.g.h"
 
+#include "ItemViewer.xaml.h"
 #include "App.xaml.h"
 #include "MainPage.xaml.h"
+#include "Scenario_AfterPick.xaml.h"
 
+#include "ItemViewer.g.hpp"
 #include "App.g.hpp"
 #include "MainPage.g.hpp"
+#include "Scenario_AfterPick.g.hpp"
 
 ::Platform::Collections::Vector<::Windows::UI::Xaml::Markup::IXamlMetadataProvider^>^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::OtherProviders::get()
 {
@@ -62,14 +66,47 @@
 
 ::Windows::UI::Xaml::Markup::IXamlType^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::CreateXamlType(::Platform::String^ typeName)
 {
+    if (typeName == L"Windows.UI.Xaml.Controls.UserControl")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
     if (typeName == L"Windows.UI.Xaml.Controls.Page")
     {
         return ref new XamlSystemBaseType(typeName);
     }
 
-    if (typeName == L"Windows.UI.Xaml.Controls.UserControl")
+    if (typeName == L"Int32")
     {
         return ref new XamlSystemBaseType(typeName);
+    }
+
+    if (typeName == L"Object")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
+    if (typeName == L"Windows.UI.Xaml.Media.ImageSource")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
+    if (typeName == L"String")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
+    if (typeName == L"JPG_Spinner.ItemViewer")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.UserControl"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::ItemViewer(); 
+            };
+        userType->SetIsLocalType();
+        return userType;
     }
 
     if (typeName == L"JPG_Spinner.MainPage")
@@ -81,6 +118,42 @@
             {
                 return ref new ::JPG_Spinner::MainPage(); 
             };
+        userType->AddMemberName(L"ProgressiveChecked");
+        userType->AddMemberName(L"TrimChecked");
+        userType->SetIsLocalType();
+        return userType;
+    }
+
+    if (typeName == L"JPG_Spinner.Scenario_AfterPick")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.Page"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::Scenario_AfterPick(); 
+            };
+        userType->SetIsLocalType();
+        return userType;
+    }
+
+    if (typeName == L"JPG_Spinner.Item")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::Item(); 
+            };
+        userType->AddMemberName(L"Image");
+        userType->AddMemberName(L"Content");
+        userType->AddMemberName(L"Description");
+        userType->AddMemberName(L"Category");
+        userType->AddMemberName(L"Link");
+        userType->AddMemberName(L"Subtitle");
+        userType->AddMemberName(L"Title");
+        userType->SetIsBindable();
         userType->SetIsLocalType();
         return userType;
     }
@@ -90,8 +163,181 @@
 
 ::Windows::UI::Xaml::Markup::IXamlMember^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::CreateXamlMember(::Platform::String^ longMemberName)
 {
-    // No Local Properties
-    (void)longMemberName; // Unused parameter
+    if (longMemberName == L"JPG_Spinner.MainPage.ProgressiveChecked")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"ProgressiveChecked", L"Int32");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::MainPage^)instance;
+                auto value = ref new ::Platform::Box<::default::int32>(that->ProgressiveChecked);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::MainPage^)instance;
+                auto boxedValue = (::Platform::IBox<::default::int32>^)value;
+                that->ProgressiveChecked = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.MainPage.TrimChecked")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"TrimChecked", L"Int32");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::MainPage^)instance;
+                auto value = ref new ::Platform::Box<::default::int32>(that->TrimChecked);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::MainPage^)instance;
+                auto boxedValue = (::Platform::IBox<::default::int32>^)value;
+                that->TrimChecked = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Image")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Image", L"Windows.UI.Xaml.Media.ImageSource");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->Image;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->Image = (::Windows::UI::Xaml::Media::ImageSource^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Content")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Content", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->Content;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->Content = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Description")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Description", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->Description;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->Description = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Category")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Category", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->Category;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->Category = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Link")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Link", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->Link;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->Link = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Subtitle")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Subtitle", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->Subtitle;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->Subtitle = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Title")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Title", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->Title;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->Title = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
     return nullptr;
 }
 

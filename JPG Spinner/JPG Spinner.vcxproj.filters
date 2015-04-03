@@ -103,6 +103,9 @@
   <ItemGroup>
     <Page Include="MainPage.xaml" />
     <Page Include="Styles.xaml" />
+    <Page Include="Scenario_AfterPick.xaml" />
+    <Page Include="ItemViewer.xaml" />
+    <Page Include="ScenariosTemplateStyles.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\windows-sdk.png">
