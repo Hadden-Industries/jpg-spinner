@@ -96,16 +96,14 @@
     </DataTemplate>
     <Style x:Key="StoreFrontTileStyle" TargetType="GridViewItem">
         <Setter Property="FontFamily" Value="Segoe UI"/>
-        <Setter Property="Height" Value="148"/>
-        <Setter Property="Width" Value="292"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="Margin" Value="0,0,8,8"/>
+        <Setter Property="Margin" Value="0,0,0,0"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Setter Property="VerticalContentAlignment" Value="Top"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="TabNavigation" Value="Local"/>
     </Style>
     <ItemsPanelTemplate x:Key="StoreFrontGridItemsPanelTemplate">
-        <ItemsWrapGrid MaximumRowsOrColumns="6"/>
+        <ItemsWrapGrid MaximumRowsOrColumns="8"/>
     </ItemsPanelTemplate>
 </ResourceDictionary>

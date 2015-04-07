@@ -298,230 +298,6 @@ static Platform::String^ GetUUID()
 	throw Platform::Exception::CreateException(hr);
 }
 
-HRESULT ChangeOrientation(
-	Windows::Storage::StorageFile^ originalFile,
-	FILE * fp,
-	USHORT OrientationFlag,
-	IWICImagingFactory * pIWICImagingFactory,
-	BOOL Trim = FALSE,
-	BOOL Progressive = TRUE
-	)
-{
-	struct jpeg_decompress_struct srcinfo;
-	struct jpeg_compress_struct dstinfo;
-	struct jpeg_error_mgr jsrcerr, jdsterr;
-
-	jvirt_barray_ptr * src_coef_arrays;
-	jvirt_barray_ptr * dst_coef_arrays;
-
-	/* We assume all-in-memory processing and can therefore use only a
-	* single file pointer for sequential input and output operation.
-	*/
-
-	jpeg_transform_info transformoption;
-	JCOPY_OPTION copyoption = JCOPYOPT_ALL;
-
-	switch (OrientationFlag) {
-	case 2U:
-	{
-		transformoption.transform = JXFORM_FLIP_H;
-	}
-	break;
-	case 3U:
-	{
-		transformoption.transform = JXFORM_ROT_180;
-	}
-	break;
-	case 4U:
-	{
-		transformoption.transform = JXFORM_FLIP_V;
-	}
-	break;
-	case 5U:
-	{
-		transformoption.transform = JXFORM_TRANSPOSE;
-	}
-	break;
-	case 6U:
-	{
-		transformoption.transform = JXFORM_ROT_90;
-	}
-	break;
-	case 7U:
-	{
-		transformoption.transform = JXFORM_TRANSVERSE;
-	}
-	break;
-	case 8U:
-	{
-		transformoption.transform = JXFORM_ROT_270;
-	}
-	break;
-	default:
-	{
-		transformoption.transform = JXFORM_NONE;
-	}
-	break;
-	}
-
-	transformoption.perfect = (Trim == TRUE) ? FALSE : TRUE;
-	transformoption.trim = (Trim == TRUE) ? TRUE : FALSE;
-	transformoption.force_grayscale = FALSE;
-	transformoption.crop = FALSE;
-
-	// Initialize the JPEG decompression object with default error handling
-	srcinfo.err = jpeg_std_error(&jsrcerr);
-	jpeg_create_decompress(&srcinfo);
-	// Initialize the JPEG compression object with default error handling
-	dstinfo.err = jpeg_std_error(&jdsterr);
-	jpeg_create_compress(&dstinfo);
-
-	if (Progressive)
-	{
-		// Set progressive mode (saves space but is slower)
-		jpeg_simple_progression(&dstinfo);
-	}
-
-	// Note: we assume only the decompression object will have virtual arrays
-
-	dstinfo.optimize_coding = TRUE;
-	dstinfo.err->trace_level = 0;
-	//srcinfo.mem->max_memory_to_use = dstinfo.mem->max_memory_to_use;
-
-	// Specify data source for decompression
-	jpeg_stdio_src(&srcinfo, fp);
-
-	// Enable saving of extra markers that we want to copy
-	jcopy_markers_setup(&srcinfo, copyoption);
-
-	// Read file header
-	(void)jpeg_read_header(&srcinfo, TRUE);
-
-	if (!jtransform_request_workspace(&srcinfo, &transformoption))
-	{
-		fclose(fp);
-		return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
-	}
-
-	// Read source file as DCT coefficients
-	src_coef_arrays = jpeg_read_coefficients(&srcinfo);
-
-	// Initialize destination compression parameters from source values
-	jpeg_copy_critical_parameters(&srcinfo, &dstinfo);
-
-	/* Adjust destination parameters if required by transform options;
-	* also find out which set of coefficient arrays will hold the output.
-	*/
-	dst_coef_arrays = jtransform_adjust_parameters(&srcinfo, &dstinfo, src_coef_arrays, &transformoption);
-
-	// Close input file
-	/* Note: we assume that jpeg_read_coefficients consumed all input
-	* until JPEG_REACHED_EOI, and that jpeg_finish_decompress will
-	* only consume more while (! cinfo->inputctl->eoi_reached).
-	* We cannot call jpeg_finish_decompress here since we still need the
-	* virtual arrays allocated from the source object for processing.
-	*/
-	fclose(fp);
-
-	// Creates the new temp file to write to
-	Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
-
-	Platform::String^ tempFileName = temporaryFolder->Path + "\\" + GetUUID();
-
-	HANDLE hTempFile = INVALID_HANDLE_VALUE;
-
-	CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
-	extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
-	extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
-	extendedParams.dwFileFlags = FILE_FLAG_RANDOM_ACCESS;
-	extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
-	extendedParams.lpSecurityAttributes = nullptr;
-	extendedParams.hTemplateFile = nullptr;
-
-	hTempFile = CreateFile2(
-		tempFileName->Data(), // file name 
-		GENERIC_READ | GENERIC_WRITE, // open for read/write 
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		CREATE_ALWAYS,
-		&extendedParams
-		);
-
-	if (INVALID_HANDLE_VALUE == hTempFile)
-	{
-		return HRESULT_FROM_WIN32(GetLastError());
-	}
-
-	// Open the output file from the handle
-	int fd = _open_osfhandle((intptr_t)hTempFile, _O_APPEND | _O_RDONLY);
-
-	if (-1 == fd)
-	{
-		CloseHandle(hTempFile);
-		return E_FAIL;
-	}
-
-	fp = _fdopen(fd, "wb");
-
-	if (0 == fp)
-	{
-		_close(fd); // Also calls CloseHandle()
-		return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
-	}
-
-	// Specify data destination for compression
-	jpeg_stdio_dest(&dstinfo, fp);
-
-	// Start compressor (note no image data is actually written here)
-	jpeg_write_coefficients(&dstinfo, dst_coef_arrays);
-
-	// Copy to the output file any extra markers that we want to preserve
-	jcopy_markers_execute(&srcinfo, &dstinfo, copyoption);
-
-	// Execute image transformation, if any
-	jtransform_execute_transformation(&srcinfo, &dstinfo, src_coef_arrays, &transformoption);
-
-	// Finish compression and release memory
-	jpeg_finish_compress(&dstinfo);
-	jpeg_destroy_compress(&dstinfo);
-	(void)jpeg_finish_decompress(&srcinfo);
-	jpeg_destroy_decompress(&srcinfo);
-
-	// Close output file, also calls _close()
-	fclose(fp);
-
-	auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(tempFileName));
-
-	getFileFromPathAsyncTask.then([pIWICImagingFactory, originalFile](Windows::Storage::StorageFile^ tempFile)
-	{
-		auto openAsyncTask = concurrency::create_task(tempFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
-
-		openAsyncTask.then([tempFile, pIWICImagingFactory, originalFile](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
-		{
-			Microsoft::WRL::ComPtr<IStream> pIStream;
-
-			HRESULT hr = CreateStreamOverRandomAccessStream(
-				reinterpret_cast<IUnknown*>(fileStream),
-				IID_PPV_ARGS(&pIStream)
-				);
-
-			if (SUCCEEDED(hr))
-			{
-				hr = SetJPEGOrientationFlag(pIStream.Get(), 1U, pIWICImagingFactory);
-
-				if (SUCCEEDED(hr))
-				{
-					auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->MoveAndReplaceAsync(originalFile));
-
-					moveAndReplaceAsyncTask.then([]()
-					{
-						return S_OK;
-					});
-				}
-			}
-		});
-	});
-}
-
 byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer)
 {
 	// Query the IBufferByteAccess interface.
@@ -628,6 +404,203 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 	});
 }
 
+concurrency::task<HRESULT> CreateReorientedTempFileAsync(
+	Windows::Storage::StorageFile^ originalFile,
+	USHORT orientationFlag,
+	Platform::String^ tempFileName,
+	BOOL trim = FALSE,
+	BOOL progressive = TRUE
+	)
+{
+	return concurrency::create_task(StorageFileToFilePointer(originalFile))
+		.then([originalFile, orientationFlag, trim, progressive, tempFileName](FILE * fp)
+	{
+		HRESULT hr = S_OK;
+
+		struct jpeg_decompress_struct srcinfo;
+		struct jpeg_compress_struct dstinfo;
+		struct jpeg_error_mgr jsrcerr, jdsterr;
+
+		jvirt_barray_ptr * src_coef_arrays;
+		jvirt_barray_ptr * dst_coef_arrays;
+
+		/* We assume all-in-memory processing and can therefore use only a
+		* single file pointer for sequential input and output operation.
+		*/
+
+		jpeg_transform_info transformoption;
+		JCOPY_OPTION copyoption = JCOPYOPT_ALL;
+
+		switch (orientationFlag) {
+		case 2U:
+		{
+			transformoption.transform = JXFORM_FLIP_H;
+		}
+		break;
+		case 3U:
+		{
+			transformoption.transform = JXFORM_ROT_180;
+		}
+		break;
+		case 4U:
+		{
+			transformoption.transform = JXFORM_FLIP_V;
+		}
+		break;
+		case 5U:
+		{
+			transformoption.transform = JXFORM_TRANSPOSE;
+		}
+		break;
+		case 6U:
+		{
+			transformoption.transform = JXFORM_ROT_90;
+		}
+		break;
+		case 7U:
+		{
+			transformoption.transform = JXFORM_TRANSVERSE;
+		}
+		break;
+		case 8U:
+		{
+			transformoption.transform = JXFORM_ROT_270;
+		}
+		break;
+		default:
+		{
+			transformoption.transform = JXFORM_NONE;
+		}
+		break;
+		}
+
+		transformoption.perfect = (trim == TRUE) ? FALSE : TRUE;
+		transformoption.trim = (trim == TRUE) ? TRUE : FALSE;
+		transformoption.force_grayscale = FALSE;
+		transformoption.crop = FALSE;
+
+		// Initialize the JPEG decompression object with default error handling
+		srcinfo.err = jpeg_std_error(&jsrcerr);
+		jpeg_create_decompress(&srcinfo);
+		// Initialize the JPEG compression object with default error handling
+		dstinfo.err = jpeg_std_error(&jdsterr);
+		jpeg_create_compress(&dstinfo);
+
+		if (progressive)
+		{
+			// Set progressive mode (saves space but is slower)
+			jpeg_simple_progression(&dstinfo);
+		}
+
+		// Note: we assume only the decompression object will have virtual arrays
+
+		dstinfo.optimize_coding = TRUE;
+		dstinfo.err->trace_level = 0;
+		//srcinfo.mem->max_memory_to_use = dstinfo.mem->max_memory_to_use;
+
+		// Specify data source for decompression
+		jpeg_stdio_src(&srcinfo, fp);
+
+		// Enable saving of extra markers that we want to copy
+		jcopy_markers_setup(&srcinfo, copyoption);
+
+		// Read file header
+		(void)jpeg_read_header(&srcinfo, TRUE);
+
+		if (!jtransform_request_workspace(&srcinfo, &transformoption))
+		{
+			fclose(fp);
+
+			return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+		}
+
+		// Read source file as DCT coefficients
+		src_coef_arrays = jpeg_read_coefficients(&srcinfo);
+
+		// Initialize destination compression parameters from source values
+		jpeg_copy_critical_parameters(&srcinfo, &dstinfo);
+
+		/* Adjust destination parameters if required by transform options;
+		* also find out which set of coefficient arrays will hold the output.
+		*/
+		dst_coef_arrays = jtransform_adjust_parameters(&srcinfo, &dstinfo, src_coef_arrays, &transformoption);
+
+		// Close input file
+		/* Note: we assume that jpeg_read_coefficients consumed all input
+		* until JPEG_REACHED_EOI, and that jpeg_finish_decompress will
+		* only consume more while (! cinfo->inputctl->eoi_reached).
+		* We cannot call jpeg_finish_decompress here since we still need the
+		* virtual arrays allocated from the source object for processing.
+		*/
+		fclose(fp);
+
+		HANDLE hTempFile = INVALID_HANDLE_VALUE;
+
+		CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
+		extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+		extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
+		extendedParams.dwFileFlags = FILE_FLAG_RANDOM_ACCESS;
+		extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+		extendedParams.lpSecurityAttributes = nullptr;
+		extendedParams.hTemplateFile = nullptr;
+
+		hTempFile = CreateFile2(
+			tempFileName->Data(), // file name 
+			GENERIC_READ | GENERIC_WRITE, // open for read/write 
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			CREATE_ALWAYS,
+			&extendedParams
+			);
+
+		if (INVALID_HANDLE_VALUE == hTempFile)
+		{
+			return HRESULT_FROM_WIN32(GetLastError());
+		}
+
+		// Open the output file from the handle
+		int fd = _open_osfhandle((intptr_t)hTempFile, _O_APPEND | _O_RDONLY);
+
+		if (-1 == fd)
+		{
+			CloseHandle(hTempFile);
+
+			return E_FAIL;
+		}
+
+		fp = _fdopen(fd, "wb");
+
+		if (0 == fp)
+		{
+			_close(fd); // Also calls CloseHandle()
+
+			return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
+		}
+
+		// Specify data destination for compression
+		jpeg_stdio_dest(&dstinfo, fp);
+
+		// Start compressor (note no image data is actually written here)
+		jpeg_write_coefficients(&dstinfo, dst_coef_arrays);
+
+		// Copy to the output file any extra markers that we want to preserve
+		jcopy_markers_execute(&srcinfo, &dstinfo, copyoption);
+
+		// Execute image transformation, if any
+		jtransform_execute_transformation(&srcinfo, &dstinfo, src_coef_arrays, &transformoption);
+
+		// Finish compression and release memory
+		jpeg_finish_compress(&dstinfo);
+		jpeg_destroy_compress(&dstinfo);
+		(void)jpeg_finish_decompress(&srcinfo);
+		jpeg_destroy_decompress(&srcinfo);
+
+		// Close output file, also calls _close()
+		fclose(fp);
+
+		return hr;
+	});
+}
+
 Scenario_AfterPick::Scenario_AfterPick()
 {
     InitializeComponent();
@@ -695,6 +668,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 	auto openPicker = ref new Windows::Storage::Pickers::FileOpenPicker();
 	openPicker->SuggestedStartLocation = Windows::Storage::Pickers::PickerLocationId::PicturesLibrary;
 	openPicker->ViewMode = Windows::Storage::Pickers::PickerViewMode::Thumbnail;
+	openPicker->CommitButtonText = "Rotate";
 
 	// Filter to include a sample subset of file types.
 	openPicker->FileTypeFilter->Clear();
@@ -724,17 +698,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 		for (unsigned int i = 0U; i < files->Size; ++i)
 		{
-			Item^ item = ref new Item();
-
-			item->Title = files->GetAt(i)->Name;
-
 			// Add picked file to MostRecentlyUsedList.
 			//mruToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));
 
 			// Return the IRandomAccessStream^ object
 			auto openingTask = concurrency::create_task(files->GetAt(i)->OpenAsync(Windows::Storage::FileAccessMode::Read));
 
-			openingTask.then([this, files, i, item](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
+			openingTask.then([this, files, i](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
 			{
 				Microsoft::WRL::ComPtr<IStream> pIStream;
 
@@ -751,40 +721,90 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 					if (SUCCEEDED(hr))
 					{
-						//safe_cast<Item^>(storeData->Items->GetAt(i))->Category = "Orientation flag: " + OrientationFlagValue.ToString();
-						item->Category = "Orientation flag: " + OrientationFlagValue.ToString();
-
-						/*if ((OrientationFlagValue >= 2U && OrientationFlagValue <= 8U))
+						if ((OrientationFlagValue >= 2U && OrientationFlagValue <= 8U))
 						{
-							auto op = StorageFileToFilePointer(files->GetAt(i));
+							Item^ item = ref new Item();
 
-							op.then([this, i, files, OrientationFlagValue](FILE * filePointer)
+							item->ID = i;
+
+							item->Title = files->GetAt(i)->Name;
+
+							item->OrientationFlag = OrientationFlagValue;
+
+							item->Category = "Orientation flag: " + OrientationFlagValue.ToString();
+
+							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem));
+
+							getThumbnailTask.then([this, files, i, item](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
 							{
-								// fclose on filePointer is the responsibility of ChangeOrientation
-								HRESULT hr = ChangeOrientation(files->GetAt(i), filePointer, OrientationFlagValue, pIWICImagingFactory, rootPage->TrimChecked, rootPage->ProgressiveChecked);
+								// Set the stream as source of the bitmap
+								Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
+								bitmapImage->SetSource(thumbnail);
+
+								// Set the bitmap as source of the Image control
+								item->Image = bitmapImage;
+
+								storeData->Items->Append(item);
+
+								// Creates the new temp file to write to
+								Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
+
+								Platform::String^ tempFileName = temporaryFolder->Path + "\\" + GetUUID();
+
+								auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(
+									files->GetAt(i),
+									item->OrientationFlag,
+									tempFileName,
+									rootPage->TrimChecked,
+									rootPage->ProgressiveChecked
+									);
+
+								createReorientedTempFileAsyncTask.then([this, files, i, tempFileName](HRESULT hr)
+								{
+									if SUCCEEDED(hr)
+									{
+										auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(tempFileName));
+
+										getFileFromPathAsyncTask.then([this, files, i](Windows::Storage::StorageFile^ tempFile)
+										{
+											auto openAsyncTask = concurrency::create_task(tempFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
+
+											openAsyncTask.then([this, files, i, tempFile](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
+											{
+												Microsoft::WRL::ComPtr<IStream> pIStream;
+
+												HRESULT hr = CreateStreamOverRandomAccessStream(
+													reinterpret_cast<IUnknown*>(fileStream),
+													IID_PPV_ARGS(&pIStream)
+													);
+
+												if (SUCCEEDED(hr))
+												{
+													hr = SetJPEGOrientationFlag(pIStream.Get(), 1U, pIWICImagingFactory);
+
+													if (SUCCEEDED(hr))
+													{
+														auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->MoveAndReplaceAsync(files->GetAt(i)));
+
+														moveAndReplaceAsyncTask.then([this, i]()
+														{
+															for (uint32 j = 0U; j < GridView1->Items->Size; ++j)
+															{
+																if (i == safe_cast<Item^>(GridView1->Items->GetAt(j))->ID)
+																{
+																	GridView1->SelectedItems->Append(GridView1->Items->GetAt(j));
+																}
+															}
+														});
+													}
+												}
+											});
+										});
+									}
+								});
 							});
-						}*/
+						}
 					}
-					else
-					{
-						//safe_cast<Item^>(storeData->Items->GetAt(i))->Category = "No orientation flag";
-						item->Category = "No orientation flag";
-					}
-
-					auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem));
-
-					getThumbnailTask.then([this, i, files, OrientationFlagValue, item](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
-					{
-						// Set the stream as source of the bitmap
-						Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
-						bitmapImage->SetSource(thumbnail);
-
-						// Set the bitmap as source of the Image control
-						//safe_cast<Item^>(storeData->Items->GetAt(i))->Image = bitmapImage;
-						item->Image = bitmapImage;
-
-						storeData->Items->Append(item);
-					});
 				}
 			});
 		}

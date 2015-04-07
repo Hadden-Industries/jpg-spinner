@@ -30,6 +30,7 @@ namespace JPG_Spinner
 	public ref class Item sealed
 	{
 		//Windows::Storage::StorageFile^ _StorageFile;
+		uint32 _ID;
 		Platform::String^  _Title;
 		Platform::String^  _Subtitle;
 		Platform::String^  _Link;
@@ -37,6 +38,8 @@ namespace JPG_Spinner
 		Platform::String^ _Description;
 		Platform::String^ _Content;
 		Windows::UI::Xaml::Media::ImageSource^ _Image;
+		unsigned short _OrientationFlag;
+
 		event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _PropertyChanged;
 
 	public:
@@ -47,7 +50,6 @@ namespace JPG_Spinner
 			Windows::UI::Xaml::Data::PropertyChangedEventArgs^ pcea = ref new Windows::UI::Xaml::Data::PropertyChangedEventArgs(propertyName);
 			_PropertyChanged(this, pcea);
 		}
-
 
 		//StorageFile
 		/*property Windows::Storage::StorageFile^ StorageFile
@@ -62,6 +64,20 @@ namespace JPG_Spinner
 				OnPropertyChanged("StorageFile");
 			}
 		}*/
+
+		//ID
+		property uint32 ID
+		{
+			uint32 get()
+			{
+				return _ID;
+			}
+			void set(uint32 value)
+			{
+				_ID = value;
+				OnPropertyChanged("ID");
+			}
+		}
 
 		//Title
 		property Platform::String^ Title
@@ -159,6 +175,20 @@ namespace JPG_Spinner
 			{
 				_Image = value;
 				OnPropertyChanged("Image");
+			}
+		}
+
+		//OrientationFlag
+		property unsigned short OrientationFlag
+		{
+			unsigned short get()
+			{
+				return _OrientationFlag;
+			}
+			void set(unsigned short value)
+			{
+				_OrientationFlag = value;
+				OnPropertyChanged("OrientationFlag");
 			}
 		}
 	};

@@ -20,19 +20,18 @@
     <Page.Resources>
         <ResourceDictionary Source="ScenariosTemplateStyles.xaml"/>
     </Page.Resources>
-    <Grid x:Name="LayoutRoot">
+    <Grid x:Name="LayoutRoot" Background="#FF140044">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="100"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid x:Name="Input" Grid.Row="0">
+        <Grid x:Name="Input" Grid.Row="0" VerticalAlignment="Bottom">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock x:Name="InputTextBlock1" Grid.Row="0" TextWrapping="Wrap"></TextBlock>
+            <TextBlock Grid.Row="0" x:Name="InputTextBlock1" TextWrapping="Wrap"></TextBlock>
         </Grid>
-        <Grid x:Name="Output" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1">
+        <Grid x:Name="Output" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="1">
             <GridView x:ConnectionId='1' x:Name="GridView1"
                       Background="{StaticResource ApplicationPageBackgroundThemeBrush}"
                       ItemTemplate="{StaticResource StoreFrontTileTemplate}"
@@ -41,10 +40,10 @@
                       ShowsScrollingPlaceholders="False"
                                                                                       
                       BorderBrush="LightGray"
-                      VerticalAlignment="Top"
+                      VerticalAlignment="Stretch"
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                      SelectionMode="None"/>
+                      SelectionMode="Extended"/>
         </Grid>
         <!-- Add Storyboards to the visual states below as necessary for supporting the various layouts -->
         <VisualStateManager.VisualStateGroups>

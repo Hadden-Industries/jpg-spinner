@@ -28,14 +28,10 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     ScenarioFrame = safe_cast<::Windows::UI::Xaml::Controls::Frame^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ScenarioFrame"));
     // Get the StackPanel named 'FooterPanel'
     FooterPanel = safe_cast<::Windows::UI::Xaml::Controls::StackPanel^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"FooterPanel"));
-    // Get the Border named 'StatusBorder'
-    StatusBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"StatusBorder"));
     // Get the Border named 'DebugBorder'
     DebugBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugBorder"));
     // Get the TextBlock named 'DebugText'
     DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
-    // Get the TextBlock named 'StatusBlock'
-    StatusBlock = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"StatusBlock"));
     // Get the CheckBox named 'CheckBoxProgressive'
     CheckBoxProgressive = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxProgressive"));
     // Get the TextBlock named 'TextBlockProgressive'

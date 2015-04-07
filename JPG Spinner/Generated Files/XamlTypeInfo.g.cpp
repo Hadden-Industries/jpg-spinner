@@ -96,6 +96,11 @@
         return ref new XamlSystemBaseType(typeName);
     }
 
+    if (typeName == L"UInt32")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
     if (typeName == L"JPG_Spinner.ItemViewer")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.UserControl"));
@@ -146,6 +151,7 @@
             {
                 return ref new ::JPG_Spinner::Item(); 
             };
+        userType->AddMemberName(L"OrientationFlag");
         userType->AddMemberName(L"Image");
         userType->AddMemberName(L"Content");
         userType->AddMemberName(L"Description");
@@ -153,8 +159,24 @@
         userType->AddMemberName(L"Link");
         userType->AddMemberName(L"Subtitle");
         userType->AddMemberName(L"Title");
+        userType->AddMemberName(L"ID");
         userType->SetIsBindable();
         userType->SetIsLocalType();
+        return userType;
+    }
+
+    if (typeName == L"UInt16")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"System.ValueType"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        userType->SetIsReturnTypeStub();
+        return userType;
+    }
+
+    if (typeName == L"System.ValueType")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
         return userType;
     }
 
@@ -201,6 +223,27 @@
                 auto that = (::JPG_Spinner::MainPage^)instance;
                 auto boxedValue = (::Platform::IBox<::default::int32>^)value;
                 that->TrimChecked = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.OrientationFlag")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"OrientationFlag", L"UInt16");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::default::uint16>(that->OrientationFlag);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto boxedValue = (::Platform::IBox<::default::uint16>^)value;
+                that->OrientationFlag = boxedValue->Value;
             };
         return xamlMember;
     }
@@ -334,6 +377,27 @@
             {
                 auto that = (::JPG_Spinner::Item^)instance;
                 that->Title = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.ID")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"ID", L"UInt32");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::default::uint32>(that->ID);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto boxedValue = (::Platform::IBox<::default::uint32>^)value;
+                that->ID = boxedValue->Value;
             };
         return xamlMember;
     }

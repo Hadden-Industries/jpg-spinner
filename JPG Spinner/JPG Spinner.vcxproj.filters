@@ -76,6 +76,8 @@
     <ClCompile Include="jfdctfst.c" />
     <ClCompile Include="jfdctint.c" />
     <ClCompile Include="jidctflt.c" />
+    <ClCompile Include="ItemViewer.xaml.cpp" />
+    <ClCompile Include="Scenario_AfterPick.xaml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -93,6 +95,8 @@
     <ClInclude Include="jdct.h" />
     <ClInclude Include="jmemsys.h" />
     <ClInclude Include="jversion.h" />
+    <ClInclude Include="ItemViewer.xaml.h" />
+    <ClInclude Include="Scenario_AfterPick.xaml.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -109,6 +113,24 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\windows-sdk.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square310x310Logo.scale-180.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Wide310x150Logo.scale-180.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square310x310Logo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Wide310x150Logo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-180.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-140.png">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>
