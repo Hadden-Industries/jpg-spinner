@@ -43,7 +43,11 @@ namespace JPG_Spinner
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
 		BOOL CoInitializeExSucceeded;
-		Platform::String^ mruToken;
+		long imagesProcessed;
+		long imagesToBeRotated;
+		long imagesRotated;
+		Windows::UI::Core::CoreDispatcher^ _dispatcher;
+		Windows::ApplicationModel::Resources::ResourceLoader^ _resourceLoader;
 
         void ItemGridView_ContainerContentChanging(ListViewBase^ sender, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^ e);
 

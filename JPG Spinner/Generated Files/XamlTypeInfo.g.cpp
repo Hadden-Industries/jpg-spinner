@@ -13,11 +13,13 @@
 #include "App.xaml.h"
 #include "MainPage.xaml.h"
 #include "Scenario_AfterPick.xaml.h"
+#include "WebPage.xaml.h"
 
 #include "ItemViewer.g.hpp"
 #include "App.g.hpp"
 #include "MainPage.g.hpp"
 #include "Scenario_AfterPick.g.hpp"
+#include "WebPage.g.hpp"
 
 ::Platform::Collections::Vector<::Windows::UI::Xaml::Markup::IXamlMetadataProvider^>^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::OtherProviders::get()
 {
@@ -142,6 +144,19 @@
         return userType;
     }
 
+    if (typeName == L"JPG_Spinner.WebPage")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.Page"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::WebPage(); 
+            };
+        userType->SetIsLocalType();
+        return userType;
+    }
+
     if (typeName == L"JPG_Spinner.Item")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
@@ -159,6 +174,7 @@
         userType->AddMemberName(L"Link");
         userType->AddMemberName(L"Subtitle");
         userType->AddMemberName(L"Title");
+        userType->AddMemberName(L"MRUToken");
         userType->AddMemberName(L"ID");
         userType->SetIsBindable();
         userType->SetIsLocalType();
@@ -377,6 +393,25 @@
             {
                 auto that = (::JPG_Spinner::Item^)instance;
                 that->Title = (::Platform::String^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.MRUToken")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"MRUToken", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->MRUToken;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->MRUToken = (::Platform::String^)value;
             };
         return xamlMember;
     }

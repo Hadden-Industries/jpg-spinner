@@ -6,7 +6,19 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-
+    <Page.Resources>
+        <Storyboard x:Name="spinrect">
+            <DoubleAnimation x:Name="doubleAnimation" Duration="0:0:3"
+                             To="360"
+                             RepeatBehavior="Forever"
+                             Storyboard.TargetName="spinme"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </Page.Resources>
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"  MinWidth="240" MaxWidth="600"/>
@@ -23,35 +35,65 @@
                 <!--<StackPanel Orientation="Horizontal" Margin="5,20,0,0">
                     <TextBlock Text="Windows app" Foreground="White" Style="{StaticResource TagLineTextStyle}"/>
                 </StackPanel>-->
-                <StackPanel Orientation="Horizontal" Margin="20,0,0,0" >
-                    <Image Source="Assets/SmallLogo.scale-100.png" Stretch="None"/>
-                    <TextBlock x:Name="SampleTitle" Foreground="White" Style="{StaticResource SampleHeaderTextStyle}" Margin="10,0,0,0" TextWrapping="Wrap" Text="JPG Spinner"/>
-                </StackPanel>
             </StackPanel>
             <StackPanel Grid.Row="1">
+                <StackPanel HorizontalAlignment="Center" Margin="0,0,0,-25" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Name="spinme" RenderTransformOrigin=".5,.5" Source="Assets/Logo.scale-100.png" Stretch="None">
+                        <Image.RenderTransform>
+                            <RotateTransform/>
+                        </Image.RenderTransform>
+                    </Image>
+                </StackPanel>
+                <StackPanel Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center">
+                    <TextBlock x:Name="SampleTitle" Foreground="White" Margin="10,0,0,0" Style="{StaticResource SampleHeaderTextStyle}" Text="JPG Spinner" TextWrapping="Wrap"/>
+                </StackPanel>
                 <StackPanel Orientation="Vertical" Margin="20,100,20,10" VerticalAlignment="Top">
-                    <CheckBox x:Name="CheckBoxTrim" Content="Trim" Margin="0,0,0,0" IsChecked="False" FontSize="18"/>
-                    <TextBlock x:Name="TextBlockTrim" Text="Remove edge pixels to preserve lossless rotation if necessary" Foreground="White" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="0,10,0,0" TextWrapping="Wrap" FontSize="14" />
+                    <CheckBox x:Name="CheckBoxTrim" x:Uid="CheckBoxTrim" Content="" Margin="0,0,0,0" IsChecked="False" FontSize="18"/>
+                    <TextBlock x:Name="TextBlockTrim" x:Uid="TextBlockTrim"
+                        Text=""
+                        Foreground="White"
+                        MaxHeight="200"
+                        TextTrimming="CharacterEllipsis"
+                        Margin="0,10,0,0"
+                        TextWrapping="Wrap"
+                        FontSize="14"
+                        PointerReleased="TextBlockTrim_PointerReleased">
+                        <ToolTipService.ToolTip>
+                            <ToolTip x:Uid="ToolTipTrim" Content=""/>
+                        </ToolTipService.ToolTip>
+                    </TextBlock>
                 </StackPanel>
-                <StackPanel Orientation="Vertical" Margin="20,20,20,10" VerticalAlignment="Top">
-                    <CheckBox x:Name="CheckBoxProgressive" Content="Progressive" Margin="0,0,0,0" IsChecked="True" FontSize="18"/>
-                    <TextBlock x:Name="TextBlockProgressive" Text="Apply progressive encoding to each rotated image" Foreground="White" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="0,10,0,0" TextWrapping="Wrap" FontSize="14" />
+                <StackPanel Orientation="Vertical" Margin="20,40,20,10" VerticalAlignment="Top">
+                    <CheckBox x:Name="CheckBoxProgressive" x:Uid="CheckBoxProgressive" Content="" Margin="0,0,0,0" IsChecked="True" FontSize="18"/>
+                    <TextBlock x:Name="TextBlockProgressive" x:Uid="TextBlockProgressive"
+                               Text=""
+                               Foreground="White"
+                               MaxHeight="200"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,10,0,0"
+                               TextWrapping="Wrap"
+                               FontSize="14"
+                               PointerReleased="TextBlockProgressive_PointerReleased">
+                        <ToolTipService.ToolTip>
+                            <ToolTip x:Uid="ToolTipProgressive" Content=""/>
+                        </ToolTipService.ToolTip>
+                    </TextBlock>
                 </StackPanel>
-                <Button Content="Pick files" HorizontalAlignment="Center" Margin="0,40,0,0" VerticalAlignment="Top" Click="Button_Click" FontWeight="Bold" FontSize="20"/>
+                <Button x:Name="ButtonPickFiles" x:Uid="ButtonPickFiles" Content="" HorizontalAlignment="Center" Margin="0,40,0,0" VerticalAlignment="Top" Click="Button_Click" FontWeight="Bold" FontSize="20" Loaded="ButtonPickFiles_Loaded"/>
             </StackPanel>
             <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,0,0,0" VerticalAlignment="Top">
                 <TextBlock Margin="20,0,0,0" Foreground="White" TextWrapping="Wrap" ></TextBlock>
                 <Border x:Name="DebugBorder" Margin="0,0,0,0" Visibility="Collapsed">
-                    <TextBlock x:Name="DebugText" Foreground="White" FontWeight="Bold" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="20,10,10,20" TextWrapping="Wrap" />
+                    <TextBlock x:Name="DebugText" Foreground="White" FontWeight="Bold" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="20,10,10,20" TextWrapping="Wrap" Text=""/>
                 </Border>
             </StackPanel>
             <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,0,0,20" HorizontalAlignment="Center" VerticalAlignment="Bottom" >
                 <Image Source="Assets/microsoft-sdk.png"  Stretch="None" HorizontalAlignment="Left"/>
-                <HyperlinkButton Content="&#xA9; Hadden Industries Ltd" Foreground="White" NavigateUri="http://haddenindustries.com/" FontWeight="Normal"/>
+                <HyperlinkButton Content="&#xA9; Hadden Industries Ltd" Click="HyperLinkButton_Click" FontWeight="Normal" Foreground="White" Tag="http://haddenindustries.com/"/>
                 <StackPanel x:Name="FooterPanel" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <HyperlinkButton Content="Terms" NavigateUri="http://haddenindustries.com/legal.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
+                    <HyperlinkButton x:Uid="HyperlinkButtonPrivacyPolicy" Content="" Click="HyperLinkButton_Click" Tag="http://haddenindustries.com/attributions.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
                     <TextBlock Text="|" Style="{StaticResource SeparatorStyle}" VerticalAlignment="Center"/>
-                    <HyperlinkButton Content="Trademarks" NavigateUri="http://haddenindustries.com/attributions.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
+                    <HyperlinkButton x:Uid="HyperlinkButtonTerms" Content="" Click="HyperLinkButton_Click" Tag="http://haddenindustries.com/legal.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

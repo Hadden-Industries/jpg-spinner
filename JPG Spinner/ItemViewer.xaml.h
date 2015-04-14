@@ -16,9 +16,10 @@ namespace JPG_Spinner
 		ItemViewer();
 		void ShowPlaceholder(Item^ item);
 		void ShowTitle();
-		void ShowCategory();
+		//void ShowCategory();
 		void ShowImage();
 		void ClearData();
+		void RotateImage(double angle);
 
 	private:
 		// reference to the data item that will be visualized by this ItemViewer

@@ -42,3 +42,61 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 
 	ScenarioFrame->Navigate(scenarioType, this);
 }
+
+
+void JPG_Spinner::MainPage::TextBlockTrim_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
+	{
+		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
+	}
+	DebugText->Text = "Clicked Trim";
+}
+
+
+void JPG_Spinner::MainPage::TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
+	{
+		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
+	}
+	DebugText->Text = "Clicked Progressive";
+}
+
+void JPG_Spinner::MainPage::HyperLinkButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.WebPage", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+	ScenarioFrame->Navigate(scenarioType, sender);
+}
+
+void JPG_Spinner::MainPage::spinme_Start()
+{
+	spinrect->Stop();
+
+	doubleAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::Forever;
+
+	/*if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
+	{
+		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
+	}
+	DebugText->Text = "Changed RepeatBehavior to Forever";*/
+
+	spinrect->Begin();
+}
+
+void JPG_Spinner::MainPage::spinme_Stop()
+{
+	doubleAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::FromCount(1.0);
+
+	/*if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
+	{
+		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
+	}
+	DebugText->Text = "Changed RepeatBehavior to FromCount(1.0)";*/
+}
+
+void JPG_Spinner::MainPage::ButtonPickFiles_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	ButtonPickFiles->Focus(Windows::UI::Xaml::FocusState::Programmatic);
+}

@@ -78,6 +78,7 @@
     <ClCompile Include="jidctflt.c" />
     <ClCompile Include="ItemViewer.xaml.cpp" />
     <ClCompile Include="Scenario_AfterPick.xaml.cpp" />
+    <ClCompile Include="WebPage.xaml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -97,6 +98,7 @@
     <ClInclude Include="jversion.h" />
     <ClInclude Include="ItemViewer.xaml.h" />
     <ClInclude Include="Scenario_AfterPick.xaml.h" />
+    <ClInclude Include="WebPage.xaml.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -110,11 +112,9 @@
     <Page Include="Scenario_AfterPick.xaml" />
     <Page Include="ItemViewer.xaml" />
     <Page Include="ScenariosTemplateStyles.xaml" />
+    <Page Include="WebPage.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Assets\windows-sdk.png">
-      <Filter>Assets</Filter>
-    </Image>
     <Image Include="Assets\Square310x310Logo.scale-180.png">
       <Filter>Assets</Filter>
     </Image>
@@ -133,5 +133,9 @@
     <Image Include="Assets\SplashScreen.scale-140.png">
       <Filter>Assets</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Strings\en-US\Resources.resw" />
+    <PRIResource Include="Strings\ru\Resources.resw" />
   </ItemGroup>
 </Project>

@@ -15,8 +15,8 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="JPG_Spinner.App">
-      <m2:VisualElements DisplayName="JPG Spinner" Square150x150Logo="Assets\Logo.png" Square30x30Logo="Assets\SmallLogo.png" Description="JPG Spinner" ForegroundText="light" BackgroundColor="#464646">
-        <m2:DefaultTile Square310x310Logo="Assets\Square310x310Logo.png" Wide310x150Logo="Assets\Wide310x150Logo.png">
+      <m2:VisualElements DisplayName="ms-resource:appDisplayName" Square150x150Logo="Assets\Logo.png" Square30x30Logo="Assets\SmallLogo.png" Description="ms-resource:appDescription" ForegroundText="light" BackgroundColor="#f05a29" ToastCapable="false">
+        <m2:DefaultTile Square310x310Logo="Assets\Square310x310Logo.png" Wide310x150Logo="Assets\Wide310x150Logo.png" ShortName="ms-resource:shortName">
         </m2:DefaultTile>
         <m2:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#f05a29" />
         <m2:InitialRotationPreference>
@@ -25,4 +25,7 @@
       </m2:VisualElements>
     </Application>
   </Applications>
+  <Capabilities>
+    <Capability Name="internetClient" />
+  </Capabilities>
 </Package>

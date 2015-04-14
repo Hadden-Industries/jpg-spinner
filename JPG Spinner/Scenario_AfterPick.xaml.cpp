@@ -605,6 +605,10 @@ Scenario_AfterPick::Scenario_AfterPick()
 {
     InitializeComponent();
 
+	_dispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
+
+	_resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+
 	pIWICImagingFactory = nullptr;
 
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -637,6 +641,10 @@ Scenario_AfterPick::Scenario_AfterPick()
 	{
 		throw Platform::Exception::CreateException(hr);
 	}
+
+	imagesProcessed = 0L;
+	imagesToBeRotated = 0L;
+	imagesRotated = 0L;
 }
 
 Scenario_AfterPick::~Scenario_AfterPick()
@@ -665,10 +673,12 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 	storeData = ref new Data();
 
+	GridView1->ItemsSource = storeData->Items;
+
 	auto openPicker = ref new Windows::Storage::Pickers::FileOpenPicker();
 	openPicker->SuggestedStartLocation = Windows::Storage::Pickers::PickerLocationId::PicturesLibrary;
 	openPicker->ViewMode = Windows::Storage::Pickers::PickerViewMode::Thumbnail;
-	openPicker->CommitButtonText = "Rotate";
+	openPicker->CommitButtonText = _resourceLoader->GetString("commitButtonText");
 
 	// Filter to include a sample subset of file types.
 	openPicker->FileTypeFilter->Clear();
@@ -694,13 +704,138 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 			concurrency::cancel_current_task();
 		}
 
-		GridView1->ItemsSource = storeData->Items;
+		InputTextBlock1->Text = _resourceLoader->GetString("initialising");
+
+		rootPage->spinme_Start();
+
+		concurrency::create_task([this, files]
+		{
+			long imagesProcessedLast = 0L;
+
+			while (static_cast<unsigned int>(imagesProcessed) <= files->Size)
+			{
+				// Only dispatch a message if the value has changed
+				if (imagesProcessed != imagesProcessedLast)
+				{
+					imagesProcessedLast = imagesProcessed;
+
+					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+						ref new Windows::UI::Core::DispatchedHandler([this]()
+					{
+						Platform::String^ string;
+
+						if (imagesProcessed > 1L)
+						{
+							string = _resourceLoader->GetString("analysedMany");
+
+							// Subtract one length of "%lu", add 1U for null terminator
+							unsigned int stringLength = string->Length() + imagesProcessed.ToString()->Length() - 3U + 1U;
+
+							wchar_t* wstring = new wchar_t[stringLength];
+
+							swprintf_s(wstring, stringLength, string->Data(), imagesProcessed);
+
+							string = ref new Platform::String(wstring);
+
+							delete[] wstring;
+						}
+						else
+						{
+							string = _resourceLoader->GetString("analysedOne");
+						}
+
+						InputTextBlock1->Text = string;
+					}));
+				}
+
+				if (imagesProcessed == files->Size)
+				{
+					break;
+				}
+
+				Sleep(20);
+			}
+
+			return;
+		}, concurrency::task_continuation_context::use_arbitrary())
+			.then([this]()
+		{
+			long imagesRotatedLast = 0L;
+			long imagesToBeRotatedLast = 0L;
+
+			while (imagesRotated < imagesToBeRotated)
+			{
+				// Only dispatch a message if any of the values have changed
+				if (imagesRotated != imagesRotatedLast || imagesToBeRotated != imagesToBeRotatedLast)
+				{
+					imagesRotatedLast = imagesRotated;
+					imagesToBeRotatedLast = imagesToBeRotated;
+
+					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+						ref new Windows::UI::Core::DispatchedHandler([this]()
+					{
+						Platform::String^ string;
+						
+						if (imagesToBeRotated > 1L)
+						{
+							string = _resourceLoader->GetString("processedMany");
+
+							// Subtract two lengths of "%lu", add 1U for null terminator
+							unsigned int stringLength = string->Length() + imagesRotated.ToString()->Length() + imagesToBeRotated.ToString()->Length() - 2 * 3U + 1U;
+
+							wchar_t* wstring = new wchar_t[stringLength];
+
+							swprintf_s(wstring, stringLength, string->Data(), imagesRotated, imagesToBeRotated);
+
+							string = ref new Platform::String(wstring);
+
+							delete[] wstring;
+						}
+						else
+						{
+							string = _resourceLoader->GetString("processedOne");
+						}						
+
+						InputTextBlock1->Text = string;
+					}));
+				}
+
+				Sleep(20);
+			}
+
+			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+				ref new Windows::UI::Core::DispatchedHandler([this]()
+			{
+				Platform::String^ string;
+
+				if (imagesRotated > 1L)
+				{
+					string = _resourceLoader->GetString("processedAllMany");
+
+					// Subtract one length of "%lu", add 1U for null terminator
+					unsigned int stringLength = string->Length() + imagesRotated.ToString()->Length() - 3U + 1U;
+
+					wchar_t* wstring = new wchar_t[stringLength];
+
+					swprintf_s(wstring, stringLength, string->Data(), imagesRotated);
+
+					string = ref new Platform::String(wstring);
+
+					delete[] wstring;
+				}
+				else
+				{
+					string = _resourceLoader->GetString("processedAllOne");
+				}
+
+				InputTextBlock1->Text = string;
+
+				rootPage->spinme_Stop();
+			}));
+		}, concurrency::task_continuation_context::use_arbitrary());
 
 		for (unsigned int i = 0U; i < files->Size; ++i)
 		{
-			// Add picked file to MostRecentlyUsedList.
-			//mruToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));
-
 			// Return the IRandomAccessStream^ object
 			auto openingTask = concurrency::create_task(files->GetAt(i)->OpenAsync(Windows::Storage::FileAccessMode::Read));
 
@@ -719,21 +854,28 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 					hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
 
+					InterlockedIncrement(&imagesProcessed);
+
 					if (SUCCEEDED(hr))
 					{
 						if ((OrientationFlagValue >= 2U && OrientationFlagValue <= 8U))
 						{
+							InterlockedIncrement(&imagesToBeRotated);
+
 							Item^ item = ref new Item();
 
 							item->ID = i;
 
-							item->Title = files->GetAt(i)->Name;
+							// Add picked file to MostRecentlyUsedList
+							item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));
+
+							item->Title = files->GetAt(i)->DisplayName;
 
 							item->OrientationFlag = OrientationFlagValue;
 
-							item->Category = "Orientation flag: " + OrientationFlagValue.ToString();
+							//item->Category = "Orientation flag: " + OrientationFlagValue.ToString();
 
-							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem));
+							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 196U));
 
 							getThumbnailTask.then([this, files, i, item](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
 							{
@@ -745,6 +887,21 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								item->Image = bitmapImage;
 
 								storeData->Items->Append(item);
+
+								/*for (uint32 j = 0U; j < GridView1->Items->Size; ++j)
+								{
+									if (i == safe_cast<Item^>(GridView1->Items->GetAt(j))->ID)
+									{
+										GridView1->SelectedItems->Append(GridView1->Items->GetAt(j));
+										ItemViewer^ iv = safe_cast<ItemViewer^>(safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromIndex(j))->ContentTemplateRoot);
+										if (iv != nullptr)
+										{
+											iv->Populate(safe_cast<Item^>(GridView1->Items->GetAt(j)));
+											iv->RotateImage(90);
+										}
+										break;
+									}
+								}*/
 
 								// Creates the new temp file to write to
 								Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
@@ -788,13 +945,27 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 														moveAndReplaceAsyncTask.then([this, i]()
 														{
-															for (uint32 j = 0U; j < GridView1->Items->Size; ++j)
+															for (uint32 j = 0U; j < storeData->Items->Size; ++j)
 															{
-																if (i == safe_cast<Item^>(GridView1->Items->GetAt(j))->ID)
+																if (i == safe_cast<Item^>(storeData->Items->GetAt(j))->ID)
 																{
-																	GridView1->SelectedItems->Append(GridView1->Items->GetAt(j));
+																	GridView1->SelectedItems->Append(storeData->Items->GetAt(j));
+																	/*try
+																	{
+																		ItemViewer^ iv = safe_cast<ItemViewer^>(safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromIndex(j))->ContentTemplateRoot);
+																		if (iv != nullptr)
+																		{
+																			iv->RotateImage(0.0);
+																		}
+																	}
+																	catch (Platform::Exception^ ex)
+																	{
+																		NULL;
+																	}*/
+																	break;
 																}
 															}
+															InterlockedIncrement(&imagesRotated);
 														});
 													}
 												}
@@ -847,11 +1018,12 @@ void JPG_Spinner::Scenario_AfterPick::ItemGridView_ContainerContentChanging(
         else if (args->Phase == 1)
         {
             iv->ShowTitle();
+
             args->RegisterUpdateCallback(ContainerContentChangingDelegate);
         }
         else if (args->Phase == 2)
         {
-            iv->ShowCategory();
+            //iv->ShowCategory();
             iv->ShowImage();
         }
 

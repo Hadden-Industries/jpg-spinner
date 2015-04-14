@@ -104,6 +104,7 @@
         <Setter Property="TabNavigation" Value="Local"/>
     </Style>
     <ItemsPanelTemplate x:Key="StoreFrontGridItemsPanelTemplate">
-        <ItemsWrapGrid MaximumRowsOrColumns="8"/>
+        <!--<ItemsWrapGrid MaximumRowsOrColumns="8"/>-->
+        <ItemsWrapGrid/>
     </ItemsPanelTemplate>
 </ResourceDictionary>

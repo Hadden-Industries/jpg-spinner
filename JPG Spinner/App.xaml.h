@@ -31,6 +31,7 @@ namespace JPG_Spinner
 	{
 		//Windows::Storage::StorageFile^ _StorageFile;
 		uint32 _ID;
+		Platform::String^ _MRUToken;
 		Platform::String^  _Title;
 		Platform::String^  _Subtitle;
 		Platform::String^  _Link;
@@ -76,6 +77,20 @@ namespace JPG_Spinner
 			{
 				_ID = value;
 				OnPropertyChanged("ID");
+			}
+		}
+
+		//MRUToken
+		property Platform::String^ MRUToken
+		{
+			Platform::String^ get()
+			{
+				return _MRUToken;
+			}
+			void set(Platform::String^ value)
+			{
+				_MRUToken = value;
+				OnPropertyChanged("MRUToken");
 			}
 		}
 

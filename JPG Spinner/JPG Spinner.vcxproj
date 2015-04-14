@@ -180,6 +180,9 @@
       <DependentUpon>Scenario_AfterPick.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="transupp.h" />
+    <ClInclude Include="WebPage.xaml.h">
+      <DependentUpon>WebPage.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -192,6 +195,9 @@
     <Page Include="ScenariosTemplateStyles.xaml" />
     <Page Include="Scenario_AfterPick.xaml" />
     <Page Include="Styles.xaml" />
+    <Page Include="WebPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -230,7 +236,6 @@
     <Image Include="Assets\Wide310x150Logo.scale-180.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="Assets\windows-sdk.png" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.xaml.cpp">
@@ -925,6 +930,13 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="WebPage.xaml.cpp">
+      <DependentUpon>WebPage.xaml</DependentUpon>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Strings\en-US\Resources.resw" />
+    <PRIResource Include="Strings\ru\Resources.resw" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

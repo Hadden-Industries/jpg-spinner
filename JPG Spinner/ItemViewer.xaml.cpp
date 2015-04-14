@@ -25,7 +25,7 @@ void ItemViewer::ShowPlaceholder(Item^ item)
 {
     _item = item;
     titleTextBlock->Opacity = 0;
-    categoryTextBlock->Opacity = 0;
+    //categoryTextBlock->Opacity = 0;
     image->Opacity = 0;
 }
 
@@ -46,14 +46,14 @@ void ItemViewer::ShowTitle()
 // Visualize category information by updating the correct TextBlock and 
 // setting Opacity to 1.
 // </summary>
-void ItemViewer::ShowCategory()
+/*void ItemViewer::ShowCategory()
 {
     if (_item != nullptr)
     {
         categoryTextBlock->Text = _item->Category;
     }
     categoryTextBlock->Opacity = 1;
-}
+}*/
 
 // <summary>
 // Visualize the Image associated with the data item by updating the Image 
@@ -64,6 +64,12 @@ void ItemViewer::ShowImage()
     if (_item != nullptr)
     {
         image->Source = _item->Image;
+
+		/*Windows::UI::Xaml::Media::RotateTransform^ myRotateTransform = ref new Windows::UI::Xaml::Media::RotateTransform();
+
+		myRotateTransform->Angle = 90.0;
+
+		image->RenderTransform = myRotateTransform;*/
     }
     image->Opacity = 1;
 }
@@ -75,6 +81,13 @@ void ItemViewer::ClearData()
 {
     _item = nullptr;
     titleTextBlock->ClearValue(TextBlock::TextProperty);
-    categoryTextBlock->ClearValue(TextBlock::TextProperty);
+    //categoryTextBlock->ClearValue(TextBlock::TextProperty);
     image->ClearValue(Image::SourceProperty);
+}
+
+void ItemViewer::RotateImage(double angle)
+{
+	Windows::UI::Xaml::Media::RotateTransform^ myRotateTransform = ref new Windows::UI::Xaml::Media::RotateTransform();
+	myRotateTransform->Angle = angle;
+	image->RenderTransform = myRotateTransform;
 }

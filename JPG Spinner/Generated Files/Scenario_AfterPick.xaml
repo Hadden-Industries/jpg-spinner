@@ -25,15 +25,15 @@
             <RowDefinition Height="100"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid x:Name="Input" Grid.Row="0" VerticalAlignment="Bottom">
+        <Grid x:Name="Input" Grid.Row="0" Margin="20,0,20,10" VerticalAlignment="Bottom">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" x:Name="InputTextBlock1" TextWrapping="Wrap"></TextBlock>
+            <TextBlock Grid.Row="0" x:Name="InputTextBlock1" Style="{StaticResource SubheaderTextBlockStyle}" Text="" TextWrapping="Wrap"></TextBlock>
         </Grid>
-        <Grid x:Name="Output" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="1">
+        <Grid x:Name="Output" HorizontalAlignment="Stretch" Margin="0,0,0,0" VerticalAlignment="Stretch" Grid.Row="1">
             <GridView x:ConnectionId='1' x:Name="GridView1"
-                      Background="{StaticResource ApplicationPageBackgroundThemeBrush}"
+                      Background="#FF140044"
                       ItemTemplate="{StaticResource StoreFrontTileTemplate}"
                       ItemContainerStyle="{StaticResource StoreFrontTileStyle}"
                       ItemsPanel="{StaticResource StoreFrontGridItemsPanelTemplate}"
