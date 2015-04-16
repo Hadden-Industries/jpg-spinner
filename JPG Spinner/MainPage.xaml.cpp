@@ -100,3 +100,10 @@ void JPG_Spinner::MainPage::ButtonPickFiles_Loaded(Platform::Object^ sender, Win
 {
 	ButtonPickFiles->Focus(Windows::UI::Xaml::FocusState::Programmatic);
 }
+
+void JPG_Spinner::MainPage::FlipButton()
+{
+	auto isButtonEnabled = ButtonPickFiles->IsEnabled;
+
+	ButtonPickFiles->IsEnabled = !isButtonEnabled;
+}

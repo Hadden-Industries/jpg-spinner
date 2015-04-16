@@ -36,6 +36,10 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     DebugBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugBorder"));
     // Get the TextBlock named 'DebugText'
     DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
+    // Get the Image named 'spinme'
+    spinme = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"spinme"));
+    // Get the TextBlock named 'AppTitle'
+    AppTitle = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"AppTitle"));
     // Get the Button named 'ButtonPickFiles'
     ButtonPickFiles = safe_cast<::Windows::UI::Xaml::Controls::Button^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ButtonPickFiles"));
     // Get the CheckBox named 'CheckBoxProgressive'
@@ -46,10 +50,6 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     CheckBoxTrim = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxTrim"));
     // Get the TextBlock named 'TextBlockTrim'
     TextBlockTrim = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockTrim"));
-    // Get the TextBlock named 'SampleTitle'
-    SampleTitle = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"SampleTitle"));
-    // Get the Image named 'spinme'
-    spinme = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"spinme"));
 }
 
 void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target)

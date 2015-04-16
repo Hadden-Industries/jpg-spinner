@@ -704,9 +704,11 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 			concurrency::cancel_current_task();
 		}
 
-		InputTextBlock1->Text = _resourceLoader->GetString("initialising");
+		rootPage->FlipButton();
 
 		rootPage->spinme_Start();
+
+		InputTextBlock1->Text = _resourceLoader->GetString("initialising");		
 
 		concurrency::create_task([this, files]
 		{
@@ -829,6 +831,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				}
 
 				InputTextBlock1->Text = string;
+
+				rootPage->FlipButton();
 
 				rootPage->spinme_Stop();
 			}));

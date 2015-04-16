@@ -9,8 +9,12 @@
              d:DesignWidth="400">
     <Grid HorizontalAlignment="Left" Background="#140044">
         <StackPanel Orientation="Horizontal" Margin="4,4,4,4">
-            <Image x:Name="image" RenderTransformOrigin=".5,.5" Height="192" Width="192" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,0"/>
-            <StackPanel Margin="8,0,0,0" Orientation="Vertical" HorizontalAlignment="stretch" VerticalAlignment="Center">
+            <Image x:Name="image"
+                   Height="192" Width="192"
+                   HorizontalAlignment="Left" VerticalAlignment="Center"
+                   Margin="0,0,4,0"
+                   RenderTransformOrigin=".5,.5"/>
+            <StackPanel Margin="4,0,0,0" Orientation="Vertical" HorizontalAlignment="stretch" VerticalAlignment="Center">
                 <TextBlock x:Name="titleTextBlock"
                            FontFamily="Segoe UI"
                            FontSize="14"
@@ -24,7 +28,7 @@
                            FontSize="14"
                            FontStyle="Italic"
                            Foreground="#FFF05A29"
-                           Text="Image can only be rotated with the trim option enabled"
+                           Text="Enable the trim option to rotate this image"
                            TextTrimming="CharacterEllipsis"
                            TextWrapping="Wrap"
                            Width="192"/>

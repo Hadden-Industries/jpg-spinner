@@ -32,6 +32,7 @@ namespace JPG_Spinner
 
 		void spinme_Start();
 		void spinme_Stop();
+		void FlipButton();
 
 	private:
 		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
