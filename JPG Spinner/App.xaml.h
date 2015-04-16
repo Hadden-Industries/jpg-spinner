@@ -33,11 +33,7 @@ namespace JPG_Spinner
 		uint32 _ID;
 		Platform::String^ _MRUToken;
 		Platform::String^  _Title;
-		Platform::String^  _Subtitle;
-		Platform::String^  _Link;
-		Platform::String^  _Category;
-		Platform::String^ _Description;
-		Platform::String^ _Content;
+		Platform::String^  _Error;
 		Windows::UI::Xaml::Media::ImageSource^ _Image;
 		unsigned short _OrientationFlag;
 
@@ -108,74 +104,17 @@ namespace JPG_Spinner
 			}
 		}
 
-		//Subtitle
-		property Platform::String^ Subtitle
+		//Error
+		property Platform::String^ Error
 		{
 			Platform::String^ get()
 			{
-				return _Subtitle;
+				return _Error;
 			}
 			void set(Platform::String^ value)
 			{
-				_Subtitle = value;
-				OnPropertyChanged("Subtitle");
-			}
-		}
-
-		//Link
-		property Platform::String^ Link
-		{
-			Platform::String^ get()
-			{
-				return _Link;
-			}
-			void set(Platform::String^ value)
-			{
-				_Link = value;
-				OnPropertyChanged("Link");
-			}
-		}
-
-
-		//Category
-		property Platform::String^ Category
-		{
-			Platform::String^ get()
-			{
-				return _Category;
-			}
-			void set(Platform::String^ value)
-			{
-				_Category = value;
-				OnPropertyChanged("Category");
-			}
-		}
-
-		//Description
-		property Platform::String^ Description
-		{
-			Platform::String^ get()
-			{
-				return _Description;
-			}
-			void set(Platform::String^ value)
-			{
-				_Description = value;
-				OnPropertyChanged("Description");
-			}
-		}
-
-		//Content
-		property Platform::String^ Content
-		{
-			Platform::String^ get()
-			{
-				return _Content;
-			}
-			void set(Platform::String^ value)
-			{
-				_Content = value;
-				OnPropertyChanged("Content");
+				_Error = value;
+				OnPropertyChanged("Error");
 			}
 		}
 

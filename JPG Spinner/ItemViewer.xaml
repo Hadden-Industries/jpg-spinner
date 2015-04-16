@@ -8,11 +8,26 @@
              d:DesignHeight="300"
              d:DesignWidth="400">
     <Grid HorizontalAlignment="Left" Background="#140044">
-        <StackPanel Orientation="Horizontal" Margin="5,5,5,5">
-            <Image x:Name="image" RenderTransformOrigin=".5,.5" Height="196" Width="196" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,0"/>
-            <StackPanel Margin="0,0,0,0" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <TextBlock x:Name="titleTextBlock" TextWrapping="Wrap" FontSize="14.667" FontWeight="Light" Width="200" FontFamily="Segoe UI"/>
-                <TextBlock x:Name="categoryTextBlock" TextWrapping="Wrap" FontSize="14.667" FontWeight="Light" Width="200" MaxHeight="20"/>
+        <StackPanel Orientation="Horizontal" Margin="4,4,4,4">
+            <Image x:Name="image" RenderTransformOrigin=".5,.5" Height="192" Width="192" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,0"/>
+            <StackPanel Margin="8,0,0,0" Orientation="Vertical" HorizontalAlignment="stretch" VerticalAlignment="Center">
+                <TextBlock x:Name="titleTextBlock"
+                           FontFamily="Segoe UI"
+                           FontSize="14"
+                           FontWeight="Light"
+                           Text="IMG_1856"
+                           TextTrimming="CharacterEllipsis"
+                           TextWrapping="Wrap"
+                           Width="192"/>
+                <TextBlock x:Name="errorTextBlock"
+                           FontFamily="Segoe UI"
+                           FontSize="14"
+                           FontStyle="Italic"
+                           Foreground="#FFF05A29"
+                           Text="Image can only be rotated with the trim option enabled"
+                           TextTrimming="CharacterEllipsis"
+                           TextWrapping="Wrap"
+                           Width="192"/>
             </StackPanel>
         </StackPanel>
     </Grid>

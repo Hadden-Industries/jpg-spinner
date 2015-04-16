@@ -33,7 +33,7 @@ namespace JPG_Spinner
     
         private: ::Windows::UI::Xaml::Controls::Image^ image;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ titleTextBlock;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ categoryTextBlock;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ errorTextBlock;
     };
 }
 

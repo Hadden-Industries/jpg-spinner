@@ -16,7 +16,7 @@ namespace JPG_Spinner
 		ItemViewer();
 		void ShowPlaceholder(Item^ item);
 		void ShowTitle();
-		//void ShowCategory();
+		void ShowError();
 		void ShowImage();
 		void ClearData();
 		void RotateImage(double angle);

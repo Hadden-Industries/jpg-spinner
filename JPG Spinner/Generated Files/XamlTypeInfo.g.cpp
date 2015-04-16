@@ -168,11 +168,7 @@
             };
         userType->AddMemberName(L"OrientationFlag");
         userType->AddMemberName(L"Image");
-        userType->AddMemberName(L"Content");
-        userType->AddMemberName(L"Description");
-        userType->AddMemberName(L"Category");
-        userType->AddMemberName(L"Link");
-        userType->AddMemberName(L"Subtitle");
+        userType->AddMemberName(L"Error");
         userType->AddMemberName(L"Title");
         userType->AddMemberName(L"MRUToken");
         userType->AddMemberName(L"ID");
@@ -283,97 +279,21 @@
         return xamlMember;
     }
 
-    if (longMemberName == L"JPG_Spinner.Item.Content")
+    if (longMemberName == L"JPG_Spinner.Item.Error")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Content", L"String");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Error", L"String");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
                 auto that = (::JPG_Spinner::Item^)instance;
-                return that->Content;
+                return that->Error;
             };
 
         xamlMember->Setter =
             [](Object^ instance, Object^ value) -> void
             {
                 auto that = (::JPG_Spinner::Item^)instance;
-                that->Content = (::Platform::String^)value;
-            };
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.Item.Description")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Description", L"String");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                return that->Description;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                that->Description = (::Platform::String^)value;
-            };
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.Item.Category")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Category", L"String");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                return that->Category;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                that->Category = (::Platform::String^)value;
-            };
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.Item.Link")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Link", L"String");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                return that->Link;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                that->Link = (::Platform::String^)value;
-            };
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.Item.Subtitle")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Subtitle", L"String");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                return that->Subtitle;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                that->Subtitle = (::Platform::String^)value;
+                that->Error = (::Platform::String^)value;
             };
         return xamlMember;
     }

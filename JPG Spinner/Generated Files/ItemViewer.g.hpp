@@ -26,8 +26,8 @@ void ::JPG_Spinner::ItemViewer::InitializeComponent()
     image = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"image"));
     // Get the TextBlock named 'titleTextBlock'
     titleTextBlock = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"titleTextBlock"));
-    // Get the TextBlock named 'categoryTextBlock'
-    categoryTextBlock = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"categoryTextBlock"));
+    // Get the TextBlock named 'errorTextBlock'
+    errorTextBlock = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"errorTextBlock"));
 }
 
 void ::JPG_Spinner::ItemViewer::Connect(int connectionId, Platform::Object^ target)

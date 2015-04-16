@@ -862,26 +862,24 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						{
 							InterlockedIncrement(&imagesToBeRotated);
 
-							Item^ item = ref new Item();
+							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
 
-							item->ID = i;
-
-							// Add picked file to MostRecentlyUsedList
-							item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));
-
-							item->Title = files->GetAt(i)->DisplayName;
-
-							item->OrientationFlag = OrientationFlagValue;
-
-							//item->Category = "Orientation flag: " + OrientationFlagValue.ToString();
-
-							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 196U));
-
-							getThumbnailTask.then([this, files, i, item](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
+							getThumbnailTask.then([this, files, i, OrientationFlagValue](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
 							{
 								// Set the stream as source of the bitmap
 								Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
 								bitmapImage->SetSource(thumbnail);
+
+								Item^ item = ref new Item();
+
+								item->ID = i;
+
+								// Add picked file to MostRecentlyUsedList
+								item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));
+
+								item->Title = files->GetAt(i)->DisplayName;
+
+								item->OrientationFlag = OrientationFlagValue;
 
 								// Set the bitmap as source of the Image control
 								item->Image = bitmapImage;
@@ -916,7 +914,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 									rootPage->ProgressiveChecked
 									);
 
-								createReorientedTempFileAsyncTask.then([this, files, i, tempFileName](HRESULT hr)
+								createReorientedTempFileAsyncTask.then([this, files, i, tempFileName, item](HRESULT hr)
 								{
 									if SUCCEEDED(hr)
 									{
@@ -972,6 +970,18 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 											});
 										});
 									}
+									// if cannot create re-oriented temporary file
+									else
+									{
+										if (hr = HRESULT_FROM_WIN32(ERROR_INVALID_DATA))
+										{
+											item->Error = _resourceLoader->GetString("trimOptionRequired");
+										}
+										else
+										{
+											item->Error = hr.ToString();
+										}
+									}
 								});
 							});
 						}
@@ -1023,7 +1033,7 @@ void JPG_Spinner::Scenario_AfterPick::ItemGridView_ContainerContentChanging(
         }
         else if (args->Phase == 2)
         {
-            //iv->ShowCategory();
+            iv->ShowError();
             iv->ShowImage();
         }
 

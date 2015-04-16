@@ -8,7 +8,7 @@
     mc:Ignorable="d">
     <Page.Resources>
         <Storyboard x:Name="spinrect">
-            <DoubleAnimation x:Name="doubleAnimation" Duration="0:0:3"
+            <DoubleAnimation x:Name="doubleAnimation" Duration="0:0:2"
                              To="360"
                              RepeatBehavior="Forever"
                              Storyboard.TargetName="spinme"

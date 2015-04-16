@@ -25,7 +25,7 @@ void ItemViewer::ShowPlaceholder(Item^ item)
 {
     _item = item;
     titleTextBlock->Opacity = 0;
-    //categoryTextBlock->Opacity = 0;
+    errorTextBlock->Opacity = 0;
     image->Opacity = 0;
 }
 
@@ -46,14 +46,14 @@ void ItemViewer::ShowTitle()
 // Visualize category information by updating the correct TextBlock and 
 // setting Opacity to 1.
 // </summary>
-/*void ItemViewer::ShowCategory()
+void ItemViewer::ShowError()
 {
     if (_item != nullptr)
     {
-        categoryTextBlock->Text = _item->Category;
+        errorTextBlock->Text = _item->Error;
     }
-    categoryTextBlock->Opacity = 1;
-}*/
+	errorTextBlock->Opacity = 1;
+}
 
 // <summary>
 // Visualize the Image associated with the data item by updating the Image 
@@ -81,7 +81,7 @@ void ItemViewer::ClearData()
 {
     _item = nullptr;
     titleTextBlock->ClearValue(TextBlock::TextProperty);
-    //categoryTextBlock->ClearValue(TextBlock::TextProperty);
+	errorTextBlock->ClearValue(TextBlock::TextProperty);
     image->ClearValue(Image::SourceProperty);
 }
 
