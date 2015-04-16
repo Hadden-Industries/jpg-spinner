@@ -22,10 +22,10 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     // Call LoadComponent on ms-appx:///MainPage.xaml
     ::Windows::UI::Xaml::Application::LoadComponent(this, ref new ::Windows::Foundation::Uri(L"ms-appx:///MainPage.xaml"), ::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Application);
 
-    // Get the Storyboard named 'spinrect'
-    spinrect = safe_cast<::Windows::UI::Xaml::Media::Animation::Storyboard^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"spinrect"));
-    // Get the DoubleAnimation named 'doubleAnimation'
-    doubleAnimation = safe_cast<::Windows::UI::Xaml::Media::Animation::DoubleAnimation^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"doubleAnimation"));
+    // Get the Storyboard named 'SpinLogo'
+    SpinLogo = safe_cast<::Windows::UI::Xaml::Media::Animation::Storyboard^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"SpinLogo"));
+    // Get the DoubleAnimation named 'SpinLogoAnimation'
+    SpinLogoAnimation = safe_cast<::Windows::UI::Xaml::Media::Animation::DoubleAnimation^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"SpinLogoAnimation"));
     // Get the Grid named 'LeftPane'
     LeftPane = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"LeftPane"));
     // Get the Frame named 'ScenarioFrame'
@@ -36,8 +36,8 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     DebugBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugBorder"));
     // Get the TextBlock named 'DebugText'
     DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
-    // Get the Image named 'spinme'
-    spinme = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"spinme"));
+    // Get the Image named 'Logo'
+    Logo = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Logo"));
     // Get the TextBlock named 'AppTitle'
     AppTitle = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"AppTitle"));
     // Get the Button named 'ButtonPickFiles'

@@ -20,18 +20,8 @@ namespace JPG_Spinner
 		property BOOL TrimChecked;
 		property BOOL ProgressiveChecked;
 
-		// Read-write property
-		/*property Platform::Collections::Vector<Windows::Storage::StorageFile^>^ PickedFiles
-		{
-			Platform::Collections::Vector<Windows::Storage::StorageFile^>^ get() { return _pickedFiles; }
-			void set(Platform::Collections::Vector<Windows::Storage::StorageFile^>^ value)
-			{
-				_pickedFiles = value;
-			}
-		}*/
-
-		void spinme_Start();
-		void spinme_Stop();
+		void SpinLogo_Start();
+		void SpinLogo_Stop();
 		void FlipButton();
 
 	private:

@@ -70,11 +70,11 @@ void JPG_Spinner::MainPage::HyperLinkButton_Click(Platform::Object^ sender, Wind
 	ScenarioFrame->Navigate(scenarioType, sender);
 }
 
-void JPG_Spinner::MainPage::spinme_Start()
+void JPG_Spinner::MainPage::SpinLogo_Start()
 {
-	spinrect->Stop();
+	SpinLogo->Stop();
 
-	doubleAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::Forever;
+	SpinLogoAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::Forever;
 
 	/*if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
 	{
@@ -82,12 +82,12 @@ void JPG_Spinner::MainPage::spinme_Start()
 	}
 	DebugText->Text = "Changed RepeatBehavior to Forever";*/
 
-	spinrect->Begin();
+	SpinLogo->Begin();
 }
 
-void JPG_Spinner::MainPage::spinme_Stop()
+void JPG_Spinner::MainPage::SpinLogo_Stop()
 {
-	doubleAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::FromCount(1.0);
+	SpinLogoAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::FromCount(1.0);
 
 	/*if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
 	{

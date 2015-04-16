@@ -7,21 +7,22 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <Page.Resources>
-        <Storyboard x:Name="spinrect">
-            <DoubleAnimation x:Name="doubleAnimation" Duration="0:0:2"
-                             To="360"
+        <Storyboard x:Name="SpinLogo">
+            <DoubleAnimation x:Name="SpinLogoAnimation"
+                             Duration="0:0:2"
                              RepeatBehavior="Forever"
-                             Storyboard.TargetName="spinme"
-                             Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)">
+                             Storyboard.TargetName="Logo"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                             To="360">
                 <DoubleAnimation.EasingFunction>
                     <SineEase EasingMode="EaseInOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
     </Page.Resources>
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"  MinWidth="240" MaxWidth="600"/>
+            <ColumnDefinition Width="2*"  MinWidth="240" MaxWidth="480"/>
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
         <Grid x:Name="LeftPane" Background="#F05A29" Grid.Column="0">
@@ -33,12 +34,14 @@
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Vertical" VerticalAlignment="Bottom"></StackPanel>
             <StackPanel Grid.Row="1" Orientation="Vertical">
-                <Image HorizontalAlignment="Center" VerticalAlignment="Center"
+                <Image x:Uid="Logo"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
                        Margin="0,0,0,-25"
-                       Name="spinme"
+                       Name="Logo"
                        RenderTransformOrigin=".5,.5"
                        Source="Assets/Logo.scale-100.png"
-                       Stretch="None">
+                       Stretch="None"
+                       AutomationProperties.Name="JPG Spinner logo">
                     <Image.RenderTransform>
                         <RotateTransform/>
                     </Image.RenderTransform>
@@ -97,7 +100,7 @@
                 </Border>
             </StackPanel>
             <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,0,0,20" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                <HyperlinkButton x:ConnectionId='1' Content="&#xA9; Hadden Industries Ltd"                               FontWeight="Normal" Foreground="White" Tag="http://haddenindustries.com/"/>
+                <HyperlinkButton x:ConnectionId='1'                               Content="&#xA9; Hadden Industries Ltd" FontWeight="Normal" Foreground="White" HorizontalAlignment="Center" Tag="http://haddenindustries.com/"/>
                 <StackPanel x:Name="FooterPanel" Orientation="Horizontal" HorizontalAlignment="Center">
                     <HyperlinkButton x:ConnectionId='2' x:Uid="HyperlinkButtonPrivacyPolicy" Content="Privacy Policy"                               Tag="http://haddenindustries.com/attributions.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
                     <TextBlock Text="|" Style="{StaticResource SeparatorStyle}" VerticalAlignment="Center"/>

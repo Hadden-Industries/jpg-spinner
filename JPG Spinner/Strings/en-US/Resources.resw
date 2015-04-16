@@ -147,10 +147,10 @@
     <value>Terms</value>
   </data>
   <data name="processedMany" xml:space="preserve">
-    <value>Processed %lu/%lu images</value>
+    <value>Rotated %lu/%lu images</value>
   </data>
   <data name="processedOne" xml:space="preserve">
-    <value>Processing image</value>
+    <value>Rotating image</value>
   </data>
   <data name="shortName" xml:space="preserve">
     <value>JPG Spinner</value>
@@ -163,10 +163,10 @@
     <value>Remove edge pixels to preserve lossless rotation if necessary ...</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
-    <value>Processed all %lu images</value>
+    <value>Rotated all %lu images</value>
   </data>
   <data name="processedAllOne" xml:space="preserve">
-    <value>Processed image</value>
+    <value>Rotated image</value>
   </data>
   <data name="commitButtonText" xml:space="preserve">
     <value>Rotate</value>
@@ -176,12 +176,18 @@
     <comment>US</comment>
   </data>
   <data name="ToolTipProgressive.Content" xml:space="preserve">
-    <value>Click here to see more information about the progressive option</value>
+    <value>Click here to see more information about this option</value>
   </data>
   <data name="ToolTipTrim.Content" xml:space="preserve">
-    <value>Click here to see more information about the trim option</value>
+    <value>Click here to see more information about this option</value>
   </data>
   <data name="trimOptionRequired" xml:space="preserve">
     <value>Enable the trim option to rotate this image</value>
+  </data>
+  <data name="ButtonCancel.Content" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Logo.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>JPG Spinner logo</value>
   </data>
 </root>

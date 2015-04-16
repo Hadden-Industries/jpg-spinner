@@ -49,14 +49,14 @@ namespace JPG_Spinner
     private:
         bool _contentLoaded;
     
-        private: ::Windows::UI::Xaml::Media::Animation::Storyboard^ spinrect;
-        private: ::Windows::UI::Xaml::Media::Animation::DoubleAnimation^ doubleAnimation;
+        private: ::Windows::UI::Xaml::Media::Animation::Storyboard^ SpinLogo;
+        private: ::Windows::UI::Xaml::Media::Animation::DoubleAnimation^ SpinLogoAnimation;
         private: ::Windows::UI::Xaml::Controls::Grid^ LeftPane;
         private: ::Windows::UI::Xaml::Controls::Frame^ ScenarioFrame;
         private: ::Windows::UI::Xaml::Controls::StackPanel^ FooterPanel;
         private: ::Windows::UI::Xaml::Controls::Border^ DebugBorder;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ DebugText;
-        private: ::Windows::UI::Xaml::Controls::Image^ spinme;
+        private: ::Windows::UI::Xaml::Controls::Image^ Logo;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ AppTitle;
         private: ::Windows::UI::Xaml::Controls::Button^ ButtonPickFiles;
         private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxProgressive;

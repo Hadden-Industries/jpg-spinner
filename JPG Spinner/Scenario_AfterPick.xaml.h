@@ -18,6 +18,7 @@
 #include "pch.h"
 #include "Scenario_AfterPick.g.h"
 #include "MainPage.xaml.h"
+#include <sstream> // wostringstream
 
 using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;

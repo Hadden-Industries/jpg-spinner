@@ -601,6 +601,18 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(
 	});
 }
 
+Platform::String^ HResultToHexString(HRESULT hr)
+{
+	std::wostringstream os;
+
+	os << L"0x";
+
+	os << std::hex << std::uppercase << hr;
+
+	return ref new Platform::String(os.str().data());
+}
+
+
 Scenario_AfterPick::Scenario_AfterPick()
 {
     InitializeComponent();
@@ -706,7 +718,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 		rootPage->FlipButton();
 
-		rootPage->spinme_Start();
+		rootPage->SpinLogo_Start();
 
 		InputTextBlock1->Text = _resourceLoader->GetString("initialising");		
 
@@ -834,7 +846,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 				rootPage->FlipButton();
 
-				rootPage->spinme_Stop();
+				rootPage->SpinLogo_Stop();
 			}));
 		}, concurrency::task_continuation_context::use_arbitrary());
 
@@ -983,7 +995,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 										}
 										else
 										{
-											item->Error = hr.ToString();
+											item->Error = HResultToHexString(hr);
 										}
 									}
 								});
