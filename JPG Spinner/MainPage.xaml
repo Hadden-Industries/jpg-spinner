@@ -36,10 +36,10 @@
             <StackPanel Grid.Row="1" Orientation="Vertical">
                 <Image x:Uid="Logo"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Margin="0,0,0,-25"
+                       Margin="0,0,0,0"
                        Name="Logo"
                        RenderTransformOrigin=".5,.5"
-                       Source="Assets/Logo.scale-100.png"
+                       Source="Assets/Logo.scale-80.png"
                        Stretch="None"
                        AutomationProperties.Name="JPG Spinner logo">
                     <Image.RenderTransform>
