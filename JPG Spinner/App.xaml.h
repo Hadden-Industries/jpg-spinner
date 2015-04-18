@@ -29,7 +29,7 @@ namespace JPG_Spinner
 	[Windows::Foundation::Metadata::WebHostHiddenAttribute]
 	public ref class Item sealed
 	{
-		//Windows::Storage::StorageFile^ _StorageFile;
+		Windows::Storage::StorageFile^ _StorageFile;
 		uint32 _ID;
 		Platform::String^ _MRUToken;
 		Platform::String^  _Title;
@@ -49,7 +49,7 @@ namespace JPG_Spinner
 		}
 
 		//StorageFile
-		/*property Windows::Storage::StorageFile^ StorageFile
+		property Windows::Storage::StorageFile^ StorageFile
 		{
 			Windows::Storage::StorageFile^ get()
 			{
@@ -60,7 +60,7 @@ namespace JPG_Spinner
 				_StorageFile = value;
 				OnPropertyChanged("StorageFile");
 			}
-		}*/
+		}
 
 		//ID
 		property uint32 ID

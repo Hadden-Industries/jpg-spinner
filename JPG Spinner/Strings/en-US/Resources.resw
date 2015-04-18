@@ -190,4 +190,7 @@
   <data name="Logo.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>JPG Spinner logo</value>
   </data>
+  <data name="noImagesToBeRotated" xml:space="preserve">
+    <value>There were no rotatable images in your selection</value>
+  </data>
 </root>

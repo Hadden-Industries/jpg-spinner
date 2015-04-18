@@ -45,6 +45,8 @@ void ::JPG_Spinner::Scenario_AfterPick::Connect(int connectionId, Platform::Obje
     case 1:
         (safe_cast<::Windows::UI::Xaml::Controls::ListViewBase^>(target))->ContainerContentChanging +=
             ref new ::Windows::Foundation::TypedEventHandler<::Windows::UI::Xaml::Controls::ListViewBase^, ::Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^>(this, (void (::JPG_Spinner::Scenario_AfterPick::*)(Windows::UI::Xaml::Controls::ListViewBase^, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^))&Scenario_AfterPick::ItemGridView_ContainerContentChanging);
+        (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::Scenario_AfterPick::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&Scenario_AfterPick::GridView1_Loaded);
         break;
     }
     (void)connectionId; // Unused parameter

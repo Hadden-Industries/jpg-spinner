@@ -172,6 +172,7 @@
         userType->AddMemberName(L"Title");
         userType->AddMemberName(L"MRUToken");
         userType->AddMemberName(L"ID");
+        userType->AddMemberName(L"StorageFile");
         userType->SetIsBindable();
         userType->SetIsLocalType();
         return userType;
@@ -189,6 +190,14 @@
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        return userType;
+    }
+
+    if (typeName == L"Windows.Storage.StorageFile")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        userType->SetIsReturnTypeStub();
         return userType;
     }
 
@@ -353,6 +362,25 @@
                 auto that = (::JPG_Spinner::Item^)instance;
                 auto boxedValue = (::Platform::IBox<::default::uint32>^)value;
                 that->ID = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.StorageFile")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"StorageFile", L"Windows.Storage.StorageFile");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->StorageFile;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->StorageFile = (::Windows::Storage::StorageFile^)value;
             };
         return xamlMember;
     }

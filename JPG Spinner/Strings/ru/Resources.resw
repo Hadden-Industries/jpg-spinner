@@ -187,4 +187,7 @@
   <data name="Logo.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Логотип JPG Spinner</value>
   </data>
+  <data name="noImagesToBeRotated" xml:space="preserve">
+    <value>В вашем выборе не было вращяемых изображений</value>
+  </data>
 </root>

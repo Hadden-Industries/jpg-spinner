@@ -34,16 +34,17 @@
         <Grid x:Name="Output" HorizontalAlignment="Stretch" Margin="0,0,0,0" VerticalAlignment="Stretch" Grid.Row="1">
             <GridView x:Name="GridView1"
                       Background="#FF140044"
-                      ItemTemplate="{StaticResource StoreFrontTileTemplate}"
+                      BorderBrush="LightGray"
+                      ContainerContentChanging="ItemGridView_ContainerContentChanging"
                       ItemContainerStyle="{StaticResource StoreFrontTileStyle}"
                       ItemsPanel="{StaticResource StoreFrontGridItemsPanelTemplate}"
-                      ShowsScrollingPlaceholders="False"
-                      ContainerContentChanging="ItemGridView_ContainerContentChanging"
-                      BorderBrush="LightGray"
-                      VerticalAlignment="Stretch"
+                      ItemTemplate="{StaticResource StoreFrontTileTemplate}"
+                      Loaded="GridView1_Loaded"
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                      SelectionMode="Extended"/>
+                      SelectionMode="Extended"
+                      ShowsScrollingPlaceholders="False"
+                      VerticalAlignment="Stretch"/>
         </Grid>
         <!-- Add Storyboards to the visual states below as necessary for supporting the various layouts -->
         <VisualStateManager.VisualStateGroups>

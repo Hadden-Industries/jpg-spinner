@@ -66,5 +66,6 @@ namespace JPG_Spinner
                 return _delegate;
             }
         }
-    };
+		void GridView1_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+	};
 }
