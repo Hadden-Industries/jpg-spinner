@@ -39,10 +39,9 @@
                       ItemContainerStyle="{StaticResource StoreFrontTileStyle}"
                       ItemsPanel="{StaticResource StoreFrontGridItemsPanelTemplate}"
                       ItemTemplate="{StaticResource StoreFrontTileTemplate}"
-                                               
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                      SelectionMode="Extended"
+                      SelectionMode="None"
                       ShowsScrollingPlaceholders="False"
                       VerticalAlignment="Stretch"/>
         </Grid>

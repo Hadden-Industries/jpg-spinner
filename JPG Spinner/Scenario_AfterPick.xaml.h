@@ -44,9 +44,11 @@ namespace JPG_Spinner
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
 		BOOL CoInitializeExSucceeded;
-		std::atomic_ulong imagesAnalysed;
-		std::atomic_ulong imagesToBeRotated;
-		std::atomic_ulong imagesRotated;
+		volatile std::atomic_ulong imagesSelected;
+		volatile std::atomic_ulong imagesAnalysed;
+		volatile std::atomic_ulong imagesToBeRotated;
+		volatile std::atomic_ulong imagesRotated;
+		volatile std::atomic_ulong imagesErrored;
 		Windows::UI::Core::CoreDispatcher^ _dispatcher;
 		Windows::ApplicationModel::Resources::ResourceLoader^ _resourceLoader;
 
@@ -66,6 +68,5 @@ namespace JPG_Spinner
                 return _delegate;
             }
         }
-		void GridView1_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 	};
 }
