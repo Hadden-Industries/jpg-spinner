@@ -654,9 +654,9 @@ Scenario_AfterPick::Scenario_AfterPick()
 		throw Platform::Exception::CreateException(hr);
 	}
 
-	imagesProcessed = 0L;
-	imagesToBeRotated = 0L;
-	imagesRotated = 0L;
+	imagesAnalysed = 0UL;
+	imagesToBeRotated = 0UL;
+	imagesRotated = 0UL;
 }
 
 Scenario_AfterPick::~Scenario_AfterPick()
@@ -724,30 +724,33 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 		concurrency::create_task([this, files]
 		{
-			long imagesProcessedLast = 0L;
+			unsigned long imagesAnalysedCurrent = 0UL;
+			unsigned long imagesAnalysedLast = 0UL;
 
-			while (static_cast<unsigned int>(imagesProcessed) <= files->Size)
+			while (imagesAnalysed.load() <= static_cast<unsigned long>(files->Size))
 			{
+				imagesAnalysedCurrent = imagesAnalysed.load();
+
 				// Only dispatch a message if the value has changed
-				if (imagesProcessed != imagesProcessedLast)
+				if (imagesAnalysedCurrent != imagesAnalysedLast)
 				{
-					imagesProcessedLast = imagesProcessed;
+					imagesAnalysedLast = imagesAnalysedCurrent;
 
 					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-						ref new Windows::UI::Core::DispatchedHandler([this]()
+						ref new Windows::UI::Core::DispatchedHandler([this, imagesAnalysedCurrent]()
 					{
 						Platform::String^ string;
 
-						if (imagesProcessed > 1L)
+						if (imagesAnalysedCurrent > 1UL)
 						{
 							string = _resourceLoader->GetString("analysedMany");
 
 							// Subtract one length of "%lu", add 1U for null terminator
-							unsigned int stringLength = string->Length() + imagesProcessed.ToString()->Length() - 3U + 1U;
+							unsigned int stringLength = string->Length() + imagesAnalysedCurrent.ToString()->Length() - 3U + 1U;
 
 							wchar_t* wstring = new wchar_t[stringLength];
 
-							swprintf_s(wstring, stringLength, string->Data(), imagesProcessed);
+							swprintf_s(wstring, stringLength, string->Data(), imagesAnalysedCurrent);
 
 							string = ref new Platform::String(wstring);
 
@@ -762,7 +765,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					}));
 				}
 
-				if (imagesProcessed == files->Size)
+				if (imagesAnalysedCurrent == static_cast<unsigned long>(files->Size))
 				{
 					break;
 				}
@@ -774,38 +777,44 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 		}, concurrency::task_continuation_context::use_arbitrary())
 			.then([this]()
 		{
+			// as soon as you've analysed all the images, enable selections in the grid
 			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
 				ref new Windows::UI::Core::DispatchedHandler([this]()
 			{
 				GridView1->SelectionMode = Windows::UI::Xaml::Controls::ListViewSelectionMode::Extended;
 			}));
 
-			long imagesRotatedLast = 0L;
-			long imagesToBeRotatedLast = 0L;
+			unsigned long imagesRotatedCurrent = 0UL;
+			unsigned long imagesRotatedLast = 0UL;
+			unsigned long imagesToBeRotatedCurrent = 0UL;
+			unsigned long imagesToBeRotatedLast = 0UL;
 
-			while (imagesRotated < imagesToBeRotated)
+			while (imagesRotated.load() < imagesToBeRotated.load())
 			{
+				imagesRotatedCurrent = imagesRotated.load();
+				imagesToBeRotatedCurrent = imagesToBeRotated.load();
+
 				// Only dispatch a message if any of the values have changed
-				if (imagesRotated != imagesRotatedLast || imagesToBeRotated != imagesToBeRotatedLast)
+				if (imagesRotatedCurrent != imagesRotatedLast || imagesToBeRotatedCurrent != imagesToBeRotatedLast)
 				{
-					imagesRotatedLast = imagesRotated;
-					imagesToBeRotatedLast = imagesToBeRotated;
+					imagesRotatedLast = imagesRotatedCurrent;
+					imagesToBeRotatedLast = imagesToBeRotatedCurrent;
 
 					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-						ref new Windows::UI::Core::DispatchedHandler([this]()
+						ref new Windows::UI::Core::DispatchedHandler([this, imagesRotatedCurrent, imagesToBeRotatedCurrent]()
 					{
 						Platform::String^ string;
 						
-						if (imagesToBeRotated > 1L)
+						if (imagesToBeRotatedCurrent > 1L)
 						{
 							string = _resourceLoader->GetString("processedMany");
 
 							// Subtract two lengths of "%lu", add 1U for null terminator
-							unsigned int stringLength = string->Length() + imagesRotated.ToString()->Length() + imagesToBeRotated.ToString()->Length() - 2 * 3U + 1U;
+							unsigned int stringLength = string->Length() + imagesRotatedCurrent.ToString()->Length() + imagesToBeRotatedCurrent.ToString()->Length() - 2 * 3U + 1U;
 
 							wchar_t* wstring = new wchar_t[stringLength];
 
-							swprintf_s(wstring, stringLength, string->Data(), imagesRotated, imagesToBeRotated);
+							swprintf_s(wstring, stringLength, string->Data(), imagesRotatedCurrent, imagesToBeRotatedCurrent);
 
 							string = ref new Platform::String(wstring);
 
@@ -828,22 +837,22 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 			{
 				Platform::String^ string;
 
-				if (0 == imagesRotated && 0 == imagesToBeRotated)
+				if (0UL == imagesRotated.load() && 0UL == imagesToBeRotated.load())
 				{
 					string = _resourceLoader->GetString("noImagesToBeRotated");
 				}
 				else
 				{
-					if (imagesRotated > 1L)
+					if (imagesRotated.load() > 1L)
 					{
 						string = _resourceLoader->GetString("processedAllMany");
 
 						// Subtract one length of "%lu", add 1U for null terminator
-						unsigned int stringLength = string->Length() + imagesRotated.ToString()->Length() - 3U + 1U;
+						unsigned int stringLength = string->Length() + imagesRotated.load().ToString()->Length() - 3U + 1U;
 
 						wchar_t* wstring = new wchar_t[stringLength];
 
-						swprintf_s(wstring, stringLength, string->Data(), imagesRotated);
+						swprintf_s(wstring, stringLength, string->Data(), imagesRotated.load());
 
 						string = ref new Platform::String(wstring);
 
@@ -865,12 +874,14 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 		concurrency::create_task([this, files]
 		{
-			while (static_cast<unsigned int>(imagesProcessed) < files->Size)
+			// wait for all the images to be analysed
+			while (imagesAnalysed.load() < static_cast<unsigned long>(files->Size))
 			{
 				Sleep(20);
 			}
 
-			while (storeData->Items->Size < static_cast<unsigned int>(imagesToBeRotated) || 0L == imagesToBeRotated)
+			// wait for the data behind the UI grid to populate
+			while (static_cast<unsigned long>(storeData->Items->Size) < imagesToBeRotated.load() || 0UL == imagesToBeRotated.load())
 			{
 				Sleep(20);
 			}
@@ -930,7 +941,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 												GridView1->SelectedItems->Append(storeData->Items->GetAt(i));
 											}));
 
-											InterlockedIncrement(&imagesRotated);
+											imagesRotated++;
 										});
 									}
 								}
@@ -985,13 +996,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 					hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
 
-					InterlockedIncrement(&imagesProcessed);
+					imagesAnalysed++;
 
 					if (SUCCEEDED(hr))
 					{
 						if ((OrientationFlagValue >= 2U && OrientationFlagValue <= 8U))
 						{
-							InterlockedIncrement(&imagesToBeRotated);
+							imagesToBeRotated++;
 
 							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
 

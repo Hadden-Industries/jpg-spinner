@@ -44,9 +44,9 @@ namespace JPG_Spinner
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
 		BOOL CoInitializeExSucceeded;
-		long imagesProcessed;
-		long imagesToBeRotated;
-		long imagesRotated;
+		std::atomic_ulong imagesAnalysed;
+		std::atomic_ulong imagesToBeRotated;
+		std::atomic_ulong imagesRotated;
 		Windows::UI::Core::CoreDispatcher^ _dispatcher;
 		Windows::ApplicationModel::Resources::ResourceLoader^ _resourceLoader;
 
