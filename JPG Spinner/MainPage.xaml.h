@@ -19,17 +19,26 @@ namespace JPG_Spinner
 
 		property BOOL TrimChecked;
 		property BOOL ProgressiveChecked;
+		property Platform::IBox<int>^ cts
+		{
+			Platform::IBox<int>^ get()
+			{
+				return ref new Platform::Box<int>((int)&_cts);
+			}
+		};
 
 		void SpinLogo_Start();
 		void SpinLogo_Stop();
 		void FlipButton();
 
-	private:
-		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-	
 	internal:
-		static MainPage^ Current;		
+		static MainPage^ Current;
+
 	private:
+		concurrency::cancellation_token_source _cts;
+		volatile std::atomic_bool buttonIsSelectFiles;
+
+		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void TextBlockTrim_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
 		void TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
 		void HyperLinkButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);

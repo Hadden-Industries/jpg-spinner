@@ -30,17 +30,32 @@ MainPage::MainPage()
 	// This is a static public property that allows downstream pages to get a handle to the MainPage instance
 	// in order to call methods that are in this class.
 	MainPage::Current = this;
+
+	buttonIsSelectFiles = true;
 }
 
 void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	TrimChecked = CheckBoxTrim->IsChecked->Value;
+	if (buttonIsSelectFiles)
+	{
+		TrimChecked = CheckBoxTrim->IsChecked->Value;
 
-	ProgressiveChecked = CheckBoxProgressive->IsChecked->Value;
+		ProgressiveChecked = CheckBoxProgressive->IsChecked->Value;
 
-	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.Scenario_AfterPick", Windows::UI::Xaml::Interop::TypeKind::Custom };
+		_cts = concurrency::cancellation_token_source();
 
-	ScenarioFrame->Navigate(scenarioType, this);
+		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.Scenario_AfterPick", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+		ScenarioFrame->Navigate(scenarioType, this);
+	}
+	else
+	{
+		_cts.cancel();
+
+		SpinLogo_Stop();
+
+		FlipButton();
+	}
 }
 
 
@@ -76,24 +91,12 @@ void JPG_Spinner::MainPage::SpinLogo_Start()
 
 	SpinLogoAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::Forever;
 
-	/*if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
-	{
-		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
-	}
-	DebugText->Text = "Changed RepeatBehavior to Forever";*/
-
 	SpinLogo->Begin();
 }
 
 void JPG_Spinner::MainPage::SpinLogo_Stop()
 {
 	SpinLogoAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::FromCount(1.0);
-
-	/*if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
-	{
-		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
-	}
-	DebugText->Text = "Changed RepeatBehavior to FromCount(1.0)";*/
 }
 
 void JPG_Spinner::MainPage::ButtonPickFiles_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
@@ -103,7 +106,14 @@ void JPG_Spinner::MainPage::ButtonPickFiles_Loaded(Platform::Object^ sender, Win
 
 void JPG_Spinner::MainPage::FlipButton()
 {
-	auto isButtonEnabled = ButtonPickFiles->IsEnabled;
+	if (buttonIsSelectFiles)
+	{
+		ButtonPickFiles->Content = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView()->GetString("cancel"); 
+	}
+	else
+	{
+		ButtonPickFiles->Content = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView()->GetString("selectFiles");
+	}
 
-	ButtonPickFiles->IsEnabled = !isButtonEnabled;
+	buttonIsSelectFiles = !buttonIsSelectFiles;
 }

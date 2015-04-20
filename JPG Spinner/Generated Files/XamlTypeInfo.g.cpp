@@ -125,9 +125,18 @@
             {
                 return ref new ::JPG_Spinner::MainPage(); 
             };
+        userType->AddMemberName(L"cts");
         userType->AddMemberName(L"ProgressiveChecked");
         userType->AddMemberName(L"TrimChecked");
         userType->SetIsLocalType();
+        return userType;
+    }
+
+    if (typeName == L"Windows.Foundation.IReference`1<Int32>")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, nullptr);
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        userType->SetIsReturnTypeStub();
         return userType;
     }
 
@@ -206,6 +215,20 @@
 
 ::Windows::UI::Xaml::Markup::IXamlMember^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::CreateXamlMember(::Platform::String^ longMemberName)
 {
+    if (longMemberName == L"JPG_Spinner.MainPage.cts")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"cts", L"Windows.Foundation.IReference`1<Int32>");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::MainPage^)instance;
+                return that->cts;
+            };
+
+        xamlMember->SetIsReadOnly();
+        return xamlMember;
+    }
+
     if (longMemberName == L"JPG_Spinner.MainPage.ProgressiveChecked")
     {
         ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"ProgressiveChecked", L"Int32");

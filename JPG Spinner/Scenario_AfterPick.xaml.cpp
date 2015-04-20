@@ -685,6 +685,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
     // as NotifyUser()
     rootPage = MainPage::Current;
 
+	auto cancellationToken = ((concurrency::cancellation_token_source*)(rootPage->cts->Value))->get_token();
+
 	storeData = ref new Data();
 
 	GridView1->ItemsSource = storeData->Items;
@@ -709,7 +711,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 	auto pickerTask = concurrency::create_task(openPicker->PickMultipleFilesAsync());
 
 	// Accept the unwrapped return value of previous call as input param
-	pickerTask.then([this](IVectorView<Windows::Storage::StorageFile^>^ files)
+	pickerTask.then([this, cancellationToken](IVectorView<Windows::Storage::StorageFile^>^ files)
 	{
 		imagesSelected = static_cast<unsigned long>(files->Size);
 
@@ -733,6 +735,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 			while (imagesAnalysed.load() <= imagesSelected.load())
 			{
+				concurrency::interruption_point();
+
 				imagesAnalysedCurrent = imagesAnalysed.load();
 
 				// Only dispatch a message if the value has changed
@@ -740,7 +744,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				{
 					imagesAnalysedLast = imagesAnalysedCurrent;
 
-					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
 						ref new Windows::UI::Core::DispatchedHandler([this, imagesAnalysedCurrent]()
 					{
 						Platform::String^ string;
@@ -778,7 +782,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 			}
 
 			return;
-		}, concurrency::task_continuation_context::use_arbitrary())
+		}, cancellationToken)
 			.then([this]()
 		{
 			// as soon as you've analysed all the images, enable selections in the grid
@@ -797,6 +801,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 			while (imagesRotated.load() + imagesErrored.load() <= imagesToBeRotated.load())
 			{
+				concurrency::interruption_point();
+
 				imagesRotatedCurrent = imagesRotated.load();
 				imagesToBeRotatedCurrent = imagesToBeRotated.load();
 				imagesErroredCurrent = imagesErrored.load();
@@ -845,7 +851,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				Sleep(20);
 			}
 
-			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
 				ref new Windows::UI::Core::DispatchedHandler([this]()
 			{
 				Platform::String^ string;
@@ -889,13 +895,18 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 				rootPage->SpinLogo_Stop();
 			}));
-		}, concurrency::task_continuation_context::use_arbitrary());
+		},
+			cancellationToken,
+			concurrency::task_continuation_context::use_arbitrary()
+			);
 
 		concurrency::create_task([this]
 		{
 			// wait for all the images to be analysed
 			while (imagesAnalysed.load() < imagesSelected.load())
 			{
+				concurrency::interruption_point();
+
 				Sleep(20);
 			}
 
@@ -906,8 +917,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 			}
 
 			return;
-		}, concurrency::task_continuation_context::use_arbitrary())
-			.then([this]()
+		}, cancellationToken)
+			.then([this, cancellationToken]()
 		{
 			Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
 
@@ -915,6 +926,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 			for (unsigned int i = 0U; i < static_cast<unsigned int>(imagesToBeRotated.load()); ++i)
 			{
+				concurrency::interruption_point();
+
 				tempFileName = temporaryFolder->Path + "\\" + GetUUID();
 
 				Item^ item = nullptr;
@@ -930,16 +943,16 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					{
 						if (E_BOUNDS == e->HResult)
 						{
-							__noop;
+							Sleep(20);
 						}
 						else
 						{
 							throw e;
 						}
 					}
-						
-					Sleep(20);
 				}
+
+				concurrency::interruption_point();
 
 				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(
 					item->StorageFile,
@@ -949,18 +962,24 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					rootPage->ProgressiveChecked
 					);
 
-				createReorientedTempFileAsyncTask.then([this, i, item, tempFileName](HRESULT hr)
+				createReorientedTempFileAsyncTask.then([this, cancellationToken, i, item, tempFileName](HRESULT hr)
 				{
+					concurrency::interruption_point();
+
 					if SUCCEEDED(hr)
 					{
 						auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(tempFileName));
 
-						getFileFromPathAsyncTask.then([this, item](Windows::Storage::StorageFile^ tempFile)
+						getFileFromPathAsyncTask.then([this, cancellationToken, item](Windows::Storage::StorageFile^ tempFile)
 						{
+							concurrency::interruption_point();
+
 							auto openAsyncTask = concurrency::create_task(tempFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
 
-							openAsyncTask.then([this, item, tempFile](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
+							openAsyncTask.then([this, cancellationToken, item, tempFile](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
 							{
+								concurrency::interruption_point();
+
 								Microsoft::WRL::ComPtr<IStream> pIStream;
 
 								HRESULT hr = CreateStreamOverRandomAccessStream(
@@ -974,30 +993,33 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 									if (SUCCEEDED(hr))
 									{
+										concurrency::interruption_point();
+
 										//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
+
 										auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->MoveAndReplaceAsync(item->StorageFile));
 										
 										moveAndReplaceAsyncTask.then([this, item]()
 										{
-											_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
+											_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
 												ref new Windows::UI::Core::DispatchedHandler([this, item]()
 											{
 												GridView1->SelectedItems->Append(item);
 											}));
 
 											imagesRotated++;
-										});
+										}, cancellationToken);
 									}
 								}
-							});
-						});
+							}, cancellationToken);
+						}, cancellationToken);
 					}
 					// if cannot create re-oriented temporary file
 					else
 					{
 						imagesErrored++;
 
-						_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
+						_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
 							ref new Windows::UI::Core::DispatchedHandler([this, item, i, hr]()
 						{
 							if (HRESULT_FROM_WIN32(ERROR_INVALID_DATA) == hr)
@@ -1009,26 +1031,40 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								item->Error = HResultToHexString(hr);
 							}
 
-							ItemViewer^ iv = safe_cast<ItemViewer^>(safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromIndex(i))->ContentTemplateRoot);
+							Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromIndex(i));
 
-							if (iv != nullptr)
+							// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+							// when the item is due to be rendered, the ShowError() will get called on it anyway
+							if (nullptr != sI)
 							{
-								iv->ShowError();
+								ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+								if (nullptr != iv)
+								{
+									iv->ShowError();
+								}
 							}
 						}));
 					}
-				});
+				}, cancellationToken);
 			}
 												
-		}, concurrency::task_continuation_context::use_arbitrary());
+		}, 
+			cancellationToken,
+			concurrency::task_continuation_context::use_arbitrary()
+			);
 
 		for (unsigned int i = 0U; i < files->Size; ++i)
 		{
+			concurrency::interruption_point();
+
 			// Return the IRandomAccessStream^ object
 			auto openingTask = concurrency::create_task(files->GetAt(i)->OpenAsync(Windows::Storage::FileAccessMode::Read));
 
-			openingTask.then([this, files, i](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
+			openingTask.then([this, cancellationToken, files, i](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
 			{
+				concurrency::interruption_point();
+
 				Microsoft::WRL::ComPtr<IStream> pIStream;
 
 				HRESULT hr = CreateStreamOverRandomAccessStream(
@@ -1038,6 +1074,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 				if (SUCCEEDED(hr))
 				{
+					concurrency::interruption_point();
+
 					USHORT OrientationFlagValue = 0U;
 
 					hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
@@ -1046,16 +1084,21 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 					if (SUCCEEDED(hr))
 					{
+						concurrency::interruption_point();
+
 						if ((OrientationFlagValue >= 2U && OrientationFlagValue <= 8U))
 						{
 							imagesToBeRotated++;
 
 							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
 
-							getThumbnailTask.then([this, files, i, OrientationFlagValue](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
+							getThumbnailTask.then([this, cancellationToken, files, i, OrientationFlagValue](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
 							{
+								concurrency::interruption_point();
+
 								// Set the stream as source of the bitmap
 								Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
+
 								bitmapImage->SetSource(thumbnail);
 
 								Item^ item = ref new Item();
@@ -1075,13 +1118,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								item->Image = bitmapImage;
 
 								storeData->Items->Append(item);
-							});
+							}, cancellationToken);
 						}
 					}
 				}
-			});
+			}, cancellationToken);
 		}
-	});
+	}, cancellationToken);
 }
 
 // <summary>

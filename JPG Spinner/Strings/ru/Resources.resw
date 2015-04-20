@@ -124,7 +124,7 @@
     <value>Проанализировано 1 изображение</value>
   </data>
   <data name="appDescription" xml:space="preserve">
-    <value>JPG Spinner automatically rotates your photos by how your camera was oriented while you took the shot</value>
+    <value>JPG Spinner automatically rotates your images by how your camera was oriented while the shot was taken</value>
   </data>
   <data name="appDisplayName" xml:space="preserve">
     <value>JPG Spinner</value>
@@ -181,7 +181,7 @@
   <data name="trimOptionRequired" xml:space="preserve">
     <value>Включите опцию 'Усекать' чтобы повернуть это изображение</value>
   </data>
-  <data name="ButtonCancel.Content" xml:space="preserve">
+  <data name="cancel" xml:space="preserve">
     <value>Отмена</value>
   </data>
   <data name="Logo.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -189,5 +189,8 @@
   </data>
   <data name="noImagesToBeRotated" xml:space="preserve">
     <value>В вашем выборе не было вращяемых изображений</value>
+  </data>
+  <data name="selectFiles" xml:space="preserve">
+    <value>Выбор Файлов</value>
   </data>
 </root>
