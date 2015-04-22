@@ -46,8 +46,8 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     CheckBoxProgressive = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxProgressive"));
     // Get the TextBlock named 'TextBlockProgressive'
     TextBlockProgressive = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockProgressive"));
-    // Get the Image named 'Logo'
-    Logo = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Logo"));
+    // Get the Path named 'Logo'
+    Logo = safe_cast<::Windows::UI::Xaml::Shapes::Path^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Logo"));
     // Get the TextBlock named 'AppTitle'
     AppTitle = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"AppTitle"));
 }

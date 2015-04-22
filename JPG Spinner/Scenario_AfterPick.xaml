@@ -20,7 +20,7 @@
     <Page.Resources>
         <ResourceDictionary Source="ScenariosTemplateStyles.xaml"/>
     </Page.Resources>
-    <Grid x:Name="LayoutRoot" Background="#FF140044">
+    <Grid x:Name="LayoutRoot" Background="#140044">
         <Grid.RowDefinitions>
             <RowDefinition Height="100"/>
             <RowDefinition Height="*"/>
@@ -33,7 +33,7 @@
         </Grid>
         <Grid x:Name="Output" HorizontalAlignment="Stretch" Margin="0,0,0,0" VerticalAlignment="Stretch" Grid.Row="1">
             <GridView x:Name="GridView1"
-                      Background="#FF140044"
+                      Background="#140044"
                       BorderBrush="LightGray"
                       ContainerContentChanging="ItemGridView_ContainerContentChanging"
                       ItemContainerStyle="{StaticResource StoreFrontTileStyle}"

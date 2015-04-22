@@ -31,7 +31,15 @@ namespace Windows {
                 ref class Border;
                 ref class TextBlock;
                 ref class CheckBox;
-                ref class Image;
+            }
+        }
+    }
+}
+namespace Windows {
+    namespace UI {
+        namespace Xaml {
+            namespace Shapes {
+                ref class Path;
             }
         }
     }
@@ -61,7 +69,7 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockTrim;
         private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxProgressive;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockProgressive;
-        private: ::Windows::UI::Xaml::Controls::Image^ Logo;
+        private: ::Windows::UI::Xaml::Shapes::Path^ Logo;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ AppTitle;
     };
 }

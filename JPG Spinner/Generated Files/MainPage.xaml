@@ -36,20 +36,19 @@
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Vertical" VerticalAlignment="Bottom"/>
             <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Image x:Uid="Logo"
-            			Margin="0,0"
-            			x:Name="Logo"
-            			RenderTransformOrigin=".5,.5"
-            			Source="Assets/Logo.scale-80.png"
-            			Stretch="None"
-            			AutomationProperties.Name="JPG Spinner logo">
-                    <Image.RenderTransform>
+                <Path x:Name="Logo" x:Uid="Logo"
+                      AutomationProperties.Name="JPG Spinner logo"
+                      Fill="#FFFFFF"
+                      Height="100" Width="100"
+                      RenderTransformOrigin=".5,.5"
+                      Data="m 90.190424 79.582371 4.01718 -4.01718 0.002 0.001 c 7.721676 -7.72168 7.721676 -20.24116 -1.3e-4 -27.96296 l -27.86505 -27.86405 c -7.72194 -7.72207 -20.24115 -7.7218 -27.96283 -1.3e-4 -7.72167 7.72154 -7.7222 20.24103 -1.3e-4 27.9631 l 0.0198 0.0198 13.87682 13.87682 0.0198 0.0198 c 2.57403 2.57389 2.5735 6.74648 0 9.31998 -2.57349 2.57349 -6.74608 2.57402 -9.32011 0 l -27.86455 -27.86443 c -2.57337 -2.57349 -2.5735 -6.74661 0 -9.32011 l 4.01704 -4.0173 2.25028 2.25014 4.86556 -18.66355 -18.6792402 4.85001 2.24356 2.24355 -4.01718 4.01705 -0.002 -10e-4 c -7.72168 7.72167 -7.72168 20.24115 1.3e-4 27.96296 l 27.8650502 27.86431 c 7.72207 7.721939 20.24115 7.721669 27.96283 0 7.72167 -7.72168 7.7222 -20.24103 1.3e-4 -27.9631 l -0.0198 -0.0198 -13.87695 -13.87682 -0.0198 -0.0198 c -2.5739 -2.57402 -2.5735 -6.74661 0 -9.32011 2.57349 -2.5735 6.74621 -2.57389 9.3201 0 l 27.86463 27.86463 c 2.57337 2.57336 2.5735 6.74648 0 9.31997 l -4.01704 4.01744 -2.25015 -2.25014 -4.86569 18.663549 18.67924 -4.850139 -2.24356 -2.24355 z">
+                    <Path.RenderTransform>
                         <RotateTransform/>
-                    </Image.RenderTransform>
-                </Image>
+                    </Path.RenderTransform>
+                </Path>
                 <TextBlock x:Name="AppTitle"
             			Foreground="White"
-            			Margin="0,-5,0,0"
+            			Margin="0,0,0,0"
             			Style="{StaticResource SampleHeaderTextStyle}"
             			Text="JPG Spinner"
             			TextWrapping="Wrap"/>
