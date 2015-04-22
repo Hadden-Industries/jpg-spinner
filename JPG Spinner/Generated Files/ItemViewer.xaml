@@ -11,7 +11,7 @@
         <StackPanel Orientation="Horizontal" Margin="4,4,4,4">
             <Image x:Name="image"
                    Height="192" Width="192"
-                   HorizontalAlignment="Left" VerticalAlignment="Center"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
                    Margin="0,0,4,0"
                    RenderTransformOrigin=".5,.5"/>
             <StackPanel Margin="4,0,0,0" Orientation="Vertical" HorizontalAlignment="stretch" VerticalAlignment="Center">

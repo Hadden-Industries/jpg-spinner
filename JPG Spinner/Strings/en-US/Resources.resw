@@ -126,7 +126,7 @@
     <comment>US</comment>
   </data>
   <data name="appDescription" xml:space="preserve">
-    <value>JPG Spinner automatically rotates your images by how your camera was oriented while the shot was taken</value>
+    <value>JPG Spinner automatically rotates your images by how the camera was oriented when the shot was taken</value>
   </data>
   <data name="appDisplayName" xml:space="preserve">
     <value>JPG Spinner</value>

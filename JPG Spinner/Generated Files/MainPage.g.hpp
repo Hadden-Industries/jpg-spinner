@@ -30,26 +30,26 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     LeftPane = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"LeftPane"));
     // Get the Frame named 'ScenarioFrame'
     ScenarioFrame = safe_cast<::Windows::UI::Xaml::Controls::Frame^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ScenarioFrame"));
+    // Get the Button named 'ButtonPickFiles'
+    ButtonPickFiles = safe_cast<::Windows::UI::Xaml::Controls::Button^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ButtonPickFiles"));
     // Get the StackPanel named 'FooterPanel'
     FooterPanel = safe_cast<::Windows::UI::Xaml::Controls::StackPanel^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"FooterPanel"));
     // Get the Border named 'DebugBorder'
     DebugBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugBorder"));
     // Get the TextBlock named 'DebugText'
     DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
-    // Get the Image named 'Logo'
-    Logo = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Logo"));
-    // Get the TextBlock named 'AppTitle'
-    AppTitle = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"AppTitle"));
-    // Get the Button named 'ButtonPickFiles'
-    ButtonPickFiles = safe_cast<::Windows::UI::Xaml::Controls::Button^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ButtonPickFiles"));
-    // Get the CheckBox named 'CheckBoxProgressive'
-    CheckBoxProgressive = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxProgressive"));
-    // Get the TextBlock named 'TextBlockProgressive'
-    TextBlockProgressive = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockProgressive"));
     // Get the CheckBox named 'CheckBoxTrim'
     CheckBoxTrim = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxTrim"));
     // Get the TextBlock named 'TextBlockTrim'
     TextBlockTrim = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockTrim"));
+    // Get the CheckBox named 'CheckBoxProgressive'
+    CheckBoxProgressive = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxProgressive"));
+    // Get the TextBlock named 'TextBlockProgressive'
+    TextBlockProgressive = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockProgressive"));
+    // Get the Image named 'Logo'
+    Logo = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Logo"));
+    // Get the TextBlock named 'AppTitle'
+    AppTitle = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"AppTitle"));
 }
 
 void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target)
@@ -58,7 +58,9 @@ void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target
     {
     case 1:
         (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ButtonBase^>(target))->Click +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::HyperLinkButton_Click);
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::Button_Click);
+        (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::ButtonPickFiles_Loaded);
         break;
     case 2:
         (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ButtonBase^>(target))->Click +=
@@ -70,17 +72,15 @@ void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target
         break;
     case 4:
         (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ButtonBase^>(target))->Click +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::Button_Click);
-        (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::ButtonPickFiles_Loaded);
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::HyperLinkButton_Click);
         break;
     case 5:
         (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
-            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&MainPage::TextBlockProgressive_PointerReleased);
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&MainPage::TextBlockTrim_PointerReleased);
         break;
     case 6:
         (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
-            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&MainPage::TextBlockTrim_PointerReleased);
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&MainPage::TextBlockProgressive_PointerReleased);
         break;
     }
     (void)connectionId; // Unused parameter

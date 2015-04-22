@@ -65,11 +65,82 @@ void ItemViewer::ShowImage()
     {
         image->Source = _item->Image;
 
-		/*Windows::UI::Xaml::Media::RotateTransform^ myRotateTransform = ref new Windows::UI::Xaml::Media::RotateTransform();
+		//Windows::UI::Xaml::Media::TransformGroup^ _TransformGroup = ref new Windows::UI::Xaml::Media::TransformGroup();
 
-		myRotateTransform->Angle = 90.0;
+		//Windows::UI::Xaml::Media::RotateTransform^ _RotateTransform = ref new Windows::UI::Xaml::Media::RotateTransform();
 
-		image->RenderTransform = myRotateTransform;*/
+		//Windows::UI::Xaml::Media::ScaleTransform^ _ScaleTransform = ref new Windows::UI::Xaml::Media::ScaleTransform();
+
+		Windows::UI::Xaml::Media::MatrixTransform^ _MatrixTransform = ref new Windows::UI::Xaml::Media::MatrixTransform();
+
+		switch (_item->OrientationFlag)
+		{
+		case 2U:
+			//_ScaleTransform->ScaleX = -1.0;
+			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
+				-1.0, 0.0, //0.0
+				0.0, 1.0,  //0.0
+				0.0, 0.0   //1.0
+				);
+			break;
+		case 3U:
+			//_RotateTransform->Angle = 180.0;
+			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
+				-1.0, 0.0, //0.0
+				0.0, -1.0, //0.0
+				0.0, 0.0   //1.0
+				);
+			break;
+		case 4U:
+			//_ScaleTransform->ScaleY = -1.0;
+			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
+				1.0, 0.0,  //0.0
+				0.0, -1.0, //0.0
+				0.0, 0.0   //1.0
+				);
+			break;
+		case 5U:
+			//_RotateTransform->Angle = 90.0;
+			//_ScaleTransform->ScaleX = -1.0;
+			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
+				0.0, -1.0, //0.0
+				-1.0, 0.0, //0.0
+				0.0, 0.0   //1.0
+				);
+			break;
+		case 6U:
+			//_RotateTransform->Angle = 270.0;
+			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
+				0.0, -1.0, //0.0
+				1.0, 0.0,  //0.0
+				0.0, 0.0   //1.0
+				);
+			break;
+		case 7U:
+			//_RotateTransform->Angle = 270.0;
+			//_ScaleTransform->ScaleX = -1.0;
+			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
+				0.0, -1.0, //0.0
+				-1.0, 0.0, //0.0
+				0.0, 0.0   //1.0
+				);
+			break;
+		case 8U:
+			//_RotateTransform->Angle = 90.0;
+			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
+				0.0, 1.0,  //0.0
+				-1.0, 0.0, //0.0
+				0.0, 0.0   //1.0
+				);
+			break;
+		}
+
+		//_TransformGroup->Children->Append(_RotateTransform);
+		//_TransformGroup->Children->Append(_ScaleTransform);
+
+		//image->RenderTransform = _TransformGroup;
+
+		image->RenderTransform = _MatrixTransform;
     }
     image->Opacity = 1;
 }
@@ -83,11 +154,4 @@ void ItemViewer::ClearData()
     titleTextBlock->ClearValue(TextBlock::TextProperty);
 	errorTextBlock->ClearValue(TextBlock::TextProperty);
     image->ClearValue(Image::SourceProperty);
-}
-
-void ItemViewer::RotateImage(double angle)
-{
-	Windows::UI::Xaml::Media::RotateTransform^ myRotateTransform = ref new Windows::UI::Xaml::Media::RotateTransform();
-	myRotateTransform->Angle = angle;
-	image->RenderTransform = myRotateTransform;
 }

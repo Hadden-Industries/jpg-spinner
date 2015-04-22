@@ -19,7 +19,6 @@ namespace JPG_Spinner
 		void ShowError();
 		void ShowImage();
 		void ClearData();
-		void RotateImage(double angle);
 
 	private:
 		// reference to the data item that will be visualized by this ItemViewer

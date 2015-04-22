@@ -22,84 +22,87 @@
     </Page.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"  MinWidth="240" MaxWidth="480"/>
+            <ColumnDefinition Width="2*" MinWidth="240" MaxWidth="480"/>
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
         <Grid x:Name="LeftPane" Background="#F05A29" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="100"/>
+                <RowDefinition Height="150"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="2*"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="100"/>
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Orientation="Vertical" VerticalAlignment="Bottom"></StackPanel>
-            <StackPanel Grid.Row="1" Orientation="Vertical">
+            <StackPanel Grid.Row="0" Orientation="Vertical" VerticalAlignment="Bottom"/>
+            <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Image x:Uid="Logo"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Margin="0,0,0,0"
-                       Name="Logo"
-                       RenderTransformOrigin=".5,.5"
-                       Source="Assets/Logo.scale-80.png"
-                       Stretch="None"
-                       AutomationProperties.Name="JPG Spinner logo">
+            			Margin="0,0"
+            			x:Name="Logo"
+            			RenderTransformOrigin=".5,.5"
+            			Source="Assets/Logo.scale-80.png"
+            			Stretch="None"
+            			AutomationProperties.Name="JPG Spinner logo">
                     <Image.RenderTransform>
                         <RotateTransform/>
                     </Image.RenderTransform>
                 </Image>
                 <TextBlock x:Name="AppTitle"
-                           Foreground="White"
-                           HorizontalAlignment="Center" VerticalAlignment="Top"
-                           Margin="0,0,0,0"
-                           Style="{StaticResource SampleHeaderTextStyle}"
-                           Text="JPG Spinner"
-                           TextWrapping="Wrap"/>
-                <StackPanel Orientation="Vertical" Margin="20,100,20,10" VerticalAlignment="Top">
-                    <CheckBox x:Name="CheckBoxTrim" x:Uid="CheckBoxTrim" Content="Trim" Margin="0,0,0,0" IsChecked="False" FontSize="18"/>
-                    <TextBlock x:Name="TextBlockTrim" x:Uid="TextBlockTrim"
-                        Text="Remove edge pixels to preserve lossless rotation if necessary ..."
-                        Foreground="White"
-                        MaxHeight="200"
-                        TextTrimming="CharacterEllipsis"
-                        Margin="0,10,0,0"
-                        TextWrapping="Wrap"
-                        FontSize="14"
-                        PointerReleased="TextBlockTrim_PointerReleased">
-                        <ToolTipService.ToolTip>
-                            <ToolTip x:Uid="ToolTipTrim" Content=""/>
-                        </ToolTipService.ToolTip>
-                    </TextBlock>
-                </StackPanel>
-                <StackPanel Orientation="Vertical" Margin="20,40,20,10" VerticalAlignment="Top">
+            			Foreground="White"
+            			Margin="0,-5,0,0"
+            			Style="{StaticResource SampleHeaderTextStyle}"
+            			Text="JPG Spinner"
+            			TextWrapping="Wrap"/>
+            </StackPanel>
+            <Button x:Name="ButtonPickFiles" x:Uid="ButtonPickFiles"
+            			Grid.Row="2"
+            			Click="Button_Click"
+            			Content="Select Files"
+            			HorizontalAlignment="Center" VerticalAlignment="Center"
+            			Loaded="ButtonPickFiles_Loaded"
+            			Margin="0,0,0,0"
+            			FontSize="20"
+            			FontWeight="Bold"/>
+            <StackPanel Grid.Row="3" Orientation="Vertical" VerticalAlignment="Center">
+                <StackPanel Orientation="Vertical" Margin="20,0,20,10">
                     <CheckBox x:Name="CheckBoxProgressive" x:Uid="CheckBoxProgressive" Content="Progressive" Margin="0,0,0,0" IsChecked="True" FontSize="18"/>
                     <TextBlock x:Name="TextBlockProgressive" x:Uid="TextBlockProgressive"
-                               Text="Apply progressive encoding to each rotated image ..."
-                               Foreground="White"
-                               MaxHeight="200"
-                               TextTrimming="CharacterEllipsis"
-                               Margin="0,10,0,0"
-                               TextWrapping="Wrap"
-                               FontSize="14"
-                               PointerReleased="TextBlockProgressive_PointerReleased">
-                        <ToolTipService.ToolTip>
-                            <ToolTip x:Uid="ToolTipProgressive" Content=""/>
-                        </ToolTipService.ToolTip>
+            				Text="Apply progressive encoding to each rotated image ..."
+            				Foreground="White"
+            				MaxHeight="200"
+            				TextTrimming="CharacterEllipsis"
+            				Margin="0,10,0,0"
+            				TextWrapping="Wrap"
+            				FontSize="14"
+            				PointerReleased="TextBlockProgressive_PointerReleased">
+            				<ToolTipService.ToolTip>
+            					<ToolTip x:Uid="ToolTipProgressive" Content=""/>
+            				</ToolTipService.ToolTip>
                     </TextBlock>
                 </StackPanel>
-                <Button x:Name="ButtonPickFiles" x:Uid="ButtonPickFiles"
-                        Click="Button_Click"
-                        Content="Select Files"
-                        HorizontalAlignment="Center" VerticalAlignment="Top"
-                        Loaded="ButtonPickFiles_Loaded"
-                        Margin="0,40,0,0"
-                        FontSize="20"
-                        FontWeight="Bold"/>
+                <StackPanel Orientation="Vertical" Margin="20,20,20,0" VerticalAlignment="Top">
+                    <CheckBox x:Name="CheckBoxTrim" x:Uid="CheckBoxTrim" Content="Trim" Margin="0,0,0,0" IsChecked="False" FontSize="18"/>
+                    <TextBlock x:Name="TextBlockTrim" x:Uid="TextBlockTrim"
+            				Text="Remove edge pixels to preserve lossless rotation if necessary ..."
+            				Foreground="White"
+            				MaxHeight="200"
+            				TextTrimming="CharacterEllipsis"
+            				Margin="0,10,0,0"
+            				TextWrapping="Wrap"
+            				FontSize="14"
+            				PointerReleased="TextBlockTrim_PointerReleased">
+            				<ToolTipService.ToolTip>
+            					<ToolTip x:Uid="ToolTipTrim" Content=""/>
+            				</ToolTipService.ToolTip>
+                    </TextBlock>
+                </StackPanel>
             </StackPanel>
-            <StackPanel Grid.Row="2" Orientation="Vertical" VerticalAlignment="Top">
+            <StackPanel Grid.Row="4" Orientation="Vertical" VerticalAlignment="Bottom">
                 <Border x:Name="DebugBorder" Visibility="Collapsed">
                     <TextBlock x:Name="DebugText" Foreground="White" FontWeight="Bold" MaxHeight="200" TextTrimming="CharacterEllipsis"  Margin="20,10,10,20" TextWrapping="Wrap" Text=""/>
                 </Border>
             </StackPanel>
-            <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,0,0,20" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+            <StackPanel Grid.Row="5" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <HyperlinkButton Click="HyperLinkButton_Click" Content="&#xA9; Hadden Industries Ltd" FontWeight="Normal" Foreground="White" HorizontalAlignment="Center" Tag="http://haddenindustries.com/"/>
                 <StackPanel x:Name="FooterPanel" Orientation="Horizontal" HorizontalAlignment="Center">
                     <HyperlinkButton x:Uid="HyperlinkButtonPrivacyPolicy" Content="Privacy Policy" Click="HyperLinkButton_Click" Tag="http://haddenindustries.com/legal.html#privacy-policy" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>

@@ -118,10 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="analysedMany" xml:space="preserve">
-    <value>Проанализировано %lu изображений</value>
+    <value>Analysed %lu images</value>
+    <comment>GB</comment>
   </data>
   <data name="analysedOne" xml:space="preserve">
-    <value>Проанализировано 1 изображение</value>
+    <value>Analysed 1 image</value>
+    <comment>GB</comment>
   </data>
   <data name="appDescription" xml:space="preserve">
     <value>JPG Spinner automatically rotates your images by how the camera was oriented when the shot was taken</value>
@@ -130,67 +132,68 @@
     <value>JPG Spinner</value>
   </data>
   <data name="ButtonPickFiles.Content" xml:space="preserve">
-    <value>Выбор Файлов</value>
+    <value>Select Files</value>
   </data>
   <data name="CheckBoxProgressive.Content" xml:space="preserve">
-    <value>Прогрессивная развертка</value>
+    <value>Progressive</value>
   </data>
   <data name="CheckBoxTrim.Content" xml:space="preserve">
-    <value>Усекать</value>
+    <value>Trim</value>
   </data>
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
-    <value>Политика Конфиденциальности</value>
+    <value>Privacy Policy</value>
   </data>
   <data name="HyperlinkButtonTerms.Content" xml:space="preserve">
-    <value>Условия</value>
+    <value>Terms</value>
   </data>
   <data name="processedMany" xml:space="preserve">
-    <value>%lu/%lu изображение обработанные</value>
+    <value>Rotated %lu/%lu images</value>
   </data>
   <data name="processedOne" xml:space="preserve">
-    <value>Идет обработ изображения</value>
+    <value>Rotating image</value>
   </data>
   <data name="shortName" xml:space="preserve">
     <value>JPG Spinner</value>
     <comment>Must be fewer than 13 characters and should be an abbreviation for the displayName</comment>
   </data>
   <data name="TextBlockProgressive.Text" xml:space="preserve">
-    <value>Применить прогрессивную развертку каждому развернутому изображение ...</value>
+    <value>Apply progressive encoding to each rotated image ...</value>
   </data>
   <data name="TextBlockTrim.Text" xml:space="preserve">
-    <value>Удалить крайние пиксели чтобы сохранить безпотерьное вращение по необходимости ...</value>
+    <value>Remove edge pixels to preserve lossless rotation if necessary ...</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
-    <value>Все %lu изображение обработанные</value>
+    <value>Rotated all %lu images</value>
   </data>
   <data name="processedAllOne" xml:space="preserve">
-    <value>Изображение обработанно</value>
+    <value>Rotated image</value>
   </data>
   <data name="commitButtonText" xml:space="preserve">
-    <value>Повернуть</value>
+    <value>Rotate</value>
   </data>
   <data name="initialising" xml:space="preserve">
-    <value>Инициализация...</value>
+    <value>Initialising...</value>
+    <comment>GB</comment>
   </data>
   <data name="ToolTipProgressive.Content" xml:space="preserve">
-    <value>Нажмите здесь, чтобы просмотреть дополнительную информацию об этом варианте</value>
+    <value>Click here to see more information about this option</value>
   </data>
   <data name="ToolTipTrim.Content" xml:space="preserve">
-    <value>Нажмите здесь, чтобы просмотреть дополнительную информацию об этом варианте</value>
+    <value>Click here to see more information about this option</value>
   </data>
   <data name="trimOptionRequired" xml:space="preserve">
-    <value>Включите опцию 'Усекать' чтобы повернуть это изображение</value>
+    <value>Enable the trim option to rotate this image</value>
   </data>
   <data name="cancel" xml:space="preserve">
-    <value>Отмена</value>
+    <value>Cancel</value>
   </data>
   <data name="Logo.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Логотип JPG Spinner</value>
+    <value>JPG Spinner logo</value>
   </data>
   <data name="noImagesToBeRotated" xml:space="preserve">
-    <value>В вашем выборе не было вращяемых изображений</value>
+    <value>There were no rotatable images in your selection</value>
   </data>
   <data name="selectFiles" xml:space="preserve">
-    <value>Выбор Файлов</value>
+    <value>Select Files</value>
   </data>
 </root>

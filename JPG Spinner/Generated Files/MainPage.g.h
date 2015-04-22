@@ -26,12 +26,12 @@ namespace Windows {
             namespace Controls {
                 ref class Grid;
                 ref class Frame;
+                ref class Button;
                 ref class StackPanel;
                 ref class Border;
                 ref class TextBlock;
-                ref class Image;
-                ref class Button;
                 ref class CheckBox;
+                ref class Image;
             }
         }
     }
@@ -53,16 +53,16 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Media::Animation::DoubleAnimation^ SpinLogoAnimation;
         private: ::Windows::UI::Xaml::Controls::Grid^ LeftPane;
         private: ::Windows::UI::Xaml::Controls::Frame^ ScenarioFrame;
+        private: ::Windows::UI::Xaml::Controls::Button^ ButtonPickFiles;
         private: ::Windows::UI::Xaml::Controls::StackPanel^ FooterPanel;
         private: ::Windows::UI::Xaml::Controls::Border^ DebugBorder;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ DebugText;
-        private: ::Windows::UI::Xaml::Controls::Image^ Logo;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ AppTitle;
-        private: ::Windows::UI::Xaml::Controls::Button^ ButtonPickFiles;
-        private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxProgressive;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockProgressive;
         private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxTrim;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockTrim;
+        private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxProgressive;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockProgressive;
+        private: ::Windows::UI::Xaml::Controls::Image^ Logo;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ AppTitle;
     };
 }
 

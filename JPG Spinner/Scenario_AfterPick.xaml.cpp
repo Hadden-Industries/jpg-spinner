@@ -962,7 +962,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					rootPage->ProgressiveChecked
 					);
 
-				createReorientedTempFileAsyncTask.then([this, cancellationToken, i, item, tempFileName](HRESULT hr)
+				createReorientedTempFileAsyncTask.then([this, cancellationToken, item, tempFileName](HRESULT hr)
 				{
 					concurrency::interruption_point();
 
@@ -993,6 +993,12 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 									if (SUCCEEDED(hr))
 									{
+										_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
+											ref new Windows::UI::Core::DispatchedHandler([this, item]()
+										{
+											item->OrientationFlag = 1U;
+										}));
+
 										concurrency::interruption_point();
 
 										//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
@@ -1005,6 +1011,20 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 												ref new Windows::UI::Core::DispatchedHandler([this, item]()
 											{
 												GridView1->SelectedItems->Append(item);
+
+												Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+												// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+												// when the item is due to be rendered, the ShowError() will get called on it anyway
+												if (nullptr != sI)
+												{
+													ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+													if (nullptr != iv)
+													{
+														iv->ShowImage();
+													}
+												}
 											}));
 
 											imagesRotated++;
@@ -1020,7 +1040,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						imagesErrored++;
 
 						_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-							ref new Windows::UI::Core::DispatchedHandler([this, item, i, hr]()
+							ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
 						{
 							if (HRESULT_FROM_WIN32(ERROR_INVALID_DATA) == hr)
 							{
@@ -1031,7 +1051,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								item->Error = HResultToHexString(hr);
 							}
 
-							Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromIndex(i));
+							Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
 
 							// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
 							// when the item is due to be rendered, the ShowError() will get called on it anyway
