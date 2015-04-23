@@ -32,9 +32,12 @@
             <TextBlock Grid.Row="0" x:Name="InputTextBlock1" Style="{StaticResource SubheaderTextBlockStyle}" Text="" TextWrapping="Wrap"></TextBlock>
         </Grid>
         <Grid x:Name="Output" HorizontalAlignment="Stretch" Margin="0,0,0,0" VerticalAlignment="Stretch" Grid.Row="1">
+            <Path Fill="#FFFFFF"
+                  Stretch="Uniform"
+                  Opacity="0.02"
+                  Data="M90.19 79.584l4.018-4.018h0.001c7.722-7.721 7.722-20.242 0-27.963L66.344 19.74  c-7.723-7.723-20.241-7.723-27.963 0c-7.722 7.721-7.722 20.242 0 27.963l0.02 0.02L52.277 61.6l0.02 0.02  c2.575 2.574 2.574 6.748 0 9.32c-2.573 2.574-6.746 2.574-9.319 0L15.113 43.076c-2.574-2.576-2.574-6.748 0-9.322l4.016-4.018  l2.251 2.25l4.866-18.664l-18.681 4.85l2.244 2.244l-4.018 4.018H5.791c-7.722 7.723-7.722 20.24 0 27.961l27.864 27.867  c7.722 7.721 20.242 7.721 27.964 0c7.722-7.723 7.722-20.242 0-27.965l-0.02-0.02L47.723 38.4l-0.02-0.02  c-2.575-2.574-2.575-6.746 0-9.318c2.572-2.576 6.744-2.576 9.319 0l27.864 27.863c2.574 2.574 2.574 6.746 0 9.318l-4.017 4.018  l-2.25-2.248l-4.866 18.664l18.68-4.852L90.19 79.584z">
+            </Path>
             <GridView x:Name="GridView1"
-                      Background="#140044"
-                      BorderBrush="LightGray"
                       ContainerContentChanging="ItemGridView_ContainerContentChanging"
                       ItemContainerStyle="{StaticResource StoreFrontTileStyle}"
                       ItemsPanel="{StaticResource StoreFrontGridItemsPanelTemplate}"

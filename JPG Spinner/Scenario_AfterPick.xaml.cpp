@@ -814,7 +814,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					imagesToBeRotatedLast = imagesToBeRotatedCurrent;
 					imagesErroredLast = imagesErroredCurrent;
 
-					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
 						ref new Windows::UI::Core::DispatchedHandler([this, imagesRotatedCurrent, imagesToBeRotatedCurrent, imagesErroredCurrent]()
 					{
 						Platform::String^ string;
@@ -851,7 +851,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				Sleep(20);
 			}
 
-			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
+			// this must run at a lower priority than the RunAsync directly above so that all the progress messages are handled before this final one
+			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
 				ref new Windows::UI::Core::DispatchedHandler([this]()
 			{
 				Platform::String^ string;

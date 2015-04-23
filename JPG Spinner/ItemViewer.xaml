@@ -7,7 +7,7 @@
              mc:Ignorable="d"
              d:DesignHeight="300"
              d:DesignWidth="400">
-    <Grid HorizontalAlignment="Left" Background="#140044">
+    <Grid HorizontalAlignment="Left">
         <StackPanel Orientation="Horizontal" Margin="4,4,4,4">
             <Image x:Name="image"
                    Height="192" Width="192"

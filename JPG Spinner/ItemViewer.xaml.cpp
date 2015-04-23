@@ -65,6 +65,11 @@ void ItemViewer::ShowImage()
     {
         image->Source = _item->Image;
 
+		/*Can also use CompositeTransform that applies multiple transforms in this order:
+		Scale(ScaleX, ScaleY)
+		Skew(SkewX, SkewY)
+		Rotate(Rotation)
+		Translate(TranslateX, TranslateY)*/
 		//Windows::UI::Xaml::Media::TransformGroup^ _TransformGroup = ref new Windows::UI::Xaml::Media::TransformGroup();
 
 		//Windows::UI::Xaml::Media::RotateTransform^ _RotateTransform = ref new Windows::UI::Xaml::Media::RotateTransform();
