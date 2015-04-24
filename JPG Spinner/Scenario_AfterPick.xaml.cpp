@@ -959,7 +959,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					item->StorageFile,
 					item->OrientationFlag,
 					tempFileName,
-					rootPage->TrimChecked,
+					rootPage->CropChecked,
 					rootPage->ProgressiveChecked
 					);
 
@@ -1045,7 +1045,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						{
 							if (HRESULT_FROM_WIN32(ERROR_INVALID_DATA) == hr)
 							{
-								item->Error = _resourceLoader->GetString("trimOptionRequired");
+								item->Error = _resourceLoader->GetString("cropOptionRequired");
 							}
 							else
 							{

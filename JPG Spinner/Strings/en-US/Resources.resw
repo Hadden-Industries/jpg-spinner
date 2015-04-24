@@ -131,14 +131,14 @@
   <data name="appDisplayName" xml:space="preserve">
     <value>JPG Spinner</value>
   </data>
-  <data name="ButtonPickFiles.Content" xml:space="preserve">
+  <data name="ButtonSelectFiles.Content" xml:space="preserve">
     <value>Select Files</value>
   </data>
   <data name="CheckBoxProgressive.Content" xml:space="preserve">
     <value>Progressive</value>
   </data>
-  <data name="CheckBoxTrim.Content" xml:space="preserve">
-    <value>Trim</value>
+  <data name="CheckBoxCrop.Content" xml:space="preserve">
+    <value>Crop</value>
   </data>
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
     <value>Privacy Policy</value>
@@ -159,8 +159,8 @@
   <data name="TextBlockProgressive.Text" xml:space="preserve">
     <value>Apply progressive encoding to each rotated image ...</value>
   </data>
-  <data name="TextBlockTrim.Text" xml:space="preserve">
-    <value>Remove edge pixels to preserve lossless rotation if necessary ...</value>
+  <data name="TextBlockCrop.Text" xml:space="preserve">
+    <value>Remove some edge pixels to enable lossless rotation of the rest of the image if necessary ...</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
     <value>Rotated all %lu images</value>
@@ -178,11 +178,11 @@
   <data name="ToolTipProgressive.Content" xml:space="preserve">
     <value>Click here to see more information about this option</value>
   </data>
-  <data name="ToolTipTrim.Content" xml:space="preserve">
+  <data name="ToolTipCrop.Content" xml:space="preserve">
     <value>Click here to see more information about this option</value>
   </data>
-  <data name="trimOptionRequired" xml:space="preserve">
-    <value>Enable the trim option to rotate this image</value>
+  <data name="cropOptionRequired" xml:space="preserve">
+    <value>Enable the "Crop" option to rotate this image</value>
   </data>
   <data name="cancel" xml:space="preserve">
     <value>Cancel</value>

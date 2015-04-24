@@ -129,13 +129,13 @@
   <data name="appDisplayName" xml:space="preserve">
     <value>JPG Spinner</value>
   </data>
-  <data name="ButtonPickFiles.Content" xml:space="preserve">
+  <data name="ButtonSelectFiles.Content" xml:space="preserve">
     <value>Выбор Файлов</value>
   </data>
   <data name="CheckBoxProgressive.Content" xml:space="preserve">
     <value>Прогрессивная развертка</value>
   </data>
-  <data name="CheckBoxTrim.Content" xml:space="preserve">
+  <data name="CheckBoxCrop.Content" xml:space="preserve">
     <value>Усекать</value>
   </data>
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
@@ -157,7 +157,7 @@
   <data name="TextBlockProgressive.Text" xml:space="preserve">
     <value>Применить прогрессивную развертку каждому развернутому изображение ...</value>
   </data>
-  <data name="TextBlockTrim.Text" xml:space="preserve">
+  <data name="TextBlockCrop.Text" xml:space="preserve">
     <value>Удалить крайние пиксели чтобы сохранить безпотерьное вращение по необходимости ...</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
@@ -175,11 +175,11 @@
   <data name="ToolTipProgressive.Content" xml:space="preserve">
     <value>Нажмите здесь, чтобы просмотреть дополнительную информацию об этом варианте</value>
   </data>
-  <data name="ToolTipTrim.Content" xml:space="preserve">
+  <data name="ToolTipCrop.Content" xml:space="preserve">
     <value>Нажмите здесь, чтобы просмотреть дополнительную информацию об этом варианте</value>
   </data>
-  <data name="trimOptionRequired" xml:space="preserve">
-    <value>Включите опцию 'Усекать' чтобы повернуть это изображение</value>
+  <data name="cropOptionRequired" xml:space="preserve">
+    <value>Включите опцию "Усекать" чтобы повернуть это изображение</value>
   </data>
   <data name="cancel" xml:space="preserve">
     <value>Отмена</value>

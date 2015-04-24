@@ -127,7 +127,7 @@
             };
         userType->AddMemberName(L"cts");
         userType->AddMemberName(L"ProgressiveChecked");
-        userType->AddMemberName(L"TrimChecked");
+        userType->AddMemberName(L"CropChecked");
         userType->SetIsLocalType();
         return userType;
     }
@@ -250,14 +250,14 @@
         return xamlMember;
     }
 
-    if (longMemberName == L"JPG_Spinner.MainPage.TrimChecked")
+    if (longMemberName == L"JPG_Spinner.MainPage.CropChecked")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"TrimChecked", L"Int32");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"CropChecked", L"Int32");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
                 auto that = (::JPG_Spinner::MainPage^)instance;
-                auto value = ref new ::Platform::Box<::default::int32>(that->TrimChecked);
+                auto value = ref new ::Platform::Box<::default::int32>(that->CropChecked);
                 return value;
             };
 
@@ -266,7 +266,7 @@
             {
                 auto that = (::JPG_Spinner::MainPage^)instance;
                 auto boxedValue = (::Platform::IBox<::default::int32>^)value;
-                that->TrimChecked = boxedValue->Value;
+                that->CropChecked = boxedValue->Value;
             };
         return xamlMember;
     }

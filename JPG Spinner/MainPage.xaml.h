@@ -17,7 +17,7 @@ namespace JPG_Spinner
 	public:
 		MainPage();
 
-		property BOOL TrimChecked;
+		property BOOL CropChecked;
 		property BOOL ProgressiveChecked;
 		property Platform::IBox<int64>^ cts
 		{
@@ -39,9 +39,17 @@ namespace JPG_Spinner
 		volatile std::atomic_bool buttonIsSelectFiles;
 
 		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-		void TextBlockTrim_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+		void TextBlockCrop_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
 		void TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
 		void HyperLinkButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-		void ButtonPickFiles_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void ButtonSelectFiles_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void CheckBoxProgressive_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void CheckBoxProgressive_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void CheckBoxCrop_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void CheckBoxCrop_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		concurrency::task<bool> SaveSettingAsync(Platform::String^ key, Platform::String^ value);
+		concurrency::task<Platform::String^> LoadSettingAsync(Platform::String^ key);
+		void CheckBoxProgressive_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void CheckBoxCrop_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 	};
 }

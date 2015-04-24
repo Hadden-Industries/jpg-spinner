@@ -28,7 +28,7 @@
                            FontSize="14"
                            FontStyle="Italic"
                            Foreground="#FFF05A29"
-                           Text="Enable the trim option to rotate this image"
+                           Text="Enable the &quot;Crop&quot; option to rotate this image"
                            TextTrimming="CharacterEllipsis"
                            TextWrapping="Wrap"
                            Width="192"/>
