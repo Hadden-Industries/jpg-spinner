@@ -19,11 +19,11 @@ namespace JPG_Spinner
 
 		property BOOL CropChecked;
 		property BOOL ProgressiveChecked;
-		property Platform::IBox<int64>^ cts
+		property Platform::IBox<intptr_t>^ cts
 		{
-			Platform::IBox<int64>^ get()
+			Platform::IBox<intptr_t>^ get()
 			{
-				return ref new Platform::Box<int64>((int64)&_cts);
+				return ref new Platform::Box<intptr_t>((intptr_t)&_cts);
 			}
 		};
 
