@@ -102,9 +102,7 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 	auto temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
 
 	// Get the files in the temporary folder
-	auto results = temporaryFolder->CreateFileQuery();
-
-	concurrency::create_task(results->GetFilesAsync())
+	concurrency::create_task(temporaryFolder->GetFilesAsync())
 		.then([](IVectorView<Windows::Storage::StorageFile^>^ filesInFolder)
 	{
 		// Iterate over the files

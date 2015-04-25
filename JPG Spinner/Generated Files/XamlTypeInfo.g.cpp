@@ -132,7 +132,7 @@
         return userType;
     }
 
-    if (typeName == L"Windows.Foundation.IReference`1<Int64>")
+    if (typeName == L"Windows.Foundation.IReference`1<Int32>")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, nullptr);
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
@@ -217,7 +217,7 @@
 {
     if (longMemberName == L"JPG_Spinner.MainPage.cts")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"cts", L"Windows.Foundation.IReference`1<Int64>");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"cts", L"Windows.Foundation.IReference`1<Int32>");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
