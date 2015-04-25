@@ -105,6 +105,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="JPG Spinner_TemporaryKey.pfx" />
+    <None Include="Package.StoreAssociation.xml" />
+    <None Include="JPG Spinner_StoreKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />

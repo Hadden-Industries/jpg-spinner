@@ -92,7 +92,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <PackageCertificateKeyFile>JPG Spinner_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>JPG Spinner_StoreKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateThumbprint>4244F6E820B9D885A364AB90A1117B5C9DC18931</PackageCertificateThumbprint>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -119,10 +120,14 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204</DisableSpecificWarnings>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -207,6 +212,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="JPG Spinner_StoreKey.pfx" />
     <None Include="JPG Spinner_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
@@ -1011,6 +1017,9 @@
     <PRIResource Include="Strings\en-GB\Resources.resw" />
     <PRIResource Include="Strings\en-US\Resources.resw" />
     <PRIResource Include="Strings\ru\Resources.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Package.StoreAssociation.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
