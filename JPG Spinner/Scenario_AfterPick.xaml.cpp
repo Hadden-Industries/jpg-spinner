@@ -486,12 +486,6 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(
 		dstinfo.err = jpeg_std_error(&jdsterr);
 		jpeg_create_compress(&dstinfo);
 
-		if (progressive)
-		{
-			// Set progressive mode (saves space but is slower)
-			jpeg_simple_progression(&dstinfo);
-		}
-
 		// Note: we assume only the decompression object will have virtual arrays
 
 		dstinfo.optimize_coding = TRUE;
@@ -576,6 +570,12 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(
 			return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
 		}
 
+		if (progressive)
+		{
+			// Set progressive mode (saves space but is slower)
+			jpeg_simple_progression(&dstinfo);
+		}
+
 		// Specify data destination for compression
 		jpeg_stdio_dest(&dstinfo, fp);
 
@@ -632,7 +632,7 @@ Scenario_AfterPick::Scenario_AfterPick()
 
 	if (SUCCEEDED(hr))
 	{
-		CoInitializeExSucceeded = TRUE;
+		CoInitializeExSucceeded = true;
 
 		hr = CoCreateInstance(
 			CLSID_WICImagingFactory,
@@ -646,8 +646,8 @@ Scenario_AfterPick::Scenario_AfterPick()
 		//Windows::Storage::StorageFolder^ localFolder = Windows::Storage::ApplicationData::Current->LocalFolder;
 		//Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
 
-		//DebugText->Text = "Installed location:\n" + installedLocation->Path + "\n" + "Local folder:\n" + localFolder->Path;
-		//DebugText->Text = temporaryFolder->Path;
+		//InputTextBlock1->Text = "Installed location:\n" + installedLocation->Path + "\n" + "Local folder:\n" + localFolder->Path;
+		//InputTextBlock1->Text = temporaryFolder->Path;
 	}
 	else
 	{
@@ -923,13 +923,9 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 		{
 			Windows::Storage::StorageFolder^ temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
 
-			Platform::String^ tempFileName;
-
 			for (unsigned int i = 0U; i < static_cast<unsigned int>(imagesToBeRotated.load()); ++i)
 			{
 				concurrency::interruption_point();
-
-				tempFileName = temporaryFolder->Path + "\\" + GetUUID();
 
 				Item^ item = nullptr;
 
@@ -954,6 +950,15 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				}
 
 				concurrency::interruption_point();
+
+				if (!item->Error->IsEmpty())
+				{
+					imagesErrored++;
+
+					continue;
+				}
+
+				Platform::String^ tempFileName = temporaryFolder->Path + "\\" + GetUUID();
 
 				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(
 					item->StorageFile,
@@ -1004,10 +1009,15 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 										//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
 
-										auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->MoveAndReplaceAsync(item->StorageFile));
+										// Using CopyAndReplaceAsync & DeleteAsync instead of only MoveAndReplaceAsync to preserve the Created date metadata
+										auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->CopyAndReplaceAsync(item->StorageFile));
 										
-										moveAndReplaceAsyncTask.then([this, item]()
+										moveAndReplaceAsyncTask.then([this, item, tempFile]()
 										{
+											imagesRotated++;
+
+											concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
+
 											_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
 												ref new Windows::UI::Core::DispatchedHandler([this, item]()
 											{
@@ -1027,8 +1037,6 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 													}
 												}
 											}));
-
-											imagesRotated++;
 										}, cancellationToken);
 									}
 								}
@@ -1132,6 +1140,11 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));
 
 								item->Title = files->GetAt(i)->DisplayName;
+
+								if (Windows::Storage::FileAttributes::ReadOnly == (files->GetAt(i)->Attributes & Windows::Storage::FileAttributes::ReadOnly))
+								{
+									item->Error = _resourceLoader->GetString("imageReadOnly");
+								}
 
 								item->OrientationFlag = OrientationFlagValue;
 

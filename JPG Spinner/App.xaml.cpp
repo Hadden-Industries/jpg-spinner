@@ -98,6 +98,24 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 		// Ensure the current window is active
 		Window::Current->Activate();
 	}
+
+	auto temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
+
+	// Get the files in the temporary folder
+	auto results = temporaryFolder->CreateFileQuery();
+
+	concurrency::create_task(results->GetFilesAsync())
+		.then([](IVectorView<Windows::Storage::StorageFile^>^ filesInFolder)
+	{
+		// Iterate over the files
+		for (auto it = filesInFolder->First(); it->HasCurrent; it->MoveNext())
+		{
+			auto file = it->Current;
+
+			// Permanently delete the file
+			concurrency::create_task(file->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
+		}
+	});
 }
 
 /// <summary>

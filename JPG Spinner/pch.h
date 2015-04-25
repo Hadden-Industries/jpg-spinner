@@ -16,6 +16,7 @@
 #include <io.h> // _open_osfhandle
 #include <Fcntl.h> // _O_APPEND _O_RDONLY
 #include <robuffer.h> // IBufferByteAccess
+#include <sstream> // wostringstream
 
 extern "C" {
 #include "jpeglib.h" // jpeg_stdio_src

@@ -78,7 +78,7 @@
                                    FontSize="14"
                                    PointerReleased="TextBlockProgressive_PointerReleased">
             			    <ToolTipService.ToolTip>
-            				    <ToolTip x:Uid="ToolTipProgressive" Content=""/>
+            				    <ToolTip x:Uid="ToolTipProgressive" Content="Click here to see more information about this option"/>
             			    </ToolTipService.ToolTip>
                         </TextBlock>
                     </StackPanel>
@@ -93,7 +93,7 @@
                                    FontSize="14"
                                    PointerReleased="TextBlockCrop_PointerReleased">
             			    <ToolTipService.ToolTip>
-            				    <ToolTip x:Uid="ToolTipCrop" Content=""/>
+            				    <ToolTip x:Uid="ToolTipCrop" Content="Click here to see more information about this option"/>
             			    </ToolTipService.ToolTip>
                         </TextBlock>
                     </StackPanel>

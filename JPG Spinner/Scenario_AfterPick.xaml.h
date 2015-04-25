@@ -18,7 +18,6 @@
 #include "pch.h"
 #include "Scenario_AfterPick.g.h"
 #include "MainPage.xaml.h"
-#include <sstream> // wostringstream
 
 using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;
@@ -43,7 +42,7 @@ namespace JPG_Spinner
 		Data^ storeData;
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
-		BOOL CoInitializeExSucceeded;
+		bool CoInitializeExSucceeded;
 		volatile std::atomic_ulong imagesSelected;
 		volatile std::atomic_ulong imagesAnalysed;
 		volatile std::atomic_ulong imagesToBeRotated;

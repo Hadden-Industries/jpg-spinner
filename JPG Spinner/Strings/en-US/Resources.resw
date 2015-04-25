@@ -196,4 +196,7 @@
   <data name="selectFiles" xml:space="preserve">
     <value>Select Files</value>
   </data>
+  <data name="imageReadOnly" xml:space="preserve">
+    <value>This image is read-only</value>
+  </data>
 </root>
