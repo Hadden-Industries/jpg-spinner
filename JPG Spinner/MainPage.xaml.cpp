@@ -34,6 +34,15 @@ MainPage::MainPage()
 	buttonIsSelectFiles = true;
 }
 
+void JPG_Spinner::MainPage::ShowDebugText(Platform::String^ debugText)
+{
+	if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
+	{
+		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
+	}
+	DebugText->Text = debugText;
+}
+
 void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (buttonIsSelectFiles)
@@ -60,20 +69,16 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 
 void JPG_Spinner::MainPage::TextBlockCrop_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
-	if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
-	{
-		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
-	}
-	DebugText->Text = "Clicked Crop";
+	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationCrop", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+	ScenarioFrame->Navigate(scenarioType, this);
 }
 
 void JPG_Spinner::MainPage::TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
-	if (Windows::UI::Xaml::Visibility::Collapsed == DebugBorder->Visibility)
-	{
-		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
-	}
-	DebugText->Text = "Clicked Progressive";
+	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationProgressive", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+	ScenarioFrame->Navigate(scenarioType, this);
 }
 
 void JPG_Spinner::MainPage::HyperLinkButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)

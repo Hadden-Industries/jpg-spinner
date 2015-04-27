@@ -38,6 +38,7 @@ namespace JPG_Spinner
 		concurrency::cancellation_token_source _cts;
 		volatile std::atomic_bool buttonIsSelectFiles;
 
+		void ShowDebugText(Platform::String^ debugText);
 		void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void TextBlockCrop_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
 		void TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);

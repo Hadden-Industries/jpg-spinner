@@ -9,12 +9,16 @@
 #include "pch.h"
 #include "XamlTypeInfo.g.h"
 
+#include "ExplanationCrop.xaml.h"
+#include "ExplanationProgressive.xaml.h"
 #include "ItemViewer.xaml.h"
 #include "App.xaml.h"
 #include "MainPage.xaml.h"
 #include "Scenario_AfterPick.xaml.h"
 #include "WebPage.xaml.h"
 
+#include "ExplanationCrop.g.hpp"
+#include "ExplanationProgressive.g.hpp"
 #include "ItemViewer.g.hpp"
 #include "App.g.hpp"
 #include "MainPage.g.hpp"
@@ -68,12 +72,12 @@
 
 ::Windows::UI::Xaml::Markup::IXamlType^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::CreateXamlType(::Platform::String^ typeName)
 {
-    if (typeName == L"Windows.UI.Xaml.Controls.UserControl")
+    if (typeName == L"Windows.UI.Xaml.Controls.Page")
     {
         return ref new XamlSystemBaseType(typeName);
     }
 
-    if (typeName == L"Windows.UI.Xaml.Controls.Page")
+    if (typeName == L"Windows.UI.Xaml.Controls.UserControl")
     {
         return ref new XamlSystemBaseType(typeName);
     }
@@ -101,6 +105,32 @@
     if (typeName == L"UInt32")
     {
         return ref new XamlSystemBaseType(typeName);
+    }
+
+    if (typeName == L"JPG_Spinner.ExplanationCrop")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.Page"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::ExplanationCrop(); 
+            };
+        userType->SetIsLocalType();
+        return userType;
+    }
+
+    if (typeName == L"JPG_Spinner.ExplanationProgressive")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.Page"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::ExplanationProgressive(); 
+            };
+        userType->SetIsLocalType();
+        return userType;
     }
 
     if (typeName == L"JPG_Spinner.ItemViewer")

@@ -79,6 +79,8 @@
     <ClCompile Include="ItemViewer.xaml.cpp" />
     <ClCompile Include="Scenario_AfterPick.xaml.cpp" />
     <ClCompile Include="WebPage.xaml.cpp" />
+    <ClCompile Include="ExplanationCrop.xaml.cpp" />
+    <ClCompile Include="ExplanationProgressive.xaml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -99,6 +101,8 @@
     <ClInclude Include="ItemViewer.xaml.h" />
     <ClInclude Include="Scenario_AfterPick.xaml.h" />
     <ClInclude Include="WebPage.xaml.h" />
+    <ClInclude Include="ExplanationCrop.xaml.h" />
+    <ClInclude Include="ExplanationProgressive.xaml.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -115,6 +119,8 @@
     <Page Include="ItemViewer.xaml" />
     <Page Include="ScenariosTemplateStyles.xaml" />
     <Page Include="WebPage.xaml" />
+    <Page Include="ExplanationCrop.xaml" />
+    <Page Include="ExplanationProgressive.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Square310x310Logo.scale-180.png">
@@ -202,6 +208,9 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="Assets\BadgeLogo.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\progressive.jpg">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

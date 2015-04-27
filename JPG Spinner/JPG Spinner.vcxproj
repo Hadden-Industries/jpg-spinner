@@ -166,6 +166,12 @@
   <ItemGroup>
     <ClInclude Include="cderror.h" />
     <ClInclude Include="cdjpeg.h" />
+    <ClInclude Include="ExplanationCrop.xaml.h">
+      <DependentUpon>ExplanationCrop.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ExplanationProgressive.xaml.h">
+      <DependentUpon>ExplanationProgressive.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ItemViewer.xaml.h">
       <DependentUpon>ItemViewer.xaml</DependentUpon>
     </ClInclude>
@@ -197,6 +203,12 @@
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="ExplanationCrop.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ExplanationProgressive.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ItemViewer.xaml" />
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
@@ -237,6 +249,7 @@
     <Image Include="Assets\Logo.scale-80.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
+    <Image Include="Assets\progressive.jpg" />
     <Image Include="Assets\SmallLogo.scale-100.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
@@ -333,6 +346,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ExplanationCrop.xaml.cpp">
+      <DependentUpon>ExplanationCrop.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ExplanationProgressive.xaml.cpp">
+      <DependentUpon>ExplanationProgressive.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="ItemViewer.xaml.cpp">
       <DependentUpon>ItemViewer.xaml</DependentUpon>

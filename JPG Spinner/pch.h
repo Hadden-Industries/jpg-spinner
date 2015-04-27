@@ -23,3 +23,13 @@ extern "C" {
 #include "cdjpeg.h" // Common decls for cjpeg/djpeg applications
 #include "transupp.h" // Support routines for jpegtran
 }
+
+template<class Interface>
+inline void SafeRelease(Interface **ppInterfaceToRelease)
+{
+	if (*ppInterfaceToRelease)
+	{
+		(*ppInterfaceToRelease)->Release();
+		*ppInterfaceToRelease = nullptr;
+	}
+}

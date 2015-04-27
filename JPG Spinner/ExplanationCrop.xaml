@@ -1,0 +1,49 @@
+﻿<Page
+    x:Class="JPG_Spinner.ExplanationCrop"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:JPG_Spinner"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="LayoutRoot" Background="#140044">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="100"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid x:Name="Input" Grid.Row="0" Margin="20,0,20,10" VerticalAlignment="Bottom">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" x:Name="InputTextBlock1" Style="{StaticResource SubheaderTextBlockStyle}" Text="Crop" TextWrapping="Wrap"></TextBlock>
+        </Grid>
+        <Grid x:Name="Output" Grid.Row="1">
+            <Path Fill="#FFFFFF"
+                  Stretch="Uniform"
+                  Opacity="0.02"
+                  Data="M90.19 79.584l4.018-4.018h0.001c7.722-7.721 7.722-20.242 0-27.963L66.344 19.74  c-7.723-7.723-20.241-7.723-27.963 0c-7.722 7.721-7.722 20.242 0 27.963l0.02 0.02L52.277 61.6l0.02 0.02  c2.575 2.574 2.574 6.748 0 9.32c-2.573 2.574-6.746 2.574-9.319 0L15.113 43.076c-2.574-2.576-2.574-6.748 0-9.322l4.016-4.018  l2.251 2.25l4.866-18.664l-18.681 4.85l2.244 2.244l-4.018 4.018H5.791c-7.722 7.723-7.722 20.24 0 27.961l27.864 27.867  c7.722 7.721 20.242 7.721 27.964 0c7.722-7.723 7.722-20.242 0-27.965l-0.02-0.02L47.723 38.4l-0.02-0.02  c-2.575-2.574-2.575-6.746 0-9.318c2.572-2.576 6.744-2.576 9.319 0l27.864 27.863c2.574 2.574 2.574 6.746 0 9.318l-4.017 4.018  l-2.25-2.248l-4.866 18.664l18.68-4.852L90.19 79.584z">
+            </Path>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="8*"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <Image x:Name="Image1"/>
+                        <TextBlock x:Name="TextBlock1" FontSize="16" Text="The JPEG file standard compresses image files by splitting them into blocks of 8x8 pixels. At low-quality compression, a technique called chroma subsampling may be used, which enlarges the blocks to as many as 16x16 pixels." TextWrapping="WrapWholeWords"/>
+                    </StackPanel>
+                     <TextBlock FontSize="16" Margin="0,10,0,0" Text="Further, each JPEG file must have a complete block in the top-left corner. Because of this, there are certain rotations that are impossible to perform losslessly if the image size is not an exact multiple of the block size." TextWrapping="WrapWholeWords"/>
+                    <TextBlock FontSize="16" Margin="0,10,0,0" Text="However, if the image is cropped to remove incomplete blocks, the remainder of the image may be rotated without loss. For high-quality compression, only a maximum of 7 pixels may be cropped from the sides of the image. In case the image was saved at very low quality the image may lose up to 15 pixels in width or height." TextWrapping="WrapWholeWords"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>
