@@ -24,5 +24,17 @@ namespace JPG_Spinner
 	private:
 		Windows::UI::Core::CoreDispatcher^ _dispatcher;
 		Windows::ApplicationModel::Resources::ResourceLoader^ _resourceLoader;
+
+		Platform::Collections::Vector<Windows::UI::Xaml::Media::Imaging::WriteableBitmap^>^ vector;
+		UINT currentLevel;
+
+		void IncreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+		void DecreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+
+		void ButtonLeftTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+		void ButtonLeftTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+
+		void ButtonRightTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+		void ButtonRightTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
 	};
 }

@@ -30,12 +30,59 @@ void ::JPG_Spinner::ExplanationProgressive::InitializeComponent()
     Output = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Output"));
     // Get the Image named 'DisplayImage'
     DisplayImage = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DisplayImage"));
+    // Get the UserControl named 'ButtonLeft'
+    ButtonLeft = safe_cast<::Windows::UI::Xaml::Controls::UserControl^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ButtonLeft"));
+    // Get the TextBlock named 'TextBlockProgressive'
+    TextBlockProgressive = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockProgressive"));
+    // Get the UserControl named 'ButtonRight'
+    ButtonRight = safe_cast<::Windows::UI::Xaml::Controls::UserControl^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ButtonRight"));
+    // Get the TextBlock named 'TextBlock2'
+    TextBlock2 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock2"));
+    // Get the TextBlock named 'ButtonRightTextBlock'
+    ButtonRightTextBlock = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ButtonRightTextBlock"));
+    // Get the VisualStateGroup named 'CommonStatesRight'
+    CommonStatesRight = safe_cast<::Windows::UI::Xaml::VisualStateGroup^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CommonStatesRight"));
+    // Get the VisualState named 'NormalRight'
+    NormalRight = safe_cast<::Windows::UI::Xaml::VisualState^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"NormalRight"));
+    // Get the VisualState named 'PointerOverRight'
+    PointerOverRight = safe_cast<::Windows::UI::Xaml::VisualState^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"PointerOverRight"));
+    // Get the TextBlock named 'ButtonLeftTextBlock'
+    ButtonLeftTextBlock = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ButtonLeftTextBlock"));
+    // Get the VisualStateGroup named 'CommonStatesLeft'
+    CommonStatesLeft = safe_cast<::Windows::UI::Xaml::VisualStateGroup^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CommonStatesLeft"));
+    // Get the VisualState named 'NormalLeft'
+    NormalLeft = safe_cast<::Windows::UI::Xaml::VisualState^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"NormalLeft"));
+    // Get the VisualState named 'PointerOverLeft'
+    PointerOverLeft = safe_cast<::Windows::UI::Xaml::VisualState^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"PointerOverLeft"));
+    // Get the Image named 'Image1'
+    Image1 = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Image1"));
+    // Get the TextBlock named 'TextBlock1'
+    TextBlock1 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock1"));
     // Get the TextBlock named 'InputTextBlock1'
     InputTextBlock1 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"InputTextBlock1"));
 }
 
 void ::JPG_Spinner::ExplanationProgressive::Connect(int connectionId, Platform::Object^ target)
 {
+    switch (connectionId)
+    {
+    case 1:
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerEntered +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&ExplanationProgressive::ButtonRightTextBlock_PointerEntered);
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerExited +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&ExplanationProgressive::ButtonRightTextBlock_PointerExited);
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&ExplanationProgressive::IncreaseProgressiveLevel);
+        break;
+    case 2:
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerEntered +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&ExplanationProgressive::ButtonLeftTextBlock_PointerEntered);
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerExited +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&ExplanationProgressive::ButtonLeftTextBlock_PointerExited);
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&ExplanationProgressive::DecreaseProgressiveLevel);
+        break;
+    }
     (void)connectionId; // Unused parameter
     (void)target; // Unused parameter
     _contentLoaded = true;

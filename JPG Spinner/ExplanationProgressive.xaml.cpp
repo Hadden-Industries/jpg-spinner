@@ -28,6 +28,8 @@ ExplanationProgressive::ExplanationProgressive()
 	_dispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread()->Dispatcher;
 
 	_resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+
+	vector = ref new Platform::Collections::Vector<Windows::UI::Xaml::Media::Imaging::WriteableBitmap^>();
 }
 
 void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
@@ -151,79 +153,159 @@ void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 
 		hr = frameDecode.Get()->QueryInterface(IID_PPV_ARGS(&pProgressive));
 
-		/*if (SUCCEEDED(hr))
+		if (SUCCEEDED(hr))
 		{
-		for (UINT uCurrentLevel = 0; SUCCEEDED(hr); uCurrentLevel++)
-		{
-		hr = pProgressive->SetCurrentLevel(uCurrentLevel);
-		if (WINCODEC_ERR_INVALIDPROGRESSIVELEVEL == hr)
-		{
-		// No more levels
+			// Do not use GetLevelCount, it requires all the data to be available up-front
+
+			for (UINT uCurrentLevel = 0; SUCCEEDED(hr); uCurrentLevel++)
+			{
+				hr = pProgressive->SetCurrentLevel(uCurrentLevel);
+
+				if (WINCODEC_ERR_INVALIDPROGRESSIVELEVEL == hr)
+				{
+					// No more levels
+					TextBlockProgressive->Text = "Progressive level " + currentLevel.ToString() + "/" + (vector->Size - 1U).ToString();
+
+					break;
+				}
+
+				if (SUCCEEDED(hr))
+				{
+					// Output the current level
+
+					Microsoft::WRL::ComPtr<IWICFormatConverter> pConverter;
+
+					if (SUCCEEDED(hr))
+					{
+						// Convert the image format to 32bppPBGRA
+						// (DXGI_FORMAT_B8G8R8A8_UNORM + D2D1_ALPHA_MODE_PREMULTIPLIED).
+						hr = wicFactory->CreateFormatConverter(&pConverter);
+					}
+
+					if (SUCCEEDED(hr))
+					{
+						hr = pConverter->Initialize(
+							//(colorContextCount == 0U) ? (IWICBitmapSource*)frameDecode.Get() : (IWICBitmapSource*)pColorTransform.Get(),
+							frameDecode.Get(),
+							GUID_WICPixelFormat32bppPBGRA,
+							WICBitmapDitherTypeNone,
+							NULL,
+							0.0f,
+							WICBitmapPaletteTypeMedianCut
+							);
+					}
+
+					if (FAILED(hr)) { throw Exception::CreateException(hr); }
+
+					auto writeableBitmap = ref new Windows::UI::Xaml::Media::Imaging::WriteableBitmap(width, height);
+
+					Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+
+					HRESULT hr = (reinterpret_cast<IUnknown*>(writeableBitmap->PixelBuffer))->QueryInterface<Windows::Storage::Streams::IBufferByteAccess>(&bufferByteAccess);
+					if (FAILED(hr)) { throw Exception::CreateException(hr); }
+
+					// Should not be freed; it doesn't belong to us.
+					byte* pixelData;
+
+					hr = bufferByteAccess->Buffer(&pixelData);
+					if (FAILED(hr)) { throw Exception::CreateException(hr); }
+
+					hr = pConverter->CopyPixels(nullptr, width * 4, width * height * 4, pixelData);
+					if (FAILED(hr)) { throw Exception::CreateException(hr); }
+
+					vector->Append(writeableBitmap);
+					
+					if (0U == uCurrentLevel)
+					{
+						currentLevel = uCurrentLevel;
+						this->DisplayImage->Source = vector->GetAt(currentLevel);
+					}
+				}
+			}
+		}
+
+	});
+}
+
+void JPG_Spinner::ExplanationProgressive::IncreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	UINT increment = 1U;
+
+	switch (vector->Size)
+	{
+	case 7U:
+		increment = 3U;
 		break;
-		}
+	case 10U:
+		increment = 3U;
+		break;
+	default:
+		increment = 1U;
+	}
 
-		if (SUCCEEDED(hr))
-		{
-		// Output the current level
-		hr = pBitmapFrame->CopyPixels(...);
-		}
-		}
-		}*/
+	if (currentLevel + increment < vector->Size)
+	{
+		currentLevel = currentLevel + increment;
+	}
+	else
+	{
+		currentLevel = 0U;
+	}
 
-		if (SUCCEEDED(hr))
-		{
-			UINT progressiveLevelCount = 0U;
+	TextBlockProgressive->Text = "Progressive level " + currentLevel.ToString() + "/" + (vector->Size - 1U).ToString();
 
-			pProgressive->GetLevelCount(&progressiveLevelCount);
+	this->DisplayImage->Source = vector->GetAt(currentLevel);
+}
 
-			hr = pProgressive->SetCurrentLevel(0U);
-		}
+void JPG_Spinner::ExplanationProgressive::DecreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	UINT increment = 1U;
 
-		Microsoft::WRL::ComPtr<IWICFormatConverter> pConverter;
+	switch (vector->Size)
+	{
+	case 7U:
+		increment = 3U;
+		break;
+	case 10U:
+		increment = 3U;
+		break;
+	default:
+		increment = 1U;
+	}
 
-		if (SUCCEEDED(hr))
-		{
-			// Convert the image format to 32bppPBGRA
-			// (DXGI_FORMAT_B8G8R8A8_UNORM + D2D1_ALPHA_MODE_PREMULTIPLIED).
-			hr = wicFactory->CreateFormatConverter(&pConverter);
-		}
+	if (static_cast<int>(currentLevel) - static_cast<int>(increment) >= 0)
+	{
+		currentLevel = currentLevel - increment;
+	}
+	else
+	{
+		currentLevel = vector->Size - 1U;
+	}
 
-		if (SUCCEEDED(hr))
-		{
-			hr = pConverter->Initialize(
-				//(colorContextCount == 0U) ? (IWICBitmapSource*)frameDecode.Get() : (IWICBitmapSource*)pColorTransform.Get(),
-				frameDecode.Get(),
-				GUID_WICPixelFormat32bppPBGRA,
-				WICBitmapDitherTypeNone,
-				NULL,
-				0.0f,
-				WICBitmapPaletteTypeMedianCut
-				);
-		}
+	TextBlockProgressive->Text = "Progressive level " + currentLevel.ToString() + "/" + (vector->Size - 1U).ToString();
 
-		if (FAILED(hr)) { throw Exception::CreateException(hr); }
+	this->DisplayImage->Source = vector->GetAt(currentLevel);
+}
 
-		_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
-			ref new Windows::UI::Core::DispatchedHandler([this, width, height, pConverter]()
-		{
-			auto writeableBitmap = ref new Windows::UI::Xaml::Media::Imaging::WriteableBitmap(width, height);
 
-			Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+void JPG_Spinner::ExplanationProgressive::ButtonLeftTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	VisualStateManager::GoToState(ButtonLeft, "PointerOverLeft", false);
+}
 
-			HRESULT hr = (reinterpret_cast<IUnknown*>(writeableBitmap->PixelBuffer))->QueryInterface<Windows::Storage::Streams::IBufferByteAccess>(&bufferByteAccess);
-			if (FAILED(hr)) { throw Exception::CreateException(hr); }
 
-			// Should not be freed; it doesn't belong to us.
-			byte* pixelData;
+void JPG_Spinner::ExplanationProgressive::ButtonLeftTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	VisualStateManager::GoToState(ButtonLeft, "NormalLeft", false);
+}
 
-			hr = bufferByteAccess->Buffer(&pixelData);
-			if (FAILED(hr)) { throw Exception::CreateException(hr); }
+void JPG_Spinner::ExplanationProgressive::ButtonRightTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	VisualStateManager::GoToState(ButtonRight, "PointerOverRight", false);
+}
 
-			hr = pConverter->CopyPixels(nullptr, width * 4, width * height * 4, pixelData);
-			if (FAILED(hr)) { throw Exception::CreateException(hr); }
 
-			this->DisplayImage->Source = writeableBitmap;
-		}));
-
-	}, concurrency::task_continuation_context::use_arbitrary());
+void JPG_Spinner::ExplanationProgressive::ButtonRightTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	VisualStateManager::GoToState(ButtonRight, "NormalRight", false);
 }
