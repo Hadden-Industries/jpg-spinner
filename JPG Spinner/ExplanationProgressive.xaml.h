@@ -20,6 +20,7 @@ namespace JPG_Spinner
 
 	protected:
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
+		virtual void OnNavigatedFrom(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
 
 	private:
 		Windows::UI::Core::CoreDispatcher^ _dispatcher;
@@ -27,6 +28,9 @@ namespace JPG_Spinner
 
 		Platform::Collections::Vector<Windows::UI::Xaml::Media::Imaging::WriteableBitmap^>^ vector;
 		UINT currentLevel;
+		Windows::Foundation::EventRegistrationToken keyDownToken;
+
+		void CoreWindow_KeyDown(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
 
 		void IncreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
 		void DecreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);

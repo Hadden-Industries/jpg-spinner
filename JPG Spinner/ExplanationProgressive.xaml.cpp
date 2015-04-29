@@ -32,6 +32,19 @@ ExplanationProgressive::ExplanationProgressive()
 	vector = ref new Platform::Collections::Vector<Windows::UI::Xaml::Media::Imaging::WriteableBitmap^>();
 }
 
+void ExplanationProgressive::CoreWindow_KeyDown(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args)
+{
+	switch (args->VirtualKey)
+	{
+	case Windows::System::VirtualKey::Left:
+		DecreaseProgressiveLevel(nullptr, nullptr);
+		break;
+	case Windows::System::VirtualKey::Right:
+		IncreaseProgressiveLevel(nullptr, nullptr);
+		break;
+	}
+}
+
 void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 {
 	auto uri = ref new Uri("ms-appx:///assets/progressive.jpg");
@@ -223,8 +236,16 @@ void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 				}
 			}
 		}
-
+	})
+		.then([this]()
+	{
+		keyDownToken = Windows::UI::Core::CoreWindow::GetForCurrentThread()->KeyDown += ref new TypedEventHandler<Windows::UI::Core::CoreWindow^, Windows::UI::Core::KeyEventArgs^>(this, &ExplanationProgressive::CoreWindow_KeyDown);
 	});
+}
+
+void ExplanationProgressive::OnNavigatedFrom(NavigationEventArgs^ e)
+{
+	Windows::UI::Core::CoreWindow::GetForCurrentThread()->KeyDown -= keyDownToken;
 }
 
 void JPG_Spinner::ExplanationProgressive::IncreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
