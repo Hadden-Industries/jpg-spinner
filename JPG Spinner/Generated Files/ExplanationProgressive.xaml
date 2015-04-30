@@ -15,7 +15,11 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" x:Name="InputTextBlock1" Style="{StaticResource SubheaderTextBlockStyle}" Text="The &quot;Progressive&quot; setting" TextWrapping="Wrap"></TextBlock>
+            <TextBlock x:Name="ExplanationProgressiveHeader" x:Uid="ExplanationProgressiveHeader"
+                       Grid.Row="0"
+                       Style="{StaticResource SubheaderTextBlockStyle}"
+                       Text="The &quot;Progressive&quot; setting"
+                       TextWrapping="Wrap"/>
         </Grid>
         <Grid x:Name="Output" Grid.Row="1">
             <Path Fill="#FFFFFF"
@@ -49,63 +53,18 @@
                                 <ColumnDefinition Width="2*"/>
                                 <ColumnDefinition Width="1*"/>
                             </Grid.ColumnDefinitions>
-                            <Image Grid.Column="0" x:Name="DisplayImage" Source="/Assets/progressive.jpg"/>
-                            <UserControl x:Name="ButtonLeft" Grid.Column="0">
-                                <TextBlock x:ConnectionId='2' x:Name="ButtonLeftTextBlock"
-                                           Foreground="White"
-                                           FontFamily="Segoe UI Symbol"
-                                           FontSize="40"
-                                           HorizontalAlignment="Left" VerticalAlignment="Center"
-                                           Opacity="0.7"
-                                                                                              
-                                                                                            
-                                                                                     
-                                           Text="">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStatesLeft">
-                                                <VisualState x:Name="NormalLeft">
-                                                    <Storyboard>
-                                                        <!--<ColorAnimation Duration="0" To="LightGray" Storyboard.TargetName="ButtonLeftTextBlock" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"/>-->
-                                                        <DoubleAnimation Duration="0:0:0.2" To="0.7" Storyboard.TargetName="ButtonLeftTextBlock" Storyboard.TargetProperty="Opacity"/>
-                                                    </Storyboard>
-                                                </VisualState>
-                                                <VisualState x:Name="PointerOverLeft">
-                                                    <Storyboard>
-                                                        <DoubleAnimation Duration="0:0:0.2" To="1.0" Storyboard.TargetName="ButtonLeftTextBlock" Storyboard.TargetProperty="Opacity"/>
-                                                    </Storyboard>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                </TextBlock>
-                            </UserControl>
-                            <TextBlock Grid.Column="0" x:Name="TextBlockProgressive" Margin="0,20,0,0" Text="Progressive level 0/0" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
-                            <UserControl x:Name="ButtonRight" Grid.Column="0">
-                                <TextBlock x:ConnectionId='1' x:Name="ButtonRightTextBlock"
-                                           Foreground="White"
-                                           FontFamily="Segoe UI Symbol"
-                                           FontSize="40"
-                                           HorizontalAlignment="Right" VerticalAlignment="Center"
-                                           Opacity="0.7"
-                                                                                               
-                                                                                             
-                                                                                     
-                                           Text="">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup x:Name="CommonStatesRight">
-                                                <VisualState x:Name="NormalRight">
-                                                    <Storyboard>
-                                                        <DoubleAnimation Duration="0:0:0.2" To="0.7" Storyboard.TargetName="ButtonRightTextBlock" Storyboard.TargetProperty="Opacity"/>
-                                                    </Storyboard>
-                                                </VisualState>
-                                                <VisualState x:Name="PointerOverRight">
-                                                    <Storyboard>
-                                                        <DoubleAnimation Duration="0:0:0.2" To="1.0" Storyboard.TargetName="ButtonRightTextBlock" Storyboard.TargetProperty="Opacity"/>
-                                                    </Storyboard>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                </TextBlock>
-                            </UserControl>
+                            <FlipView x:ConnectionId='1' x:Name="FlipView1" Grid.Column="0" UseTouchAnimationsForAllNavigation="False"                                    >
+                                <FlipView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Image Source="{Binding Image}" HorizontalAlignment="Center"/>
+                                            <Border Background="#A5000000" VerticalAlignment="Bottom">
+                                                <TextBlock Text="{Binding Caption}" FontFamily="Segoe UI" FontSize="24" Foreground="#CCFFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,5,0,5"/>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </FlipView.ItemTemplate>
+                            </FlipView>
                             <Grid Column="1">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1*"/>

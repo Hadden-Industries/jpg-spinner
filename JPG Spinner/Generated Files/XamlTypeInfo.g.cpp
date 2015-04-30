@@ -107,6 +107,11 @@
         return ref new XamlSystemBaseType(typeName);
     }
 
+    if (typeName == L"Windows.UI.Xaml.Media.Imaging.WriteableBitmap")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
     if (typeName == L"JPG_Spinner.ExplanationCrop")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.Page"));
@@ -237,6 +242,17 @@
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
         userType->SetIsReturnTypeStub();
+        return userType;
+    }
+
+    if (typeName == L"JPG_Spinner.ProgressiveDataItem")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->AddMemberName(L"Image");
+        userType->AddMemberName(L"Caption");
+        userType->SetIsBindable();
+        userType->SetIsLocalType();
         return userType;
     }
 
@@ -434,6 +450,44 @@
             {
                 auto that = (::JPG_Spinner::Item^)instance;
                 that->StorageFile = (::Windows::Storage::StorageFile^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.ProgressiveDataItem.Image")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Image", L"Windows.UI.Xaml.Media.Imaging.WriteableBitmap");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::ProgressiveDataItem^)instance;
+                return that->Image;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::ProgressiveDataItem^)instance;
+                that->Image = (::Windows::UI::Xaml::Media::Imaging::WriteableBitmap^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.ProgressiveDataItem.Caption")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Caption", L"String");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::ProgressiveDataItem^)instance;
+                return that->Caption;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::ProgressiveDataItem^)instance;
+                that->Caption = (::Platform::String^)value;
             };
         return xamlMember;
     }

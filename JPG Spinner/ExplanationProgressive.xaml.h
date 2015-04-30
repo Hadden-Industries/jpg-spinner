@@ -9,6 +9,73 @@
 
 namespace JPG_Spinner
 {
+	[Windows::UI::Xaml::Data::Bindable]
+	[Windows::Foundation::Metadata::WebHostHiddenAttribute]
+	public ref class ProgressiveDataItem sealed
+	{
+		Platform::String^ _caption;
+		Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ _image;
+
+		event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _PropertyChanged;
+
+	public:
+		ProgressiveDataItem(Platform::String^ caption, Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ image);
+
+		void OnPropertyChanged(Platform::String^ propertyName)
+		{
+			Windows::UI::Xaml::Data::PropertyChangedEventArgs^ pcea = ref new  Windows::UI::Xaml::Data::PropertyChangedEventArgs(propertyName);
+			_PropertyChanged(this, pcea);
+		}
+
+		// Caption
+		property Platform::String^ Caption
+		{
+			Platform::String^ get()
+			{
+				return _caption;
+			}
+			void set(Platform::String^ value)
+			{
+				_caption = value;
+				OnPropertyChanged("Caption");
+			}
+		}
+
+		// Image
+		property Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ Image
+		{
+			Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ get()
+			{
+				return _image;
+			}
+			void set(Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ value)
+			{
+				_image = value;
+				OnPropertyChanged("Image");
+			}
+		}
+	};
+
+	[Windows::Foundation::Metadata::WebHostHiddenAttribute]
+	public ref class ProgressiveData sealed
+	{
+		Windows::UI::Xaml::Interop::IBindableObservableVector^ _items;
+
+	public:
+		ProgressiveData()
+		{
+			_items = ref new Platform::Collections::Vector<ProgressiveDataItem^>();
+		}
+
+		property Windows::UI::Xaml::Interop::IBindableObservableVector^ Items
+		{
+			Windows::UI::Xaml::Interop::IBindableObservableVector^ get()
+			{
+				return _items;
+			}
+		}
+	};
+
 	/// <summary>
 	/// An empty page that can be used on its own or navigated to within a Frame.
 	/// </summary>
@@ -20,25 +87,13 @@ namespace JPG_Spinner
 
 	protected:
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
-		virtual void OnNavigatedFrom(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
 
 	private:
 		Windows::UI::Core::CoreDispatcher^ _dispatcher;
 		Windows::ApplicationModel::Resources::ResourceLoader^ _resourceLoader;
 
-		Platform::Collections::Vector<Windows::UI::Xaml::Media::Imaging::WriteableBitmap^>^ vector;
-		UINT currentLevel;
-		Windows::Foundation::EventRegistrationToken keyDownToken;
-
-		void CoreWindow_KeyDown(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args);
-
-		void IncreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
-		void DecreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
-
-		void ButtonLeftTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
-		void ButtonLeftTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
-
-		void ButtonRightTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
-		void ButtonRightTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+		ProgressiveData^ data;
+		
+		void FlipView1_SizeChanged(Platform::Object^ sender, Windows::UI::Xaml::SizeChangedEventArgs^ e);
 	};
 }

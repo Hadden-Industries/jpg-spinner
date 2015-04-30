@@ -199,4 +199,13 @@
   <data name="imageReadOnly" xml:space="preserve">
     <value>This image is read-only</value>
   </data>
+  <data name="ExplanationCropHeader.Text" xml:space="preserve">
+    <value>The "Crop" setting</value>
+  </data>
+  <data name="ExplanationProgressiveHeader.Text" xml:space="preserve">
+    <value>The "Progressive" setting</value>
+  </data>
+  <data name="progressiveLevel" xml:space="preserve">
+    <value>Progressive level</value>
+  </data>
 </root>

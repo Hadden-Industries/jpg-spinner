@@ -13,18 +13,10 @@ namespace Windows {
         namespace Xaml {
             namespace Controls {
                 ref class Grid;
-                ref class Image;
-                ref class UserControl;
+                ref class FlipView;
                 ref class TextBlock;
+                ref class Image;
             }
-        }
-    }
-}
-namespace Windows {
-    namespace UI {
-        namespace Xaml {
-            ref class VisualStateGroup;
-            ref class VisualState;
         }
     }
 }
@@ -44,22 +36,11 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Controls::Grid^ LayoutRoot;
         private: ::Windows::UI::Xaml::Controls::Grid^ Input;
         private: ::Windows::UI::Xaml::Controls::Grid^ Output;
-        private: ::Windows::UI::Xaml::Controls::Image^ DisplayImage;
-        private: ::Windows::UI::Xaml::Controls::UserControl^ ButtonLeft;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockProgressive;
-        private: ::Windows::UI::Xaml::Controls::UserControl^ ButtonRight;
+        private: ::Windows::UI::Xaml::Controls::FlipView^ FlipView1;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlock2;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ ButtonRightTextBlock;
-        private: ::Windows::UI::Xaml::VisualStateGroup^ CommonStatesRight;
-        private: ::Windows::UI::Xaml::VisualState^ NormalRight;
-        private: ::Windows::UI::Xaml::VisualState^ PointerOverRight;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ ButtonLeftTextBlock;
-        private: ::Windows::UI::Xaml::VisualStateGroup^ CommonStatesLeft;
-        private: ::Windows::UI::Xaml::VisualState^ NormalLeft;
-        private: ::Windows::UI::Xaml::VisualState^ PointerOverLeft;
         private: ::Windows::UI::Xaml::Controls::Image^ Image1;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlock1;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ InputTextBlock1;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ ExplanationProgressiveHeader;
     };
 }
 

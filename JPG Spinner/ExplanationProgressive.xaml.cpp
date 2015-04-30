@@ -21,6 +21,12 @@ using namespace Windows::UI::Xaml::Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
+ProgressiveDataItem::ProgressiveDataItem(Platform::String^ caption, Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ image)
+{
+	_caption = caption;
+	_image = image;
+}
+
 ExplanationProgressive::ExplanationProgressive()
 {
 	InitializeComponent();
@@ -29,20 +35,9 @@ ExplanationProgressive::ExplanationProgressive()
 
 	_resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
 
-	vector = ref new Platform::Collections::Vector<Windows::UI::Xaml::Media::Imaging::WriteableBitmap^>();
-}
+	data = ref new ProgressiveData();
 
-void ExplanationProgressive::CoreWindow_KeyDown(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::KeyEventArgs^ args)
-{
-	switch (args->VirtualKey)
-	{
-	case Windows::System::VirtualKey::Left:
-		DecreaseProgressiveLevel(nullptr, nullptr);
-		break;
-	case Windows::System::VirtualKey::Right:
-		IncreaseProgressiveLevel(nullptr, nullptr);
-		break;
-	}
+	FlipView1->ItemsSource = data->Items;
 }
 
 void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
@@ -75,7 +70,7 @@ void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 
 		Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frameDecode;
 
-		hr = bitmapDecoder->GetFrame(0, &frameDecode);
+		hr = bitmapDecoder->GetFrame(0U, &frameDecode);
 		if (FAILED(hr)) { throw Exception::CreateException(hr); }
 
 		UINT width, height;
@@ -168,17 +163,18 @@ void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 
 		if (SUCCEEDED(hr))
 		{
-			// Do not use GetLevelCount, it requires all the data to be available up-front
-
-			for (UINT uCurrentLevel = 0; SUCCEEDED(hr); uCurrentLevel++)
+			for (unsigned char uCurrentLevel = 0U; SUCCEEDED(hr); uCurrentLevel++)
 			{
-				hr = pProgressive->SetCurrentLevel(uCurrentLevel);
+				if (uCurrentLevel % 3U)
+				{
+					continue;
+				}
+
+				hr = pProgressive->SetCurrentLevel(static_cast<UINT>(uCurrentLevel));
 
 				if (WINCODEC_ERR_INVALIDPROGRESSIVELEVEL == hr)
 				{
-					// No more levels
-					TextBlockProgressive->Text = "Progressive level " + currentLevel.ToString() + "/" + (vector->Size - 1U).ToString();
-
+					// No more levels				
 					break;
 				}
 
@@ -218,7 +214,7 @@ void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 					if (FAILED(hr)) { throw Exception::CreateException(hr); }
 
 					// Should not be freed; it doesn't belong to us.
-					byte* pixelData;
+					byte* pixelData = nullptr;
 
 					hr = bufferByteAccess->Buffer(&pixelData);
 					if (FAILED(hr)) { throw Exception::CreateException(hr); }
@@ -226,107 +222,20 @@ void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 					hr = pConverter->CopyPixels(nullptr, width * 4, width * height * 4, pixelData);
 					if (FAILED(hr)) { throw Exception::CreateException(hr); }
 
-					vector->Append(writeableBitmap);
-					
-					if (0U == uCurrentLevel)
-					{
-						currentLevel = uCurrentLevel;
-						this->DisplayImage->Source = vector->GetAt(currentLevel);
-					}
+					UINT levels = 0U;
+
+					// For streaming data, should not use GetLevelCount, as it requires all the data to be available up-front
+					hr = pProgressive->GetLevelCount(&levels);
+					if (FAILED(hr)) { throw Exception::CreateException(hr); }
+
+					data->Items->Append(ref new ProgressiveDataItem(_resourceLoader->GetString("progressiveLevel") + " " + uCurrentLevel.ToString() + "/" + (levels - 1U).ToString(), writeableBitmap));
 				}
 			}
 		}
-	})
-		.then([this]()
-	{
-		keyDownToken = Windows::UI::Core::CoreWindow::GetForCurrentThread()->KeyDown += ref new TypedEventHandler<Windows::UI::Core::CoreWindow^, Windows::UI::Core::KeyEventArgs^>(this, &ExplanationProgressive::CoreWindow_KeyDown);
 	});
 }
 
-void ExplanationProgressive::OnNavigatedFrom(NavigationEventArgs^ e)
+void JPG_Spinner::ExplanationProgressive::FlipView1_SizeChanged(Platform::Object^ sender, Windows::UI::Xaml::SizeChangedEventArgs^ e)
 {
-	Windows::UI::Core::CoreWindow::GetForCurrentThread()->KeyDown -= keyDownToken;
-}
-
-void JPG_Spinner::ExplanationProgressive::IncreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	UINT increment = 1U;
-
-	switch (vector->Size)
-	{
-	case 7U:
-		increment = 3U;
-		break;
-	case 10U:
-		increment = 3U;
-		break;
-	default:
-		increment = 1U;
-	}
-
-	if (currentLevel + increment < vector->Size)
-	{
-		currentLevel = currentLevel + increment;
-	}
-	else
-	{
-		currentLevel = 0U;
-	}
-
-	TextBlockProgressive->Text = "Progressive level " + currentLevel.ToString() + "/" + (vector->Size - 1U).ToString();
-
-	this->DisplayImage->Source = vector->GetAt(currentLevel);
-}
-
-void JPG_Spinner::ExplanationProgressive::DecreaseProgressiveLevel(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	UINT increment = 1U;
-
-	switch (vector->Size)
-	{
-	case 7U:
-		increment = 3U;
-		break;
-	case 10U:
-		increment = 3U;
-		break;
-	default:
-		increment = 1U;
-	}
-
-	if (static_cast<int>(currentLevel) - static_cast<int>(increment) >= 0)
-	{
-		currentLevel = currentLevel - increment;
-	}
-	else
-	{
-		currentLevel = vector->Size - 1U;
-	}
-
-	TextBlockProgressive->Text = "Progressive level " + currentLevel.ToString() + "/" + (vector->Size - 1U).ToString();
-
-	this->DisplayImage->Source = vector->GetAt(currentLevel);
-}
-
-
-void JPG_Spinner::ExplanationProgressive::ButtonLeftTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	VisualStateManager::GoToState(ButtonLeft, "PointerOverLeft", false);
-}
-
-
-void JPG_Spinner::ExplanationProgressive::ButtonLeftTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	VisualStateManager::GoToState(ButtonLeft, "NormalLeft", false);
-}
-
-void JPG_Spinner::ExplanationProgressive::ButtonRightTextBlock_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	VisualStateManager::GoToState(ButtonRight, "PointerOverRight", false);
-}
-
-
-void JPG_Spinner::ExplanationProgressive::ButtonRightTextBlock_PointerExited(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	VisualStateManager::GoToState(ButtonRight, "NormalRight", false);
+	FlipView1->Height = (static_cast<double>(2.0) / static_cast<double>(3.0)) * (1.01 * FlipView1->ActualWidth);
 }

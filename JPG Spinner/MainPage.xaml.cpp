@@ -69,23 +69,32 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 
 void JPG_Spinner::MainPage::TextBlockCrop_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
-	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationCrop", Windows::UI::Xaml::Interop::TypeKind::Custom };
+	if (buttonIsSelectFiles)
+	{
+		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationCrop", Windows::UI::Xaml::Interop::TypeKind::Custom };
 
-	ScenarioFrame->Navigate(scenarioType, this);
+		ScenarioFrame->Navigate(scenarioType, this);
+	}
 }
 
 void JPG_Spinner::MainPage::TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
-	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationProgressive", Windows::UI::Xaml::Interop::TypeKind::Custom };
+	if (buttonIsSelectFiles)
+	{
+		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationProgressive", Windows::UI::Xaml::Interop::TypeKind::Custom };
 
-	ScenarioFrame->Navigate(scenarioType, this);
+		ScenarioFrame->Navigate(scenarioType, this);
+	}
 }
 
 void JPG_Spinner::MainPage::HyperLinkButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.WebPage", Windows::UI::Xaml::Interop::TypeKind::Custom };
+	if (buttonIsSelectFiles)
+	{
+		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.WebPage", Windows::UI::Xaml::Interop::TypeKind::Custom };
 
-	ScenarioFrame->Navigate(scenarioType, sender);
+		ScenarioFrame->Navigate(scenarioType, sender);
+	}
 }
 
 void JPG_Spinner::MainPage::SpinLogo_Start()

@@ -32,8 +32,8 @@ void ::JPG_Spinner::ExplanationCrop::InitializeComponent()
     Image1 = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Image1"));
     // Get the TextBlock named 'TextBlock1'
     TextBlock1 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock1"));
-    // Get the TextBlock named 'InputTextBlock1'
-    InputTextBlock1 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"InputTextBlock1"));
+    // Get the TextBlock named 'ExplanationCropHeader'
+    ExplanationCropHeader = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ExplanationCropHeader"));
 }
 
 void ::JPG_Spinner::ExplanationCrop::Connect(int connectionId, Platform::Object^ target)

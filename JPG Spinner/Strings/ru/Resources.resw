@@ -136,7 +136,7 @@
     <value>Прогрессивная развертка</value>
   </data>
   <data name="CheckBoxCrop.Content" xml:space="preserve">
-    <value>Усекать</value>
+    <value>Обрезать</value>
   </data>
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
     <value>Политика Конфиденциальности</value>
@@ -179,7 +179,7 @@
     <value>Нажмите здесь, чтобы просмотреть дополнительную информацию об этом варианте</value>
   </data>
   <data name="cropOptionRequired" xml:space="preserve">
-    <value>Включите опцию "Усекать" чтобы повернуть это изображение</value>
+    <value>Включите параметр "Обрезать" чтобы повернуть это изображение</value>
   </data>
   <data name="cancel" xml:space="preserve">
     <value>Отмена</value>
@@ -194,6 +194,15 @@
     <value>Выбор Файлов</value>
   </data>
   <data name="imageReadOnly" xml:space="preserve">
-    <value>This image is read-only</value>
+    <value>У этого изображения атрибут только для чтения</value>
+  </data>
+  <data name="ExplanationCropHeader.Text" xml:space="preserve">
+    <value>Параметр "Обрезать"</value>
+  </data>
+  <data name="ExplanationProgressiveHeader.Text" xml:space="preserve">
+    <value>Параметр "Прогрессивная развертка"</value>
+  </data>
+  <data name="progressiveLevel" xml:space="preserve">
+    <value>Прогрессивный уровень</value>
   </data>
 </root>

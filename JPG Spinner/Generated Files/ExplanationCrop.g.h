@@ -37,7 +37,7 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Controls::Grid^ Output;
         private: ::Windows::UI::Xaml::Controls::Image^ Image1;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlock1;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ InputTextBlock1;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ ExplanationCropHeader;
     };
 }
 
