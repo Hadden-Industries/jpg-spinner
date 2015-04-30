@@ -35,7 +35,7 @@ namespace JPG_Spinner
 		Platform::String^  _Title;
 		Platform::String^  _Error;
 		Windows::UI::Xaml::Media::ImageSource^ _Image;
-		unsigned short _OrientationFlag;
+		unsigned char _OrientationFlag;
 
 		event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _PropertyChanged;
 
@@ -44,8 +44,11 @@ namespace JPG_Spinner
 
 		void OnPropertyChanged(Platform::String^ propertyName)
 		{
-			Windows::UI::Xaml::Data::PropertyChangedEventArgs^ pcea = ref new Windows::UI::Xaml::Data::PropertyChangedEventArgs(propertyName);
-			_PropertyChanged(this, pcea);
+			if (nullptr != propertyName)
+			{
+				Windows::UI::Xaml::Data::PropertyChangedEventArgs^ pcea = ref new Windows::UI::Xaml::Data::PropertyChangedEventArgs(propertyName);
+				_PropertyChanged(this, pcea);
+			}
 		}
 
 		//StorageFile
@@ -57,8 +60,11 @@ namespace JPG_Spinner
 			}
 			void set(Windows::Storage::StorageFile^ value)
 			{
-				_StorageFile = value;
-				OnPropertyChanged("StorageFile");
+				if (nullptr == _StorageFile || !_StorageFile->Equals(value))
+				{
+					_StorageFile = value;
+					OnPropertyChanged("StorageFile");
+				}
 			}
 		}
 
@@ -71,8 +77,11 @@ namespace JPG_Spinner
 			}
 			void set(uint32 value)
 			{
-				_ID = value;
-				OnPropertyChanged("ID");
+				if (_ID != value)
+				{
+					_ID = value;
+					OnPropertyChanged("ID");
+				}
 			}
 		}
 
@@ -85,8 +94,11 @@ namespace JPG_Spinner
 			}
 			void set(Platform::String^ value)
 			{
-				_MRUToken = value;
-				OnPropertyChanged("MRUToken");
+				if (!_MRUToken->Equals(value))
+				{
+					_MRUToken = value;
+					OnPropertyChanged("MRUToken");
+				}
 			}
 		}
 
@@ -99,8 +111,11 @@ namespace JPG_Spinner
 			}
 			void set(Platform::String^ value)
 			{
-				_Title = value;
-				OnPropertyChanged("Title");
+				if (!_Title->Equals(value))
+				{
+					_Title = value;
+					OnPropertyChanged("Title");
+				}
 			}
 		}
 
@@ -113,8 +128,11 @@ namespace JPG_Spinner
 			}
 			void set(Platform::String^ value)
 			{
-				_Error = value;
-				OnPropertyChanged("Error");
+				if (!_Error->Equals(value))
+				{
+					_Error = value;
+					OnPropertyChanged("Error");
+				}
 			}
 		}
 
@@ -127,22 +145,28 @@ namespace JPG_Spinner
 			}
 			void set(Windows::UI::Xaml::Media::ImageSource^ value)
 			{
-				_Image = value;
-				OnPropertyChanged("Image");
+				if (nullptr == _Image || !_Image->Equals(value))
+				{
+					_Image = value;
+					OnPropertyChanged("Image");
+				}
 			}
 		}
 
 		//OrientationFlag
-		property unsigned short OrientationFlag
+		property unsigned char OrientationFlag
 		{
-			unsigned short get()
+			unsigned char get()
 			{
 				return _OrientationFlag;
 			}
-			void set(unsigned short value)
+			void set(unsigned char value)
 			{
-				_OrientationFlag = value;
-				OnPropertyChanged("OrientationFlag");
+				if (_OrientationFlag != value)
+				{
+					_OrientationFlag = value;
+					OnPropertyChanged("OrientationFlag");
+				}
 			}
 		}
 	};

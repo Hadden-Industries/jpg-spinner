@@ -23,7 +23,14 @@ using namespace Windows::UI::Xaml::Navigation;
 
 ProgressiveDataItem::ProgressiveDataItem(Platform::String^ caption, Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ image)
 {
-	_caption = caption;
+	if (nullptr == caption)
+	{
+		_caption = "";
+	}
+	else
+	{
+		_caption = caption;
+	}
 	_image = image;
 }
 
@@ -42,6 +49,13 @@ ExplanationProgressive::ExplanationProgressive()
 
 concurrency::task<void> ExplanationProgressive::LoadStorageFileAsync(Windows::Storage::StorageFile^ storageFile)
 {
+	if (nullptr == storageFile)
+	{
+		// Do not throw, just create an empty task
+		//throw Platform::COMException::CreateException(E_POINTER);
+		return concurrency::create_task([]{});
+	}
+
 	return concurrency::create_task(storageFile->OpenAsync(Windows::Storage::FileAccessMode::Read))
 		.then([this](Windows::Storage::Streams::IRandomAccessStream^ inputStream)
 	{
@@ -171,6 +185,7 @@ concurrency::task<void> ExplanationProgressive::LoadStorageFileAsync(Windows::St
 		{
 			if (GUID_ContainerFormatJpeg == containerFormatGUID)
 			{
+				// discard every level that isn't a multiple of 3
 				if (uCurrentLevel % 3U)
 				{
 					continue;
@@ -274,7 +289,9 @@ void JPG_Spinner::ExplanationProgressive::ExplanationProgressiveButton_Click(Pla
 	openPicker->FileTypeFilter->Append(".jif");
 	openPicker->FileTypeFilter->Append(".jfif");
 	openPicker->FileTypeFilter->Append(".jfi");
+#if _DEBUG
 	openPicker->FileTypeFilter->Append(".png");
+#endif
 
 	concurrency::create_task(openPicker->PickSingleFileAsync())
 		.then([this](Windows::Storage::StorageFile^ storageFile)

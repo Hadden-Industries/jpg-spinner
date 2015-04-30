@@ -98,6 +98,10 @@ void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target
         (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
             ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&MainPage::TextBlockProgressive_PointerReleased);
         break;
+    case 9:
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&MainPage::Logo_PointerReleased);
+        break;
     }
     (void)connectionId; // Unused parameter
     (void)target; // Unused parameter

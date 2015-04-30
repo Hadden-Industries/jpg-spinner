@@ -222,7 +222,7 @@
         return userType;
     }
 
-    if (typeName == L"UInt16")
+    if (typeName == L"Byte")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"System.ValueType"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
@@ -319,12 +319,12 @@
 
     if (longMemberName == L"JPG_Spinner.Item.OrientationFlag")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"OrientationFlag", L"UInt16");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"OrientationFlag", L"Byte");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
                 auto that = (::JPG_Spinner::Item^)instance;
-                auto value = ref new ::Platform::Box<::default::uint16>(that->OrientationFlag);
+                auto value = ref new ::Platform::Box<::default::uint8>(that->OrientationFlag);
                 return value;
             };
 
@@ -332,7 +332,7 @@
             [](Object^ instance, Object^ value) -> void
             {
                 auto that = (::JPG_Spinner::Item^)instance;
-                auto boxedValue = (::Platform::IBox<::default::uint16>^)value;
+                auto boxedValue = (::Platform::IBox<::default::uint8>^)value;
                 that->OrientationFlag = boxedValue->Value;
             };
         return xamlMember;

@@ -268,3 +268,16 @@ void JPG_Spinner::MainPage::CheckBoxCrop_Loaded(Platform::Object^ sender, Window
 		}
 	});
 }
+
+void JPG_Spinner::MainPage::Logo_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	if (buttonIsSelectFiles && Windows::UI::Xaml::Media::Animation::ClockState::Active != SpinLogo->GetCurrentState())
+	{
+		if (Windows::UI::Xaml::Media::Animation::ClockState::Filling == SpinLogo->GetCurrentState())
+		{
+			SpinLogo->Stop();
+		}
+
+		SpinLogo->Begin();
+	}
+}

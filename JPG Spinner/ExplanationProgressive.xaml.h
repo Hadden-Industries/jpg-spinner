@@ -23,8 +23,11 @@ namespace JPG_Spinner
 
 		void OnPropertyChanged(Platform::String^ propertyName)
 		{
-			Windows::UI::Xaml::Data::PropertyChangedEventArgs^ pcea = ref new  Windows::UI::Xaml::Data::PropertyChangedEventArgs(propertyName);
-			_PropertyChanged(this, pcea);
+			if (nullptr != propertyName)
+			{
+				Windows::UI::Xaml::Data::PropertyChangedEventArgs^ pcea = ref new  Windows::UI::Xaml::Data::PropertyChangedEventArgs(propertyName);
+				_PropertyChanged(this, pcea);
+			}
 		}
 
 		// Caption
@@ -36,8 +39,11 @@ namespace JPG_Spinner
 			}
 			void set(Platform::String^ value)
 			{
-				_caption = value;
-				OnPropertyChanged("Caption");
+				if (!_caption->Equals(value))
+				{
+					_caption = value;
+					OnPropertyChanged("Caption");
+				}
 			}
 		}
 
@@ -50,8 +56,11 @@ namespace JPG_Spinner
 			}
 			void set(Windows::UI::Xaml::Media::Imaging::WriteableBitmap^ value)
 			{
-				_image = value;
-				OnPropertyChanged("Image");
+				if (nullptr == _image || !_image->Equals(value))
+				{
+					_image = value;
+					OnPropertyChanged("Image");
+				}
 			}
 		}
 	};

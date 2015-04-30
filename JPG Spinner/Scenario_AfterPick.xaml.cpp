@@ -32,89 +32,7 @@ using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Media;
 
-static HRESULT PROPVAR_ConvertNumber(
-	PROPVARIANT *pv,
-	int dest_bits,
-	BOOL dest_signed,
-	LONGLONG *res
-	)
-{
-	BOOL src_signed;
-
-	switch (pv->vt)
-	{
-	case VT_I1:
-		src_signed = TRUE;
-		*res = pv->cVal;
-		break;
-	case VT_UI1:
-		src_signed = FALSE;
-		*res = pv->bVal;
-		break;
-	case VT_I2:
-		src_signed = TRUE;
-		*res = pv->iVal;
-		break;
-	case VT_UI2:
-		src_signed = FALSE;
-		*res = pv->uiVal;
-		break;
-	case VT_I4:
-		src_signed = TRUE;
-		*res = pv->lVal;
-		break;
-	case VT_UI4:
-		src_signed = FALSE;
-		*res = pv->ulVal;
-		break;
-	case VT_I8:
-		src_signed = TRUE;
-		*res = pv->hVal.QuadPart;
-		break;
-	case VT_UI8:
-		src_signed = FALSE;
-		*res = pv->uhVal.QuadPart;
-		break;
-	case VT_EMPTY:
-		src_signed = FALSE;
-		*res = 0;
-		break;
-	default:
-		return E_NOTIMPL;
-	}
-
-	if (*res < 0 && src_signed != dest_signed)
-		return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
-
-	if (dest_bits < 64)
-	{
-		if (dest_signed)
-		{
-			if (*res >= ((LONGLONG)1 << (dest_bits - 1)) ||
-				*res < ((LONGLONG)-1 << (dest_bits - 1)))
-				return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
-		}
-		else
-		{
-			if ((ULONGLONG)(*res) >= ((ULONGLONG)1 << dest_bits))
-				return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
-		}
-	}
-
-	return S_OK;
-}
-
-HRESULT WINAPI PropVariantToUInt16(PROPVARIANT *propvarIn, USHORT *ret)
-{
-	LONGLONG res;
-	HRESULT hr;
-
-	hr = PROPVAR_ConvertNumber(propvarIn, 16, FALSE, &res);
-	if (SUCCEEDED(hr)) *ret = (USHORT)res;
-	return hr;
-}
-
-HRESULT GetJPEGOrientationFlag(IStream * FileStream, USHORT &OrientationFlag, IWICImagingFactory * pIWICImagingFactory)
+HRESULT GetJPEGOrientationFlag(IStream * FileStream, unsigned char &OrientationFlag, IWICImagingFactory * pIWICImagingFactory)
 {
 	Microsoft::WRL::ComPtr<IWICBitmapDecoder> pDecoder;
 	Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> pSource;
@@ -176,7 +94,7 @@ HRESULT GetJPEGOrientationFlag(IStream * FileStream, USHORT &OrientationFlag, IW
 
 		if (SUCCEEDED(hr))
 		{
-			hr = PropVariantToUInt16(&propvariantOrientationFlag, &OrientationFlag);
+			OrientationFlag = static_cast<unsigned char>(propvariantOrientationFlag.uiVal);
 		}
 
 		PropVariantClear(&propvariantOrientationFlag);
@@ -185,7 +103,7 @@ HRESULT GetJPEGOrientationFlag(IStream * FileStream, USHORT &OrientationFlag, IW
 	return hr;
 }
 
-HRESULT SetJPEGOrientationFlag(IStream * FileStream, const USHORT OrientationFlag, IWICImagingFactory * pIWICImagingFactory)
+HRESULT SetJPEGOrientationFlag(IStream * FileStream, const unsigned char OrientationFlag, IWICImagingFactory * pIWICImagingFactory)
 {
 	Microsoft::WRL::ComPtr<IWICBitmapDecoder> pDecoder;
 	Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> pSource;
@@ -238,7 +156,7 @@ HRESULT SetJPEGOrientationFlag(IStream * FileStream, const USHORT OrientationFla
 			PropVariantInit(&value);
 
 			value.vt = VT_UI2;
-			value.uiVal = OrientationFlag;
+			value.uiVal = static_cast<USHORT>(OrientationFlag);
 
 			hr = pSource->GetMetadataQueryReader(&pQueryReader);
 
@@ -406,7 +324,7 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 
 concurrency::task<HRESULT> CreateReorientedTempFileAsync(
 	Windows::Storage::StorageFile^ originalFile,
-	USHORT orientationFlag,
+	unsigned char orientationFlag,
 	Platform::String^ tempFileName,
 	BOOL trim = FALSE,
 	BOOL progressive = TRUE
@@ -1093,7 +1011,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				{
 					concurrency::interruption_point();
 
-					USHORT OrientationFlagValue = 0U;
+					unsigned char OrientationFlagValue = 0U;
 
 					hr = GetJPEGOrientationFlag(pIStream.Get(), OrientationFlagValue, pIWICImagingFactory);
 
