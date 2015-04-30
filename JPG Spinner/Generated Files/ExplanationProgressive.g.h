@@ -13,9 +13,9 @@ namespace Windows {
         namespace Xaml {
             namespace Controls {
                 ref class Grid;
-                ref class FlipView;
                 ref class TextBlock;
-                ref class Image;
+                ref class FlipView;
+                ref class RichTextBlock;
             }
         }
     }
@@ -36,10 +36,11 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Controls::Grid^ LayoutRoot;
         private: ::Windows::UI::Xaml::Controls::Grid^ Input;
         private: ::Windows::UI::Xaml::Controls::Grid^ Output;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlock4;
         private: ::Windows::UI::Xaml::Controls::FlipView^ FlipView1;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlock2;
-        private: ::Windows::UI::Xaml::Controls::Image^ Image1;
-        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlock1;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlock3;
+        private: ::Windows::UI::Xaml::Controls::RichTextBlock^ TextBlock1;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ ExplanationProgressiveHeader;
     };
 }

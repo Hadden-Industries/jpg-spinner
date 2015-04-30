@@ -47,10 +47,10 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Image Grid.Column="0" x:Name="Image1"/>
-                            <TextBlock Grid.Column="1" x:Name="TextBlock1" FontSize="16" Text="The JPEG file standard compresses image files by splitting them into blocks of 8x8 pixels. At low-quality compression, a technique called chroma subsampling may be used, which enlarges the blocks to as many as 16x16 pixels." TextWrapping="WrapWholeWords"/>
+                            <TextBlock Grid.Column="1" x:Name="TextBlock1" FontSize="18" Text="The JPEG file standard compresses image files by splitting them into blocks of 8x8 pixels. At low-quality compression, a technique called chroma subsampling may be used, which enlarges the blocks to as many as 16x16 pixels." TextWrapping="WrapWholeWords"/>
                         </Grid>
-                        <TextBlock FontSize="16" Margin="0,10,0,0" Text="Every JPEG file must also have a complete block in the top-left corner. Because of this, there are certain rotations that are impossible to perform losslessly if the image size is not an exact multiple of the block size." TextWrapping="WrapWholeWords"/>
-                        <TextBlock FontSize="16" Margin="0,10,0,0" Text="However, if the image is cropped to remove incomplete blocks, the remainder of the image may be rotated without loss. For high-quality compression, only a maximum of 7 pixels may be cropped from the sides of the image. In case the image was saved at very low quality the image may lose up to 15 pixels in width or height." TextWrapping="WrapWholeWords"/>
+                        <TextBlock FontSize="18" Margin="0,10,0,0" Text="Every JPEG file must also have a complete block in the top-left corner. Because of this, there are certain rotations that are impossible to perform losslessly if the image size is not an exact multiple of the block size." TextWrapping="WrapWholeWords"/>
+                        <TextBlock FontSize="18" Margin="0,10,0,0" Text="However, if the image is cropped to remove incomplete blocks, the remainder of the image may be rotated without loss. For high-quality compression, only a maximum of 7 pixels may be cropped from the sides of the image. In case the image was saved at very low quality the image may lose up to 15 pixels in width or height." TextWrapping="WrapWholeWords"/>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

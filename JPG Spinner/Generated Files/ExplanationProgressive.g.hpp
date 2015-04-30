@@ -28,14 +28,16 @@ void ::JPG_Spinner::ExplanationProgressive::InitializeComponent()
     Input = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Input"));
     // Get the Grid named 'Output'
     Output = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Output"));
+    // Get the TextBlock named 'TextBlock4'
+    TextBlock4 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock4"));
     // Get the FlipView named 'FlipView1'
     FlipView1 = safe_cast<::Windows::UI::Xaml::Controls::FlipView^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"FlipView1"));
     // Get the TextBlock named 'TextBlock2'
     TextBlock2 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock2"));
-    // Get the Image named 'Image1'
-    Image1 = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Image1"));
-    // Get the TextBlock named 'TextBlock1'
-    TextBlock1 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock1"));
+    // Get the TextBlock named 'TextBlock3'
+    TextBlock3 = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock3"));
+    // Get the RichTextBlock named 'TextBlock1'
+    TextBlock1 = safe_cast<::Windows::UI::Xaml::Controls::RichTextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlock1"));
     // Get the TextBlock named 'ExplanationProgressiveHeader'
     ExplanationProgressiveHeader = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"ExplanationProgressiveHeader"));
 }
@@ -47,6 +49,10 @@ void ::JPG_Spinner::ExplanationProgressive::Connect(int connectionId, Platform::
     case 1:
         (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->SizeChanged +=
             ref new ::Windows::UI::Xaml::SizeChangedEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::SizeChangedEventArgs^))&ExplanationProgressive::FlipView1_SizeChanged);
+        break;
+    case 2:
+        (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ButtonBase^>(target))->Click +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::ExplanationProgressive::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&ExplanationProgressive::ExplanationProgressiveButton_Click);
         break;
     }
     (void)connectionId; // Unused parameter

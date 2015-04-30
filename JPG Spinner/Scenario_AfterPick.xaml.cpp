@@ -601,18 +601,6 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(
 	});
 }
 
-Platform::String^ HResultToHexString(HRESULT hr)
-{
-	std::wostringstream os;
-
-	os << L"0x";
-
-	os << std::hex << std::uppercase << hr;
-
-	return ref new Platform::String(os.str().data());
-}
-
-
 Scenario_AfterPick::Scenario_AfterPick()
 {
     InitializeComponent();

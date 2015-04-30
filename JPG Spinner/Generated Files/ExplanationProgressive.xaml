@@ -45,8 +45,17 @@
                                 <ColumnDefinition Width="auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Image Grid.Column="0" x:Name="Image1"/>
-                            <TextBlock Grid.Column="1" x:Name="TextBlock1" FontSize="18" Text="Progressive encoding reduces an image's size by around 10 %, without any loss of data. It also enables more responsive web pages that use such images because the user will see a preview very quickly as the page loads, even if they are on a slow internet connection, without having to wait for the entire image to download." TextWrapping="WrapWholeWords"/>
+                            <RichTextBlock x:Name="TextBlock1" Grid.Column="1" TextWrapping="WrapWholeWords">
+                                <Paragraph FontSize="18">Progressive encoding reduces an image's size
+                                    <Hyperlink NavigateUri="http://yuiblog.com/blog/2008/12/05/imageopt-4/">
+                                        <Run x:Uid="ByAround10%" Text="by around 10 %"/>
+                                    </Hyperlink>, without any loss of data, by re-arranging how the data is stored within the file. Web pages that use such images are quicker to load, and are
+                                    <Hyperlink NavigateUri="http://blog.patrickmeenan.com/2013/06/progressive-jpegs-ftw.html">
+                                        <Run x:Uid="MoreResponsive" Text="more responsive"/>
+                                    </Hyperlink>
+                                    because the user will see a preview very quickly, even if they are on a slow internet connection, without having to wait for the entire image to download.
+                                </Paragraph>
+                            </RichTextBlock>
                         </Grid>
                         <Grid Margin="0,20,0,0">
                             <Grid.ColumnDefinitions>
@@ -71,9 +80,14 @@
                                     <ColumnDefinition Width="8*"/>
                                     <ColumnDefinition Width="1*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="1" x:Name="TextBlock2" FontSize="18" Margin="0,20" Text="You can see an example of an image with progressive encoding here. Click the right arrow to see the way the image would look as it downloads." TextWrapping="WrapWholeWords"/>
+                                <StackPanel Grid.Column="1" Orientation="Vertical">
+                                    <TextBlock x:Name="TextBlock2" FontSize="18" Margin="0,20,0,0" Text="You can see an example of an image with progressive encoding here. Interact with the image to see the stages it would go through as it downloads." TextWrapping="WrapWholeWords"/>
+                                    <TextBlock x:Name="TextBlock3" FontSize="18" Margin="0,20,0,0" Text="Click the button below to view the progressive levels in one of your own images." TextWrapping="WrapWholeWords"/>
+                                    <Button x:ConnectionId='2' x:Uid="ExplanationProgressiveButton" Content="Select File" HorizontalAlignment="Center" Margin="0,20,0,0"                                           />
+                                </StackPanel>
                             </Grid>
                         </Grid>
+                        <TextBlock x:Name="TextBlock4" FontSize="18" Margin="0,20" Text="The drawback to jpeg files encoded progressively is that displaying the levels takes more resources than displaying a single-level, &quot;baseline&quot;, jpeg file." TextWrapping="WrapWholeWords"/>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

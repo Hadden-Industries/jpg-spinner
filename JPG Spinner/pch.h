@@ -33,3 +33,5 @@ inline void SafeRelease(Interface **ppInterfaceToRelease)
 		*ppInterfaceToRelease = nullptr;
 	}
 }
+
+Platform::String^ HResultToHexString(HRESULT hr);
