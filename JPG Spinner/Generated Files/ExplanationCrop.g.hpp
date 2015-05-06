@@ -28,6 +28,10 @@ void ::JPG_Spinner::ExplanationCrop::InitializeComponent()
     Input = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Input"));
     // Get the Grid named 'Output'
     Output = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Output"));
+    // Get the Rectangle named 'RectVertical'
+    RectVertical = safe_cast<::Windows::UI::Xaml::Shapes::Rectangle^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"RectVertical"));
+    // Get the Rectangle named 'RectHorizontal'
+    RectHorizontal = safe_cast<::Windows::UI::Xaml::Shapes::Rectangle^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"RectHorizontal"));
     // Get the Image named 'Image1'
     Image1 = safe_cast<::Windows::UI::Xaml::Controls::Image^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Image1"));
     // Get the TextBlock named 'TextBlock1'

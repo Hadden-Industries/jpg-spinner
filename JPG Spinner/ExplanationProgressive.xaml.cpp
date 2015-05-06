@@ -257,6 +257,9 @@ concurrency::task<void> ExplanationProgressive::LoadStorageFileAsync(Windows::St
 			data->Items->Clear();
 			data->Items->Append(ref new ProgressiveDataItem(HResultToHexString(hr), nullptr));
 		}
+
+		// Refresh the FlipView to fix cases like the left button remaining when a new file is loaded
+		FlipView1->Focus(Windows::UI::Xaml::FocusState::Pointer);
 	});
 }
 

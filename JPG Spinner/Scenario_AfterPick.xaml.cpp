@@ -97,7 +97,31 @@ HRESULT GetJPEGOrientationFlag(IStream * FileStream, unsigned char &OrientationF
 			OrientationFlag = static_cast<unsigned char>(propvariantOrientationFlag.uiVal);
 		}
 
-		PropVariantClear(&propvariantOrientationFlag);
+		PropVariantClear(&propvariantOrientationFlag); // Clear value for new query
+
+		//JPEGInterchangeFormat
+		//hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=513}", &propvariantOrientationFlag);
+
+		//PropVariantClear(&propvariantOrientationFlag);
+
+		//JPEGInterchangeFormatLength
+		//hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=514}", &propvariantOrientationFlag);
+
+		//ThumbnailData
+		//hr = pQueryReader->GetMetadataByName(L"/app0/{ushort=6}", &propvariantOrientationFlag);
+		//WINCODEC_ERR_PROPERTYNOTFOUND
+
+		//PixelXDimension
+		//hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=40962}", &propvariantOrientationFlag);
+
+		//PixelYDimension
+		//hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=40963}", &propvariantOrientationFlag);
+
+		//SubjectArea
+		//hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=37396}", &propvariantOrientationFlag);
+
+		//SubjectLocation
+		//hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=41492}", &propvariantOrientationFlag);
 	}
 
 	return hr;
@@ -137,61 +161,139 @@ HRESULT SetJPEGOrientationFlag(IStream * FileStream, const unsigned char Orienta
 	if (SUCCEEDED(hr))
 	{
 		Microsoft::WRL::ComPtr<IWICFastMetadataEncoder> pFME;
-		Microsoft::WRL::ComPtr<IWICMetadataQueryWriter> pFMEQW;
 
 		hr = pIWICImagingFactory->CreateFastMetadataEncoderFromFrameDecode(pSource.Get(), &pFME);
+
+		Microsoft::WRL::ComPtr<IWICMetadataQueryWriter> pFMEQW;
 
 		if (SUCCEEDED(hr))
 		{
 			hr = pFME->GetMetadataQueryWriter(&pFMEQW);
 		}
 
+		Microsoft::WRL::ComPtr<IWICMetadataQueryReader> pQueryReader;
+
+		hr = pSource->GetMetadataQueryReader(&pQueryReader);
+		
+		PROPVARIANT value = { 0 };
+		PropVariantInit(&value);
+
 		if (SUCCEEDED(hr))
 		{
-			Microsoft::WRL::ComPtr<IWICMetadataQueryReader> pQueryReader;
 			PROPVARIANT propvariantOrientationFlag = { 0 };
-			PROPVARIANT value = { 0 };
-
 			PropVariantInit(&propvariantOrientationFlag);
-			PropVariantInit(&value);
-
+			
 			value.vt = VT_UI2;
 			value.uiVal = static_cast<USHORT>(OrientationFlag);
 
-			hr = pSource->GetMetadataQueryReader(&pQueryReader);
+			HRESULT hrEXIF = S_OK;
 
-			if (SUCCEEDED(hr))
+			hr = pQueryReader->GetMetadataByName(L"/app1/ifd/{ushort=274}", &propvariantOrientationFlag);
+
+			if (SUCCEEDED(hr) && propvariantOrientationFlag.vt != VT_EMPTY)
 			{
-				HRESULT hrEXIF = S_OK;
+				hr = pFMEQW->SetMetadataByName(L"/app1/ifd/{ushort=274}", &value);
+			}
 
-				hr = pQueryReader->GetMetadataByName(L"/app1/ifd/{ushort=274}", &propvariantOrientationFlag);
+			hrEXIF = hr;
 
-				if (SUCCEEDED(hr) && propvariantOrientationFlag.vt != VT_EMPTY)
-				{
-					hr = pFMEQW->SetMetadataByName(L"/app1/ifd/{ushort=274}", &value);
-				}
+			PropVariantClear(&propvariantOrientationFlag);
 
-				hrEXIF = hr;
+			hr = pQueryReader->GetMetadataByName(L"/xmp/tiff:Orientation", &propvariantOrientationFlag);
 
-				PropVariantClear(&propvariantOrientationFlag);
-
-				hr = pQueryReader->GetMetadataByName(L"/xmp/tiff:Orientation", &propvariantOrientationFlag);
-
-				// usually WINCODEC_ERR_PROPERTYNOTFOUND == hr here
-				if (SUCCEEDED(hr) && propvariantOrientationFlag.vt != VT_EMPTY)
-				{
-					hr = pFMEQW->SetMetadataByName(L"/xmp/tiff:Orientation", &value);
-				}
-				// if the XMP update failed, then 
-				else
-				{
-					hr = hrEXIF;
-				}
+			// usually WINCODEC_ERR_PROPERTYNOTFOUND == hr here
+			if (SUCCEEDED(hr) && propvariantOrientationFlag.vt != VT_EMPTY)
+			{
+				hr = pFMEQW->SetMetadataByName(L"/xmp/tiff:Orientation", &value);
+			}
+			// if the XMP update failed, then 
+			else
+			{
+				hr = hrEXIF;
 			}
 
 			PropVariantClear(&propvariantOrientationFlag);
 			PropVariantClear(&value);
 		}
+
+		// Note the details of the thumbnail
+		unsigned int JPEGInterchangeFormat = 0U;
+		unsigned int JPEGInterchangeFormatLength = 0U;
+
+		hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=513}", &value);
+		
+		if (SUCCEEDED(hr))
+		{
+			JPEGInterchangeFormat = value.uintVal;
+		}
+
+		PropVariantClear(&value);
+
+		hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=514}", &value);
+
+		if (SUCCEEDED(hr))
+		{
+			JPEGInterchangeFormatLength = value.uintVal;
+		}
+
+		PropVariantClear(&value);
+
+		// Zero the thumbnail App1/1st IFD block
+		if (SUCCEEDED(hr))
+		{
+			Microsoft::WRL::ComPtr<IWICMetadataQueryReader> pEmbedReader;
+			
+			Platform::String^ pathMetadata = "/app1/thumb";
+
+			hr = pQueryReader->GetMetadataByName(pathMetadata->Data(), &value);
+
+			if (SUCCEEDED(hr))
+			{
+				if (VT_UNKNOWN == value.vt)
+				{
+					hr = value.punkVal->QueryInterface(IID_PPV_ARGS(&pEmbedReader));
+				}
+			}
+
+			PropVariantClear(&value);
+
+			if (SUCCEEDED(hr))
+			{
+				Microsoft::WRL::ComPtr<IEnumString> metadataItems;
+
+				hr = pEmbedReader->GetEnumerator(&metadataItems);
+
+				// Enumerate through all values, commonly those below
+				// Compression /app1/thumb/{ushort=259}
+				// XResolution /app1/thumb/{ushort=282}
+				// YResolution /app1/thumb/{ushort=283}
+				// ResolutionUnit /app1/thumb/{ushort=296}
+				// /app1/thumb/{} this deletes the two below
+				// JPEGInterchangeFormat /app1/thumb/{ushort=513}
+				// JPEGInterchangeFormatLength /app1/thumb/{ushort=514}
+				for (;SUCCEEDED(hr);)
+				{
+					ULONG metadataItemsFetched = 0U;
+
+					LPOLESTR metadataItem;
+
+					hr = metadataItems->Next(1U, &metadataItem, &metadataItemsFetched);
+
+					// Next returns S_FALSE when there are no more items, so check metadataItemsFetched
+					if (SUCCEEDED(hr) && 1U == metadataItemsFetched)
+					{
+						hr = pFMEQW->RemoveMetadataByName((pathMetadata + ref new Platform::String(metadataItem))->Data());
+
+						// metadataItem is allocated by Next and needs to be freed
+						CoTaskMemFree(metadataItem);
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+		}		
 
 		if (SUCCEEDED(hr))
 		{
@@ -205,42 +307,51 @@ HRESULT SetJPEGOrientationFlag(IStream * FileStream, const unsigned char Orienta
 static Platform::String^ GetUUID()
 {
 	GUID result;
+
 	HRESULT hr = CoCreateGuid(&result);
+	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
 
-	if (SUCCEEDED(hr))
-	{
-		Platform::Guid gd(result);
-		return gd.ToString();
-	}
+	Platform::Guid gd(result);
 
-	throw Platform::Exception::CreateException(hr);
+	return gd.ToString();
 }
 
 byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer)
 {
-	// Query the IBufferByteAccess interface.
+	byte* pixels = nullptr;
+
 	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
-	reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
+
+	// Query the IBufferByteAccess interface.
+	HRESULT hr = reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
+	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
 
 	// Retrieve the buffer data.
-	byte* pixels = nullptr;
-	bufferByteAccess->Buffer(&pixels);
+	hr = bufferByteAccess->Buffer(&pixels);
+	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
+	
 	return pixels;
 }
 
 byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer, unsigned int *length)
 {
+	byte* pixels = nullptr;
+
+	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+
+	// Query the IBufferByteAccess interface.
+	HRESULT hr = reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
+	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
+
+	// Retrieve the buffer data.
+	hr = bufferByteAccess->Buffer(&pixels);
+	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
+
 	if (length != nullptr)
 	{
 		*length = buffer->Length;
 	}
-	// Query the IBufferByteAccess interface.
-	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
-	reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
-
-	// Retrieve the buffer data.
-	byte* pixels = nullptr;
-	bufferByteAccess->Buffer(&pixels);
+	
 	return pixels;
 }
 
@@ -650,7 +761,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				{
 					imagesAnalysedLast = imagesAnalysedCurrent;
 
-					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
+					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
 						ref new Windows::UI::Core::DispatchedHandler([this, imagesAnalysedCurrent]()
 					{
 						Platform::String^ string;
@@ -905,7 +1016,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 									if (SUCCEEDED(hr))
 									{
-										_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
+										_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
 											ref new Windows::UI::Core::DispatchedHandler([this, item]()
 										{
 											item->OrientationFlag = 1U;
@@ -945,6 +1056,54 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 											}));
 										}, cancellationToken);
 									}
+									else
+									{
+										imagesErrored++;
+
+										_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+											ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
+										{
+											item->Error = HResultToHexString(hr);
+
+											Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+											// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+											// when the item is due to be rendered, the ShowError() will get called on it anyway
+											if (nullptr != sI)
+											{
+												ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+												if (nullptr != iv)
+												{
+													iv->ShowError();
+												}
+											}
+										}));
+									}
+								}
+								else
+								{
+									imagesErrored++;
+
+									_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+										ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
+									{
+										item->Error = HResultToHexString(hr);
+
+										Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+										// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+										// when the item is due to be rendered, the ShowError() will get called on it anyway
+										if (nullptr != sI)
+										{
+											ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+											if (nullptr != iv)
+											{
+												iv->ShowError();
+											}
+										}
+									}));
 								}
 							}, cancellationToken);
 						}, cancellationToken);

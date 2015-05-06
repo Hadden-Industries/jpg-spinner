@@ -48,6 +48,94 @@
                             <Paragraph>Every JPEG file must also have a complete block in the top-left corner. Because of this, there are certain rotations that are impossible to perform losslessly if the image size is not an exact multiple of the block size. Modern cameras have their image sizes exactly aligned with the jpeg block boundaries, so <Italic>most people should not have to enable this option</Italic>.</Paragraph>
                         </RichTextBlock>
                         <TextBlock FontSize="18" Margin="0,10,0,0" Text="However, if the image is cropped to remove incomplete blocks, the remainder of the image may be rotated without loss. For high-quality compression, only a maximum of 7 pixels may be cropped from the sides of the image. In case the image was saved at low quality the image may lose up to 15 pixels in width or height." TextWrapping="WrapWholeWords"/>
+                        <Grid Width="152" Height="127" Background="White">
+                            <Rectangle x:Name="RectVertical" Width="400" Height="400">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0" SpreadMethod="Repeat">
+                                        <GradientStop Offset="0" Color="Black"/>
+                                        <GradientStop Offset="0.02" Color="Black"/>
+                                        <GradientStop Offset="0.02" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.12" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.12" Color="Black"/>
+                                        <GradientStop Offset="0.13" Color="Black"/>
+                                        <GradientStop Offset="0.13" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.245" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.245" Color="Black"/>
+                                        <GradientStop Offset="0.255" Color="Black"/>
+                                        <GradientStop Offset="0.255" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.37" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.37" Color="Black"/>
+                                        <GradientStop Offset="0.38" Color="Black"/>
+                                        <GradientStop Offset="0.38" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.495" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.495" Color="Black"/>
+                                        <GradientStop Offset="0.505" Color="Black"/>
+                                        <GradientStop Offset="0.505" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.62" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.62" Color="Black"/>
+                                        <GradientStop Offset="0.63" Color="Black"/>
+                                        <GradientStop Offset="0.63" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.745" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.745" Color="Black"/>
+                                        <GradientStop Offset="0.755" Color="Black"/>
+                                        <GradientStop Offset="0.755" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.87" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.87" Color="Black"/>
+                                        <GradientStop Offset="0.88" Color="Black"/>
+                                        <GradientStop Offset="0.88" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.98" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.98" Color="Black"/>
+                                        <GradientStop Offset="1" Color="Black"/>
+                                        <LinearGradientBrush.RelativeTransform>
+                                            <ScaleTransform ScaleX="0.16" ScaleY="0.16"/>
+                                        </LinearGradientBrush.RelativeTransform>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Rectangle x:Name="RectHorizontal" Width="400" Height="400">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1" SpreadMethod="Repeat">
+                                        <GradientStop Offset="0" Color="Black"/>
+                                        <GradientStop Offset="0.02" Color="Black"/>
+                                        <GradientStop Offset="0.02" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.12" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.12" Color="Black"/>
+                                        <GradientStop Offset="0.13" Color="Black"/>
+                                        <GradientStop Offset="0.13" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.245" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.245" Color="Black"/>
+                                        <GradientStop Offset="0.255" Color="Black"/>
+                                        <GradientStop Offset="0.255" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.37" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.37" Color="Black"/>
+                                        <GradientStop Offset="0.38" Color="Black"/>
+                                        <GradientStop Offset="0.38" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.495" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.495" Color="Black"/>
+                                        <GradientStop Offset="0.505" Color="Black"/>
+                                        <GradientStop Offset="0.505" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.62" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.62" Color="Black"/>
+                                        <GradientStop Offset="0.63" Color="Black"/>
+                                        <GradientStop Offset="0.63" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.745" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.745" Color="Black"/>
+                                        <GradientStop Offset="0.755" Color="Black"/>
+                                        <GradientStop Offset="0.755" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.87" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.87" Color="Black"/>
+                                        <GradientStop Offset="0.88" Color="Black"/>
+                                        <GradientStop Offset="0.88" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.98" Color="#00FF0000"/>
+                                        <GradientStop Offset="0.98" Color="Black"/>
+                                        <GradientStop Offset="1" Color="Black"/>
+                                        <LinearGradientBrush.RelativeTransform>
+                                            <ScaleTransform ScaleX="0.16" ScaleY="0.16"/>
+                                        </LinearGradientBrush.RelativeTransform>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                        </Grid>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
