@@ -32,6 +32,54 @@ using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Media;
 
+FILE* CreateTempFile(const wchar_t* filePath)
+{
+	HANDLE hTempFile = INVALID_HANDLE_VALUE;
+
+	CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
+	extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
+	extendedParams.dwFileFlags = FILE_FLAG_RANDOM_ACCESS;
+	extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+	extendedParams.lpSecurityAttributes = nullptr;
+	extendedParams.hTemplateFile = nullptr;
+
+	hTempFile = CreateFile2(
+		filePath,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		CREATE_ALWAYS,
+		&extendedParams
+		);
+
+	if (INVALID_HANDLE_VALUE == hTempFile)
+	{
+		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(GetLastError()));
+	}
+
+	// Open the output file from the handle
+	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(hTempFile), _O_RDWR | _O_BINARY);
+
+	if (-1 == fd)
+	{
+		CloseHandle(hTempFile);
+
+		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE));
+	}
+
+	FILE * fp = _fdopen(fd, "w+b");
+
+	if (0 == fp)
+	{
+		// Also calls CloseHandle()
+		_close(fd);
+
+		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE));
+	}
+
+	return fp;
+}
+
 HRESULT GetJPEGOrientationFlag(IStream * FileStream, unsigned char &OrientationFlag, IWICImagingFactory * pIWICImagingFactory)
 {
 	Microsoft::WRL::ComPtr<IWICBitmapDecoder> pDecoder;
@@ -127,14 +175,142 @@ HRESULT GetJPEGOrientationFlag(IStream * FileStream, unsigned char &OrientationF
 	return hr;
 }
 
-HRESULT SetJPEGOrientationFlag(IStream * FileStream, const unsigned char OrientationFlag, IWICImagingFactory * pIWICImagingFactory)
+HRESULT DeleteJPEGThumbnailData(Platform::String^ filePath, USHORT thumbnailOffset, USHORT thumbnailLength)
+{
+	if (filePath->IsEmpty() || 0U == thumbnailOffset || 0U == thumbnailLength)
+	{
+		return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+	}
+
+	FILE * tempFilePointer = CreateTempFile(filePath->Data());
+
+	HANDLE hTempFile = INVALID_HANDLE_VALUE;
+
+	CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
+	extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	extendedParams.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+	extendedParams.dwFileFlags = FILE_FLAG_RANDOM_ACCESS;
+	extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+	extendedParams.lpSecurityAttributes = nullptr;
+	extendedParams.hTemplateFile = nullptr;
+
+	hTempFile = CreateFile2(
+		(filePath + ".temp")->Data(),
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		OPEN_EXISTING,
+		&extendedParams
+		);
+
+	if (INVALID_HANDLE_VALUE == hTempFile)
+	{
+		return HRESULT_FROM_WIN32(GetLastError());
+	}
+
+	// Open the output file from the handle
+	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(hTempFile), _O_RDONLY | _O_BINARY);
+
+	if (-1 == fd)
+	{
+		CloseHandle(hTempFile);
+
+		return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
+	}
+
+	FILE * filePointer = _fdopen(fd, "rb");
+
+	if (0 == filePointer)
+	{
+		// Also calls CloseHandle()
+		_close(fd);
+
+		return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
+	}
+
+	byte fileHead[65536] = { 0 };
+
+	// Read File head
+	if (6 != fread(fileHead, sizeof(byte), 6, filePointer))
+	{
+		return HRESULT_FROM_WIN32(ERROR_READ_FAULT);
+	}
+
+	// Check for JPEG SOI + Exif APP1
+	if (fileHead[0] != 0xFF ||
+		fileHead[1] != 0xD8 ||
+		fileHead[2] != 0xFF ||
+		fileHead[3] != 0xE1)
+	{
+		return HRESULT_FROM_WIN32(ERROR_IPSEC_IKE_INVALID_HEADER);
+	}
+	
+	// Get App1 length (all 2-byte quantities in JPEG markers are MSB first)
+	USHORT lengthApp1 = ((static_cast<USHORT>(fileHead[4])) << 8) + (static_cast<USHORT>(fileHead[5]));
+
+	// Sanity check that the thumbnail can fit within the App1 block
+	if (thumbnailLength >= lengthApp1)
+	{
+		return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+	}
+
+	lengthApp1 = lengthApp1 - thumbnailLength;
+
+	// Write the new length in
+	fileHead[4] = (lengthApp1 >> 8) & 0xFF;
+	fileHead[5] = lengthApp1 & 0xFF;
+	
+	// Read the remainder of the App1 block
+	if (lengthApp1 != fread(&fileHead[6], sizeof(byte), lengthApp1, filePointer))
+	{
+		return HRESULT_FROM_WIN32(ERROR_READ_FAULT);
+	}
+
+	// Subtract 2 bytes for the length of the length field itself
+	if (6 + lengthApp1 - 2 != fwrite(fileHead, sizeof(byte), 6 + lengthApp1 - 2, tempFilePointer))
+	{
+		return HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
+	}
+
+	if (0 == fseek(filePointer, thumbnailLength - 2U, SEEK_CUR))
+	{
+		int c = 0;
+
+		while ((c = getc(filePointer)) != EOF)
+		{
+			if (EOF == putc(c, tempFilePointer))
+			{
+				return HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
+			}
+		}
+	}
+	else
+	{
+		return HRESULT_FROM_WIN32(ERROR_READ_FAULT);
+	}
+
+	// Close output file, also calls _close()
+	if (0 == fclose(filePointer))
+	{
+		if (0 == fclose(tempFilePointer))
+		{
+			if (0 == DeleteFileW((filePath + ".temp")->Data()))
+			{
+				return HRESULT_FROM_WIN32(GetLastError());
+			}
+		}
+	}
+
+	return S_OK;
+}
+
+HRESULT FixMetadata(Platform::String^ filePath, IStream * fileStream, IWICImagingFactory * pIWICImagingFactory)
 {
 	Microsoft::WRL::ComPtr<IWICBitmapDecoder> pDecoder;
 	Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> pSource;
 	GUID guidContainerFormat;
 
 	HRESULT hr = pIWICImagingFactory->CreateDecoderFromStream(
-		FileStream,
+		fileStream,
 		NULL,
 		WICDecodeMetadataCacheOnDemand, // A decoder must be created using the WICDecodeOptions value WICDecodeMetadataCacheOnDemand to perform in-place metadata updates
 		&pDecoder
@@ -184,7 +360,7 @@ HRESULT SetJPEGOrientationFlag(IStream * FileStream, const unsigned char Orienta
 			PropVariantInit(&propvariantOrientationFlag);
 			
 			value.vt = VT_UI2;
-			value.uiVal = static_cast<USHORT>(OrientationFlag);
+			value.uiVal = 1U;
 
 			HRESULT hrEXIF = S_OK;
 
@@ -216,30 +392,37 @@ HRESULT SetJPEGOrientationFlag(IStream * FileStream, const unsigned char Orienta
 			PropVariantClear(&value);
 		}
 
-		// Note the details of the thumbnail
-		unsigned int JPEGInterchangeFormat = 0U;
-		unsigned int JPEGInterchangeFormatLength = 0U;
+		USHORT jPEGInterchangeFormat = 0U;
+		USHORT jPEGInterchangeFormatLength = 0U;
 
-		hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=513}", &value);
-		
-		if (SUCCEEDED(hr))
+		bool removeThumbnail = true;
+
+		// Note the details of the thumbnail, if any
+		if (removeThumbnail && SUCCEEDED(hr))
 		{
-			JPEGInterchangeFormat = value.uintVal;
+			hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=513}", &value);
+
+			if (SUCCEEDED(hr))
+			{
+				jPEGInterchangeFormat = value.uiVal;
+			}
+
+			PropVariantClear(&value);
+
+			hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=514}", &value);
+
+			if (SUCCEEDED(hr))
+			{
+				jPEGInterchangeFormatLength = value.uiVal;
+			}
+
+			PropVariantClear(&value);
+
+			hr = S_OK;
 		}
-
-		PropVariantClear(&value);
-
-		hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=514}", &value);
-
-		if (SUCCEEDED(hr))
-		{
-			JPEGInterchangeFormatLength = value.uintVal;
-		}
-
-		PropVariantClear(&value);
 
 		// Zero the thumbnail App1/1st IFD block
-		if (SUCCEEDED(hr))
+		if (removeThumbnail && SUCCEEDED(hr))
 		{
 			Microsoft::WRL::ComPtr<IWICMetadataQueryReader> pEmbedReader;
 			
@@ -253,67 +436,101 @@ HRESULT SetJPEGOrientationFlag(IStream * FileStream, const unsigned char Orienta
 				{
 					hr = value.punkVal->QueryInterface(IID_PPV_ARGS(&pEmbedReader));
 				}
-			}
 
-			PropVariantClear(&value);
+				PropVariantClear(&value);
 
-			if (SUCCEEDED(hr))
-			{
-				Microsoft::WRL::ComPtr<IEnumString> metadataItems;
-
-				hr = pEmbedReader->GetEnumerator(&metadataItems);
-
-				// Enumerate through all values, commonly those below
-				// Compression /app1/thumb/{ushort=259}
-				// XResolution /app1/thumb/{ushort=282}
-				// YResolution /app1/thumb/{ushort=283}
-				// ResolutionUnit /app1/thumb/{ushort=296}
-				// /app1/thumb/{} this deletes the two below
-				// JPEGInterchangeFormat /app1/thumb/{ushort=513}
-				// JPEGInterchangeFormatLength /app1/thumb/{ushort=514}
-				for (;SUCCEEDED(hr);)
+				if (SUCCEEDED(hr))
 				{
-					ULONG metadataItemsFetched = 0U;
+					Microsoft::WRL::ComPtr<IEnumString> metadataItems;
 
-					LPOLESTR metadataItem;
+					hr = pEmbedReader->GetEnumerator(&metadataItems);
 
-					hr = metadataItems->Next(1U, &metadataItem, &metadataItemsFetched);
-
-					// Next returns S_FALSE when there are no more items, so check metadataItemsFetched
-					if (SUCCEEDED(hr) && 1U == metadataItemsFetched)
+					// Enumerate through all values, commonly those below
+					// Compression /app1/thumb/{ushort=259}
+					// XResolution /app1/thumb/{ushort=282}
+					// YResolution /app1/thumb/{ushort=283}
+					// ResolutionUnit /app1/thumb/{ushort=296}
+					// /app1/thumb/{} this deletes the two below
+					// JPEGInterchangeFormat /app1/thumb/{ushort=513}
+					// JPEGInterchangeFormatLength /app1/thumb/{ushort=514}
+					for (; SUCCEEDED(hr);)
 					{
-						hr = pFMEQW->RemoveMetadataByName((pathMetadata + ref new Platform::String(metadataItem))->Data());
+						ULONG metadataItemsFetched = 0U;
 
-						// metadataItem is allocated by Next and needs to be freed
-						CoTaskMemFree(metadataItem);
-					}
-					else
-					{
-						break;
+						LPOLESTR metadataItem;
+
+						hr = metadataItems->Next(1U, &metadataItem, &metadataItemsFetched);
+
+						// Next returns S_FALSE when there are no more items, so check metadataItemsFetched
+						if (SUCCEEDED(hr) && 1U == metadataItemsFetched)
+						{
+							hr = pFMEQW->RemoveMetadataByName((pathMetadata + ref new Platform::String(metadataItem))->Data());
+
+							// metadataItem is allocated by Next and needs to be freed
+							CoTaskMemFree(metadataItem);
+						}
+						else
+						{
+							break;
+						}
 					}
 				}
 			}
-		}		
+			else
+			{
+				// if there is no thumbnail block
+				if (WINCODEC_ERR_PROPERTYNOTFOUND == hr)
+				{
+					// then continue
+					hr = S_OK;
+				}
+			}
+		}
 
 		if (SUCCEEDED(hr))
 		{
 			hr = pFME->Commit();
+		}
+
+		if (removeThumbnail && SUCCEEDED(hr))
+		{
+			if (0U != jPEGInterchangeFormat && 0U != jPEGInterchangeFormatLength)
+			{
+				// Rename to file for DeleteJPEGThumbnailData to use
+				if (0 == MoveFileExW(filePath->Data(), (filePath + ".temp")->Data(), NULL))
+				{
+					return HRESULT_FROM_WIN32(GetLastError());
+				}
+
+				// This function will create a new file that will have the correct name
+				hr = DeleteJPEGThumbnailData(filePath, jPEGInterchangeFormat + 12U, jPEGInterchangeFormatLength);
+
+				// If we fail at this, then rename the file back
+				if (FAILED(hr))
+				{
+					if (0 == MoveFileExW((filePath + ".temp")->Data(), filePath->Data(), NULL))
+					{
+						return HRESULT_FROM_WIN32(GetLastError());
+					}
+
+					// Doesn't matter if we failed at removing the thumbnail data
+					hr = S_OK;
+				}				
+			}
 		}
 	}
 
 	return hr;
 }
 
-static Platform::String^ GetUUID()
+static Platform::Guid GetUUID()
 {
 	GUID result;
 
 	HRESULT hr = CoCreateGuid(&result);
 	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
 
-	Platform::Guid gd(result);
-
-	return gd.ToString();
+	return Platform::Guid(result);
 }
 
 byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer)
@@ -368,7 +585,7 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 		{
 			HRESULT hr = S_OK;
 
-			Platform::String^ tempFileName = tempFolder->Path + "\\" + GetUUID();
+			Platform::String^ tempFileName = tempFolder->Path + "\\" + GetUUID().ToString();
 
 			CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
 			extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
@@ -557,47 +774,7 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(
 		*/
 		fclose(fp);
 
-		HANDLE hTempFile = INVALID_HANDLE_VALUE;
-
-		CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
-		extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
-		extendedParams.dwFileAttributes = FILE_ATTRIBUTE_TEMPORARY;
-		extendedParams.dwFileFlags = FILE_FLAG_RANDOM_ACCESS;
-		extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
-		extendedParams.lpSecurityAttributes = nullptr;
-		extendedParams.hTemplateFile = nullptr;
-
-		hTempFile = CreateFile2(
-			tempFileName->Data(), // file name 
-			GENERIC_READ | GENERIC_WRITE, // open for read/write 
-			FILE_SHARE_READ | FILE_SHARE_WRITE,
-			CREATE_ALWAYS,
-			&extendedParams
-			);
-
-		if (INVALID_HANDLE_VALUE == hTempFile)
-		{
-			return HRESULT_FROM_WIN32(GetLastError());
-		}
-
-		// Open the output file from the handle
-		int fd = _open_osfhandle((intptr_t)hTempFile, _O_APPEND | _O_RDONLY);
-
-		if (-1 == fd)
-		{
-			CloseHandle(hTempFile);
-
-			return E_FAIL;
-		}
-
-		fp = _fdopen(fd, "wb");
-
-		if (0 == fp)
-		{
-			_close(fd); // Also calls CloseHandle()
-
-			return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
-		}
+		fp = CreateTempFile(tempFileName->Data());
 
 		if (progressive)
 		{
@@ -666,7 +843,8 @@ Scenario_AfterPick::Scenario_AfterPick()
 		//InputTextBlock1->Text = "Installed location:\n" + installedLocation->Path + "\n" + "Local folder:\n" + localFolder->Path;
 		//InputTextBlock1->Text = temporaryFolder->Path;
 	}
-	else
+	
+	if (FAILED(hr))
 	{
 		throw Platform::Exception::CreateException(hr);
 	}
@@ -975,7 +1153,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					continue;
 				}
 
-				Platform::String^ tempFileName = temporaryFolder->Path + "\\" + GetUUID();
+				Platform::String^ tempFileName = temporaryFolder->Path + "\\" + item->UUID.ToString();
 
 				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(
 					item->StorageFile,
@@ -1012,7 +1190,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 								if (SUCCEEDED(hr))
 								{
-									hr = SetJPEGOrientationFlag(pIStream.Get(), 1U, pIWICImagingFactory);
+									hr = FixMetadata(tempFile->Path, pIStream.Get(), pIWICImagingFactory);
 
 									if (SUCCEEDED(hr))
 									{
@@ -1199,7 +1377,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 								item->StorageFile = files->GetAt(i);
 
-								item->ID = i;
+								item->UUID = GetUUID();
 
 								// Add picked file to MostRecentlyUsedList
 								item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(files->GetAt(i));

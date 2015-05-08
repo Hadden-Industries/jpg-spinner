@@ -102,11 +102,6 @@
         return ref new XamlSystemBaseType(typeName);
     }
 
-    if (typeName == L"UInt32")
-    {
-        return ref new XamlSystemBaseType(typeName);
-    }
-
     if (typeName == L"Windows.UI.Xaml.Media.Imaging.WriteableBitmap")
     {
         return ref new XamlSystemBaseType(typeName);
@@ -167,7 +162,7 @@
         return userType;
     }
 
-    if (typeName == L"Windows.Foundation.IReference`1<Int32>")
+    if (typeName == L"Windows.Foundation.IReference`1<Int64>")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, nullptr);
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
@@ -215,7 +210,7 @@
         userType->AddMemberName(L"Error");
         userType->AddMemberName(L"Title");
         userType->AddMemberName(L"MRUToken");
-        userType->AddMemberName(L"ID");
+        userType->AddMemberName(L"UUID");
         userType->AddMemberName(L"StorageFile");
         userType->SetIsBindable();
         userType->SetIsLocalType();
@@ -234,6 +229,14 @@
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        return userType;
+    }
+
+    if (typeName == L"Guid")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"System.ValueType"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        userType->SetIsReturnTypeStub();
         return userType;
     }
 
@@ -263,7 +266,7 @@
 {
     if (longMemberName == L"JPG_Spinner.MainPage.cts")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"cts", L"Windows.Foundation.IReference`1<Int32>");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"cts", L"Windows.Foundation.IReference`1<Int64>");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
@@ -414,14 +417,14 @@
         return xamlMember;
     }
 
-    if (longMemberName == L"JPG_Spinner.Item.ID")
+    if (longMemberName == L"JPG_Spinner.Item.UUID")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"ID", L"UInt32");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"UUID", L"Guid");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
                 auto that = (::JPG_Spinner::Item^)instance;
-                auto value = ref new ::Platform::Box<::default::uint32>(that->ID);
+                auto value = ref new ::Platform::Box<::Platform::Guid>(that->UUID);
                 return value;
             };
 
@@ -429,8 +432,8 @@
             [](Object^ instance, Object^ value) -> void
             {
                 auto that = (::JPG_Spinner::Item^)instance;
-                auto boxedValue = (::Platform::IBox<::default::uint32>^)value;
-                that->ID = boxedValue->Value;
+                auto boxedValue = (::Platform::IBox<::Platform::Guid>^)value;
+                that->UUID = boxedValue->Value;
             };
         return xamlMember;
     }

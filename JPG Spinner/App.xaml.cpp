@@ -141,6 +141,6 @@ void App::OnNavigationFailed(Platform::Object ^sender, Windows::UI::Xaml::Naviga
 	throw ref new FailureException("Failed to load Page " + e->SourcePageType.Name);
 }
 
-Item::Item() : _StorageFile(nullptr), _ID(0U), _MRUToken(""), _Title(""), _Error(""), _Image(nullptr), _OrientationFlag(0U)
+Item::Item() : _StorageFile(nullptr), _UUID(Platform::Guid(GUID_NULL)), _MRUToken(""), _Title(""), _Error(""), _Image(nullptr), _OrientationFlag(0U)
 {
 }

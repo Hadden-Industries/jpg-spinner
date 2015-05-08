@@ -30,7 +30,7 @@ namespace JPG_Spinner
 	public ref class Item sealed
 	{
 		Windows::Storage::StorageFile^ _StorageFile;
-		uint32 _ID;
+		Platform::Guid _UUID;
 		Platform::String^ _MRUToken;
 		Platform::String^  _Title;
 		Platform::String^  _Error;
@@ -68,19 +68,19 @@ namespace JPG_Spinner
 			}
 		}
 
-		//ID
-		property uint32 ID
+		//UUID
+		property Platform::Guid UUID
 		{
-			uint32 get()
+			Platform::Guid get()
 			{
-				return _ID;
+				return _UUID;
 			}
-			void set(uint32 value)
+			void set(Platform::Guid value)
 			{
-				if (_ID != value)
+				if (_UUID != value)
 				{
-					_ID = value;
-					OnPropertyChanged("ID");
+					_UUID = value;
+					OnPropertyChanged("UUID");
 				}
 			}
 		}
