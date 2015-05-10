@@ -41,6 +41,8 @@ namespace JPG_Spinner
 		unsigned short _JPEGInterchangeFormat;
 		unsigned short _JPEGInterchangeFormatLength;
 		PROPVARIANT _SubjectArea;
+		PROPVARIANT _SubjectLocation;
+		bool _HasThumbnail;
 
 		event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _PropertyChanged;
 
@@ -231,7 +233,7 @@ namespace JPG_Spinner
 		{
 			Platform::IBox<intptr_t>^ get()
 			{
-				return ref new Platform::Box<intptr_t>((intptr_t)&_SubjectArea);
+				return ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&_SubjectArea));
 			}
 			void set(Platform::IBox<intptr_t>^ ptrValue)
 			{
@@ -243,11 +245,51 @@ namespace JPG_Spinner
 
 					if (SUCCEEDED(hr))
 					{
-						OnPropertyChanged("SubjectArea");
+						OnPropertyChanged("PtrSubjectArea");
 					}
 				}
 			}
 		};
+
+		//PtrSubjectLocation
+		property Platform::IBox<intptr_t>^ PtrSubjectLocation
+		{
+			Platform::IBox<intptr_t>^ get()
+			{
+				return ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&_SubjectLocation));
+			}
+			void set(Platform::IBox<intptr_t>^ ptrValue)
+			{
+				PROPVARIANT value = *((PROPVARIANT*)(ptrValue->Value));
+
+				if (0 != PropVariantCompare(_SubjectLocation, value))
+				{
+					HRESULT hr = PropVariantCopy(&_SubjectLocation, &value);
+
+					if (SUCCEEDED(hr))
+					{
+						OnPropertyChanged("PtrSubjectLocation");
+					}
+				}
+			}
+		};
+
+		//HasThumbnail
+		property bool HasThumbnail
+		{
+			bool get()
+			{
+				return _HasThumbnail;
+			}
+			void set(bool value)
+			{
+				if (_HasThumbnail != value)
+				{
+					_HasThumbnail = value;
+					OnPropertyChanged("HasThumbnail");
+				}
+			}
+		}
 
 		//TempFilePath
 		property Platform::String^ TempFilePath

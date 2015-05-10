@@ -16,7 +16,7 @@ Platform::String^ HResultToHexString(HRESULT hr)
 	return ref new Platform::String(os.str().data());
 }
 
-OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short xOffset, unsigned short yOffset)
+OrientationHelper::OrientationHelper(unsigned char orientation, unsigned short xOffset, unsigned short yOffset)
 {
 	switch (orientation)
 	{
@@ -27,7 +27,9 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
 		_XYFlips = false;
+		_WICBitmapTransformOptions = WICBitmapTransformRotate0;
 		break;
+
 	case 2U:
 		//_ScaleTransform->ScaleX = -1.0;
 		_Matrix = Windows::UI::Xaml::Media::Matrix(
@@ -36,7 +38,9 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
 		_XYFlips = false;
+		_WICBitmapTransformOptions = WICBitmapTransformFlipHorizontal;
 		break;
+
 	case 3U:
 		//_RotateTransform->Angle = 180.0;
 		_Matrix = Windows::UI::Xaml::Media::Matrix(
@@ -45,7 +49,9 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
 		_XYFlips = false;
+		_WICBitmapTransformOptions = WICBitmapTransformRotate180;
 		break;
+
 	case 4U:
 		//_ScaleTransform->ScaleY = -1.0;
 		_Matrix = Windows::UI::Xaml::Media::Matrix(
@@ -54,7 +60,9 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
 		_XYFlips = false;
+		_WICBitmapTransformOptions = WICBitmapTransformFlipVertical;
 		break;
+
 	case 5U:
 		//_RotateTransform->Angle = 90.0;
 		//_ScaleTransform->ScaleX = -1.0;
@@ -64,7 +72,9 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
 		_XYFlips = true;
+		_WICBitmapTransformOptions = WICBitmapTransformRotate90 | WICBitmapTransformFlipHorizontal;
 		break;
+
 	case 6U:
 		//_RotateTransform->Angle = 270.0;
 		_Matrix = Windows::UI::Xaml::Media::Matrix(
@@ -73,7 +83,9 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
 		_XYFlips = true;
+		_WICBitmapTransformOptions = WICBitmapTransformRotate90;
 		break;
+
 	case 7U:
 		//_RotateTransform->Angle = 270.0;
 		//_ScaleTransform->ScaleX = -1.0;
@@ -83,7 +95,9 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
 		_XYFlips = true;
+		_WICBitmapTransformOptions = WICBitmapTransformRotate90 | WICBitmapTransformFlipVertical;
 		break;
+
 	case 8U:
 		//_RotateTransform->Angle = 90.0;
 		_Matrix = Windows::UI::Xaml::Media::Matrix(
@@ -91,19 +105,21 @@ OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short x
 			-1.0, 0.0, //0.0
 			static_cast<double>(xOffset), static_cast<double>(yOffset) //1.0
 			);
-		break;
+		_WICBitmapTransformOptions = WICBitmapTransformRotate270;
 		_XYFlips = true;
+		break;
+
 	default:
 		throw Platform::Exception::CreateException(E_INVALIDARG);
 	}
 }
 
-Windows::UI::Xaml::Media::Matrix OrientationMatrix::getInverseMatrix()
+Windows::UI::Xaml::Media::Matrix OrientationHelper::getInverseMatrix()
 {
 	return _Matrix;
 }
 
-Windows::UI::Xaml::Media::Matrix OrientationMatrix::getMatrix()
+Windows::UI::Xaml::Media::Matrix OrientationHelper::getMatrix()
 {
 	auto d2D1Matrix = D2D1::Matrix3x2F(static_cast<float>(_Matrix.M11), static_cast<float>(_Matrix.M12), static_cast<float>(_Matrix.M21), static_cast<float>(_Matrix.M22), static_cast<float>(_Matrix.OffsetX), static_cast<float>(_Matrix.OffsetY));
 
@@ -117,7 +133,12 @@ Windows::UI::Xaml::Media::Matrix OrientationMatrix::getMatrix()
 	}
 }
 
-bool OrientationMatrix::XYFlips()
+WICBitmapTransformOptions OrientationHelper::GetWICBitmapTransformOptions()
+{
+	return static_cast<WICBitmapTransformOptions>(_WICBitmapTransformOptions);
+}
+
+bool OrientationHelper::XYFlips()
 {
 	return _XYFlips;
 }

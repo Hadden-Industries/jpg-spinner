@@ -177,7 +177,7 @@ concurrency::task<void> ExplanationProgressive::LoadStorageFileAsync(Windows::St
 
 		Microsoft::WRL::ComPtr<IWICProgressiveLevelControl> pProgressive;
 
-		hr = frameDecode.Get()->QueryInterface(IID_PPV_ARGS(&pProgressive));
+		hr = frameDecode.As(&pProgressive);
 
 		if (FAILED(hr)) { return hr; }
 

@@ -73,9 +73,9 @@ void ItemViewer::ShowImage()
 
 		Windows::UI::Xaml::Media::MatrixTransform^ _MatrixTransform = ref new Windows::UI::Xaml::Media::MatrixTransform();
 
-		auto matrix = new OrientationMatrix(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
+		auto orientationHelper = new OrientationHelper(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
 
-		_MatrixTransform->Matrix = matrix->getInverseMatrix();
+		_MatrixTransform->Matrix = orientationHelper->getInverseMatrix();
 
 		image->RenderTransform = _MatrixTransform;
     }

@@ -18,6 +18,7 @@
 #include <robuffer.h> // IBufferByteAccess
 #include <sstream> // wostringstream
 #include <d2d1_1.h> // D2D1::Matrix3x2F
+#include <Wincodecsdk.h> // IWICMetadataBlockWriter
 
 extern "C" {
 #include "jpeglib.h" // jpeg_stdio_src
@@ -37,10 +38,10 @@ inline void SafeRelease(Interface **ppInterfaceToRelease)
 
 Platform::String^ HResultToHexString(HRESULT hr);
 
-class OrientationMatrix
+class OrientationHelper
 {
 	public:
-		OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short xOffset = 0U, unsigned short yOffset = 0U);
+		OrientationHelper::OrientationHelper(unsigned char orientation, unsigned short xOffset = 0U, unsigned short yOffset = 0U);
 
 		Windows::UI::Xaml::Media::Matrix getMatrix();
 
@@ -48,7 +49,10 @@ class OrientationMatrix
 
 		bool XYFlips();
 
+		WICBitmapTransformOptions GetWICBitmapTransformOptions();
+
 	private:
 		Windows::UI::Xaml::Media::Matrix _Matrix;
 		bool _XYFlips;
+		int _WICBitmapTransformOptions;
 };

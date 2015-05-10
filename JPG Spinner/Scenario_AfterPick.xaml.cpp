@@ -158,6 +158,29 @@ HRESULT GetMetadata(IStream * FileStream, Item^ item, IWICImagingFactory * pIWIC
 
 	PropVariantClear(&propVariant);
 
+	// return early if the orientation value is unusable
+	if (!((item->Orientation >= 2U && item->Orientation <= 8U)
+		|| (item->OrientationXMP >= 2U && item->OrientationXMP <= 8U)))
+	{
+		return S_OK;
+	}
+
+	hrLastSuccessful = hr;
+
+	// Thumbnail
+	Microsoft::WRL::ComPtr<IWICBitmapSource> pIWICBitmapSource;
+
+	hr = pSource->GetThumbnail(&pIWICBitmapSource);
+
+	if (SUCCEEDED(hr) && nullptr != pIWICBitmapSource)
+	{
+		item->HasThumbnail = true;
+	}
+	else
+	{
+		hr = hrLastSuccessful;
+	}
+
 	hrLastSuccessful = hr;
 
 	// Note the details of the thumbnail, if any
@@ -210,7 +233,7 @@ HRESULT GetMetadata(IStream * FileStream, Item^ item, IWICImagingFactory * pIWIC
 
 	if (SUCCEEDED(hr))
 	{
-		item->PtrSubjectArea = ref new Platform::Box<intptr_t>((intptr_t)&propVariant);
+		item->PtrSubjectArea = ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&propVariant));
 	}
 	else
 	{
@@ -221,11 +244,26 @@ HRESULT GetMetadata(IStream * FileStream, Item^ item, IWICImagingFactory * pIWIC
 	
 	hrLastSuccessful = hr;
 
+	//SubjectLocation
+	hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=41492}", &propVariant);
+	if (SUCCEEDED(hr))
+	{
+		item->PtrSubjectLocation = ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&propVariant));
+	}
+	else
+	{
+		hr = hrLastSuccessful;
+	}
+
+	PropVariantClear(&propVariant);
+
+	hrLastSuccessful = hr;
+
 	//FocalPlaneXResolution
 	hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=41486}", &propVariant);
 	if (SUCCEEDED(hr))
 	{
-		//item->FocalPlaneXResolution = ref new Platform::Box<intptr_t>((intptr_t)&propVariant); //propVariant.uhVal;
+		//item->FocalPlaneXResolution = ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&propVariant)); //propVariant.uhVal;
 	}
 	else
 	{
@@ -240,7 +278,7 @@ HRESULT GetMetadata(IStream * FileStream, Item^ item, IWICImagingFactory * pIWIC
 	hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=41487}", &propVariant);
 	if (SUCCEEDED(hr))
 	{
-		//item->FocalPlaneYResolution = ref new Platform::Box<intptr_t>((intptr_t)&propVariant);
+		//item->FocalPlaneYResolution = ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&propVariant));
 	}
 	else
 	{
@@ -252,9 +290,6 @@ HRESULT GetMetadata(IStream * FileStream, Item^ item, IWICImagingFactory * pIWIC
 	//ThumbnailData
 	//hr = pQueryReader->GetMetadataByName(L"/app0/{ushort=6}", &propvariantOrientationFlag);
 	//WINCODEC_ERR_PROPERTYNOTFOUND
-
-	//SubjectLocation
-	//hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=41492}", &propvariantOrientationFlag);
 
 	return hr;
 }
@@ -357,7 +392,8 @@ HRESULT DeleteJPEGThumbnailMetadata(Item^ item, IWICImagingFactory * pIWICImagin
 
 HRESULT DeleteJPEGThumbnailData(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 {
-	// Note that the thumbnail offset is at JPEGInterchangeFormat + 12U from the beginning of the file
+	// Note that the thumbnail offset is at JPEGInterchangeFormat + 12U from the beginning of the file (may not be 12 when JFIF...)
+	// Currently trim off the padding, NOT the thumbnail data! Need to use the offset value
 
 	if (Platform::Guid(GUID_NULL) == item->UUID || 0U == item->JPEGInterchangeFormat || 0U == item->JPEGInterchangeFormatLength)
 	{
@@ -414,7 +450,7 @@ HRESULT DeleteJPEGThumbnailData(Item^ item, IWICImagingFactory * pIWICImagingFac
 		return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
 	}
 
-	byte fileHead[65536] = { 0 };
+	byte fileHead[0xFFFF] = { 0 };
 
 	// Read File head
 	if (6 != fread(fileHead, sizeof(byte), 6, filePointer))
@@ -496,6 +532,273 @@ HRESULT DeleteJPEGThumbnailData(Item^ item, IWICImagingFactory * pIWICImagingFac
 	return S_OK;
 }
 
+HRESULT FixMetadataOutOfPlace(Item^ item, IWICImagingFactory * pIWICImagingFactory)
+{
+	if (VT_EMPTY == ((PROPVARIANT*)item->PtrSubjectArea->Value)->vt &&
+		VT_EMPTY == ((PROPVARIANT*)item->PtrSubjectLocation->Value)->vt &&
+		!item->HasThumbnail)
+	{
+		// Nothing to fix
+		return S_OK;
+	}
+
+	Platform::String^ filePathSuffix = ".mdop";
+
+	FILE * tempFilePointer = CreateTempFile((item->TempFilePath + filePathSuffix)->Data());
+
+	if (0 != fclose(tempFilePointer))
+	{
+		return HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE);
+	}
+
+	Microsoft::WRL::ComPtr<IWICBitmapDecoder> piDecoder;
+
+	// Create the decoder.
+	HRESULT hr = pIWICImagingFactory->CreateDecoderFromFilename(
+		item->TempFilePath->Data(),
+		NULL,
+		GENERIC_READ,
+		WICDecodeMetadataCacheOnDemand, //For JPEG lossless decoding/encoding.
+		&piDecoder);
+	if (FAILED(hr)) return hr;
+
+	Microsoft::WRL::ComPtr<IWICStream> piFileStream;
+
+	// Create a file stream.
+	hr = pIWICImagingFactory->CreateStream(&piFileStream);
+	if (FAILED(hr)) return hr;
+
+	// Initialize our new file stream.
+	hr = piFileStream->InitializeFromFilename((item->TempFilePath + filePathSuffix)->Data(), GENERIC_WRITE);
+	if (FAILED(hr)) return hr;
+
+	Microsoft::WRL::ComPtr<IWICBitmapEncoder> piEncoder;
+
+	// Create the encoder.
+	hr = pIWICImagingFactory->CreateEncoder(GUID_ContainerFormatJpeg, NULL, &piEncoder);
+	if (FAILED(hr)) return hr;
+
+	// Initialize the encoder
+	hr = piEncoder->Initialize(piFileStream.Get(), WICBitmapEncoderNoCache);
+	if (FAILED(hr)) return hr;
+
+	UINT count = 0U;
+
+	hr = piDecoder->GetFrameCount(&count);
+	if (FAILED(hr)) return hr;
+
+	// Process each frame of the image.
+	for (UINT i = 0; i < count; i++)
+	{
+		// Frame variables.
+		Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> piFrameDecode;
+		Microsoft::WRL::ComPtr<IWICBitmapFrameEncode> piFrameEncode;
+		Microsoft::WRL::ComPtr<IWICMetadataQueryReader> piFrameQReader;
+		Microsoft::WRL::ComPtr<IWICMetadataQueryWriter> piFrameQWriter;
+
+		// Get and create the image frame.
+		hr = piDecoder->GetFrame(i, &piFrameDecode);
+		if (FAILED(hr)) return hr;
+
+		hr = piEncoder->CreateNewFrame(&piFrameEncode, NULL);
+		if (FAILED(hr)) return hr;
+
+		// Initialize the encoder.
+		hr = piFrameEncode->Initialize(NULL);
+		if (FAILED(hr)) return hr;
+
+		UINT width, height = 0U;
+
+		// Get and set the size.
+		hr = piFrameDecode->GetSize(&width, &height);
+		if (FAILED(hr)) return hr;
+
+		hr = piFrameEncode->SetSize(width, height);
+		if (FAILED(hr)) return hr;
+
+		double dpiX, dpiY = 0.0;
+
+		// Get and set the resolution.
+		piFrameDecode->GetResolution(&dpiX, &dpiY);
+		if (FAILED(hr)) return hr;
+
+		hr = piFrameEncode->SetResolution(dpiX, dpiY);
+		if (FAILED(hr)) return hr;
+
+		WICPixelFormatGUID pixelFormat = GUID_NULL;
+
+		// Set the pixel format.
+		piFrameDecode->GetPixelFormat(&pixelFormat);
+		if (FAILED(hr)) return hr;
+
+		hr = piFrameEncode->SetPixelFormat(&pixelFormat);
+		if (FAILED(hr)) return hr;
+
+		Microsoft::WRL::ComPtr<IWICMetadataBlockReader> piBlockReader;
+
+		// Copy metadata using metadata block reader/writer.
+		hr = piFrameDecode.As(&piBlockReader);
+		if (FAILED(hr)) return hr;
+
+		Microsoft::WRL::ComPtr<IWICMetadataBlockWriter> piBlockWriter;
+
+		hr = piFrameEncode.As(&piBlockWriter);
+		if (FAILED(hr)) return hr;
+
+		hr = piBlockWriter->InitializeFromBlockReader(piBlockReader.Get());
+		if (FAILED(hr)) return hr;
+
+		hr = piFrameEncode->GetMetadataQueryWriter(&piFrameQWriter);
+		if (FAILED(hr)) return hr;
+
+		// Set up the orientation helper
+		auto orientationHelper = new OrientationHelper(item->Orientation ? item->Orientation : item->OrientationXMP);
+
+		// Set the SubjectArea value according to the re-oriented coordinates
+		if (VT_EMPTY != ((PROPVARIANT*)item->PtrSubjectArea->Value)->vt)
+		{
+			PROPVARIANT propvariantToSet = { 0 };
+			PropVariantInit(&propvariantToSet);
+
+			hr = PropVariantCopy(&propvariantToSet, (PROPVARIANT*)item->PtrSubjectArea->Value);
+			if (FAILED(hr)) return hr;
+
+			auto coordinate = Windows::Foundation::Point(static_cast<float>(((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[0]), static_cast<float>(((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[1]));
+
+			auto matrix = orientationHelper->getMatrix();
+
+			if (orientationHelper->XYFlips())
+			{
+				coordinate.X = coordinate.X - (static_cast<float>(height) / static_cast<float>(2.0));
+				coordinate.Y = coordinate.Y - (static_cast<float>(width) / static_cast<float>(2.0));
+			}
+			else
+			{
+				coordinate.X = coordinate.X - (static_cast<float>(width) / static_cast<float>(2.0));
+				coordinate.Y = coordinate.Y - (static_cast<float>(height) / static_cast<float>(2.0));
+			}
+
+			coordinate = matrix.Transform(coordinate);
+
+			coordinate.X = coordinate.X + (static_cast<float>(width) / static_cast<float>(2.0));
+			coordinate.Y = coordinate.Y + (static_cast<float>(height) / static_cast<float>(2.0));
+
+			propvariantToSet.caui.pElems[0] = static_cast<USHORT>(coordinate.X);
+			propvariantToSet.caui.pElems[1] = static_cast<USHORT>(coordinate.Y);
+
+			if (4U == ((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.cElems)
+			{
+				if (orientationHelper->XYFlips())
+				{
+					propvariantToSet.caui.pElems[2] = ((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[3];
+					propvariantToSet.caui.pElems[3] = ((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[2];
+				}
+			}
+
+			hr = piFrameQWriter->SetMetadataByName(L"/app1/ifd/exif/{ushort=37396}", &propvariantToSet);
+			if (FAILED(hr)) { return hr; }
+
+			PropVariantClear(&propvariantToSet);
+		}
+
+		// Set the SubjectLocation value according to the re-oriented coordinates
+		if (VT_EMPTY != ((PROPVARIANT*)item->PtrSubjectLocation->Value)->vt)
+		{
+			PROPVARIANT propvariantToSet = { 0 };
+			PropVariantInit(&propvariantToSet);
+
+			hr = PropVariantCopy(&propvariantToSet, (PROPVARIANT*)item->PtrSubjectLocation->Value);
+			if (FAILED(hr)) return hr;
+
+			auto coordinate = Windows::Foundation::Point(static_cast<float>(((PROPVARIANT*)item->PtrSubjectLocation->Value)->caui.pElems[0]), static_cast<float>(((PROPVARIANT*)item->PtrSubjectLocation->Value)->caui.pElems[1]));
+
+			auto matrix = orientationHelper->getMatrix();
+
+			if (orientationHelper->XYFlips())
+			{
+				coordinate.X = coordinate.X - (static_cast<float>(height) / static_cast<float>(2.0));
+				coordinate.Y = coordinate.Y - (static_cast<float>(width) / static_cast<float>(2.0));
+			}
+			else
+			{
+				coordinate.X = coordinate.X - (static_cast<float>(width) / static_cast<float>(2.0));
+				coordinate.Y = coordinate.Y - (static_cast<float>(height) / static_cast<float>(2.0));
+			}
+
+			coordinate = matrix.Transform(coordinate);
+
+			coordinate.X = coordinate.X + (static_cast<float>(width) / static_cast<float>(2.0));
+			coordinate.Y = coordinate.Y + (static_cast<float>(height) / static_cast<float>(2.0));
+
+			propvariantToSet.caui.pElems[0] = static_cast<USHORT>(coordinate.X);
+			propvariantToSet.caui.pElems[1] = static_cast<USHORT>(coordinate.Y);
+
+			hr = piFrameQWriter->SetMetadataByName(L"/app1/ifd/exif/{ushort=41492}", &propvariantToSet);
+			if (FAILED(hr)) { return hr; }
+
+			PropVariantClear(&propvariantToSet);
+		}
+
+		// If there is a thumbnail
+		if (item->HasThumbnail)
+		{
+			// Rotate it
+			Microsoft::WRL::ComPtr<IWICBitmapSource> pIWICBitmapSource;
+
+			hr = piFrameDecode->GetThumbnail(&pIWICBitmapSource);
+			if (FAILED(hr)) { return hr; }
+
+			Microsoft::WRL::ComPtr<IWICBitmap> pIWICBitmap;
+
+			// To improve the performance of pIWICBitmapFlipRotator, cache the data
+			hr = pIWICImagingFactory->CreateBitmapFromSource(pIWICBitmapSource.Get(), WICBitmapCacheOnLoad, &pIWICBitmap);
+			if (FAILED(hr)) { return hr; }
+
+			Microsoft::WRL::ComPtr<IWICBitmapFlipRotator> pIWICBitmapFlipRotator;
+
+			hr = pIWICImagingFactory->CreateBitmapFlipRotator(&pIWICBitmapFlipRotator);
+			if (FAILED(hr)) { return hr; }
+
+			hr = pIWICBitmapFlipRotator->Initialize(pIWICBitmap.Get(), orientationHelper->GetWICBitmapTransformOptions());
+			if (FAILED(hr)) { return hr; }
+
+			// The source image will be re-encoded as either an 8bpp or 24bpp JPEG and will be written to the JPEG’s APP1 metadata block
+			hr = piFrameEncode->SetThumbnail(pIWICBitmapFlipRotator.Get());
+			if (FAILED(hr)) { return hr; }
+		}
+
+		hr = piFrameEncode->WriteSource(
+			static_cast<IWICBitmapSource*>(piFrameDecode.Get()),
+			NULL); // Using NULL enables JPEG loss-less encoding.
+		if (FAILED(hr)) return hr;
+
+		// Commit the frame.
+		hr = piFrameEncode->Commit();
+		if (FAILED(hr)) return hr;
+	}
+
+	hr = piEncoder->Commit();
+	if (FAILED(hr)) return hr;
+
+	// This fails with E_NOTIMPL, and is safe to ignore as per https://msdn.microsoft.com/en-us/library/windows/desktop/aa380036(v=vs.85).aspx
+	piFileStream->Commit(STGC_DEFAULT);
+
+	// Release all handles to the files so that MoveFileEx can work
+	SafeRelease(piEncoder.GetAddressOf());
+	SafeRelease(piFileStream.GetAddressOf());
+	SafeRelease(piDecoder.GetAddressOf());
+
+	if (0 == MoveFileExW(
+		(item->TempFilePath + filePathSuffix)->Data(),
+		item->TempFilePath->Data(),
+		MOVEFILE_REPLACE_EXISTING))
+	{
+		return HRESULT_FROM_WIN32(GetLastError());
+	}
+
+	return hr;
+}
+
 HRESULT FixMetadata(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 {
 	Microsoft::WRL::ComPtr<IWICBitmapDecoder> pDecoder;
@@ -553,64 +856,6 @@ HRESULT FixMetadata(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 	}
 
 	PropVariantClear(&propvariantOrientationFlag);
-
-	// Set the SubjectArea value according to the re-oriented coordinates
-	/*if (SUCCEEDED(hr))
-	{
-		PROPVARIANT propvariantToSet = { 0 };
-		PropVariantInit(&propvariantToSet);
-
-		hr = PropVariantCopy(&propvariantToSet, (PROPVARIANT*)item->PtrSubjectArea->Value);
-
-		if (SUCCEEDED(hr))
-		{
-			auto coordinate = Windows::Foundation::Point(static_cast<float>(((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[0]), static_cast<float>(((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[1]));
-
-			UINT width, height = 0U;
-
-			hr = pSource->GetSize(&width, &height);
-
-			if (SUCCEEDED(hr))
-			{
-				auto orientationMatrix = new OrientationMatrix(item->Orientation ? item->Orientation : item->OrientationXMP);
-
-				auto matrix = orientationMatrix->getMatrix();
-
-				if (orientationMatrix->XYFlips())
-				{
-					coordinate.X = coordinate.X - (static_cast<float>(height) / static_cast<float>(2.0));
-					coordinate.Y = coordinate.Y - (static_cast<float>(width) / static_cast<float>(2.0));
-				}
-				else
-				{
-					coordinate.X = coordinate.X - (static_cast<float>(width) / static_cast<float>(2.0));
-					coordinate.Y = coordinate.Y - (static_cast<float>(height) / static_cast<float>(2.0));
-				}
-
-				coordinate = matrix.Transform(coordinate);
-
-				coordinate.X = coordinate.X + (static_cast<float>(width) / static_cast<float>(2.0));
-				coordinate.Y = coordinate.Y + (static_cast<float>(height) / static_cast<float>(2.0));
-
-				propvariantToSet.caui.pElems[0] = static_cast<USHORT>(coordinate.X);
-				propvariantToSet.caui.pElems[1] = static_cast<USHORT>(coordinate.Y);
-
-				if (4U == ((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.cElems)
-				{
-					if (orientationMatrix->XYFlips())
-					{
-						propvariantToSet.caui.pElems[2] = ((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[3];
-						propvariantToSet.caui.pElems[3] = ((PROPVARIANT*)item->PtrSubjectArea->Value)->caui.pElems[2];
-					}
-				}
-
-				// Commit chokes on this
-				//hr = pFMEQW->SetMetadataByName(L"/app1/ifd/exif/{ushort=37396}", &propvariantToSet);
-			}
-		}
-
-		PropVariantClear(&propvariantToSet);
-	}*/
 
 	hr = pFME->Commit();
 
@@ -700,7 +945,7 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 			if (INVALID_HANDLE_VALUE != tempFileHandle)
 			{
 				// Open the output file from the handle
-				int fd = _open_osfhandle((intptr_t)tempFileHandle, _O_RDWR | _O_BINARY);
+				int fd = _open_osfhandle(reinterpret_cast<intptr_t>(tempFileHandle), _O_RDWR | _O_BINARY);
 
 				if (-1 != fd)
 				{
@@ -1248,62 +1493,92 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 						if (SUCCEEDED(hr))
 						{
-							if (rootPage->DeleteThumbnails)
+							hr = FixMetadataOutOfPlace(item, pIWICImagingFactory);
+
+							if (SUCCEEDED(hr))
 							{
+								/*if (rootPage->DeleteThumbnails)
+								{
 								// Ignore return value
 								DeleteJPEGThumbnailData(item, pIWICImagingFactory);
-							}
+								}*/
 
-							_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
-								ref new Windows::UI::Core::DispatchedHandler([this, item]()
-							{
-								item->Orientation = 1U;
-								item->OrientationXMP = 1U;
-							}));
+								_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
+									ref new Windows::UI::Core::DispatchedHandler([this, item]()
+								{
+									item->Orientation = 1U;
+									item->OrientationXMP = 1U;
+								}));
 
-							concurrency::interruption_point();
-
-							//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
-
-							auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(item->TempFilePath));
-
-							getFileFromPathAsyncTask.then([this, cancellationToken, item](Windows::Storage::StorageFile^ tempFile)
-							{
 								concurrency::interruption_point();
 
-								// Using CopyAndReplaceAsync & DeleteAsync instead of only MoveAndReplaceAsync to preserve the Created date metadata
-								auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->CopyAndReplaceAsync(item->StorageFile));
+								//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
 
-								moveAndReplaceAsyncTask.then([this, item, tempFile]()
+								auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(item->TempFilePath));
+
+								getFileFromPathAsyncTask.then([this, cancellationToken, item](Windows::Storage::StorageFile^ tempFile)
 								{
-									imagesRotated++;
-
-									concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
-
 									concurrency::interruption_point();
 
-									// Rotate the preview
-									_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-										ref new Windows::UI::Core::DispatchedHandler([this, item]()
+									// Using CopyAndReplaceAsync & DeleteAsync instead of only MoveAndReplaceAsync to preserve the Created date metadata
+									auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->CopyAndReplaceAsync(item->StorageFile));
+
+									moveAndReplaceAsyncTask.then([this, item, tempFile]()
 									{
-										GridView1->SelectedItems->Append(item);
+										imagesRotated++;
 
-										Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+										concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
 
-										// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
-										// when the item is due to be rendered, the ShowError() will get called on it anyway
-										if (nullptr != sI)
+										concurrency::interruption_point();
+
+										// Rotate the preview
+										_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+											ref new Windows::UI::Core::DispatchedHandler([this, item]()
 										{
-											ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+											GridView1->SelectedItems->Append(item);
 
-											if (nullptr != iv)
+											Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+											// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+											// when the item is due to be rendered, the ShowError() will get called on it anyway
+											if (nullptr != sI)
 											{
-												iv->ShowImage();
+												ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+												if (nullptr != iv)
+												{
+													iv->ShowImage();
+												}
 											}
-										}
-									}));
+										}));
+									}, cancellationToken);
 								}, cancellationToken);
-							}, cancellationToken);
+							}
+							// If cannot fix the metadata out-of-place
+							else
+							{
+								imagesErrored++;
+
+								_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+									ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
+								{
+									item->Error = HResultToHexString(hr);
+
+									Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+									// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+									// when the item is due to be rendered, the ShowError() will get called on it anyway
+									if (nullptr != sI)
+									{
+										ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+										if (nullptr != iv)
+										{
+											iv->ShowError();
+										}
+									}
+								}));
+							};
 						}
 						// If cannot fix the metadata
 						else
@@ -1396,6 +1671,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 					hr = GetMetadata(pIStream.Get(), item, pIWICImagingFactory);
 
+					// Important to increment this before the analysed count so that the monitor jobs don't race
+					if ((item->Orientation >= 2U && item->Orientation <= 8U)
+						|| (item->OrientationXMP >= 2U && item->OrientationXMP <= 8U))
+					{
+						imagesToBeRotated++;
+					}
+
 					imagesAnalysed++;
 
 					if (SUCCEEDED(hr))
@@ -1405,8 +1687,6 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						if ((item->Orientation >= 2U && item->Orientation <= 8U)
 							|| (item->OrientationXMP >= 2U && item->OrientationXMP <= 8U))
 						{
-							imagesToBeRotated++;
-
 							auto getThumbnailTask = concurrency::create_task(files->GetAt(i)->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
 
 							getThumbnailTask.then([this, cancellationToken, files, i, item](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)

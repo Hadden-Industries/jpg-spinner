@@ -141,7 +141,19 @@ void App::OnNavigationFailed(Platform::Object ^sender, Windows::UI::Xaml::Naviga
 	throw ref new FailureException("Failed to load Page " + e->SourcePageType.Name);
 }
 
-Item::Item() : _StorageFile(nullptr), _UUID(Platform::Guid(GUID_NULL)), _MRUToken(""), _Title(""), _Error(""), _Image(nullptr), _Orientation(0U), _OrientationXMP(0U), _JPEGInterchangeFormat(0U), _JPEGInterchangeFormatLength(0U)
+Item::Item() :
+_StorageFile(nullptr),
+_UUID(Platform::Guid(GUID_NULL)),
+_MRUToken(""),
+_Title(""),
+_Error(""),
+_Image(nullptr),
+_Orientation(0U),
+_OrientationXMP(0U),
+_JPEGInterchangeFormat(0U),
+_JPEGInterchangeFormatLength(0U),
+_HasThumbnail(false)
 {
 	PropVariantInit(&_SubjectArea);
+	PropVariantInit(&_SubjectLocation);
 }

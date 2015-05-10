@@ -97,6 +97,11 @@
         return ref new XamlSystemBaseType(typeName);
     }
 
+    if (typeName == L"Boolean")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
     if (typeName == L"Windows.UI.Xaml.Media.ImageSource")
     {
         return ref new XamlSystemBaseType(typeName);
@@ -207,6 +212,8 @@
                 return ref new ::JPG_Spinner::Item(); 
             };
         userType->AddMemberName(L"TempFilePath");
+        userType->AddMemberName(L"HasThumbnail");
+        userType->AddMemberName(L"PtrSubjectLocation");
         userType->AddMemberName(L"PtrSubjectArea");
         userType->AddMemberName(L"JPEGInterchangeFormatLength");
         userType->AddMemberName(L"JPEGInterchangeFormat");
@@ -366,6 +373,46 @@
             };
 
         xamlMember->SetIsReadOnly();
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.HasThumbnail")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"HasThumbnail", L"Boolean");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::Platform::Boolean>(that->HasThumbnail);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto boxedValue = (::Platform::IBox<::Platform::Boolean>^)value;
+                that->HasThumbnail = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.PtrSubjectLocation")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"PtrSubjectLocation", L"Windows.Foundation.IReference`1<Int32>");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->PtrSubjectLocation;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->PtrSubjectLocation = (::Platform::IBox<::default::int32>^)value;
+            };
         return xamlMember;
     }
 

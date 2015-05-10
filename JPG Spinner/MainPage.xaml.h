@@ -24,7 +24,7 @@ namespace JPG_Spinner
 		{
 			Platform::IBox<intptr_t>^ get()
 			{
-				return ref new Platform::Box<intptr_t>((intptr_t)&_cts);
+				return ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&_cts));
 			}
 		};
 
