@@ -19,6 +19,7 @@ namespace JPG_Spinner
 
 		property BOOL CropChecked;
 		property BOOL ProgressiveChecked;
+		property BOOL DeleteThumbnails;
 		property Platform::IBox<intptr_t>^ cts
 		{
 			Platform::IBox<intptr_t>^ get()

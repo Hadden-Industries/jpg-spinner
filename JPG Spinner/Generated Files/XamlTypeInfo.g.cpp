@@ -92,12 +92,12 @@
         return ref new XamlSystemBaseType(typeName);
     }
 
-    if (typeName == L"Windows.UI.Xaml.Media.ImageSource")
+    if (typeName == L"String")
     {
         return ref new XamlSystemBaseType(typeName);
     }
 
-    if (typeName == L"String")
+    if (typeName == L"Windows.UI.Xaml.Media.ImageSource")
     {
         return ref new XamlSystemBaseType(typeName);
     }
@@ -156,13 +156,14 @@
                 return ref new ::JPG_Spinner::MainPage(); 
             };
         userType->AddMemberName(L"cts");
+        userType->AddMemberName(L"DeleteThumbnails");
         userType->AddMemberName(L"ProgressiveChecked");
         userType->AddMemberName(L"CropChecked");
         userType->SetIsLocalType();
         return userType;
     }
 
-    if (typeName == L"Windows.Foundation.IReference`1<Int64>")
+    if (typeName == L"Windows.Foundation.IReference`1<Int32>")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, nullptr);
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
@@ -205,7 +206,12 @@
             {
                 return ref new ::JPG_Spinner::Item(); 
             };
-        userType->AddMemberName(L"OrientationFlag");
+        userType->AddMemberName(L"TempFilePath");
+        userType->AddMemberName(L"PtrSubjectArea");
+        userType->AddMemberName(L"JPEGInterchangeFormatLength");
+        userType->AddMemberName(L"JPEGInterchangeFormat");
+        userType->AddMemberName(L"OrientationXMP");
+        userType->AddMemberName(L"Orientation");
         userType->AddMemberName(L"Image");
         userType->AddMemberName(L"Error");
         userType->AddMemberName(L"Title");
@@ -217,7 +223,7 @@
         return userType;
     }
 
-    if (typeName == L"Byte")
+    if (typeName == L"UInt16")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"System.ValueType"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
@@ -229,6 +235,14 @@
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        return userType;
+    }
+
+    if (typeName == L"Byte")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"System.ValueType"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
+        userType->SetIsReturnTypeStub();
         return userType;
     }
 
@@ -266,7 +280,7 @@
 {
     if (longMemberName == L"JPG_Spinner.MainPage.cts")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"cts", L"Windows.Foundation.IReference`1<Int64>");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"cts", L"Windows.Foundation.IReference`1<Int32>");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
@@ -275,6 +289,27 @@
             };
 
         xamlMember->SetIsReadOnly();
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.MainPage.DeleteThumbnails")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"DeleteThumbnails", L"Int32");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::MainPage^)instance;
+                auto value = ref new ::Platform::Box<::default::int32>(that->DeleteThumbnails);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::MainPage^)instance;
+                auto boxedValue = (::Platform::IBox<::default::int32>^)value;
+                that->DeleteThumbnails = boxedValue->Value;
+            };
         return xamlMember;
     }
 
@@ -320,14 +355,89 @@
         return xamlMember;
     }
 
-    if (longMemberName == L"JPG_Spinner.Item.OrientationFlag")
+    if (longMemberName == L"JPG_Spinner.Item.TempFilePath")
     {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"OrientationFlag", L"Byte");
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"TempFilePath", L"String");
         xamlMember->Getter =
             [](Object^ instance) -> Object^
             {
                 auto that = (::JPG_Spinner::Item^)instance;
-                auto value = ref new ::Platform::Box<::default::uint8>(that->OrientationFlag);
+                return that->TempFilePath;
+            };
+
+        xamlMember->SetIsReadOnly();
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.PtrSubjectArea")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"PtrSubjectArea", L"Windows.Foundation.IReference`1<Int32>");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->PtrSubjectArea;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->PtrSubjectArea = (::Platform::IBox<::default::int32>^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.JPEGInterchangeFormatLength")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"JPEGInterchangeFormatLength", L"UInt16");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::default::uint16>(that->JPEGInterchangeFormatLength);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto boxedValue = (::Platform::IBox<::default::uint16>^)value;
+                that->JPEGInterchangeFormatLength = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.JPEGInterchangeFormat")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"JPEGInterchangeFormat", L"UInt16");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::default::uint16>(that->JPEGInterchangeFormat);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto boxedValue = (::Platform::IBox<::default::uint16>^)value;
+                that->JPEGInterchangeFormat = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.OrientationXMP")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"OrientationXMP", L"Byte");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::default::uint8>(that->OrientationXMP);
                 return value;
             };
 
@@ -336,7 +446,28 @@
             {
                 auto that = (::JPG_Spinner::Item^)instance;
                 auto boxedValue = (::Platform::IBox<::default::uint8>^)value;
-                that->OrientationFlag = boxedValue->Value;
+                that->OrientationXMP = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.Orientation")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"Orientation", L"Byte");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::default::uint8>(that->Orientation);
+                return value;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto boxedValue = (::Platform::IBox<::default::uint8>^)value;
+                that->Orientation = boxedValue->Value;
             };
         return xamlMember;
     }

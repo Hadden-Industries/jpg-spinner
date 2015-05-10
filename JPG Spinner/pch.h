@@ -17,6 +17,7 @@
 #include <Fcntl.h> // _O_APPEND _O_RDONLY
 #include <robuffer.h> // IBufferByteAccess
 #include <sstream> // wostringstream
+#include <d2d1_1.h> // D2D1::Matrix3x2F
 
 extern "C" {
 #include "jpeglib.h" // jpeg_stdio_src
@@ -35,3 +36,19 @@ inline void SafeRelease(Interface **ppInterfaceToRelease)
 }
 
 Platform::String^ HResultToHexString(HRESULT hr);
+
+class OrientationMatrix
+{
+	public:
+		OrientationMatrix::OrientationMatrix(unsigned char orientation, unsigned short xOffset = 0U, unsigned short yOffset = 0U);
+
+		Windows::UI::Xaml::Media::Matrix getMatrix();
+
+		Windows::UI::Xaml::Media::Matrix getInverseMatrix();
+
+		bool XYFlips();
+
+	private:
+		Windows::UI::Xaml::Media::Matrix _Matrix;
+		bool _XYFlips;
+};

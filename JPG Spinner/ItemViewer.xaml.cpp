@@ -70,80 +70,12 @@ void ItemViewer::ShowImage()
 		Skew(SkewX, SkewY)
 		Rotate(Rotation)
 		Translate(TranslateX, TranslateY)*/
-		//Windows::UI::Xaml::Media::TransformGroup^ _TransformGroup = ref new Windows::UI::Xaml::Media::TransformGroup();
-
-		//Windows::UI::Xaml::Media::RotateTransform^ _RotateTransform = ref new Windows::UI::Xaml::Media::RotateTransform();
-
-		//Windows::UI::Xaml::Media::ScaleTransform^ _ScaleTransform = ref new Windows::UI::Xaml::Media::ScaleTransform();
 
 		Windows::UI::Xaml::Media::MatrixTransform^ _MatrixTransform = ref new Windows::UI::Xaml::Media::MatrixTransform();
 
-		switch (_item->OrientationFlag)
-		{
-		case 2U:
-			//_ScaleTransform->ScaleX = -1.0;
-			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
-				-1.0, 0.0, //0.0
-				0.0, 1.0,  //0.0
-				0.0, 0.0   //1.0
-				);
-			break;
-		case 3U:
-			//_RotateTransform->Angle = 180.0;
-			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
-				-1.0, 0.0, //0.0
-				0.0, -1.0, //0.0
-				0.0, 0.0   //1.0
-				);
-			break;
-		case 4U:
-			//_ScaleTransform->ScaleY = -1.0;
-			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
-				1.0, 0.0,  //0.0
-				0.0, -1.0, //0.0
-				0.0, 0.0   //1.0
-				);
-			break;
-		case 5U:
-			//_RotateTransform->Angle = 90.0;
-			//_ScaleTransform->ScaleX = -1.0;
-			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
-				0.0, -1.0, //0.0
-				-1.0, 0.0, //0.0
-				0.0, 0.0   //1.0
-				);
-			break;
-		case 6U:
-			//_RotateTransform->Angle = 270.0;
-			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
-				0.0, -1.0, //0.0
-				1.0, 0.0,  //0.0
-				0.0, 0.0   //1.0
-				);
-			break;
-		case 7U:
-			//_RotateTransform->Angle = 270.0;
-			//_ScaleTransform->ScaleX = -1.0;
-			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
-				0.0, -1.0, //0.0
-				-1.0, 0.0, //0.0
-				0.0, 0.0   //1.0
-				);
-			break;
-		case 8U:
-			//_RotateTransform->Angle = 90.0;
-			_MatrixTransform->Matrix = Windows::UI::Xaml::Media::Matrix(
-				0.0, 1.0,  //0.0
-				-1.0, 0.0, //0.0
-				0.0, 0.0   //1.0
-				);
-			break;
-		}
+		auto matrix = new OrientationMatrix(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
 
-		//_TransformGroup->Children->Append(_RotateTransform);
-		//_TransformGroup->Children->Append(_ScaleTransform);
-
-		//image->RenderTransform = _TransformGroup;
+		_MatrixTransform->Matrix = matrix->getInverseMatrix();
 
 		image->RenderTransform = _MatrixTransform;
     }

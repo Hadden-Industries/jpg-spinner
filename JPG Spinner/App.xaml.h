@@ -6,6 +6,7 @@
 #pragma once
 
 #include "App.g.h"
+#include <Propvarutil.h> // PropVariantCompare
 
 namespace JPG_Spinner
 {
@@ -35,7 +36,11 @@ namespace JPG_Spinner
 		Platform::String^  _Title;
 		Platform::String^  _Error;
 		Windows::UI::Xaml::Media::ImageSource^ _Image;
-		unsigned char _OrientationFlag;
+		unsigned char _Orientation;
+		unsigned char _OrientationXMP;
+		unsigned short _JPEGInterchangeFormat;
+		unsigned short _JPEGInterchangeFormatLength;
+		PROPVARIANT _SubjectArea;
 
 		event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _PropertyChanged;
 
@@ -153,20 +158,103 @@ namespace JPG_Spinner
 			}
 		}
 
-		//OrientationFlag
-		property unsigned char OrientationFlag
+		//Orientation
+		property unsigned char Orientation
 		{
 			unsigned char get()
 			{
-				return _OrientationFlag;
+				return _Orientation;
 			}
 			void set(unsigned char value)
 			{
-				if (_OrientationFlag != value)
+				if (_Orientation != value)
 				{
-					_OrientationFlag = value;
-					OnPropertyChanged("OrientationFlag");
+					_Orientation = value;
+					OnPropertyChanged("Orientation");
 				}
+			}
+		}
+
+		//OrientationXMP
+		property unsigned char OrientationXMP
+		{
+			unsigned char get()
+			{
+				return _OrientationXMP;
+			}
+			void set(unsigned char value)
+			{
+				if (_OrientationXMP != value)
+				{
+					_OrientationXMP = value;
+					OnPropertyChanged("OrientationXMP");
+				}
+			}
+		}
+
+		//JPEGInterchangeFormat
+		property unsigned short JPEGInterchangeFormat
+		{
+			unsigned short get()
+			{
+				return _JPEGInterchangeFormat;
+			}
+			void set(unsigned short value)
+			{
+				if (_JPEGInterchangeFormat != value)
+				{
+					_JPEGInterchangeFormat = value;
+					OnPropertyChanged("JPEGInterchangeFormat");
+				}
+			}
+		}
+
+		//JPEGInterchangeFormatLength
+		property unsigned short JPEGInterchangeFormatLength
+		{
+			unsigned short get()
+			{
+				return _JPEGInterchangeFormatLength;
+			}
+			void set(unsigned short value)
+			{
+				if (_JPEGInterchangeFormatLength != value)
+				{
+					_JPEGInterchangeFormatLength = value;
+					OnPropertyChanged("JPEGInterchangeFormatLength");
+				}
+			}
+		}
+
+		//PtrSubjectArea
+		property Platform::IBox<intptr_t>^ PtrSubjectArea
+		{
+			Platform::IBox<intptr_t>^ get()
+			{
+				return ref new Platform::Box<intptr_t>((intptr_t)&_SubjectArea);
+			}
+			void set(Platform::IBox<intptr_t>^ ptrValue)
+			{
+				PROPVARIANT value = *((PROPVARIANT*)(ptrValue->Value));
+
+				if (0 != PropVariantCompare(_SubjectArea, value))
+				{
+					HRESULT hr = PropVariantCopy(&_SubjectArea, &value);
+
+					if (SUCCEEDED(hr))
+					{
+						OnPropertyChanged("SubjectArea");
+					}
+				}
+			}
+		};
+
+		//TempFilePath
+		property Platform::String^ TempFilePath
+		{
+			Platform::String^ get()
+			{
+				return Windows::Storage::ApplicationData::Current->TemporaryFolder->Path + "\\" + _UUID.ToString();
 			}
 		}
 	};

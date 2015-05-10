@@ -32,6 +32,8 @@ MainPage::MainPage()
 	MainPage::Current = this;
 
 	buttonIsSelectFiles = true;
+
+	DeleteThumbnails = true;
 }
 
 void JPG_Spinner::MainPage::ShowDebugText(Platform::String^ debugText)
