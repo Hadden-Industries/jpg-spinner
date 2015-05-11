@@ -33,7 +33,6 @@ namespace JPG_Spinner
 		Windows::Storage::StorageFile^ _StorageFile;
 		Platform::Guid _UUID;
 		Platform::String^ _MRUToken;
-		Platform::String^  _Title;
 		Platform::String^  _Error;
 		Windows::UI::Xaml::Media::ImageSource^ _Image;
 		unsigned char _Orientation;
@@ -71,6 +70,11 @@ namespace JPG_Spinner
 				{
 					_StorageFile = value;
 					OnPropertyChanged("StorageFile");
+
+					if (nullptr == _StorageFile || !_StorageFile->DisplayName->Equals(value->DisplayName))
+					{
+						OnPropertyChanged("Title");
+					}
 				}
 			}
 		}
@@ -114,15 +118,7 @@ namespace JPG_Spinner
 		{
 			Platform::String^ get()
 			{
-				return _Title;
-			}
-			void set(Platform::String^ value)
-			{
-				if (!_Title->Equals(value))
-				{
-					_Title = value;
-					OnPropertyChanged("Title");
-				}
+				return _StorageFile->DisplayName;
 			}
 		}
 

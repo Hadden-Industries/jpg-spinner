@@ -567,12 +567,7 @@
                 return that->Title;
             };
 
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                that->Title = (::Platform::String^)value;
-            };
+        xamlMember->SetIsReadOnly();
         return xamlMember;
     }
 

@@ -145,7 +145,6 @@ Item::Item() :
 _StorageFile(nullptr),
 _UUID(Platform::Guid(GUID_NULL)),
 _MRUToken(""),
-_Title(""),
 _Error(""),
 _Image(nullptr),
 _Orientation(0U),
