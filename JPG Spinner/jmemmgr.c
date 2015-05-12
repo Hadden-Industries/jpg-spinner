@@ -130,7 +130,7 @@ typedef struct {
   jvirt_barray_ptr virt_barray_list;
 
   /* This counts total space obtained from jpeg_get_small/large */
-  long total_space_allocated;
+  size_t total_space_allocated;
 
   /* alloc_sarray and alloc_barray set this value for use by virtual
    * array routines.
@@ -585,8 +585,8 @@ realize_virt_arrays (j_common_ptr cinfo)
 /* Allocate the in-memory buffers for any unrealized virtual arrays */
 {
   my_mem_ptr mem = (my_mem_ptr) cinfo->mem;
-  long space_per_minheight, maximum_space, avail_mem;
-  long minheights, max_minheights;
+  size_t space_per_minheight, maximum_space, avail_mem;
+  size_t minheights, max_minheights;
   jvirt_sarray_ptr sptr;
   jvirt_barray_ptr bptr;
 
@@ -598,18 +598,18 @@ realize_virt_arrays (j_common_ptr cinfo)
   maximum_space = 0;
   for (sptr = mem->virt_sarray_list; sptr != NULL; sptr = sptr->next) {
     if (sptr->mem_buffer == NULL) { /* if not realized yet */
-      space_per_minheight += (long) sptr->maxaccess *
-			     (long) sptr->samplesperrow * SIZEOF(JSAMPLE);
-      maximum_space += (long) sptr->rows_in_array *
-		       (long) sptr->samplesperrow * SIZEOF(JSAMPLE);
+      space_per_minheight += sptr->maxaccess *
+		  sptr->samplesperrow * SIZEOF(JSAMPLE);
+      maximum_space += sptr->rows_in_array *
+		  sptr->samplesperrow * SIZEOF(JSAMPLE);
     }
   }
   for (bptr = mem->virt_barray_list; bptr != NULL; bptr = bptr->next) {
     if (bptr->mem_buffer == NULL) { /* if not realized yet */
-      space_per_minheight += (long) bptr->maxaccess *
-			     (long) bptr->blocksperrow * SIZEOF(JBLOCK);
-      maximum_space += (long) bptr->rows_in_array *
-		       (long) bptr->blocksperrow * SIZEOF(JBLOCK);
+      space_per_minheight += bptr->maxaccess *
+		  bptr->blocksperrow * SIZEOF(JBLOCK);
+      maximum_space += bptr->rows_in_array *
+		  bptr->blocksperrow * SIZEOF(JBLOCK);
     }
   }
 
