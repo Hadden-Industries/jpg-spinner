@@ -41,6 +41,8 @@ namespace JPG_Spinner
 		unsigned short _JPEGInterchangeFormatLength;
 		PROPVARIANT _SubjectArea;
 		PROPVARIANT _SubjectLocation;
+		PROPVARIANT _FocalPlaneXResolution;
+		PROPVARIANT _FocalPlaneYResolution;
 		bool _HasThumbnail;
 
 		event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _PropertyChanged;
@@ -233,7 +235,7 @@ namespace JPG_Spinner
 			}
 			void set(Platform::IBox<intptr_t>^ ptrValue)
 			{
-				PROPVARIANT value = *((PROPVARIANT*)(ptrValue->Value));
+				PROPVARIANT value = *(reinterpret_cast<PROPVARIANT*>(ptrValue->Value));
 
 				if (0 != PropVariantCompare(_SubjectArea, value))
 				{
@@ -256,7 +258,7 @@ namespace JPG_Spinner
 			}
 			void set(Platform::IBox<intptr_t>^ ptrValue)
 			{
-				PROPVARIANT value = *((PROPVARIANT*)(ptrValue->Value));
+				PROPVARIANT value = *(reinterpret_cast<PROPVARIANT*>(ptrValue->Value));
 
 				if (0 != PropVariantCompare(_SubjectLocation, value))
 				{
@@ -265,6 +267,52 @@ namespace JPG_Spinner
 					if (SUCCEEDED(hr))
 					{
 						OnPropertyChanged("PtrSubjectLocation");
+					}
+				}
+			}
+		};
+
+		//PtrFocalPlaneXResolution
+		property Platform::IBox<intptr_t>^ PtrFocalPlaneXResolution
+		{
+			Platform::IBox<intptr_t>^ get()
+			{
+				return ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&_FocalPlaneXResolution));
+			}
+			void set(Platform::IBox<intptr_t>^ ptrValue)
+			{
+				PROPVARIANT value = *(reinterpret_cast<PROPVARIANT*>(ptrValue->Value));
+
+				if (0 != PropVariantCompare(_FocalPlaneXResolution, value))
+				{
+					HRESULT hr = PropVariantCopy(&_FocalPlaneXResolution, &value);
+
+					if (SUCCEEDED(hr))
+					{
+						OnPropertyChanged("PtrFocalPlaneXResolution");
+					}
+				}
+			}
+		};
+
+		//PtrFocalPlaneYResolution
+		property Platform::IBox<intptr_t>^ PtrFocalPlaneYResolution
+		{
+			Platform::IBox<intptr_t>^ get()
+			{
+				return ref new Platform::Box<intptr_t>(reinterpret_cast<intptr_t>(&_FocalPlaneYResolution));
+			}
+			void set(Platform::IBox<intptr_t>^ ptrValue)
+			{
+				PROPVARIANT value = *(reinterpret_cast<PROPVARIANT*>(ptrValue->Value));
+
+				if (0 != PropVariantCompare(_FocalPlaneYResolution, value))
+				{
+					HRESULT hr = PropVariantCopy(&_FocalPlaneYResolution, &value);
+
+					if (SUCCEEDED(hr))
+					{
+						OnPropertyChanged("PtrFocalPlaneYResolution");
 					}
 				}
 			}

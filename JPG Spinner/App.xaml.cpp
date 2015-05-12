@@ -43,14 +43,16 @@ App::App()
 void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e)
 {
 
-/*#if _DEBUG
-		// Show graphics profiling information while debugging.
-		if (IsDebuggerPresent())
-		{
-			// Display the current frame rate counters
-			 DebugSettings->EnableFrameRateCounter = true;
-		}
-#endif*/
+#if _DEBUG
+	// Show graphics profiling information while debugging.
+	if (IsDebuggerPresent())
+	{
+		// Display the current frame rate counters
+		//DebugSettings->EnableFrameRateCounter = true;
+		//DebugSettings->EnableRedrawRegions = true;
+		//DebugSettings->IsOverdrawHeatMapEnabled = true;
+	}
+#endif
 
 	auto rootFrame = dynamic_cast<Frame^>(Window::Current->Content);
 

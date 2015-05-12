@@ -213,6 +213,8 @@
             };
         userType->AddMemberName(L"TempFilePath");
         userType->AddMemberName(L"HasThumbnail");
+        userType->AddMemberName(L"PtrFocalPlaneYResolution");
+        userType->AddMemberName(L"PtrFocalPlaneXResolution");
         userType->AddMemberName(L"PtrSubjectLocation");
         userType->AddMemberName(L"PtrSubjectArea");
         userType->AddMemberName(L"JPEGInterchangeFormatLength");
@@ -393,6 +395,44 @@
                 auto that = (::JPG_Spinner::Item^)instance;
                 auto boxedValue = (::Platform::IBox<::Platform::Boolean>^)value;
                 that->HasThumbnail = boxedValue->Value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.PtrFocalPlaneYResolution")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"PtrFocalPlaneYResolution", L"Windows.Foundation.IReference`1<Int32>");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->PtrFocalPlaneYResolution;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->PtrFocalPlaneYResolution = (::Platform::IBox<::default::int32>^)value;
+            };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.PtrFocalPlaneXResolution")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"PtrFocalPlaneXResolution", L"Windows.Foundation.IReference`1<Int32>");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                return that->PtrFocalPlaneXResolution;
+            };
+
+        xamlMember->Setter =
+            [](Object^ instance, Object^ value) -> void
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                that->PtrFocalPlaneXResolution = (::Platform::IBox<::default::int32>^)value;
             };
         return xamlMember;
     }
