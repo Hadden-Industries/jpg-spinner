@@ -22,7 +22,6 @@
 
 extern "C" {
 #include "jpeglib.h" // jpeg_stdio_src
-#include "cdjpeg.h" // Common decls for cjpeg/djpeg applications
 #include "transupp.h" // Support routines for jpegtran
 }
 

@@ -28,7 +28,6 @@
     <ClCompile Include="App.xaml.cpp" />
     <ClCompile Include="MainPage.xaml.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="cdjpeg.c" />
     <ClCompile Include="transupp.c" />
     <ClCompile Include="jidctfst.c" />
     <ClCompile Include="jidctint.c" />
@@ -87,7 +86,6 @@
     <ClInclude Include="App.xaml.h" />
     <ClInclude Include="MainPage.xaml.h" />
     <ClInclude Include="cderror.h" />
-    <ClInclude Include="cdjpeg.h" />
     <ClInclude Include="jconfig.h" />
     <ClInclude Include="jerror.h" />
     <ClInclude Include="jinclude.h" />
