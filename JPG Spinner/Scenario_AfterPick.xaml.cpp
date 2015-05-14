@@ -528,7 +528,7 @@ HRESULT DeleteJPEGThumbnailData(Item^ item, IWICImagingFactory * pIWICImagingFac
 	}
 
 	// Subtract 2 bytes for the length of the length field itself
-	if (6 + lengthApp1 - 2 != fwrite(fileHead, sizeof(byte), 6 + lengthApp1 - 2, tempFilePointer))
+	if (static_cast<size_t>(6U + lengthApp1 - 2U) != fwrite(fileHead, sizeof(byte), static_cast<size_t>(6U + lengthApp1 - 2U), tempFilePointer))
 	{
 		return HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
 	}
@@ -1250,7 +1250,16 @@ Scenario_AfterPick::Scenario_AfterPick()
 
 	GetNativeSystemInfo(&systemInfo);
 
-	numberLogicalProcessors = static_cast<unsigned long>(systemInfo.dwNumberOfProcessors);
+	// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
+	double reductionFactor = 2.0;
+
+	numberLogicalProcessors = static_cast<unsigned long>(static_cast<double>(systemInfo.dwNumberOfProcessors) / reductionFactor);
+
+	// Sanity check
+	if (0U == numberLogicalProcessors)
+	{
+		numberLogicalProcessors = 1U;
+	}
 }
 
 Scenario_AfterPick::~Scenario_AfterPick()

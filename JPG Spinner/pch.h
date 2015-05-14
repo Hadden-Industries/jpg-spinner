@@ -19,9 +19,9 @@
 #include <sstream> // wostringstream
 #include <d2d1_1.h> // D2D1::Matrix3x2F
 #include <Wincodecsdk.h> // IWICMetadataBlockWriter
+#include "jpeglib.h" // jpeg_stdio_src
 
 extern "C" {
-#include "jpeglib.h" // jpeg_stdio_src
 #include "transupp.h" // Support routines for jpegtran
 }
 
