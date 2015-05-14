@@ -74,7 +74,7 @@ jpeg_free_large (j_common_ptr cinfo, void FAR * object, size_t sizeofobject)
  */
 
 #ifndef DEFAULT_MAX_MEM		/* so can override from makefile */
-#define DEFAULT_MAX_MEM		1000000L /* default: one megabyte */
+#define DEFAULT_MAX_MEM		134217728L /* default: 128 mebibyte */
 #endif
 
 GLOBAL(long)
@@ -141,7 +141,7 @@ GLOBAL(void)
 jpeg_open_backing_store (j_common_ptr cinfo, backing_store_ptr info,
 			 long total_bytes_needed)
 {
-  if ((info->temp_file = tmpfile()) == NULL)
+	if (tmpfile_s(&(info->temp_file)))
     ERREXITS(cinfo, JERR_TFILE_CREATE, "");
   info->read_backing_store = read_backing_store;
   info->write_backing_store = write_backing_store;
