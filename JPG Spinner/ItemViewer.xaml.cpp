@@ -16,7 +16,7 @@ ItemViewer::ItemViewer()
 
 // <summary>
 // This method visualizes the placeholder state of the data item. When 
-// showing a placehlder, we set the opacity of other elements to zero
+// showing a placeholder, we set the opacity of other elements to zero
 // so that stale data is not visible to the end user.  Note that we use
 // Grid's background color as the placeholder background.
 // </summary>
@@ -65,19 +65,23 @@ void ItemViewer::ShowImage()
     {
         image->Source = _item->Image;
 
-		/*Can also use CompositeTransform that applies multiple transforms in this order:
-		Scale(ScaleX, ScaleY)
-		Skew(SkewX, SkewY)
-		Rotate(Rotation)
-		Translate(TranslateX, TranslateY)*/
+		// Only perform the matrix calculations if the orientation is not horizontal
+		if ((_item->Orientation ? _item->Orientation : _item->OrientationXMP) <= 1U)
+		{
+			image->ClearValue(Image::RenderTransformProperty);
+		}
+		else
+		{
+			auto orientationHelper = new OrientationHelper(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
 
-		Windows::UI::Xaml::Media::MatrixTransform^ _MatrixTransform = ref new Windows::UI::Xaml::Media::MatrixTransform();
+			Windows::UI::Xaml::Media::MatrixTransform^ _MatrixTransform = ref new Windows::UI::Xaml::Media::MatrixTransform();
 
-		auto orientationHelper = new OrientationHelper(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
+			_MatrixTransform->Matrix = orientationHelper->getInverseMatrix();
 
-		_MatrixTransform->Matrix = orientationHelper->getInverseMatrix();
-
-		image->RenderTransform = _MatrixTransform;
+			image->RenderTransform = _MatrixTransform;
+		}
+		
+		
     }
     image->Opacity = 1;
 }

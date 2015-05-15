@@ -23,6 +23,5 @@ namespace JPG_Spinner
 	private:
 		// reference to the data item that will be visualized by this ItemViewer
 		Item^ _item;
-
 	};
 }

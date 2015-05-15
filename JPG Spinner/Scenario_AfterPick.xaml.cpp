@@ -9,8 +9,8 @@
 //*********************************************************
 
 //
-// Scenario1.xaml.cpp
-// Implementation of the Scenario1 class
+// Scenario_AfterPick.xaml.cpp
+// Implementation of the Scenario_AfterPick class
 //
 
 #include "pch.h"
@@ -948,7 +948,7 @@ byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer)
 	return pixels;
 }
 
-byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer, unsigned int *length)
+/*byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer, unsigned int *length)
 {
 	byte* pixels = nullptr;
 
@@ -968,9 +968,9 @@ byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer, unsigned 
 	}
 	
 	return pixels;
-}
+}*/
 
-concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile^ storageFile)
+concurrency::task<FILE *> StorageFileToFilePointerAsync(Windows::Storage::StorageFile^ storageFile)
 {
 	return concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(storageFile))
 		.then([](Windows::Storage::Streams::IBuffer^ buffer)
@@ -1014,13 +1014,37 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 
 					if (nullptr != filePointer)
 					{
-						if (buffer->Length == fwrite(GetPointerToByteData(buffer), sizeof(byte), buffer->Length, filePointer))
+						if (static_cast<size_t>(buffer->Length) == fwrite(GetPointerToByteData(buffer), sizeof(byte), static_cast<size_t>(buffer->Length), filePointer))
 						{
 							if (0 == fseek(filePointer, 0L, SEEK_SET))
 							{
 								return filePointer;
 							}
 						}
+
+						/*// Without COM casts
+						Windows::Storage::Streams::DataReader^ reader = Windows::Storage::Streams::DataReader::FromBuffer(buffer);
+
+						if (nullptr != reader)
+						{
+							byte * uselessArray = new byte[buffer->Length];
+
+							reader->ReadBytes(Platform::ArrayReference<byte>(uselessArray, buffer->Length));
+
+							if (static_cast<size_t>(buffer->Length) == fwrite(uselessArray, sizeof(byte), static_cast<size_t>(buffer->Length), filePointer))
+							{
+								if (0 == fseek(filePointer, 0L, SEEK_SET))
+								{
+									delete[] uselessArray;
+									delete reader;
+									reader = nullptr;
+									return filePointer;
+								}
+							}
+							delete[] uselessArray;
+							delete reader;
+							reader = nullptr;
+						}*/
 					}
 					else
 					{
@@ -1048,14 +1072,65 @@ concurrency::task<FILE *> StorageFileToFilePointer(Windows::Storage::StorageFile
 	});
 }
 
-concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, BOOL trim = FALSE, BOOL progressive = TRUE)
+/*
+* ERROR HANDLING:
+*
+* The JPEG library's standard error handler (jerror.c) is divided into
+* several "methods" which you can override individually.  This lets you
+* adjust the behavior without duplicating a lot of code, which you might
+* have to update with each future release.
+*
+* Our example here shows how to override the "error_exit" method so that
+* control is returned to the library's caller when a fatal error occurs,
+* rather than calling exit() as the standard error_exit method does.
+*
+* We use C's setjmp/longjmp facility to return control.  This means that the
+* routine which calls the JPEG library must first execute a setjmp() call to
+* establish the return point.  We want the replacement error_exit to do a
+* longjmp().  But we need to make the setjmp buffer accessible to the
+* error_exit routine.  To do this, we make a private extension of the
+* standard JPEG error handler object.  (If we were using C++, we'd say we
+* were making a subclass of the regular error handler.)
+*
+* Here's the extended error handler struct:
+*/
+struct my_error_mgr {
+	struct jpeg_error_mgr pub;	/* "public" fields */
+
+	jmp_buf setjmp_buffer;	/* for return to caller */
+};
+
+typedef struct my_error_mgr * my_error_ptr;
+
+// The routine that will replace the standard error_exit method
+METHODDEF(void) my_error_exit(j_common_ptr cinfo)
 {
-	return concurrency::create_task(StorageFileToFilePointer(item->StorageFile))
-		.then([item, trim, progressive](FILE * fp)
+	// cinfo->err really points to a my_error_mgr struct, so coerce pointer
+	my_error_ptr myerr = (my_error_ptr)cinfo->err;
+
+	// Note: Can postpone this until after returning
+	char buffer[JMSG_LENGTH_MAX];
+
+	// Create the message
+	(*cinfo->err->format_message) (cinfo, buffer);
+
+	// Return control to the setjmp point
+	longjmp(myerr->setjmp_buffer, 1);
+}
+
+concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, int32 maxMemoryToUse, BOOL trim = FALSE, BOOL progressive = TRUE)
+{
+	return concurrency::create_task(StorageFileToFilePointerAsync(item->StorageFile))
+		.then([item, maxMemoryToUse, trim, progressive](FILE * fp)
 	{
 		struct jpeg_decompress_struct srcinfo;
 		struct jpeg_compress_struct dstinfo;
-		struct jpeg_error_mgr jsrcerr, jdsterr;
+
+		/* We use our private extension JPEG error handler.
+		* Note that this struct must live as long as the main JPEG parameter
+		* struct, to avoid dangling-pointer problems.
+		*/
+		struct my_error_mgr jsrcerr, jdsterr;
 
 		jvirt_barray_ptr * src_coef_arrays;
 		jvirt_barray_ptr * dst_coef_arrays;
@@ -1116,17 +1191,47 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, BOOL trim =
 		transformoption.crop = FALSE;
 
 		// Initialize the JPEG decompression object with default error handling
-		srcinfo.err = jpeg_std_error(&jsrcerr);
-		jpeg_create_decompress(&srcinfo);
-		// Initialize the JPEG compression object with default error handling
-		dstinfo.err = jpeg_std_error(&jdsterr);
-		jpeg_create_compress(&dstinfo);
+		srcinfo.err = jpeg_std_error(&jsrcerr.pub);
 
-		// Note: we assume only the decompression object will have virtual arrays
+		// Set up the normal JPEG error routines, then override error_exit
+		jsrcerr.pub.error_exit = my_error_exit;
+
+		// Establish the setjmp return context for my_error_exit to use
+		if (setjmp(jsrcerr.setjmp_buffer))
+		{
+			// IThe JPEG code has signaled an error. Clean up the JPEG object,
+			jpeg_destroy_decompress(&srcinfo);
+			jpeg_destroy_compress(&dstinfo);
+			// close the input file,
+			fclose(fp);
+			// and return
+			return E_FAIL;
+		}
+
+		jpeg_create_decompress(&srcinfo);
+
+		// Initialize the JPEG compression object with default error handling
+		dstinfo.err = jpeg_std_error(&jdsterr.pub);
+
+		jdsterr.pub.error_exit = my_error_exit;
+
+		if (setjmp(jdsterr.setjmp_buffer))
+		{
+			// IThe JPEG code has signaled an error. Clean up the JPEG object,
+			jpeg_destroy_compress(&dstinfo);
+			jpeg_destroy_decompress(&srcinfo);
+			// close the input file,
+			fclose(fp);
+			// and return
+			return E_FAIL;
+		}
+
+		jpeg_create_compress(&dstinfo);
 
 		dstinfo.optimize_coding = TRUE;
 		dstinfo.err->trace_level = 0;
-		//srcinfo.mem->max_memory_to_use = dstinfo.mem->max_memory_to_use;
+		srcinfo.mem->max_memory_to_use = maxMemoryToUse;
+		dstinfo.mem->max_memory_to_use = srcinfo.mem->max_memory_to_use;
 
 		// Specify data source for decompression
 		jpeg_stdio_src(&srcinfo, fp);
@@ -1135,6 +1240,11 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, BOOL trim =
 		jcopy_markers_setup(&srcinfo, copyoption);
 
 		// Read file header
+		/* We can ignore the return value from jpeg_read_header since
+		*   (a) suspension is not possible with the stdio data source, and
+		*   (b) we passed TRUE to reject a tables-only JPEG file as an error.
+		* See libjpeg.txt for more info.
+		*/
 		(void)jpeg_read_header(&srcinfo, TRUE);
 
 		if (!jtransform_request_workspace(&srcinfo, &transformoption))
@@ -1164,6 +1274,8 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, BOOL trim =
 		*/
 		fclose(fp);
 
+		concurrency::interruption_point();
+
 		fp = CreateTempFile(item->TempFilePath->Data());
 
 		if (progressive)
@@ -1184,9 +1296,11 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, BOOL trim =
 		// Execute image transformation, if any
 		jtransform_execute_transformation(&srcinfo, &dstinfo, src_coef_arrays, &transformoption);
 
-		// Finish compression and release memory
+		// Finish compression
 		jpeg_finish_compress(&dstinfo);
+		// Release memory
 		jpeg_destroy_compress(&dstinfo);
+		// We can ignore the return value since suspension is not possible with the stdio data source
 		(void)jpeg_finish_decompress(&srcinfo);
 		jpeg_destroy_decompress(&srcinfo);
 
@@ -1194,7 +1308,7 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, BOOL trim =
 		fclose(fp);
 
 		return S_OK;
-	});
+	}, concurrency::task_continuation_context::use_arbitrary());
 }
 
 Scenario_AfterPick::Scenario_AfterPick()
@@ -1251,14 +1365,14 @@ Scenario_AfterPick::Scenario_AfterPick()
 	GetNativeSystemInfo(&systemInfo);
 
 	// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
-	double reductionFactor = 2.0;
+	float reductionFactor = 2.0;
 
-	numberLogicalProcessors = static_cast<unsigned long>(static_cast<double>(systemInfo.dwNumberOfProcessors) / reductionFactor);
+	numberProcessorsToUse = static_cast<unsigned long>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
 
 	// Sanity check
-	if (0U == numberLogicalProcessors)
+	if (0U == numberProcessorsToUse)
 	{
-		numberLogicalProcessors = 1U;
+		numberProcessorsToUse = 1U;
 	}
 }
 
@@ -1279,8 +1393,7 @@ Scenario_AfterPick::~Scenario_AfterPick()
 // property is typically used to configure the page.</param>
 void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 {
-    // A pointer back to the main page.  This is needed if you want to call methods in MainPage such
-    // as NotifyUser()
+    // A pointer back to the main page. This is needed if you want to call methods in MainPage
     rootPage = MainPage::Current;
 
 	auto cancellationToken = ((concurrency::cancellation_token_source*)(rootPage->cts->Value))->get_token();
@@ -1554,14 +1667,14 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 					continue;
 				}
 
-				while (imagesBeingRotated >= numberLogicalProcessors)
+				while (imagesBeingRotated >= numberProcessorsToUse)
 				{
 					Sleep(20);
 				}
 
 				imagesBeingRotated++;
 
-				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(item, rootPage->CropChecked, rootPage->ProgressiveChecked);
+				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(item, static_cast<int32>((static_cast<float>(0.90) * static_cast<float>(MAX_MEM_FOR_ALL_JPEGS)) / static_cast<float>(numberProcessorsToUse)), rootPage->CropChecked, rootPage->ProgressiveChecked);
 
 				createReorientedTempFileAsyncTask.then([this, cancellationToken, item](HRESULT hr)
 				{
@@ -1580,18 +1693,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 							if (SUCCEEDED(hr))
 							{
-								/*if (rootPage->DeleteThumbnails)
-								{
-								// Ignore return value
-								DeleteJPEGThumbnailData(item, pIWICImagingFactory);
-								}*/
-
-								_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
-									ref new Windows::UI::Core::DispatchedHandler([this, item]()
-								{
-									item->Orientation = 1U;
-									item->OrientationXMP = 1U;
-								}));
+								//if (rootPage->DeleteThumbnails) {DeleteJPEGThumbnailData(item, pIWICImagingFactory);}
 
 								concurrency::interruption_point();
 
@@ -1618,12 +1720,22 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 										_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
 											ref new Windows::UI::Core::DispatchedHandler([this, item]()
 										{
+											if (0U != item->Orientation)
+											{
+												item->Orientation = 1U;
+											}
+
+											if (0U != item->OrientationXMP)
+											{
+												item->OrientationXMP = 1U;
+											}
+
 											GridView1->SelectedItems->Append(item);
 
 											Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
 
 											// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
-											// when the item is due to be rendered, the ShowError() will get called on it anyway
+											// when the item is due to be rendered, the ShowImage() will get called on it anyway
 											if (nullptr != sI)
 											{
 												ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
@@ -1763,18 +1875,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 	}, cancellationToken);
 }
 
-// <summary>
 // We will visualize the data item in asynchronously in multiple phases for improved panning user experience 
-// of large lists.  In this sample scneario, we will visualize different parts of the data item
+// of large lists.  In this sample scenario, we will visualize different parts of the data item
 // in the following order:
 // 
 //     1) Placeholders (visualized synchronously - Phase 0)
 //     2) Title (visualized asynchronously - Phase 1)
 //     3) Category and Image (visualized asynchronously - Phase 2)
-//
-// </summary>
-// <param name="sender"></param>
-// <param name="args"></param>
 void JPG_Spinner::Scenario_AfterPick::ItemGridView_ContainerContentChanging(
     ListViewBase^ sender,
     Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^ args)
@@ -1785,7 +1892,7 @@ void JPG_Spinner::Scenario_AfterPick::ItemGridView_ContainerContentChanging(
     {
         // if the container is being added to the recycle queue (meaning it will not particiapte in 
         // visualizing data items for the time being), we clear out the data item
-        if (args->InRecycleQueue == true)
+        if (args->InRecycleQueue)
         {
             iv->ClearData();
         }

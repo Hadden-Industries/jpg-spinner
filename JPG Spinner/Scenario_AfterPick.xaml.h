@@ -15,6 +15,9 @@
 
 #pragma once
 
+// 1 GiB
+#define MAX_MEM_FOR_ALL_JPEGS 1073741824
+
 #include "pch.h"
 #include "Scenario_AfterPick.g.h"
 #include "MainPage.xaml.h"
@@ -37,13 +40,13 @@ namespace JPG_Spinner
         virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
 
     private:
-		Scenario_AfterPick::~Scenario_AfterPick();
+		~Scenario_AfterPick();
         MainPage^ rootPage;
 		Data^ storeData;
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
 		bool CoInitializeExSucceeded;
-		unsigned long numberLogicalProcessors;
+		unsigned long numberProcessorsToUse;
 		volatile std::atomic_ulong imagesSelected;
 		volatile std::atomic_ulong imagesAnalysed;
 		volatile std::atomic_ulong imagesToBeRotated;
