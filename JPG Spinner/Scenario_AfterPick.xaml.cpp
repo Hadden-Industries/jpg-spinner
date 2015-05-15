@@ -1118,7 +1118,7 @@ METHODDEF(void) my_error_exit(j_common_ptr cinfo)
 	longjmp(myerr->setjmp_buffer, 1);
 }
 
-concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, int32 maxMemoryToUse, BOOL trim = FALSE, BOOL progressive = TRUE)
+concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxMemoryToUse, BOOL trim = FALSE, BOOL progressive = TRUE)
 {
 	return concurrency::create_task(StorageFileToFilePointerAsync(item->StorageFile))
 		.then([item, maxMemoryToUse, trim, progressive](FILE * fp)
@@ -1674,7 +1674,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 				imagesBeingRotated++;
 
-				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(item, static_cast<int32>((static_cast<float>(0.90) * static_cast<float>(MAX_MEM_FOR_ALL_JPEGS)) / static_cast<float>(numberProcessorsToUse)), rootPage->CropChecked, rootPage->ProgressiveChecked);
+				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(item, static_cast<size_t>((static_cast<float>(0.90) * static_cast<float>(MAX_MEM_FOR_ALL_JPEGS)) / static_cast<float>(numberProcessorsToUse)), rootPage->CropChecked, rootPage->ProgressiveChecked);
 
 				createReorientedTempFileAsyncTask.then([this, cancellationToken, item](HRESULT hr)
 				{

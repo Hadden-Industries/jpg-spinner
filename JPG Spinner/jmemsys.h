@@ -196,5 +196,5 @@ EXTERN(void) jpeg_open_backing_store JPP((j_common_ptr cinfo,
  * all opened backing-store objects have been closed.
  */
 
-EXTERN(long) jpeg_mem_init JPP((j_common_ptr cinfo));
+EXTERN(size_t) jpeg_mem_init JPP((j_common_ptr cinfo));
 EXTERN(void) jpeg_mem_term JPP((j_common_ptr cinfo));

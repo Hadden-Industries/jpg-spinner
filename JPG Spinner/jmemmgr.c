@@ -1029,7 +1029,7 @@ GLOBAL(void)
 jinit_memory_mgr (j_common_ptr cinfo)
 {
   my_mem_ptr mem;
-  long max_to_use;
+  size_t max_to_use;
   int pool;
   size_t test_mac;
 

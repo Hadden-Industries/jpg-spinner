@@ -74,7 +74,7 @@ jpeg_free_large (j_common_ptr cinfo, void FAR * object, size_t sizeofobject)
  */
 
 #ifndef DEFAULT_MAX_MEM		/* so can override from makefile */
-#define DEFAULT_MAX_MEM		134217728L /* default: 128 mebibyte */
+#define DEFAULT_MAX_MEM		134217728 /* default: 128 mebibyte */
 #endif
 
 GLOBAL(size_t)
@@ -154,7 +154,7 @@ jpeg_open_backing_store (j_common_ptr cinfo, backing_store_ptr info,
  * cleanup required.
  */
 
-GLOBAL(long)
+GLOBAL(size_t)
 jpeg_mem_init (j_common_ptr cinfo)
 {
   return DEFAULT_MAX_MEM;	/* default for max_memory_to_use */
