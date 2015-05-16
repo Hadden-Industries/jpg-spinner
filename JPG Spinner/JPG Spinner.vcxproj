@@ -199,6 +199,9 @@
     <ClInclude Include="Scenario_AfterPick.xaml.h">
       <DependentUpon>Scenario_AfterPick.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingsFlyout.xaml.h">
+      <DependentUpon>SettingsFlyout.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="transupp.h" />
     <ClInclude Include="WebPage.xaml.h">
       <DependentUpon>WebPage.xaml</DependentUpon>
@@ -220,6 +223,7 @@
     </Page>
     <Page Include="ScenariosTemplateStyles.xaml" />
     <Page Include="Scenario_AfterPick.xaml" />
+    <Page Include="SettingsFlyout.xaml" />
     <Page Include="Styles.xaml" />
     <Page Include="WebPage.xaml">
       <SubType>Designer</SubType>
@@ -1005,6 +1009,9 @@
     </ClCompile>
     <ClCompile Include="Scenario_AfterPick.xaml.cpp">
       <DependentUpon>Scenario_AfterPick.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsFlyout.xaml.cpp">
+      <DependentUpon>SettingsFlyout.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="transupp.c">
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsWinRT>

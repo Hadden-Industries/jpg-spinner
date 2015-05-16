@@ -5,6 +5,7 @@
 
 #include "pch.h"
 #include "MainPage.xaml.h"
+#include "SettingsFlyout.xaml.h"
 
 using namespace JPG_Spinner;
 
@@ -101,10 +102,8 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 		Window::Current->Activate();
 	}
 
-	auto temporaryFolder = Windows::Storage::ApplicationData::Current->TemporaryFolder;
-
 	// Get the files in the temporary folder
-	concurrency::create_task(temporaryFolder->GetFilesAsync())
+	concurrency::create_task(Windows::Storage::ApplicationData::Current->TemporaryFolder->GetFilesAsync())
 		.then([](IVectorView<Windows::Storage::StorageFile^>^ filesInFolder)
 	{
 		// Iterate over the files
@@ -114,6 +113,47 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 
 			// Permanently delete the file
 			concurrency::create_task(file->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
+		}
+	});
+
+	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
+		.then([](Platform::String^ value)
+	{
+		SYSTEM_INFO systemInfo = SYSTEM_INFO();
+
+		GetNativeSystemInfo(&systemInfo);
+
+		// If you have not saved this setting before
+		if (nullptr == value
+			// or the saved value is greater than the total current number of processors
+			|| wcstoul(value->Data(), nullptr, 0) > static_cast<unsigned long>(systemInfo.dwNumberOfProcessors))
+		{
+			// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
+			const float reductionFactor = 2.0;
+
+			unsigned long numberLogicalProcessorsToUse = static_cast<unsigned long>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
+
+			// Sanity check
+			if (0U == numberLogicalProcessorsToUse)
+			{
+				numberLogicalProcessorsToUse = 1U;
+			}
+
+			concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", numberLogicalProcessorsToUse.ToString()));
+		}
+	});
+
+	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
+		.then([](Platform::String^ value)
+	{
+		unsigned long long megabytesRAMToUse = (MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL);
+
+		// If you have not saved this setting before
+		if (nullptr == value
+			// or the saved value is more than the current allowable
+			|| wcstoull(value->Data(), nullptr, 0) > megabytesRAMToUse)
+		{
+			concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", megabytesRAMToUse.ToString()));
 		}
 	});
 }
@@ -141,6 +181,33 @@ void App::OnSuspending(Object^ sender, SuspendingEventArgs^ e)
 void App::OnNavigationFailed(Platform::Object ^sender, Windows::UI::Xaml::Navigation::NavigationFailedEventArgs ^e)
 {
 	throw ref new FailureException("Failed to load Page " + e->SourcePageType.Name);
+}
+
+void App::OnWindowCreated(Windows::UI::Xaml::WindowCreatedEventArgs^ args)
+{
+	Windows::UI::ApplicationSettings::SettingsPane::GetForCurrentView()->CommandsRequested += ref new Windows::Foundation::TypedEventHandler<Windows::UI::ApplicationSettings::SettingsPane^, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^>(this, &App::OnCommandsRequested);
+}
+
+void App::OnCommandsRequested(Windows::UI::ApplicationSettings::SettingsPane^ sender, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^ args)
+{
+	Windows::UI::Popups::UICommandInvokedHandler^ handler = ref new Windows::UI::Popups::UICommandInvokedHandler(this, &App::OnSettingsCommand);
+
+	Windows::UI::ApplicationSettings::SettingsCommand^ generalCommand = ref new Windows::UI::ApplicationSettings::SettingsCommand(
+		"options",
+		Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView()->GetString("settingsFlyoutOptions"),
+		handler);
+
+	args->Request->ApplicationCommands->Append(generalCommand);
+}
+
+void App::OnSettingsCommand(Windows::UI::Popups::IUICommand^ command)
+{
+	if ("options" == command->Id->ToString())
+	{
+		auto mySettings = ref new JPG_Spinner::SettingsFlyout();
+
+		mySettings->Show();
+	}
 }
 
 Item::Item() :

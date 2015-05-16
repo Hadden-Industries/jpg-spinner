@@ -1371,20 +1371,29 @@ Scenario_AfterPick::Scenario_AfterPick()
 	imagesErrored = 0UL;
 	imagesBeingRotated = 0U;
 
-	SYSTEM_INFO systemInfo = SYSTEM_INFO();
+	// Sensible default of one processor
+	numberProcessorsToUse = 1UL;
 
-	GetNativeSystemInfo(&systemInfo);
-
-	// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
-	float reductionFactor = 2.0;
-
-	numberProcessorsToUse = static_cast<unsigned long>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
-
-	// Sanity check
-	if (0U == numberProcessorsToUse)
+	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
+		.then([this](Platform::String^ value)
 	{
-		numberProcessorsToUse = 1U;
-	}
+		if (nullptr != value)
+		{
+			numberProcessorsToUse = wcstoul(value->Data(), nullptr, 0);
+		}
+	});
+
+	// Sensible default of 128 MiB
+	bytesRAMToUse = 128ULL * 1024ULL * 1024ULL;
+
+	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
+		.then([this](Platform::String^ value)
+	{
+		if (nullptr != value)
+		{
+			bytesRAMToUse = wcstoull(value->Data(), nullptr, 0) * 1024ULL * 1024ULL;
+		}
+	});
 }
 
 Scenario_AfterPick::~Scenario_AfterPick()
@@ -1692,7 +1701,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 				imagesBeingRotated++;
 
-				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(item, static_cast<size_t>((static_cast<float>(0.90) * static_cast<float>(MAX_MEM_FOR_ALL_JPEGS)) / static_cast<float>(numberProcessorsToUse)), rootPage->CropChecked, rootPage->ProgressiveChecked);
+				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(
+					item,
+					static_cast<size_t>(
+					(static_cast<double>(0.95) * static_cast<double>(bytesRAMToUse)) / static_cast<double>(numberProcessorsToUse)
+					),
+					rootPage->CropChecked,
+					rootPage->ProgressiveChecked);
 
 				createReorientedTempFileAsyncTask.then([this, cancellationToken, item](HRESULT hr)
 				{

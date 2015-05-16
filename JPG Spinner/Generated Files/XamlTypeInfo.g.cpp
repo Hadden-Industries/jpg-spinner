@@ -15,6 +15,7 @@
 #include "App.xaml.h"
 #include "MainPage.xaml.h"
 #include "Scenario_AfterPick.xaml.h"
+#include "SettingsFlyout.xaml.h"
 #include "WebPage.xaml.h"
 
 #include "ExplanationCrop.g.hpp"
@@ -23,6 +24,7 @@
 #include "App.g.hpp"
 #include "MainPage.g.hpp"
 #include "Scenario_AfterPick.g.hpp"
+#include "SettingsFlyout.g.hpp"
 #include "WebPage.g.hpp"
 
 ::Platform::Collections::Vector<::Windows::UI::Xaml::Markup::IXamlMetadataProvider^>^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::OtherProviders::get()
@@ -83,6 +85,16 @@
     }
 
     if (typeName == L"Int32")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
+    if (typeName == L"Windows.UI.Xaml.Controls.SettingsFlyout")
+    {
+        return ref new XamlSystemBaseType(typeName);
+    }
+
+    if (typeName == L"Windows.UI.Xaml.Controls.ContentControl")
     {
         return ref new XamlSystemBaseType(typeName);
     }
@@ -184,6 +196,19 @@
             []() -> Platform::Object^ 
             {
                 return ref new ::JPG_Spinner::Scenario_AfterPick(); 
+            };
+        userType->SetIsLocalType();
+        return userType;
+    }
+
+    if (typeName == L"JPG_Spinner.SettingsFlyout")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.SettingsFlyout"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::SettingsFlyout(); 
             };
         userType->SetIsLocalType();
         return userType;

@@ -6,6 +6,8 @@
 #pragma once
 
 #define MAX_PATH_UNICODE 32767
+// 1 GiB
+#define MAX_MEM_FOR_ALL_JPEGS 1073741824ULL
 
 #include <collection.h>
 #include <ppltasks.h>
@@ -55,3 +57,9 @@ class OrientationHelper
 		bool _XYFlips;
 		int _WICBitmapTransformOptions;
 };
+
+namespace JPG_Spinner
+{
+	concurrency::task<Platform::String^> LoadSettingAsync(Platform::String^ key);
+	concurrency::task<bool> SaveSettingAsync(Platform::String^ key, Platform::String^ value);
+}

@@ -119,6 +119,7 @@
     <Page Include="WebPage.xaml" />
     <Page Include="ExplanationCrop.xaml" />
     <Page Include="ExplanationProgressive.xaml" />
+    <Page Include="SettingsFlyout.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Square310x310Logo.scale-180.png">

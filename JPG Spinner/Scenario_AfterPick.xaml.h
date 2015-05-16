@@ -15,9 +15,6 @@
 
 #pragma once
 
-// 1 GiB
-#define MAX_MEM_FOR_ALL_JPEGS 1073741824
-
 #include "pch.h"
 #include "Scenario_AfterPick.g.h"
 #include "MainPage.xaml.h"
@@ -47,6 +44,7 @@ namespace JPG_Spinner
 		IWICImagingFactory * pIWICImagingFactory;
 		bool CoInitializeExSucceeded;
 		unsigned long numberProcessorsToUse;
+		unsigned long long bytesRAMToUse;
 		volatile std::atomic_ulong imagesSelected;
 		volatile std::atomic_ulong imagesAnalysed;
 		volatile std::atomic_ulong imagesToBeRotated;

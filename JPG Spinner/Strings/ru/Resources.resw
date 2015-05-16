@@ -205,4 +205,22 @@
   <data name="progressiveLevel" xml:space="preserve">
     <value>Прогрессивный уровень</value>
   </data>
+  <data name="SettingsFlyout.Title" xml:space="preserve">
+    <value>Параметры</value>
+  </data>
+  <data name="settingsFlyoutOptions" xml:space="preserve">
+    <value>Параметры</value>
+  </data>
+  <data name="SettingsFlyoutOptionsMemory.Text" xml:space="preserve">
+    <value>Память</value>
+  </data>
+  <data name="SettingsFlyoutOptionsProcessor.Text" xml:space="preserve">
+    <value>Процессор</value>
+  </data>
+  <data name="SettingsFlyoutOptionsTextBlockMemory.Text" xml:space="preserve">
+    <value>Максимальный объем оперативной памяти, в мегабайтах</value>
+  </data>
+  <data name="SettingsFlyoutOptionsTextBlockProcessor.Text" xml:space="preserve">
+    <value>Максимальное число логических ядер</value>
+  </data>
 </root>
