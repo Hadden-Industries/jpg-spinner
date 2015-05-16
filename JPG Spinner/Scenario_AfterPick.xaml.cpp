@@ -1319,8 +1319,6 @@ Scenario_AfterPick::Scenario_AfterPick()
 
 	_resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
 
-	pIWICImagingFactory = nullptr;
-
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	if (FAILED(hr))
@@ -1332,12 +1330,25 @@ Scenario_AfterPick::Scenario_AfterPick()
 	{
 		CoInitializeExSucceeded = true;
 
-		hr = CoCreateInstance(
+		MULTI_QI mutliQi = { &__uuidof(pIWICImagingFactory), nullptr, S_OK };
+
+		hr = CoCreateInstanceFromApp(
 			CLSID_WICImagingFactory,
-			NULL,
+			nullptr,
 			CLSCTX_INPROC_SERVER,
-			IID_PPV_ARGS(&pIWICImagingFactory)
-			);
+			nullptr,
+			1,
+			&mutliQi);
+
+		if (SUCCEEDED(hr))
+		{
+			hr = mutliQi.hr;
+
+			if (SUCCEEDED(hr))
+			{
+				pIWICImagingFactory = static_cast<IWICImagingFactory*>(mutliQi.pItf);
+			}
+		}
 
 		//Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
 		//Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
@@ -1350,7 +1361,7 @@ Scenario_AfterPick::Scenario_AfterPick()
 	
 	if (FAILED(hr))
 	{
-		throw Platform::Exception::CreateException(hr);
+		InputTextBlock1->Text = HResultToHexString(hr);
 	}
 
 	imagesSelected = 0UL;
@@ -1393,6 +1404,13 @@ Scenario_AfterPick::~Scenario_AfterPick()
 // property is typically used to configure the page.</param>
 void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 {
+	// If there is any text in the top section then there has been an error
+	if (!InputTextBlock1->Text->IsEmpty())
+	{
+		// so return
+		return;
+	}
+
     // A pointer back to the main page. This is needed if you want to call methods in MainPage
     rootPage = MainPage::Current;
 
