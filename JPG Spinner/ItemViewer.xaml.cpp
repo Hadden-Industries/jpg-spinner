@@ -72,16 +72,12 @@ void ItemViewer::ShowImage()
 		}
 		else
 		{
-			auto orientationHelper = new OrientationHelper(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
-
 			Windows::UI::Xaml::Media::MatrixTransform^ _MatrixTransform = ref new Windows::UI::Xaml::Media::MatrixTransform();
 
-			_MatrixTransform->Matrix = orientationHelper->getInverseMatrix();
+			_MatrixTransform->Matrix = OrientationHelper::GetInverseMatrix(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
 
 			image->RenderTransform = _MatrixTransform;
 		}
-		
-		
     }
     image->Opacity = 1;
 }

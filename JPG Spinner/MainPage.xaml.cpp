@@ -33,7 +33,7 @@ JPG_Spinner::MainPage::MainPage()
 
 	buttonIsSelectFiles = true;
 
-	DeleteThumbnails = false;
+	//DeleteThumbnails = false;
 }
 
 void JPG_Spinner::MainPage::ShowDebugText(Platform::String^ debugText)

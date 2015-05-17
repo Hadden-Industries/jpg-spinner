@@ -709,7 +709,7 @@ HRESULT FixMetadataOutOfPlace(Item^ item, IWICImagingFactory * pIWICImagingFacto
 
 			auto coordinate = Windows::Foundation::Point(static_cast<float>((reinterpret_cast<PROPVARIANT*>(item->PtrSubjectArea->Value))->caui.pElems[0]), static_cast<float>((reinterpret_cast<PROPVARIANT*>(item->PtrSubjectArea->Value))->caui.pElems[1]));
 
-			auto matrix = orientationHelper->getMatrix();
+			auto matrix = orientationHelper->GetMatrix();
 
 			if (orientationHelper->XYFlips())
 			{
@@ -756,7 +756,7 @@ HRESULT FixMetadataOutOfPlace(Item^ item, IWICImagingFactory * pIWICImagingFacto
 
 			auto coordinate = Windows::Foundation::Point(static_cast<float>((reinterpret_cast<PROPVARIANT*>(item->PtrSubjectLocation->Value))->caui.pElems[0]), static_cast<float>((reinterpret_cast<PROPVARIANT*>(item->PtrSubjectLocation->Value))->caui.pElems[1]));
 
-			auto matrix = orientationHelper->getMatrix();
+			auto matrix = orientationHelper->GetMatrix();
 
 			if (orientationHelper->XYFlips())
 			{

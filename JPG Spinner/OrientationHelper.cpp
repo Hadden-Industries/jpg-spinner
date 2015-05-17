@@ -28,12 +28,12 @@ OrientationHelper::OrientationHelper(const unsigned char orientation)
 	_orientation = orientation;
 }
 
-Windows::UI::Xaml::Media::Matrix OrientationHelper::getMatrix()
+Windows::UI::Xaml::Media::Matrix OrientationHelper::GetMatrix()
 {
-	return OrientationHelper::getMatrix(_orientation);
+	return OrientationHelper::GetMatrix(_orientation);
 }
 
-Windows::UI::Xaml::Media::Matrix OrientationHelper::getMatrix(const unsigned char orientation)
+Windows::UI::Xaml::Media::Matrix OrientationHelper::GetMatrix(const unsigned char orientation)
 {
 	switch (orientation)
 	{
@@ -98,12 +98,12 @@ Windows::UI::Xaml::Media::Matrix OrientationHelper::getMatrix(const unsigned cha
 	}
 }
 
-Windows::UI::Xaml::Media::Matrix OrientationHelper::getInverseMatrix()
+Windows::UI::Xaml::Media::Matrix OrientationHelper::GetInverseMatrix()
 {
-	return OrientationHelper::getInverseMatrix(_orientation);
+	return OrientationHelper::GetInverseMatrix(_orientation);
 }
 
-Windows::UI::Xaml::Media::Matrix OrientationHelper::getInverseMatrix(const unsigned char orientation)
+Windows::UI::Xaml::Media::Matrix OrientationHelper::GetInverseMatrix(const unsigned char orientation)
 {
 	switch (orientation)
 	{
