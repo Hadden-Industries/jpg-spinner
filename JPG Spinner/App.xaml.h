@@ -5,6 +5,14 @@
 
 #pragma once
 
+#ifdef _WIN64
+// 16 GiB
+#define MAX_MEM_FOR_ALL_JPEGS 17179869184ULL
+#else
+// 1 GiB
+#define MAX_MEM_FOR_ALL_JPEGS 1073741824ULL
+#endif
+
 #include "App.g.h"
 #include <Propvarutil.h> // PropVariantCompare
 

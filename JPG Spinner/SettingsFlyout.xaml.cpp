@@ -83,6 +83,17 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ sender
 		}
 	});
 
+	SliderMemory->Maximum = static_cast<double>((MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL));
+
+	// If the app was built for x64
+	if (Windows::System::ProcessorArchitecture::X64 == Windows::ApplicationModel::Package::Current->Id->Architecture)
+	{
+		// then increase the step sizes
+		SliderMemory->StepFrequency = 512.0;
+
+		SliderMemory->TickFrequency = 1024.0;
+	}
+
 	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
 		.then([this](Platform::String^ value)
 	{
