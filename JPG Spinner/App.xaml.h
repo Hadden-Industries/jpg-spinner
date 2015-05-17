@@ -48,8 +48,8 @@ namespace JPG_Spinner
 		Windows::UI::Xaml::Media::ImageSource^ _Image;
 		unsigned char _Orientation;
 		unsigned char _OrientationXMP;
-		unsigned short _JPEGInterchangeFormat;
-		unsigned short _JPEGInterchangeFormatLength;
+		//unsigned short _JPEGInterchangeFormat;
+		//unsigned short _JPEGInterchangeFormatLength;
 		PROPVARIANT _SubjectArea;
 		PROPVARIANT _SubjectLocation;
 		PROPVARIANT _FocalPlaneXResolution;
@@ -203,7 +203,7 @@ namespace JPG_Spinner
 			}
 		}
 
-		//JPEGInterchangeFormat
+		/*//JPEGInterchangeFormat
 		property unsigned short JPEGInterchangeFormat
 		{
 			unsigned short get()
@@ -235,7 +235,7 @@ namespace JPG_Spinner
 					OnPropertyChanged("JPEGInterchangeFormatLength");
 				}
 			}
-		}
+		}*/
 
 		//PtrSubjectArea
 		property Platform::IBox<intptr_t>^ PtrSubjectArea

@@ -218,8 +218,8 @@ _Error(""),
 _Image(nullptr),
 _Orientation(0U),
 _OrientationXMP(0U),
-_JPEGInterchangeFormat(0U),
-_JPEGInterchangeFormatLength(0U),
+//_JPEGInterchangeFormat(0U),
+//_JPEGInterchangeFormatLength(0U),
 _HasThumbnail(false)
 {
 	PropVariantInit(&_SubjectArea);

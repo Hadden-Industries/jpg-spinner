@@ -242,8 +242,6 @@
         userType->AddMemberName(L"PtrFocalPlaneXResolution");
         userType->AddMemberName(L"PtrSubjectLocation");
         userType->AddMemberName(L"PtrSubjectArea");
-        userType->AddMemberName(L"JPEGInterchangeFormatLength");
-        userType->AddMemberName(L"JPEGInterchangeFormat");
         userType->AddMemberName(L"OrientationXMP");
         userType->AddMemberName(L"Orientation");
         userType->AddMemberName(L"Image");
@@ -257,7 +255,7 @@
         return userType;
     }
 
-    if (typeName == L"UInt16")
+    if (typeName == L"Byte")
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"System.ValueType"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
@@ -269,14 +267,6 @@
     {
         ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Object"));
         userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
-        return userType;
-    }
-
-    if (typeName == L"Byte")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"System.ValueType"));
-        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Metadata;
-        userType->SetIsReturnTypeStub();
         return userType;
     }
 
@@ -496,48 +486,6 @@
             {
                 auto that = (::JPG_Spinner::Item^)instance;
                 that->PtrSubjectArea = (::Platform::IBox<::default::int32>^)value;
-            };
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.Item.JPEGInterchangeFormatLength")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"JPEGInterchangeFormatLength", L"UInt16");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                auto value = ref new ::Platform::Box<::default::uint16>(that->JPEGInterchangeFormatLength);
-                return value;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                auto boxedValue = (::Platform::IBox<::default::uint16>^)value;
-                that->JPEGInterchangeFormatLength = boxedValue->Value;
-            };
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.Item.JPEGInterchangeFormat")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"JPEGInterchangeFormat", L"UInt16");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                auto value = ref new ::Platform::Box<::default::uint16>(that->JPEGInterchangeFormat);
-                return value;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                auto boxedValue = (::Platform::IBox<::default::uint16>^)value;
-                that->JPEGInterchangeFormat = boxedValue->Value;
             };
         return xamlMember;
     }

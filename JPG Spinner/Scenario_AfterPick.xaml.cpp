@@ -219,7 +219,7 @@ concurrency::task<HRESULT> GetMetadataAsync(Item^ item, IWICImagingFactory * pIW
 			hr = hrLastSuccessful;
 		}
 
-		hrLastSuccessful = hr;
+		/*hrLastSuccessful = hr;
 
 		// Note the details of the thumbnail, if any
 		hr = pQueryReader->GetMetadataByName(L"/app1/thumb/{ushort=259}", &propVariant);
@@ -264,7 +264,7 @@ concurrency::task<HRESULT> GetMetadataAsync(Item^ item, IWICImagingFactory * pIW
 
 		PropVariantClear(&propVariant);
 
-		hrLastSuccessful = hr;
+		hrLastSuccessful = hr;*/
 
 		//SubjectArea
 		hr = pQueryReader->GetMetadataByName(L"/app1/ifd/exif/{ushort=37396}", &propVariant);
@@ -333,7 +333,7 @@ concurrency::task<HRESULT> GetMetadataAsync(Item^ item, IWICImagingFactory * pIW
 	});
 }
 
-// Zero the thumbnail App1/1st IFD block
+/*// Zero the thumbnail App1/1st IFD block
 HRESULT DeleteJPEGThumbnailMetadata(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 {
 	Microsoft::WRL::ComPtr<IWICBitmapDecoder> pDecoder;
@@ -569,7 +569,7 @@ HRESULT DeleteJPEGThumbnailData(Item^ item, IWICImagingFactory * pIWICImagingFac
 	}
 
 	return S_OK;
-}
+}*/
 
 HRESULT FixMetadataOutOfPlace(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 {
