@@ -21,9 +21,9 @@ using namespace Windows::UI::Xaml::Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
-MainPage^ MainPage::Current = nullptr;
+JPG_Spinner::MainPage^ MainPage::Current = nullptr;
 
-MainPage::MainPage()
+JPG_Spinner::MainPage::MainPage()
 {
 	InitializeComponent();
 
@@ -49,9 +49,9 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 {
 	if (buttonIsSelectFiles)
 	{
-		CropChecked = CheckBoxCrop->IsChecked->Value;
+		CropChecked = static_cast<BOOL>(CheckBoxCrop->IsOn);
 
-		ProgressiveChecked = CheckBoxProgressive->IsChecked->Value;
+		ProgressiveChecked = static_cast<BOOL>(CheckBoxProgressive->IsOn);
 
 		_cts = concurrency::cancellation_token_source();
 
@@ -132,47 +132,38 @@ void JPG_Spinner::MainPage::FlipButton()
 	buttonIsSelectFiles = !buttonIsSelectFiles;
 }
 
-void JPG_Spinner::MainPage::CheckBoxProgressive_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", Boolean(true).ToString()));
-}
-
-void JPG_Spinner::MainPage::CheckBoxProgressive_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", Boolean(false).ToString()));
-}
-
-void JPG_Spinner::MainPage::CheckBoxCrop_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	concurrency::create_task(SaveSettingAsync("CheckBoxCrop", Boolean(true).ToString()));
-}
-
-void JPG_Spinner::MainPage::CheckBoxCrop_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	concurrency::create_task(SaveSettingAsync("CheckBoxCrop", Boolean(false).ToString()));
-}
-
 void JPG_Spinner::MainPage::CheckBoxProgressive_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	concurrency::create_task(LoadSettingAsync("CheckBoxProgressive"))
 		.then([this](Platform::String^ value)
 	{
+		// if found a stored value
 		if (nullptr != value)
 		{
-			if (Boolean(true).ToString() == value)
+			// if the current value is not the stored
+			if (CheckBoxProgressive->IsOn.ToString() != value)
 			{
-				CheckBoxProgressive->IsChecked = true;
-			}
-			else
-			{
-				CheckBoxProgressive->IsChecked = false;
+				// toggle
+				CheckBoxProgressive->IsOn = !CheckBoxProgressive->IsOn;
 			}
 		}
+		// else new installation
 		else
 		{
-			CheckBoxProgressive->IsChecked = true;
+			// so set sensible default
+			CheckBoxProgressive->IsOn = true;
+			// and save it
+			concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", CheckBoxProgressive->IsOn.ToString()));
 		}
 	});
+}
+
+void JPG_Spinner::MainPage::CheckBoxProgressive_Toggled(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	(void)sender;
+	(void)e;
+
+	concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", CheckBoxProgressive->IsOn.ToString()));
 }
 
 void JPG_Spinner::MainPage::CheckBoxCrop_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
@@ -180,22 +171,33 @@ void JPG_Spinner::MainPage::CheckBoxCrop_Loaded(Platform::Object^ sender, Window
 	concurrency::create_task(LoadSettingAsync("CheckBoxCrop"))
 		.then([this](Platform::String^ value)
 	{
+		// if found a stored value
 		if (nullptr != value)
 		{
-			if (Boolean(true).ToString() == value)
+			// if the current value is not the stored
+			if (CheckBoxCrop->IsOn.ToString() != value)
 			{
-				CheckBoxCrop->IsChecked = true;
-			}
-			else
-			{
-				CheckBoxCrop->IsChecked = false;
+				// toggle
+				CheckBoxCrop->IsOn = !CheckBoxCrop->IsOn;
 			}
 		}
+		// else new installation
 		else
 		{
-			CheckBoxCrop->IsChecked = false;
+			// so set sensible default
+			CheckBoxCrop->IsOn = false;
+			// and save it
+			concurrency::create_task(SaveSettingAsync("CheckBoxCrop", CheckBoxCrop->IsOn.ToString()));
 		}
 	});
+}
+
+void JPG_Spinner::MainPage::CheckBoxCrop_Toggled(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	(void)sender;
+	(void)e;
+
+	concurrency::create_task(SaveSettingAsync("CheckBoxCrop", CheckBoxCrop->IsOn.ToString()));
 }
 
 void JPG_Spinner::MainPage::Logo_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)

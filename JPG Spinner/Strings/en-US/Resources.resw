@@ -134,10 +134,10 @@
   <data name="ButtonSelectFiles.Content" xml:space="preserve">
     <value>Select Files</value>
   </data>
-  <data name="CheckBoxProgressive.Content" xml:space="preserve">
+  <data name="CheckBoxProgressive.Header" xml:space="preserve">
     <value>Progressive</value>
   </data>
-  <data name="CheckBoxCrop.Content" xml:space="preserve">
+  <data name="CheckBoxCrop.Header" xml:space="preserve">
     <value>Crop</value>
   </data>
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
@@ -160,7 +160,7 @@
     <value>Apply progressive encoding to each rotated image ...</value>
   </data>
   <data name="TextBlockCrop.Text" xml:space="preserve">
-    <value>Remove some edge pixels to enable lossless rotation of the rest of the image if necessary ...</value>
+    <value>If necessary, remove some edge pixels to enable lossless rotation of the rest of the image ...</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
     <value>Rotated all %lu images</value>

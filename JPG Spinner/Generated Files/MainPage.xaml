@@ -65,36 +65,46 @@
                     <ColumnDefinition Width="8*"/>
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
-                    <StackPanel Orientation="Vertical">
-                        <CheckBox x:ConnectionId='7' x:Name="CheckBoxProgressive" x:Uid="CheckBoxProgressive" Content="Progressive" FontSize="18"                                                                                                                    />
-                        <TextBlock x:ConnectionId='8' x:Name="TextBlockProgressive" x:Uid="TextBlockProgressive"
-                                   Text="Apply progressive encoding to each rotated image ..."
-                                   TextTrimming="CharacterEllipsis"
-                                   Margin="0,10,0,0"
-                                   TextWrapping="Wrap"
-                                   FontSize="14"
-                                                                                         >
-            			    <ToolTipService.ToolTip>
-            				    <ToolTip x:Uid="ToolTipProgressive" Content="Click here to see more information about this option"/>
-            			    </ToolTipService.ToolTip>
-                        </TextBlock>
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                        <StackPanel Orientation="Vertical">
+                            <ToggleSwitch x:ConnectionId='7' x:Name="CheckBoxProgressive" x:Uid="CheckBoxProgressive"
+                                          Header="Progressive"
+                                                                             
+                                          Margin="-6,0,0,-10"
+                                                                               />
+                            <TextBlock x:ConnectionId='8' x:Name="TextBlockProgressive" x:Uid="TextBlockProgressive"
+                                       Text="Apply progressive encoding to each rotated image ..."
+                                       TextTrimming="CharacterEllipsis"
+                                       Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       FontSize="14"
+                                                                                             >
+            			        <ToolTipService.ToolTip>
+            				        <ToolTip x:Uid="ToolTipProgressive" Content="Click here to see more information about this option" Placement="Bottom"/>
+            			        </ToolTipService.ToolTip>
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Vertical" Margin="0,20,0,0" VerticalAlignment="Top">
+                            <ToggleSwitch x:ConnectionId='5' x:Name="CheckBoxCrop" x:Uid="CheckBoxCrop"
+                                          Header="Crop"
+                                                                      
+                                          Margin="-6,0,0,-10"
+                                                                        />
+                            <TextBlock x:ConnectionId='6' x:Name="TextBlockCrop" x:Uid="TextBlockCrop"
+                                       Text="If necessary, remove some edge pixels to enable lossless rotation of the rest of the image ..."
+                                       TextTrimming="CharacterEllipsis"
+                                       Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       FontSize="14"
+                                                                                      >
+            			        <ToolTipService.ToolTip>
+            				        <ToolTip x:Uid="ToolTipCrop" Content="Click here to see more information about this option" Placement="Bottom"/>
+            			        </ToolTipService.ToolTip>
+                            </TextBlock>
+                        </StackPanel>
                     </StackPanel>
-                    <StackPanel Orientation="Vertical" Margin="0,20,0,0" VerticalAlignment="Top">
-                        <CheckBox x:ConnectionId='5' x:Name="CheckBoxCrop" x:Uid="CheckBoxCrop" Content="Crop" FontSize="18"                                                                                               />
-                        <TextBlock x:ConnectionId='6' x:Name="TextBlockCrop" x:Uid="TextBlockCrop"
-                                   Text="Remove some edge pixels to enable lossless rotation of the rest of the image if necessary ..."
-                                   TextTrimming="CharacterEllipsis"
-                                   Margin="0,10,0,0"
-                                   TextWrapping="Wrap"
-                                   FontSize="14"
-                                                                                  >
-            			    <ToolTipService.ToolTip>
-            				    <ToolTip x:Uid="ToolTipCrop" Content="Click here to see more information about this option"/>
-            			    </ToolTipService.ToolTip>
-                        </TextBlock>
-                    </StackPanel>
-                </StackPanel>
+                </ScrollViewer>
             </Grid>
             <StackPanel Grid.Row="4" Orientation="Vertical" VerticalAlignment="Bottom">
                 <Border x:Name="DebugBorder" Visibility="Collapsed">

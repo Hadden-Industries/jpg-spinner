@@ -38,12 +38,12 @@ void ::JPG_Spinner::MainPage::InitializeComponent()
     DebugBorder = safe_cast<::Windows::UI::Xaml::Controls::Border^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugBorder"));
     // Get the TextBlock named 'DebugText'
     DebugText = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"DebugText"));
-    // Get the CheckBox named 'CheckBoxCrop'
-    CheckBoxCrop = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxCrop"));
+    // Get the ToggleSwitch named 'CheckBoxCrop'
+    CheckBoxCrop = safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxCrop"));
     // Get the TextBlock named 'TextBlockCrop'
     TextBlockCrop = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockCrop"));
-    // Get the CheckBox named 'CheckBoxProgressive'
-    CheckBoxProgressive = safe_cast<::Windows::UI::Xaml::Controls::CheckBox^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxProgressive"));
+    // Get the ToggleSwitch named 'CheckBoxProgressive'
+    CheckBoxProgressive = safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxProgressive"));
     // Get the TextBlock named 'TextBlockProgressive'
     TextBlockProgressive = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockProgressive"));
     // Get the Path named 'Logo'
@@ -75,24 +75,20 @@ void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target
             ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::HyperLinkButton_Click);
         break;
     case 5:
-        (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ToggleButton^>(target))->Checked +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxCrop_Checked);
-        (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ToggleButton^>(target))->Unchecked +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxCrop_Unchecked);
         (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
             ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxCrop_Loaded);
+        (safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(target))->Toggled +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxCrop_Toggled);
         break;
     case 6:
         (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
             ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&MainPage::TextBlockCrop_PointerReleased);
         break;
     case 7:
-        (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ToggleButton^>(target))->Checked +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxProgressive_Checked);
-        (safe_cast<::Windows::UI::Xaml::Controls::Primitives::ToggleButton^>(target))->Unchecked +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxProgressive_Unchecked);
         (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
             ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxProgressive_Loaded);
+        (safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(target))->Toggled +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxProgressive_Toggled);
         break;
     case 8:
         (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=

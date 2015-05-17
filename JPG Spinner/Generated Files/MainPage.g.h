@@ -30,7 +30,7 @@ namespace Windows {
                 ref class StackPanel;
                 ref class Border;
                 ref class TextBlock;
-                ref class CheckBox;
+                ref class ToggleSwitch;
             }
         }
     }
@@ -65,9 +65,9 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Controls::StackPanel^ FooterPanel;
         private: ::Windows::UI::Xaml::Controls::Border^ DebugBorder;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ DebugText;
-        private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxCrop;
+        private: ::Windows::UI::Xaml::Controls::ToggleSwitch^ CheckBoxCrop;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockCrop;
-        private: ::Windows::UI::Xaml::Controls::CheckBox^ CheckBoxProgressive;
+        private: ::Windows::UI::Xaml::Controls::ToggleSwitch^ CheckBoxProgressive;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockProgressive;
         private: ::Windows::UI::Xaml::Shapes::Path^ Logo;
         private: ::Windows::UI::Xaml::Controls::TextBlock^ AppTitle;

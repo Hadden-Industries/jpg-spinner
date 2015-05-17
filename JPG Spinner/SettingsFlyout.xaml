@@ -14,17 +14,8 @@
     Loaded="SettingsFlyout_Loaded"
     Unloaded="SettingsFlyout_Unloaded">
     <StackPanel>
+        <!--Dummy wide stack panel to force the sliders to expand to the full width available-->
         <StackPanel Margin="0,0,646,0" Style="{StaticResource SettingsFlyoutSectionStyle}"/>
-        <!--<StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
-            <TextBlock Text="Images" Style="{StaticResource TitleTextBlockStyle}"/>
-        
-            <TextBlock Margin="6,0,0,0" Text="Apply progressive encoding to each rotated image" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="WrapWholeWords"/>
-            <ToggleSwitch HorizontalAlignment="Left" HorizontalContentAlignment="Left"/>
-
-            <TextBlock Margin="6,0,0,0" Text="Remove some edge pixels to enable lossless rotation of the rest of the image if necessary" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="WrapWholeWords"/>
-            <ToggleSwitch HorizontalAlignment="Left" HorizontalContentAlignment="Left"/>
-        </StackPanel>-->
-        
         <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
             <TextBlock x:Uid="SettingsFlyoutOptionsProcessor" Style="{StaticResource TitleTextBlockStyle}" Text="Processor"/>
             <TextBlock x:Uid="SettingsFlyoutOptionsTextBlockProcessor" Margin="6,0,0,0" Style="{StaticResource BodyTextBlockStyle}" Text="Maximum logical cores to use" TextWrapping="WrapWholeWords"/>
@@ -37,7 +28,7 @@
                     TickFrequency="1"
                     TickPlacement="Inline"/>
         </StackPanel>
-
+        
         <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
             <TextBlock x:Uid="SettingsFlyoutOptionsMemory" Style="{StaticResource TitleTextBlockStyle}" Text="Memory"/>
             <TextBlock x:Uid="SettingsFlyoutOptionsTextBlockMemory" Margin="6,0,0,0" Text="Maximum RAM to use, in megabytes" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="WrapWholeWords"/>
@@ -50,7 +41,7 @@
                     TickFrequency="128"
                     TickPlacement="Inline"/>
         </StackPanel>
-
+        
         <!--<StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
             <TextBlock Text="Frequently Asked Questions" Style="{StaticResource TitleTextBlockStyle}"/>
             <TextBlock Margin="0,0,0,25" Text="You will find answers to the most often asked questions here" Style="{StaticResource BodyTextBlockStyle}"/>

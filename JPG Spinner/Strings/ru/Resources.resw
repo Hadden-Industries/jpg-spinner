@@ -132,10 +132,10 @@
   <data name="ButtonSelectFiles.Content" xml:space="preserve">
     <value>Выбор Файлов</value>
   </data>
-  <data name="CheckBoxProgressive.Content" xml:space="preserve">
+  <data name="CheckBoxProgressive.Header" xml:space="preserve">
     <value>Прогрессивная развертка</value>
   </data>
-  <data name="CheckBoxCrop.Content" xml:space="preserve">
+  <data name="CheckBoxCrop.Header" xml:space="preserve">
     <value>Обрезать</value>
   </data>
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
@@ -158,7 +158,7 @@
     <value>Применить прогрессивную развертку каждому развернутому изображение ...</value>
   </data>
   <data name="TextBlockCrop.Text" xml:space="preserve">
-    <value>Удалить крайние пиксели чтобы сохранить безпотерьное вращение по необходимости ...</value>
+    <value>При необходимости, удалить крайние пиксели чтобы сохранить безпотерьное вращение ...</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
     <value>Все %lu изображение обработанные</value>
