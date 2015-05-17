@@ -1307,7 +1307,18 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxM
 		// Close output file, also calls _close()
 		fclose(fp);
 
+		/*// Check whether any corrupt-data warnings occurred
+		if (0L == srcinfo.err->num_warnings > 0L &&
+			0L == dstinfo.err->num_warnings > 0L)
+		{
+			return S_OK;
+		}
+		else
+		{
+			return HRESULT_FROM_WIN32(ERROR_FILE_CORRUPT);
+		}*/
 		return S_OK;
+
 	}, concurrency::task_continuation_context::use_arbitrary());
 }
 
@@ -1358,7 +1369,7 @@ Scenario_AfterPick::Scenario_AfterPick()
 		//InputTextBlock1->Text = "Installed location:\n" + installedLocation->Path + "\n" + "Local folder:\n" + localFolder->Path;
 		//InputTextBlock1->Text = temporaryFolder->Path;
 	}
-	
+
 	if (FAILED(hr))
 	{
 		InputTextBlock1->Text = HResultToHexString(hr);
@@ -1369,7 +1380,7 @@ Scenario_AfterPick::Scenario_AfterPick()
 	imagesToBeRotated = 0UL;
 	imagesRotated = 0UL;
 	imagesErrored = 0UL;
-	imagesBeingRotated = 0U;
+	imagesBeingRotated = 0UL;
 
 	// Sensible default of one processor
 	numberProcessorsToUse = 1UL;
@@ -1383,8 +1394,8 @@ Scenario_AfterPick::Scenario_AfterPick()
 		}
 	});
 
-	// Sensible default of 128 MiB
-	bytesRAMToUse = 128ULL * 1024ULL * 1024ULL;
+	// Sensible default of 512 MiB
+	bytesRAMToUse = 512ULL * 1024ULL * 1024ULL;
 
 	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
 		.then([this](Platform::String^ value)
@@ -1915,7 +1926,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 //     1) Placeholders (visualized synchronously - Phase 0)
 //     2) Title (visualized asynchronously - Phase 1)
 //     3) Category and Image (visualized asynchronously - Phase 2)
-void JPG_Spinner::Scenario_AfterPick::ItemGridView_ContainerContentChanging(
+void Scenario_AfterPick::ItemGridView_ContainerContentChanging(
     ListViewBase^ sender,
     Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^ args)
 {

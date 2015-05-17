@@ -15,9 +15,9 @@
 #include <Fcntl.h> // _O_APPEND _O_RDONLY
 #include <robuffer.h> // IBufferByteAccess
 #include <sstream> // wostringstream
-#include <d2d1_1.h> // D2D1::Matrix3x2F
 #include <Wincodecsdk.h> // IWICMetadataBlockWriter
 #include "jpeglib.h" // jpeg_stdio_src
+#include "OrientationHelper.h" // OrientationHelper
 
 extern "C" {
 #include "transupp.h" // Support routines for jpegtran
@@ -34,28 +34,3 @@ inline void SafeRelease(Interface **ppInterfaceToRelease)
 }
 
 Platform::String^ HResultToHexString(HRESULT hr);
-
-class OrientationHelper
-{
-	public:
-		OrientationHelper::OrientationHelper(unsigned char orientation, unsigned short xOffset = 0U, unsigned short yOffset = 0U);
-
-		Windows::UI::Xaml::Media::Matrix getMatrix();
-
-		Windows::UI::Xaml::Media::Matrix getInverseMatrix();
-
-		bool XYFlips();
-
-		WICBitmapTransformOptions GetWICBitmapTransformOptions();
-
-	private:
-		Windows::UI::Xaml::Media::Matrix _Matrix;
-		bool _XYFlips;
-		int _WICBitmapTransformOptions;
-};
-
-namespace JPG_Spinner
-{
-	concurrency::task<Platform::String^> LoadSettingAsync(Platform::String^ key);
-	concurrency::task<bool> SaveSettingAsync(Platform::String^ key, Platform::String^ value);
-}

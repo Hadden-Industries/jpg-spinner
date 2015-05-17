@@ -376,4 +376,7 @@ namespace JPG_Spinner
 
 		}
 	};
+
+	concurrency::task<Platform::String^> LoadSettingAsync(Platform::String^ key);
+	concurrency::task<bool> SaveSettingAsync(Platform::String^ key, Platform::String^ value);
 }

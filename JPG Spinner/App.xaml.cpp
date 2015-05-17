@@ -225,3 +225,76 @@ _HasThumbnail(false)
 	PropVariantInit(&_SubjectArea);
 	PropVariantInit(&_SubjectLocation);
 }
+
+concurrency::task<Platform::String^> JPG_Spinner::LoadSettingAsync(Platform::String^ key)
+{
+	return concurrency::create_task(Windows::System::UserProfile::UserInformation::GetDisplayNameAsync())
+		.then([key](Platform::String^ displayName)
+	{
+		Platform::String^ value = nullptr;
+
+		Windows::Storage::ApplicationDataContainer^ localSettings = Windows::Storage::ApplicationData::Current->LocalSettings;
+
+		if (nullptr != displayName)
+		{
+			Windows::Storage::ApplicationDataContainer^ container;
+
+			// if there is a container with the user's name
+			if (localSettings->Containers->HasKey(displayName))
+			{
+				// then retrieve it
+				container = localSettings->Containers->Lookup(displayName);
+			}
+			else
+			{
+				return value;
+			}
+
+			return safe_cast<Platform::String^>(container->Values->Lookup(key));
+		}
+		else
+		{
+			if (localSettings->Values->HasKey(key))
+			{
+				return safe_cast<Platform::String^>(localSettings->Values->Lookup(key));
+			}
+			else
+			{
+				return value;
+			}
+		}
+	});
+}
+
+concurrency::task<bool> JPG_Spinner::SaveSettingAsync(Platform::String^ key, Platform::String^ value)
+{
+	return concurrency::create_task(Windows::System::UserProfile::UserInformation::GetDisplayNameAsync())
+		.then([key, value](Platform::String^ displayName)
+	{
+		Windows::Storage::ApplicationDataContainer^ localSettings = Windows::Storage::ApplicationData::Current->LocalSettings;
+
+		if (nullptr != displayName)
+		{
+			Windows::Storage::ApplicationDataContainer^ container;
+
+			// if there is a container with the user's name
+			if (localSettings->Containers->HasKey(displayName))
+			{
+				// then retrieve it
+				container = localSettings->Containers->Lookup(displayName);
+			}
+			else
+			{
+				// else create one
+				container = localSettings->CreateContainer(displayName, Windows::Storage::ApplicationDataCreateDisposition::Always);
+			}
+
+			return container->Values->Insert(key, value);
+		}
+		else
+		{
+			// insert for all users
+			return localSettings->Values->Insert(key, value);
+		}
+	});
+}
