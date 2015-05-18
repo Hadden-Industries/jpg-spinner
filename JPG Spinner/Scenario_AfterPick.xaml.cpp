@@ -32,7 +32,7 @@ using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Media;
 
-void CreateTempFile(Platform::String^ filePath)
+HRESULT CreateTempFile(Platform::String^ filePath)
 {
 	HANDLE hTempFile = INVALID_HANDLE_VALUE;
 
@@ -53,13 +53,15 @@ void CreateTempFile(Platform::String^ filePath)
 
 	if (INVALID_HANDLE_VALUE == hTempFile)
 	{
-		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(GetLastError()));
+		return HRESULT_FROM_WIN32(GetLastError());
 	}
 
 	if (FALSE == CloseHandle(hTempFile))
 	{
-		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(GetLastError()));
+		return HRESULT_FROM_WIN32(GetLastError());
 	}
+
+	return S_OK;
 }
 
 FILE* CreateTempFile(const wchar_t* filePath)
@@ -83,7 +85,7 @@ FILE* CreateTempFile(const wchar_t* filePath)
 
 	if (INVALID_HANDLE_VALUE == hTempFile)
 	{
-		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(GetLastError()));
+		return nullptr;
 	}
 
 	// Open the output file from the handle
@@ -93,7 +95,9 @@ FILE* CreateTempFile(const wchar_t* filePath)
 	{
 		CloseHandle(hTempFile);
 
-		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE));
+		SetLastError(ERROR_CANNOT_MAKE);
+
+		return nullptr;
 	}
 
 	FILE * fp = _fdopen(fd, "w+b");
@@ -103,7 +107,9 @@ FILE* CreateTempFile(const wchar_t* filePath)
 		// Also calls CloseHandle()
 		_close(fd);
 
-		throw Platform::Exception::CreateException(HRESULT_FROM_WIN32(ERROR_CANNOT_MAKE));
+		SetLastError(ERROR_CANNOT_MAKE);
+
+		return nullptr;
 	}
 
 	return fp;
@@ -446,6 +452,11 @@ HRESULT DeleteJPEGThumbnailData(Item^ item, IWICImagingFactory * pIWICImagingFac
 
 	FILE * tempFilePointer = CreateTempFile((item->TempFilePath + filePathSuffix)->Data());
 
+	if (nullptr == tempFilePointer)
+	{
+		return HRESULT_FROM_WIN32(GetLastError());
+	}
+
 	HANDLE hTempFile = INVALID_HANDLE_VALUE;
 
 	CREATEFILE2_EXTENDED_PARAMETERS extendedParams = { 0 };
@@ -596,12 +607,13 @@ HRESULT FixMetadataOutOfPlace(Item^ item, IWICImagingFactory * pIWICImagingFacto
 
 	Platform::String^ filePathSuffix = ".mdop";
 
-	CreateTempFile(item->TempFilePath + filePathSuffix);
+	HRESULT hr = CreateTempFile(item->TempFilePath + filePathSuffix);
+	if (FAILED(hr)) { return hr; }
 
 	Microsoft::WRL::ComPtr<IWICBitmapDecoder> piDecoder;
 
 	// Create the decoder.
-	HRESULT hr = pIWICImagingFactory->CreateDecoderFromFilename(
+	hr = pIWICImagingFactory->CreateDecoderFromFilename(
 		item->TempFilePath->Data(),
 		NULL,
 		GENERIC_READ,
@@ -921,7 +933,7 @@ HRESULT FixMetadata(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 	return hr;
 }
 
-static Platform::Guid GetUUID()
+Platform::Guid GetUUID()
 {
 	GUID result;
 
@@ -1249,6 +1261,9 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxM
 
 		if (!jtransform_request_workspace(&srcinfo, &transformoption))
 		{
+			jpeg_destroy_compress(&dstinfo);
+			jpeg_destroy_decompress(&srcinfo);
+
 			fclose(fp);
 
 			return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
@@ -1277,6 +1292,14 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxM
 		concurrency::interruption_point();
 
 		fp = CreateTempFile(item->TempFilePath->Data());
+
+		if (nullptr == fp)
+		{
+			jpeg_destroy_compress(&dstinfo);
+			jpeg_destroy_decompress(&srcinfo);
+
+			return HRESULT_FROM_WIN32(GetLastError());
+		}
 
 		if (progressive)
 		{

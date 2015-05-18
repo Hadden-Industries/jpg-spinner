@@ -19,12 +19,6 @@
 
 OrientationHelper::OrientationHelper(const unsigned char orientation)
 {
-	// Check for invalid argument
-	if (orientation < 1U || orientation > 8U)
-	{
-		throw Platform::Exception::CreateException(E_INVALIDARG);
-	}
-
 	_orientation = orientation;
 }
 
