@@ -44,6 +44,10 @@ namespace JPG_Spinner
         private: ::Windows::UI::Xaml::Controls::Grid^ LayoutRoot;
         private: ::Windows::UI::Xaml::Controls::Grid^ Input;
         private: ::Windows::UI::Xaml::Controls::Grid^ Output;
+        private: ::Windows::UI::Xaml::Shapes::Rectangle^ RectVertical3;
+        private: ::Windows::UI::Xaml::Shapes::Rectangle^ RectHorizontal3;
+        private: ::Windows::UI::Xaml::Shapes::Rectangle^ RectVertical2;
+        private: ::Windows::UI::Xaml::Shapes::Rectangle^ RectHorizontal2;
         private: ::Windows::UI::Xaml::Shapes::Rectangle^ RectVertical;
         private: ::Windows::UI::Xaml::Shapes::Rectangle^ RectHorizontal;
         private: ::Windows::UI::Xaml::Controls::Image^ Image1;

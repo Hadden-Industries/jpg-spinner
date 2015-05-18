@@ -28,6 +28,14 @@ void ::JPG_Spinner::ExplanationCrop::InitializeComponent()
     Input = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Input"));
     // Get the Grid named 'Output'
     Output = safe_cast<::Windows::UI::Xaml::Controls::Grid^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"Output"));
+    // Get the Rectangle named 'RectVertical3'
+    RectVertical3 = safe_cast<::Windows::UI::Xaml::Shapes::Rectangle^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"RectVertical3"));
+    // Get the Rectangle named 'RectHorizontal3'
+    RectHorizontal3 = safe_cast<::Windows::UI::Xaml::Shapes::Rectangle^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"RectHorizontal3"));
+    // Get the Rectangle named 'RectVertical2'
+    RectVertical2 = safe_cast<::Windows::UI::Xaml::Shapes::Rectangle^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"RectVertical2"));
+    // Get the Rectangle named 'RectHorizontal2'
+    RectHorizontal2 = safe_cast<::Windows::UI::Xaml::Shapes::Rectangle^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"RectHorizontal2"));
     // Get the Rectangle named 'RectVertical'
     RectVertical = safe_cast<::Windows::UI::Xaml::Shapes::Rectangle^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"RectVertical"));
     // Get the Rectangle named 'RectHorizontal'

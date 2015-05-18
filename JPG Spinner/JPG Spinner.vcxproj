@@ -101,6 +101,8 @@
       <DisableSpecificWarnings>4453;28204;4100</DisableSpecificWarnings>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
+      <SmallerTypeCheck>true</SmallerTypeCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shcore.lib;Propsys.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -112,6 +114,7 @@
       <DisableSpecificWarnings>4453;28204;4100</DisableSpecificWarnings>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shcore.lib;Propsys.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -124,6 +127,8 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
+      <SmallerTypeCheck>true</SmallerTypeCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shcore.lib;Propsys.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -138,8 +143,8 @@
       <DisableSpecificWarnings>4453;28204;4100</DisableSpecificWarnings>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <FloatingPointModel>Fast</FloatingPointModel>
       <WarningLevel>Level4</WarningLevel>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shcore.lib;Propsys.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -151,6 +156,7 @@
       <DisableSpecificWarnings>4453;28204;4100</DisableSpecificWarnings>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
+      <SmallerTypeCheck>true</SmallerTypeCheck>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shcore.lib;Propsys.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -162,7 +168,6 @@
       <DisableSpecificWarnings>4453;28204;4100</DisableSpecificWarnings>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <FloatingPointModel>Fast</FloatingPointModel>
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <Link>
@@ -248,6 +253,8 @@
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="Assets\crop.png" />
+    <Image Include="Assets\crop_rotated.png" />
+    <Image Include="Assets\crop_rotated_cropped.png" />
     <Image Include="Assets\Logo.scale-100.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>

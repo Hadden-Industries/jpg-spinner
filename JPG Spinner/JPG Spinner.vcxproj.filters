@@ -219,6 +219,12 @@
     <Image Include="Assets\crop.png">
       <Filter>Assets</Filter>
     </Image>
+    <Image Include="Assets\crop_rotated.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\crop_rotated_cropped.png">
+      <Filter>Assets</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Strings\en-US\Resources.resw" />
