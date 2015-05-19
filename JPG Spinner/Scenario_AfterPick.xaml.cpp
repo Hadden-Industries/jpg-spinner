@@ -1742,14 +1742,16 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				{
 					imagesBeingRotated--;
 
-					concurrency::interruption_point();
-
-					if SUCCEEDED(hr)
+					if (SUCCEEDED(hr))
 					{
+						concurrency::interruption_point();
+
 						hr = FixMetadata(item, pIWICImagingFactory);
 
 						if (SUCCEEDED(hr))
 						{
+							concurrency::interruption_point();
+
 							hr = FixMetadataOutOfPlace(item, pIWICImagingFactory);
 						}
 
@@ -1767,47 +1769,100 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								{
 									concurrency::interruption_point();
 
-									// Using CopyAndReplaceAsync & DeleteAsync instead of only MoveAndReplaceAsync to preserve the Created date metadata
-									auto moveAndReplaceAsyncTask = concurrency::create_task(tempFile->CopyAndReplaceAsync(item->StorageFile));
+									auto readBufferAsyncTask = concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(tempFile));
 
-									moveAndReplaceAsyncTask.then([this, item, tempFile]()
+									readBufferAsyncTask.then([this, cancellationToken, item, tempFile](Windows::Storage::Streams::IBuffer^ tempFileBuffer)
 									{
-										imagesRotated++;
-
-										concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
-
 										concurrency::interruption_point();
 
-										// Rotate the preview
-										_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-											ref new Windows::UI::Core::DispatchedHandler([this, item]()
+										auto openAsyncTask = concurrency::create_task(item->StorageFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
+
+										openAsyncTask.then([this, item, tempFile, tempFileBuffer](Windows::Storage::Streams::IRandomAccessStream^ randomAccessStream)
 										{
-											if (0U != item->Orientation)
+											concurrency::interruption_point();
+
+											Windows::Storage::Streams::DataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter(randomAccessStream);
+
+											dataWriter->WriteBuffer(tempFileBuffer);
+
+											concurrency::interruption_point();
+
+											auto storeAsyncTask = concurrency::create_task(dataWriter->StoreAsync());
+											
+											storeAsyncTask.then([this, item, tempFile, randomAccessStream, dataWriter](concurrency::task<unsigned int> task)
 											{
-												item->Orientation = 1U;
-											}
+												concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
 
-											if (0U != item->OrientationXMP)
-											{
-												item->OrientationXMP = 1U;
-											}
+												unsigned int bytesWritten = 0U;
 
-											GridView1->SelectedItems->Append(item);
-
-											Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
-
-											// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
-											// when the item is due to be rendered, the ShowImage() will get called on it anyway
-											if (nullptr != sI)
-											{
-												ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
-
-												if (nullptr != iv)
+												try
 												{
-													iv->ShowImage();
+													bytesWritten = task.get();
 												}
-											}
-										}));
+												catch (Platform::Exception^ ex)
+												{
+													imagesErrored++;
+
+													_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+														ref new Windows::UI::Core::DispatchedHandler([this, item, ex]()
+													{
+														item->Error = HResultToHexString(ex->HResult);
+
+														Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+														// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+														// when the item is due to be rendered, the ShowError() will get called on it anyway
+														if (nullptr != sI)
+														{
+															ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+															if (nullptr != iv)
+															{
+																iv->ShowError();
+															}
+														}
+													}));
+
+													return;
+												}
+
+												// reset stream size to override the file
+												randomAccessStream->Size = bytesWritten;
+
+												imagesRotated++;
+
+												// Rotate the preview
+												_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+													ref new Windows::UI::Core::DispatchedHandler([this, item]()
+												{
+													if (0U != item->Orientation)
+													{
+														item->Orientation = 1U;
+													}
+
+													if (0U != item->OrientationXMP)
+													{
+														item->OrientationXMP = 1U;
+													}
+
+													GridView1->SelectedItems->Append(item);
+
+													Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+													// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+													// when the item is due to be rendered, the ShowImage() will get called on it anyway
+													if (nullptr != sI)
+													{
+														ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+														if (nullptr != iv)
+														{
+															iv->ShowImage();
+														}
+													}
+												}));
+											});
+										}, cancellationToken);
 									}, cancellationToken);
 								}, cancellationToken);
 							}
