@@ -17,6 +17,8 @@
             </Grid.RowDefinitions>
             <TextBlock x:Name="ExplanationProgressiveHeader" x:Uid="ExplanationProgressiveHeader"
                        Grid.Row="0"
+                       FontSize="36"
+                       HorizontalAlignment="Center"
                        Style="{StaticResource SubheaderTextBlockStyle}"
                        Text="The &quot;Progressive&quot; setting"
                        TextWrapping="Wrap"/>
