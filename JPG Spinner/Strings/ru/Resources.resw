@@ -155,10 +155,10 @@
     <comment>Must be fewer than 13 characters and should be an abbreviation for the displayName</comment>
   </data>
   <data name="TextBlockProgressive.Text" xml:space="preserve">
-    <value>Применить прогрессивную развертку каждому развернутому изображение ...</value>
+    <value>Применить прогрессивную развертку каждому развернутому изображение …</value>
   </data>
   <data name="TextBlockCrop.Text" xml:space="preserve">
-    <value>При необходимости, удалить крайние пиксели чтобы сохранить безпотерьное вращение ...</value>
+    <value>При необходимости, удалить крайние пиксели чтобы сохранить безпотерьное вращение …</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
     <value>Все %lu изображение обработанные</value>

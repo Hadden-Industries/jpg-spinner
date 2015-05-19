@@ -157,10 +157,10 @@
     <comment>Must be fewer than 13 characters and should be an abbreviation for the displayName</comment>
   </data>
   <data name="TextBlockProgressive.Text" xml:space="preserve">
-    <value>Apply progressive encoding to each rotated image ...</value>
+    <value>Apply progressive encoding to each rotated image …</value>
   </data>
   <data name="TextBlockCrop.Text" xml:space="preserve">
-    <value>If necessary, remove some edge pixels to enable lossless rotation of the rest of the image ...</value>
+    <value>If necessary, remove some edge pixels to enable lossless rotation of the rest of the image …</value>
   </data>
   <data name="processedAllMany" xml:space="preserve">
     <value>Rotated all %lu images</value>

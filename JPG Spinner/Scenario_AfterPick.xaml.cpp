@@ -943,45 +943,6 @@ Platform::Guid GetUUID()
 	return Platform::Guid(result);
 }
 
-byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer)
-{
-	byte* pixels = nullptr;
-
-	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
-
-	// Query the IBufferByteAccess interface.
-	HRESULT hr = reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
-	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
-
-	// Retrieve the buffer data.
-	hr = bufferByteAccess->Buffer(&pixels);
-	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
-	
-	return pixels;
-}
-
-/*byte* GetPointerToByteData(Windows::Storage::Streams::IBuffer^ buffer, unsigned int *length)
-{
-	byte* pixels = nullptr;
-
-	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
-
-	// Query the IBufferByteAccess interface.
-	HRESULT hr = reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
-	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
-
-	// Retrieve the buffer data.
-	hr = bufferByteAccess->Buffer(&pixels);
-	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
-
-	if (length != nullptr)
-	{
-		*length = buffer->Length;
-	}
-	
-	return pixels;
-}*/
-
 concurrency::task<FILE *> StorageFileToFilePointerAsync(Windows::Storage::StorageFile^ storageFile)
 {
 	return concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(storageFile))
@@ -1026,11 +987,27 @@ concurrency::task<FILE *> StorageFileToFilePointerAsync(Windows::Storage::Storag
 
 					if (nullptr != filePointer)
 					{
-						if (static_cast<size_t>(buffer->Length) == fwrite(GetPointerToByteData(buffer), sizeof(byte), static_cast<size_t>(buffer->Length), filePointer))
+						Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+
+						// Query the IBufferByteAccess interface.
+						hr = reinterpret_cast<IInspectable*>(buffer)->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
+
+						if (SUCCEEDED(hr))
 						{
-							if (0 == fseek(filePointer, 0L, SEEK_SET))
+							byte* bytes = nullptr;
+
+							// Retrieve the buffer data.
+							hr = bufferByteAccess->Buffer(&bytes);
+
+							if (SUCCEEDED(hr))
 							{
-								return filePointer;
+								if (static_cast<size_t>(buffer->Length) == fwrite(bytes, sizeof(byte), static_cast<size_t>(buffer->Length), filePointer))
+								{
+									if (0 == fseek(filePointer, 0L, SEEK_SET))
+									{
+										return filePointer;
+									}
+								}
 							}
 						}
 
@@ -1714,7 +1691,25 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						}
 						else
 						{
-							throw e;
+							_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+								ref new Windows::UI::Core::DispatchedHandler([this, item, e]()
+							{
+								item->Error = HResultToHexString(e->HResult);
+
+								Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+								// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+								// when the item is due to be rendered, the ShowError() will get called on it anyway
+								if (nullptr != sI)
+								{
+									ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+									if (nullptr != iv)
+									{
+										iv->ShowError();
+									}
+								}
+							}));
 						}
 					}
 				}

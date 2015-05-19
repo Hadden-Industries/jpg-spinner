@@ -74,7 +74,7 @@
                                           Margin="-6,0,0,-10"
                                           Toggled="CheckBoxProgressive_Toggled"/>
                             <TextBlock x:Name="TextBlockProgressive" x:Uid="TextBlockProgressive"
-                                       Text="Apply progressive encoding to each rotated image ..."
+                                       Text="Apply progressive encoding to each rotated image …"
                                        TextTrimming="CharacterEllipsis"
                                        Margin="0,10,0,0"
                                        TextWrapping="Wrap"
@@ -92,7 +92,7 @@
                                           Margin="-6,0,0,-10"
                                           Toggled="CheckBoxCrop_Toggled"/>
                             <TextBlock x:Name="TextBlockCrop" x:Uid="TextBlockCrop"
-                                       Text="If necessary, remove some edge pixels to enable lossless rotation of the rest of the image ..."
+                                       Text="If necessary, remove some edge pixels to enable lossless rotation of the rest of the image …"
                                        TextTrimming="CharacterEllipsis"
                                        Margin="0,10,0,0"
                                        TextWrapping="Wrap"
