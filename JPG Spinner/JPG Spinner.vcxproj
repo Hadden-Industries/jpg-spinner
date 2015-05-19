@@ -268,6 +268,9 @@
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="Assets\progressive.jpg" />
+    <Image Include="Assets\Settings.scale-100.png" />
+    <Image Include="Assets\Settings.scale-140.png" />
+    <Image Include="Assets\Settings.scale-180.png" />
     <Image Include="Assets\SmallLogo.scale-100.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>

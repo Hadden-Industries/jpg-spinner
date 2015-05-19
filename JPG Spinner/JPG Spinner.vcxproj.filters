@@ -225,6 +225,15 @@
     <Image Include="Assets\crop_rotated_cropped.png">
       <Filter>Assets</Filter>
     </Image>
+    <Image Include="Assets\Settings.scale-100.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Settings.scale-140.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Settings.scale-180.png">
+      <Filter>Assets</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Strings\en-US\Resources.resw" />

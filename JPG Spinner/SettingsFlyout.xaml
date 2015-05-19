@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="Options"
-    IconSource="Assets/SmallLogo.scale-100.png"
+    IconSource="Assets/Settings.png"
     HeaderForeground="White"
     HeaderBackground="#F05A29"
     Background="White"
