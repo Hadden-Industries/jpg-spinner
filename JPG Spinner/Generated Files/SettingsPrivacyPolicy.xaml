@@ -1,0 +1,38 @@
+﻿<SettingsFlyout x:ConnectionId='1'
+    x:Uid="SettingsPrivacyPolicy"
+    x:Class="JPG_Spinner.SettingsPrivacyPolicy"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="Privacy Policy"
+    IconSource="Assets/Settings.png"
+    HeaderForeground="White"
+    HeaderBackground="#F05A29"
+    Background="White"
+    mc:Ignorable="d"
+                                         
+                                             >
+    <StackPanel>
+        <!--Dummy wide stack panel to force the sliders to expand to the full width available-->
+        <StackPanel Margin="0,0,646,0" Style="{StaticResource SettingsFlyoutSectionStyle}"/>
+        
+        <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
+            <TextBlock x:Name="PrivacyPolicyDate" Margin="0,0,0,20" Style="{StaticResource TitleTextBlockStyle}" Text="2015-05-20">
+                <ToolTipService.ToolTip>
+            		<ToolTip x:Uid="ToolTipPrivacyPolicyDate" Content="Date this policy was last changed" Placement="Top"/>
+            	</ToolTipService.ToolTip>
+            </TextBlock>
+            <RichTextBlock FontSize="14" TextWrapping="WrapWholeWords">
+                <Paragraph x:Name="PrivacyPolicyParagraph1" Margin="0,0,0,5">JPG Spinner does not collect any personally identifiable information about you, nor do we collect any data about the images that you process. If you navigate to any hyperlinks within the application, certain limited technical information will be transmitted to the hosting servers, such as your IP address, but we do not use or store it.</Paragraph>
+                <Paragraph x:Name="PrivacyPolicyParagraph2" Margin="0,0,0,5">If you contact us about JPG Spinner we may save and process any details you provide to improve our services. Such use of your information is governed by
+                    <Hyperlink x:ConnectionId='3' x:Name="HyperlinkPrivacyPolicy"                                     >the Privacy Policy on our website</Hyperlink>.
+                </Paragraph>
+                <Paragraph x:Name="PrivacyPolicyParagraph3" Margin="0,0,0,5">Microsoft® will make crash dumps available to us in case JPG Spinner errors. These will contain data such as the stack trace at the time of the crash, the list of threads, their contexts, and the memory behind their stacks. We will only use this information to aid in debugging. More information is available
+                    <Hyperlink x:ConnectionId='2' x:Name="HyperlinkAnalyzingCrashReports"                                     >here</Hyperlink>.</Paragraph>
+                <Paragraph x:Name="PrivacyPolicyParagraph4" Margin="0,0,0,5">This privacy policy is subject to change without notice.</Paragraph>
+            </RichTextBlock>
+        </StackPanel>
+    </StackPanel>
+</SettingsFlyout>
+

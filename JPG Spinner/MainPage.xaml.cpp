@@ -99,6 +99,20 @@ void JPG_Spinner::MainPage::HyperLinkButton_Click(Platform::Object^ sender, Wind
 	}
 }
 
+void JPG_Spinner::MainPage::LoadWebPage(Platform::String^ uri)
+{
+	if (buttonIsSelectFiles)
+	{
+		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.WebPage", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+		auto hyperlinkButton = ref new HyperlinkButton();
+
+		hyperlinkButton->Tag = uri;
+
+		ScenarioFrame->Navigate(scenarioType, hyperlinkButton);
+	}
+}
+
 void JPG_Spinner::MainPage::SpinLogo_Start()
 {
 	SpinLogo->Stop();

@@ -16,6 +16,7 @@
 #include "MainPage.xaml.h"
 #include "Scenario_AfterPick.xaml.h"
 #include "SettingsFlyout.xaml.h"
+#include "SettingsPrivacyPolicy.xaml.h"
 #include "WebPage.xaml.h"
 
 #include "ExplanationCrop.g.hpp"
@@ -25,6 +26,7 @@
 #include "MainPage.g.hpp"
 #include "Scenario_AfterPick.g.hpp"
 #include "SettingsFlyout.g.hpp"
+#include "SettingsPrivacyPolicy.g.hpp"
 #include "WebPage.g.hpp"
 
 ::Platform::Collections::Vector<::Windows::UI::Xaml::Markup::IXamlMetadataProvider^>^ ::XamlTypeInfo::InfoProvider::XamlTypeInfoProvider::OtherProviders::get()
@@ -208,6 +210,19 @@
             []() -> Platform::Object^ 
             {
                 return ref new ::JPG_Spinner::SettingsFlyout(); 
+            };
+        userType->SetIsLocalType();
+        return userType;
+    }
+
+    if (typeName == L"JPG_Spinner.SettingsPrivacyPolicy")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlUserType^ userType = ref new ::XamlTypeInfo::InfoProvider::XamlUserType(this, typeName, GetXamlTypeByName(L"Windows.UI.Xaml.Controls.SettingsFlyout"));
+        userType->KindOfType = ::Windows::UI::Xaml::Interop::TypeKind::Custom;
+        userType->Activator =
+            []() -> Platform::Object^ 
+            {
+                return ref new ::JPG_Spinner::SettingsPrivacyPolicy(); 
             };
         userType->SetIsLocalType();
         return userType;

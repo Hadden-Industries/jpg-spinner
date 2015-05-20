@@ -31,6 +31,7 @@ namespace JPG_Spinner
 		void SpinLogo_Start();
 		void SpinLogo_Stop();
 		void FlipButton();
+		void LoadWebPage(Platform::String^ uri);
 
 	internal:
 		static MainPage^ Current;

@@ -28,7 +28,7 @@ WebPage::WebPage()
 
 void WebPage::OnNavigatedTo(NavigationEventArgs^ e)
 {
-	auto uri = ref new Uri((String^)((HyperlinkButton^)e->Parameter)->Tag);
+	auto uri = ref new Uri(safe_cast<String^>(safe_cast<HyperlinkButton^>(e->Parameter)->Tag));
 
 	WebView1->Navigate(uri);
 }

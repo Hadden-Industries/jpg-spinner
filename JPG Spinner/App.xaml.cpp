@@ -6,6 +6,7 @@
 #include "pch.h"
 #include "MainPage.xaml.h"
 #include "SettingsFlyout.xaml.h"
+#include "SettingsPrivacyPolicy.xaml.h"
 
 using namespace JPG_Spinner;
 
@@ -192,12 +193,21 @@ void App::OnCommandsRequested(Windows::UI::ApplicationSettings::SettingsPane^ se
 {
 	Windows::UI::Popups::UICommandInvokedHandler^ handler = ref new Windows::UI::Popups::UICommandInvokedHandler(this, &App::OnSettingsCommand);
 
-	Windows::UI::ApplicationSettings::SettingsCommand^ generalCommand = ref new Windows::UI::ApplicationSettings::SettingsCommand(
+	auto _resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+
+	Windows::UI::ApplicationSettings::SettingsCommand^ settingsCommandOptions = ref new Windows::UI::ApplicationSettings::SettingsCommand(
 		"options",
-		Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView()->GetString("settingsFlyoutOptions"),
+		_resourceLoader->GetString("settingsFlyoutOptions"),
 		handler);
 
-	args->Request->ApplicationCommands->Append(generalCommand);
+	args->Request->ApplicationCommands->Append(settingsCommandOptions);
+
+	Windows::UI::ApplicationSettings::SettingsCommand^ settingsCommandPrivacyPolicy = ref new Windows::UI::ApplicationSettings::SettingsCommand(
+		"privacy_policy",
+		_resourceLoader->GetString("settingsFlyoutPrivacyPolicy"),
+		handler);
+
+	args->Request->ApplicationCommands->Append(settingsCommandPrivacyPolicy);
 }
 
 void App::OnSettingsCommand(Windows::UI::Popups::IUICommand^ command)
@@ -205,6 +215,12 @@ void App::OnSettingsCommand(Windows::UI::Popups::IUICommand^ command)
 	if ("options" == command->Id->ToString())
 	{
 		auto mySettings = ref new JPG_Spinner::SettingsFlyout();
+
+		mySettings->Show();
+	}
+	else if ("privacy_policy" == command->Id->ToString())
+	{
+		auto mySettings = ref new JPG_Spinner::SettingsPrivacyPolicy();
 
 		mySettings->Show();
 	}

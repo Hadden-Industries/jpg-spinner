@@ -114,9 +114,7 @@
             <StackPanel Grid.Row="5" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <HyperlinkButton Click="HyperLinkButton_Click" Content="&#xA9; Hadden Industries Ltd" FontWeight="Normal" Foreground="White" HorizontalAlignment="Center" Tag="http://haddenindustries.com/"/>
                 <StackPanel x:Name="FooterPanel" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <HyperlinkButton x:Uid="HyperlinkButtonPrivacyPolicy" Content="Privacy Policy" Click="HyperLinkButton_Click" Tag="http://haddenindustries.com/legal.html#privacy-policy" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
-                    <TextBlock Text="|" Style="{StaticResource SeparatorStyle}" VerticalAlignment="Center"/>
-                    <HyperlinkButton x:Uid="HyperlinkButtonTerms" Content="Terms" Click="HyperLinkButton_Click" Tag="http://haddenindustries.com/legal.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
+                    <HyperlinkButton x:Uid="HyperlinkButtonTerms" Content="Terms &amp; Conditions" Click="HyperLinkButton_Click" Tag="http://haddenindustries.com/legal.html" FontSize="12" Style="{StaticResource HyperlinkStyle}"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

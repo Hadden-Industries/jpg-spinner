@@ -144,7 +144,7 @@
     <value>Privacy Policy</value>
   </data>
   <data name="HyperlinkButtonTerms.Content" xml:space="preserve">
-    <value>Terms</value>
+    <value>Terms &amp; Conditions</value>
   </data>
   <data name="processedMany" xml:space="preserve">
     <value>Rotated %lu/%lu images</value>
@@ -225,5 +225,17 @@
   </data>
   <data name="SettingsFlyoutOptionsTextBlockProcessor.Text" xml:space="preserve">
     <value>Maximum logical cores to use</value>
+  </data>
+  <data name="ExplanationProgressiveButton.Content" xml:space="preserve">
+    <value>Select File</value>
+  </data>
+  <data name="settingsFlyoutPrivacyPolicy" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="SettingsPrivacyPolicy.Title" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="ToolTipPrivacyPolicyDate.Content" xml:space="preserve">
+    <value>Date this policy was last changed</value>
   </data>
 </root>
