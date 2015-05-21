@@ -26,6 +26,8 @@ namespace JPG_Spinner
 
 		void SettingsPrivacyPolicy_AcceleratorKeyActivated(Windows::UI::Core::CoreDispatcher^ sender, Windows::UI::Core::AcceleratorKeyEventArgs^ args);	
 
+		void PrivacyPolicyDate_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+
 		void HyperlinkPrivacyPolicy_Click(Windows::UI::Xaml::Documents::Hyperlink^ sender, Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^ args);
 	};
 }

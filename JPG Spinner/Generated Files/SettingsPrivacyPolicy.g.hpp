@@ -49,10 +49,14 @@ void ::JPG_Spinner::SettingsPrivacyPolicy::Connect(int connectionId, Platform::O
             ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::SettingsPrivacyPolicy::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&SettingsPrivacyPolicy::SettingsPrivacyPolicy_Unloaded);
         break;
     case 2:
+        (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::SettingsPrivacyPolicy::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&SettingsPrivacyPolicy::PrivacyPolicyDate_Loaded);
+        break;
+    case 3:
         (safe_cast<::Windows::UI::Xaml::Documents::Hyperlink^>(target))->Click +=
             ref new ::Windows::Foundation::TypedEventHandler<::Windows::UI::Xaml::Documents::Hyperlink^, ::Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^>(this, (void (::JPG_Spinner::SettingsPrivacyPolicy::*)(Windows::UI::Xaml::Documents::Hyperlink^, Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^))&SettingsPrivacyPolicy::HyperlinkPrivacyPolicy_Click);
         break;
-    case 3:
+    case 4:
         (safe_cast<::Windows::UI::Xaml::Documents::Hyperlink^>(target))->Click +=
             ref new ::Windows::Foundation::TypedEventHandler<::Windows::UI::Xaml::Documents::Hyperlink^, ::Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^>(this, (void (::JPG_Spinner::SettingsPrivacyPolicy::*)(Windows::UI::Xaml::Documents::Hyperlink^, Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^))&SettingsPrivacyPolicy::HyperlinkPrivacyPolicy_Click);
         break;

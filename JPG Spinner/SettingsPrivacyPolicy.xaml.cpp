@@ -84,6 +84,36 @@ void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_Unloaded(Platform
 	}
 }
 
+void JPG_Spinner::SettingsPrivacyPolicy::PrivacyPolicyDate_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	// Extract the string from the XAML (in ISO 8601 YYYY-MM-DD format)
+	std::wstring dateString = PrivacyPolicyDate->Text->Data();
+
+	SYSTEMTIME systemTime = { 0 };
+
+	systemTime.wYear = static_cast<WORD>(wcstoul(dateString.substr(0, 4).c_str(), nullptr, 0));
+	systemTime.wMonth = static_cast<WORD>(wcstoul(dateString.substr(5, 2).c_str(), nullptr, 0));
+	systemTime.wDay = static_cast<WORD>(wcstoul(dateString.substr(8, 2).c_str(), nullptr, 0));
+
+	FILETIME fileTime = { 0 };
+
+	if (SystemTimeToFileTime(&systemTime, &fileTime))
+	{
+		Windows::Foundation::DateTime dateTime;
+
+		ULARGE_INTEGER uLarge_Integer = { 0 };
+
+		uLarge_Integer.HighPart = fileTime.dwHighDateTime;
+		uLarge_Integer.LowPart = fileTime.dwLowDateTime;
+
+		dateTime.UniversalTime = static_cast<long long>(uLarge_Integer.QuadPart);
+
+		Windows::Globalization::DateTimeFormatting::DateTimeFormatter^ dateTimeFormatter = Windows::Globalization::DateTimeFormatting::DateTimeFormatter::ShortDate::get();
+
+		PrivacyPolicyDate->Text = dateTimeFormatter->Format(dateTime);
+	}
+}
+
 void JPG_Spinner::SettingsPrivacyPolicy::HyperlinkPrivacyPolicy_Click(Windows::UI::Xaml::Documents::Hyperlink^ sender, Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^ args)
 {
 	(void)args;
