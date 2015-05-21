@@ -82,6 +82,7 @@
     <ClCompile Include="jmemansi.c" />
     <ClCompile Include="SettingsFlyout.xaml.cpp" />
     <ClCompile Include="OrientationHelper.cpp" />
+    <ClCompile Include="SettingsPrivacyPolicy.xaml.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -105,6 +106,7 @@
     <ClInclude Include="ExplanationProgressive.xaml.h" />
     <ClInclude Include="SettingsFlyout.xaml.h" />
     <ClInclude Include="OrientationHelper.h" />
+    <ClInclude Include="SettingsPrivacyPolicy.xaml.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />

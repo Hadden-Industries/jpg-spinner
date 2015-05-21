@@ -1435,14 +1435,11 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 	auto cancellationToken = (reinterpret_cast<concurrency::cancellation_token_source*>(rootPage->cts->Value))->get_token();
 
-	storeData = ref new Data();
+	auto openPicker = ref new Windows::Storage::Pickers::FolderPicker();
 
-	GridView1->ItemsSource = storeData->Items;
-
-	auto openPicker = ref new Windows::Storage::Pickers::FileOpenPicker();
 	openPicker->SuggestedStartLocation = Windows::Storage::Pickers::PickerLocationId::PicturesLibrary;
+
 	openPicker->ViewMode = Windows::Storage::Pickers::PickerViewMode::Thumbnail;
-	openPicker->CommitButtonText = _resourceLoader->GetString("commitButtonText");
 
 	// Filter to include a sample subset of file types.
 	openPicker->FileTypeFilter->Clear();
@@ -1454,246 +1451,477 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 	openPicker->FileTypeFilter->Append(".jfi");
 
 	// All this work will be done asynchronously on a background thread:
-
 	// Wrap the async call inside a concurrency::task object
-	auto pickerTask = concurrency::create_task(openPicker->PickMultipleFilesAsync());
+	auto pickerTask = concurrency::create_task(openPicker->PickSingleFolderAsync());
 
-	// Accept the unwrapped return value of previous call as input param
-	pickerTask.then([this, cancellationToken](IVectorView<Windows::Storage::StorageFile^>^ files)
+	pickerTask.then([this, cancellationToken, openPicker](Windows::Storage::StorageFolder^ folder)
 	{
-		imagesSelected = static_cast<unsigned long>(files->Size);
-
-		// file is null if user cancels the file picker.
-		if (0 == imagesSelected)
+		// folder is null if user cancels the folder picker
+		if (nullptr == folder)
 		{
 			// Stop work and clean up.
 			concurrency::cancel_current_task();
 		}
 
-		rootPage->FlipButton();
+		storeData = ref new Data();
 
-		rootPage->SpinLogo_Start();
+		GridView1->ItemsSource = storeData->Items;
 
-		InputTextBlock1->Text = _resourceLoader->GetString("initialising");		
+		// Create query based on the previous file type filter
+		auto queryOptions = ref new Windows::Storage::Search::QueryOptions(Windows::Storage::Search::CommonFileQuery::DefaultQuery, openPicker->FileTypeFilter);
 
-		concurrency::create_task([this]
+		auto storageFileQueryResult = folder->CreateFileQueryWithOptions(queryOptions);
+
+		auto getFilesAsyncTask = concurrency::create_task(storageFileQueryResult->GetFilesAsync());
+
+		getFilesAsyncTask.then([this, cancellationToken](IVectorView<Windows::Storage::StorageFile^>^ files)
 		{
-			unsigned long imagesAnalysedCurrent = 0UL;
-			unsigned long imagesAnalysedLast = 0UL;
+			imagesSelected = static_cast<unsigned long>(files->Size);
 
-			while (imagesAnalysed.load() <= imagesSelected.load())
+			// if there are no JPEG files in the folder
+			if (0UL == imagesSelected)
 			{
-				concurrency::interruption_point();
-
-				imagesAnalysedCurrent = imagesAnalysed.load();
-
-				// Only dispatch a message if the value has changed
-				if (imagesAnalysedCurrent != imagesAnalysedLast)
-				{
-					imagesAnalysedLast = imagesAnalysedCurrent;
-
-					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
-						ref new Windows::UI::Core::DispatchedHandler([this, imagesAnalysedCurrent]()
-					{
-						Platform::String^ string;
-
-						if (imagesAnalysedCurrent > 1UL)
-						{
-							string = _resourceLoader->GetString("analysedMany");
-
-							// Subtract one length of "%lu", add 1U for null terminator
-							unsigned int stringLength = string->Length() + imagesAnalysedCurrent.ToString()->Length() - 3U + 1U;
-
-							wchar_t* wstring = new wchar_t[stringLength];
-
-							swprintf_s(wstring, stringLength, string->Data(), imagesAnalysedCurrent);
-
-							string = ref new Platform::String(wstring);
-
-							delete[] wstring;
-						}
-						else
-						{
-							string = _resourceLoader->GetString("analysedOne");
-						}
-
-						InputTextBlock1->Text = string;
-					}));
-				}
-
-				if (imagesAnalysedCurrent == imagesSelected.load())
-				{
-					break;
-				}
-
-				Sleep(20);
-			}
-
-			return;
-		}, cancellationToken)
-			.then([this]()
-		{
-			// as soon as you've analysed all the images, enable selections in the grid
-			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
-				ref new Windows::UI::Core::DispatchedHandler([this]()
-			{
-				GridView1->SelectionMode = Windows::UI::Xaml::Controls::ListViewSelectionMode::Extended;
-			}));
-
-			unsigned long imagesRotatedCurrent = 0UL;
-			unsigned long imagesRotatedLast = 0UL;
-			unsigned long imagesToBeRotatedCurrent = 0UL;
-			unsigned long imagesToBeRotatedLast = 0UL;
-			unsigned long imagesErroredCurrent = 0UL;
-			unsigned long imagesErroredLast = 0UL;
-
-			while (imagesRotated.load() + imagesErrored.load() <= imagesToBeRotated.load())
-			{
-				concurrency::interruption_point();
-
-				imagesRotatedCurrent = imagesRotated.load();
-				imagesToBeRotatedCurrent = imagesToBeRotated.load();
-				imagesErroredCurrent = imagesErrored.load();
-
-				// Only dispatch a message if any of the values have changed
-				if (imagesRotatedCurrent != imagesRotatedLast || imagesToBeRotatedCurrent != imagesToBeRotatedLast || imagesErroredCurrent != imagesErroredLast)
-				{
-					imagesRotatedLast = imagesRotatedCurrent;
-					imagesToBeRotatedLast = imagesToBeRotatedCurrent;
-					imagesErroredLast = imagesErroredCurrent;
-
-					_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
-						ref new Windows::UI::Core::DispatchedHandler([this, imagesRotatedCurrent, imagesToBeRotatedCurrent, imagesErroredCurrent]()
-					{
-						Platform::String^ string;
-						
-						if (imagesToBeRotatedCurrent > 1UL || (1UL == imagesErroredCurrent && 1UL == imagesToBeRotatedCurrent))
-						{
-							string = _resourceLoader->GetString("processedMany");
-
-							// Subtract two lengths of "%lu", add 1U for null terminator
-							unsigned int stringLength = string->Length() + imagesRotatedCurrent.ToString()->Length() + imagesToBeRotatedCurrent.ToString()->Length() - 2 * 3U + 1U;
-
-							wchar_t* wstring = new wchar_t[stringLength];
-
-							swprintf_s(wstring, stringLength, string->Data(), imagesRotatedCurrent, imagesToBeRotatedCurrent);
-
-							string = ref new Platform::String(wstring);
-
-							delete[] wstring;
-						}
-						else
-						{
-							string = _resourceLoader->GetString("processedOne");
-						}						
-
-						InputTextBlock1->Text = string;
-					}));
-				}
-
-				if (imagesRotatedCurrent + imagesErroredCurrent == imagesToBeRotatedCurrent)
-				{
-					break;
-				}
-
-				Sleep(20);
-			}
-
-			// this must run at a lower priority than the RunAsync directly above so that all the progress messages are handled before this final one
-			_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-				ref new Windows::UI::Core::DispatchedHandler([this]()
-			{
-				Platform::String^ string;
-
-				if (0UL == imagesToBeRotated.load())
-				{
-					string = _resourceLoader->GetString("noImagesToBeRotated");
-
-					InputTextBlock1->Text = string;
-				}
-				else
-				{
-					// if you've rotated all images without errors
-					if (imagesRotated.load() == imagesToBeRotated.load())
-					{
-						if (imagesRotated.load() > 1UL)
-						{
-							string = _resourceLoader->GetString("processedAllMany");
-
-							// Subtract one length of "%lu", add 1U for null terminator
-							unsigned int stringLength = string->Length() + imagesRotated.load().ToString()->Length() - 3U + 1U;
-
-							wchar_t* wstring = new wchar_t[stringLength];
-
-							swprintf_s(wstring, stringLength, string->Data(), imagesRotated.load());
-
-							string = ref new Platform::String(wstring);
-
-							delete[] wstring;
-						}
-						else
-						{
-							string = _resourceLoader->GetString("processedAllOne");
-						}
-
-						InputTextBlock1->Text = string;
-					}
-				}
-
-				rootPage->FlipButton();
-
-				rootPage->SpinLogo_Stop();
-			}));
-		},
-			cancellationToken,
-			concurrency::task_continuation_context::use_arbitrary()
-			);
-
-		concurrency::create_task([this]
-		{
-			// wait for all the images to be analysed
-			while (imagesAnalysed.load() < imagesSelected.load())
-			{
-				concurrency::interruption_point();
-
-				Sleep(20);
-			}
-
-			// we got here if all images have been analysed, hence imagesToBeRotated will have its final value
-			if (0UL == imagesToBeRotated.load())
-			{
+				// Stop work and clean up.
 				concurrency::cancel_current_task();
 			}
 
-			return;
-		}, cancellationToken)
-			.then([this, cancellationToken]()
-		{
-			for (unsigned int i = 0U; i < static_cast<unsigned int>(imagesToBeRotated.load()); ++i)
+			rootPage->FlipButton();
+
+			rootPage->SpinLogo_Start();
+
+			InputTextBlock1->Text = _resourceLoader->GetString("initialising");		
+
+			concurrency::create_task([this]
 			{
-				concurrency::interruption_point();
+				unsigned long imagesAnalysedCurrent = 0UL;
+				unsigned long imagesAnalysedLast = 0UL;
 
-				Item^ item = nullptr;
-
-				// wait for the data behind the UI grid to populate
-				while (nullptr == item)
+				while (imagesAnalysed.load() <= imagesSelected.load())
 				{
-					try
+					concurrency::interruption_point();
+
+					imagesAnalysedCurrent = imagesAnalysed.load();
+
+					// Only dispatch a message if the value has changed
+					if (imagesAnalysedCurrent != imagesAnalysedLast)
 					{
-						item = safe_cast<Item^>(storeData->Items->GetAt(i));
-					}
-					catch (Platform::Exception^ e)
-					{
-						if (E_BOUNDS == e->HResult)
+						imagesAnalysedLast = imagesAnalysedCurrent;
+
+						_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
+							ref new Windows::UI::Core::DispatchedHandler([this, imagesAnalysedCurrent]()
 						{
-							Sleep(20);
+							Platform::String^ string;
+
+							if (imagesAnalysedCurrent > 1UL)
+							{
+								string = _resourceLoader->GetString("analysedMany");
+
+								// Subtract one length of "%lu", add 1U for null terminator
+								unsigned int stringLength = string->Length() + imagesAnalysedCurrent.ToString()->Length() - 3U + 1U;
+
+								wchar_t* wstring = new wchar_t[stringLength];
+
+								swprintf_s(wstring, stringLength, string->Data(), imagesAnalysedCurrent);
+
+								string = ref new Platform::String(wstring);
+
+								delete[] wstring;
+							}
+							else
+							{
+								string = _resourceLoader->GetString("analysedOne");
+							}
+
+							InputTextBlock1->Text = string;
+						}));
+					}
+
+					if (imagesAnalysedCurrent == imagesSelected.load())
+					{
+						break;
+					}
+
+					Sleep(20);
+				}
+
+				return;
+			}, cancellationToken)
+				.then([this]()
+			{
+				// as soon as you've analysed all the images, enable selections in the grid
+				_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::High,
+					ref new Windows::UI::Core::DispatchedHandler([this]()
+				{
+					GridView1->SelectionMode = Windows::UI::Xaml::Controls::ListViewSelectionMode::Extended;
+				}));
+
+				unsigned long imagesRotatedCurrent = 0UL;
+				unsigned long imagesRotatedLast = 0UL;
+				unsigned long imagesToBeRotatedCurrent = 0UL;
+				unsigned long imagesToBeRotatedLast = 0UL;
+				unsigned long imagesErroredCurrent = 0UL;
+				unsigned long imagesErroredLast = 0UL;
+
+				while (imagesRotated.load() + imagesErrored.load() <= imagesToBeRotated.load())
+				{
+					concurrency::interruption_point();
+
+					imagesRotatedCurrent = imagesRotated.load();
+					imagesToBeRotatedCurrent = imagesToBeRotated.load();
+					imagesErroredCurrent = imagesErrored.load();
+
+					// Only dispatch a message if any of the values have changed
+					if (imagesRotatedCurrent != imagesRotatedLast || imagesToBeRotatedCurrent != imagesToBeRotatedLast || imagesErroredCurrent != imagesErroredLast)
+					{
+						imagesRotatedLast = imagesRotatedCurrent;
+						imagesToBeRotatedLast = imagesToBeRotatedCurrent;
+						imagesErroredLast = imagesErroredCurrent;
+
+						_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal,
+							ref new Windows::UI::Core::DispatchedHandler([this, imagesRotatedCurrent, imagesToBeRotatedCurrent, imagesErroredCurrent]()
+						{
+							Platform::String^ string;
+						
+							if (imagesToBeRotatedCurrent > 1UL || (1UL == imagesErroredCurrent && 1UL == imagesToBeRotatedCurrent))
+							{
+								string = _resourceLoader->GetString("processedMany");
+
+								// Subtract two lengths of "%lu", add 1U for null terminator
+								unsigned int stringLength = string->Length() + imagesRotatedCurrent.ToString()->Length() + imagesToBeRotatedCurrent.ToString()->Length() - 2 * 3U + 1U;
+
+								wchar_t* wstring = new wchar_t[stringLength];
+
+								swprintf_s(wstring, stringLength, string->Data(), imagesRotatedCurrent, imagesToBeRotatedCurrent);
+
+								string = ref new Platform::String(wstring);
+
+								delete[] wstring;
+							}
+							else
+							{
+								string = _resourceLoader->GetString("processedOne");
+							}						
+
+							InputTextBlock1->Text = string;
+						}));
+					}
+
+					if (imagesRotatedCurrent + imagesErroredCurrent == imagesToBeRotatedCurrent)
+					{
+						break;
+					}
+
+					Sleep(20);
+				}
+
+				// this must run at a lower priority than the RunAsync directly above so that all the progress messages are handled before this final one
+				_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+					ref new Windows::UI::Core::DispatchedHandler([this]()
+				{
+					Platform::String^ string;
+
+					if (0UL == imagesToBeRotated.load())
+					{
+						string = _resourceLoader->GetString("noImagesToBeRotated");
+
+						InputTextBlock1->Text = string;
+					}
+					else
+					{
+						// if you've rotated all images without errors
+						if (imagesRotated.load() == imagesToBeRotated.load())
+						{
+							if (imagesRotated.load() > 1UL)
+							{
+								string = _resourceLoader->GetString("processedAllMany");
+
+								// Subtract one length of "%lu", add 1U for null terminator
+								unsigned int stringLength = string->Length() + imagesRotated.load().ToString()->Length() - 3U + 1U;
+
+								wchar_t* wstring = new wchar_t[stringLength];
+
+								swprintf_s(wstring, stringLength, string->Data(), imagesRotated.load());
+
+								string = ref new Platform::String(wstring);
+
+								delete[] wstring;
+							}
+							else
+							{
+								string = _resourceLoader->GetString("processedAllOne");
+							}
+
+							InputTextBlock1->Text = string;
 						}
+					}
+
+					rootPage->FlipButton();
+
+					rootPage->SpinLogo_Stop();
+				}));
+			},
+				cancellationToken,
+				concurrency::task_continuation_context::use_arbitrary()
+				);
+
+			concurrency::create_task([this]
+			{
+				// wait for all the images to be analysed
+				while (imagesAnalysed.load() < imagesSelected.load())
+				{
+					concurrency::interruption_point();
+
+					Sleep(20);
+				}
+
+				// we got here if all images have been analysed, hence imagesToBeRotated will have its final value
+				if (0UL == imagesToBeRotated.load())
+				{
+					concurrency::cancel_current_task();
+				}
+
+				return;
+			}, cancellationToken)
+				.then([this, cancellationToken]()
+			{
+				for (unsigned int i = 0U; i < static_cast<unsigned int>(imagesToBeRotated.load()); ++i)
+				{
+					concurrency::interruption_point();
+
+					Item^ item = nullptr;
+
+					// wait for the data behind the UI grid to populate
+					while (nullptr == item)
+					{
+						try
+						{
+							item = safe_cast<Item^>(storeData->Items->GetAt(i));
+						}
+						catch (Platform::Exception^ e)
+						{
+							if (E_BOUNDS == e->HResult)
+							{
+								Sleep(20);
+							}
+							else
+							{
+								_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+									ref new Windows::UI::Core::DispatchedHandler([this, item, e]()
+								{
+									item->Error = HResultToHexString(e->HResult);
+
+									Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+									// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+									// when the item is due to be rendered, the ShowError() will get called on it anyway
+									if (nullptr != sI)
+									{
+										ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+										if (nullptr != iv)
+										{
+											iv->ShowError();
+										}
+									}
+								}));
+							}
+						}
+					}
+
+					concurrency::interruption_point();
+
+					if (!item->Error->IsEmpty())
+					{
+						imagesErrored++;
+
+						continue;
+					}
+
+					while (imagesBeingRotated >= numberProcessorsToUse)
+					{
+						Sleep(20);
+					}
+
+					imagesBeingRotated++;
+
+					auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(
+						item,
+						static_cast<size_t>(
+						(static_cast<double>(0.95) * static_cast<double>(bytesRAMToUse)) / static_cast<double>(numberProcessorsToUse)
+						),
+						rootPage->CropChecked,
+						rootPage->ProgressiveChecked);
+
+					createReorientedTempFileAsyncTask.then([this, cancellationToken, item](HRESULT hr)
+					{
+						imagesBeingRotated--;
+
+						if (SUCCEEDED(hr))
+						{
+							concurrency::interruption_point();
+
+							hr = FixMetadata(item, pIWICImagingFactory);
+
+							if (SUCCEEDED(hr))
+							{
+								concurrency::interruption_point();
+
+								hr = FixMetadataOutOfPlace(item, pIWICImagingFactory);
+							}
+
+								if (SUCCEEDED(hr))
+								{
+									//if (rootPage->DeleteThumbnails) {DeleteJPEGThumbnailData(item, pIWICImagingFactory);}
+
+									concurrency::interruption_point();
+
+									//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
+
+									auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(item->TempFilePath));
+
+									getFileFromPathAsyncTask.then([this, cancellationToken, item](Windows::Storage::StorageFile^ tempFile)
+									{
+										concurrency::interruption_point();
+
+										auto readBufferAsyncTask = concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(tempFile));
+
+										readBufferAsyncTask.then([this, cancellationToken, item, tempFile](Windows::Storage::Streams::IBuffer^ tempFileBuffer)
+										{
+											concurrency::interruption_point();
+
+											auto openAsyncTask = concurrency::create_task(item->StorageFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
+
+											openAsyncTask.then([this, item, tempFile, tempFileBuffer](Windows::Storage::Streams::IRandomAccessStream^ randomAccessStream)
+											{
+												concurrency::interruption_point();
+
+												Windows::Storage::Streams::DataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter(randomAccessStream);
+
+												dataWriter->WriteBuffer(tempFileBuffer);
+
+												concurrency::interruption_point();
+
+												auto storeAsyncTask = concurrency::create_task(dataWriter->StoreAsync());
+											
+												storeAsyncTask.then([this, item, tempFile, randomAccessStream, dataWriter](concurrency::task<unsigned int> task)
+												{
+													concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
+
+													unsigned int bytesWritten = 0U;
+
+													try
+													{
+														bytesWritten = task.get();
+													}
+													catch (Platform::Exception^ ex)
+													{
+														imagesErrored++;
+
+														_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+															ref new Windows::UI::Core::DispatchedHandler([this, item, ex]()
+														{
+															item->Error = HResultToHexString(ex->HResult);
+
+															Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+															// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+															// when the item is due to be rendered, the ShowError() will get called on it anyway
+															if (nullptr != sI)
+															{
+																ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+																if (nullptr != iv)
+																{
+																	iv->ShowError();
+																}
+															}
+														}));
+
+														return;
+													}
+
+													// reset stream size to override the file
+													randomAccessStream->Size = bytesWritten;
+
+													imagesRotated++;
+
+													// Rotate the preview
+													_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+														ref new Windows::UI::Core::DispatchedHandler([this, item]()
+													{
+														if (0U != item->Orientation)
+														{
+															item->Orientation = 1U;
+														}
+
+														if (0U != item->OrientationXMP)
+														{
+															item->OrientationXMP = 1U;
+														}
+
+														GridView1->SelectedItems->Append(item);
+
+														Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+														// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+														// when the item is due to be rendered, the ShowImage() will get called on it anyway
+														if (nullptr != sI)
+														{
+															ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+															if (nullptr != iv)
+															{
+																iv->ShowImage();
+															}
+														}
+													}));
+												});
+											}, cancellationToken);
+										}, cancellationToken);
+									}, cancellationToken);
+								}
+								// If cannot fix the metadata
+								else
+								{
+									imagesErrored++;
+
+									_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
+										ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
+									{
+										item->Error = HResultToHexString(hr);
+
+										Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
+
+										// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
+										// when the item is due to be rendered, the ShowError() will get called on it anyway
+										if (nullptr != sI)
+										{
+											ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
+
+											if (nullptr != iv)
+											{
+												iv->ShowError();
+											}
+										}
+									}));
+								};
+						}
+						// If cannot create re-oriented temporary file
 						else
 						{
+							imagesErrored++;
+
 							_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-								ref new Windows::UI::Core::DispatchedHandler([this, item, e]()
+								ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
 							{
-								item->Error = HResultToHexString(e->HResult);
+								if (HRESULT_FROM_WIN32(ERROR_INVALID_DATA) == hr)
+								{
+									item->Error = _resourceLoader->GetString("cropOptionRequired");
+								}
+								else
+								{
+									item->Error = HResultToHexString(hr);
+								}
 
 								Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
 
@@ -1710,283 +1938,71 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								}
 							}));
 						}
-					}
-				}
+					}, cancellationToken);
+				}							
+			},
+				cancellationToken,
+				concurrency::task_continuation_context::use_arbitrary()
+				);
 
-				concurrency::interruption_point();
-
-				if (!item->Error->IsEmpty())
-				{
-					imagesErrored++;
-
-					continue;
-				}
-
-				while (imagesBeingRotated >= numberProcessorsToUse)
-				{
-					Sleep(20);
-				}
-
-				imagesBeingRotated++;
-
-				auto createReorientedTempFileAsyncTask = CreateReorientedTempFileAsync(
-					item,
-					static_cast<size_t>(
-					(static_cast<double>(0.95) * static_cast<double>(bytesRAMToUse)) / static_cast<double>(numberProcessorsToUse)
-					),
-					rootPage->CropChecked,
-					rootPage->ProgressiveChecked);
-
-				createReorientedTempFileAsyncTask.then([this, cancellationToken, item](HRESULT hr)
-				{
-					imagesBeingRotated--;
-
-					if (SUCCEEDED(hr))
-					{
-						concurrency::interruption_point();
-
-						hr = FixMetadata(item, pIWICImagingFactory);
-
-						if (SUCCEEDED(hr))
-						{
-							concurrency::interruption_point();
-
-							hr = FixMetadataOutOfPlace(item, pIWICImagingFactory);
-						}
-
-							if (SUCCEEDED(hr))
-							{
-								//if (rootPage->DeleteThumbnails) {DeleteJPEGThumbnailData(item, pIWICImagingFactory);}
-
-								concurrency::interruption_point();
-
-								//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
-
-								auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(item->TempFilePath));
-
-								getFileFromPathAsyncTask.then([this, cancellationToken, item](Windows::Storage::StorageFile^ tempFile)
-								{
-									concurrency::interruption_point();
-
-									auto readBufferAsyncTask = concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(tempFile));
-
-									readBufferAsyncTask.then([this, cancellationToken, item, tempFile](Windows::Storage::Streams::IBuffer^ tempFileBuffer)
-									{
-										concurrency::interruption_point();
-
-										auto openAsyncTask = concurrency::create_task(item->StorageFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
-
-										openAsyncTask.then([this, item, tempFile, tempFileBuffer](Windows::Storage::Streams::IRandomAccessStream^ randomAccessStream)
-										{
-											concurrency::interruption_point();
-
-											Windows::Storage::Streams::DataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter(randomAccessStream);
-
-											dataWriter->WriteBuffer(tempFileBuffer);
-
-											concurrency::interruption_point();
-
-											auto storeAsyncTask = concurrency::create_task(dataWriter->StoreAsync());
-											
-											storeAsyncTask.then([this, item, tempFile, randomAccessStream, dataWriter](concurrency::task<unsigned int> task)
-											{
-												concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
-
-												unsigned int bytesWritten = 0U;
-
-												try
-												{
-													bytesWritten = task.get();
-												}
-												catch (Platform::Exception^ ex)
-												{
-													imagesErrored++;
-
-													_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-														ref new Windows::UI::Core::DispatchedHandler([this, item, ex]()
-													{
-														item->Error = HResultToHexString(ex->HResult);
-
-														Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
-
-														// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
-														// when the item is due to be rendered, the ShowError() will get called on it anyway
-														if (nullptr != sI)
-														{
-															ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
-
-															if (nullptr != iv)
-															{
-																iv->ShowError();
-															}
-														}
-													}));
-
-													return;
-												}
-
-												// reset stream size to override the file
-												randomAccessStream->Size = bytesWritten;
-
-												imagesRotated++;
-
-												// Rotate the preview
-												_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-													ref new Windows::UI::Core::DispatchedHandler([this, item]()
-												{
-													if (0U != item->Orientation)
-													{
-														item->Orientation = 1U;
-													}
-
-													if (0U != item->OrientationXMP)
-													{
-														item->OrientationXMP = 1U;
-													}
-
-													GridView1->SelectedItems->Append(item);
-
-													Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
-
-													// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
-													// when the item is due to be rendered, the ShowImage() will get called on it anyway
-													if (nullptr != sI)
-													{
-														ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
-
-														if (nullptr != iv)
-														{
-															iv->ShowImage();
-														}
-													}
-												}));
-											});
-										}, cancellationToken);
-									}, cancellationToken);
-								}, cancellationToken);
-							}
-							// If cannot fix the metadata
-							else
-							{
-								imagesErrored++;
-
-								_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-									ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
-								{
-									item->Error = HResultToHexString(hr);
-
-									Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
-
-									// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
-									// when the item is due to be rendered, the ShowError() will get called on it anyway
-									if (nullptr != sI)
-									{
-										ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
-
-										if (nullptr != iv)
-										{
-											iv->ShowError();
-										}
-									}
-								}));
-							};
-					}
-					// If cannot create re-oriented temporary file
-					else
-					{
-						imagesErrored++;
-
-						_dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Low,
-							ref new Windows::UI::Core::DispatchedHandler([this, item, hr]()
-						{
-							if (HRESULT_FROM_WIN32(ERROR_INVALID_DATA) == hr)
-							{
-								item->Error = _resourceLoader->GetString("cropOptionRequired");
-							}
-							else
-							{
-								item->Error = HResultToHexString(hr);
-							}
-
-							Windows::UI::Xaml::Controls::Primitives::SelectorItem^ sI = safe_cast<Windows::UI::Xaml::Controls::Primitives::SelectorItem^>(GridView1->ContainerFromItem(item));
-
-							// this can return a nullptr when the item has not yet been rendered to the grid - this is normal!
-							// when the item is due to be rendered, the ShowError() will get called on it anyway
-							if (nullptr != sI)
-							{
-								ItemViewer^ iv = safe_cast<ItemViewer^>(sI->ContentTemplateRoot);
-
-								if (nullptr != iv)
-								{
-									iv->ShowError();
-								}
-							}
-						}));
-					}
-				}, cancellationToken);
-			}							
-		},
-			cancellationToken,
-			concurrency::task_continuation_context::use_arbitrary()
-			);
-
-		for (unsigned int i = 0U; i < files->Size; ++i)
-		{
-			concurrency::interruption_point();
-
-			Item^ item = ref new Item();
-
-			item->StorageFile = files->GetAt(i);
-
-			auto getMetadataAsyncTask = concurrency::create_task(GetMetadataAsync(item, pIWICImagingFactory));
-
-			getMetadataAsyncTask.then([this, item, cancellationToken](HRESULT hr)
+			for (unsigned int i = 0U; i < files->Size; ++i)
 			{
 				concurrency::interruption_point();
 
-				if (SUCCEEDED(hr))
+				Item^ item = ref new Item();
+
+				item->StorageFile = files->GetAt(i);
+
+				auto getMetadataAsyncTask = concurrency::create_task(GetMetadataAsync(item, pIWICImagingFactory));
+
+				getMetadataAsyncTask.then([this, item, cancellationToken](HRESULT hr)
 				{
-					if (item->OrientationCoalesced >= 2U && item->OrientationCoalesced <= 8U)
+					concurrency::interruption_point();
+
+					if (SUCCEEDED(hr))
 					{
-						concurrency::interruption_point();
-
-						imagesToBeRotated++;
-
-						auto getThumbnailTask = concurrency::create_task(item->StorageFile->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
-
-						getThumbnailTask.then([this, item, cancellationToken](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
+						if (item->OrientationCoalesced >= 2U && item->OrientationCoalesced <= 8U)
 						{
 							concurrency::interruption_point();
 
-							Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
+							imagesToBeRotated++;
 
-							// Set the stream as source of the bitmap
-							bitmapImage->SetSource(thumbnail);
+							auto getThumbnailTask = concurrency::create_task(item->StorageFile->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
 
-							item->UUID = GetUUID();
-
-							// Add picked file to MostRecentlyUsedList
-							item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(item->StorageFile);
-
-							if (Windows::Storage::FileAttributes::ReadOnly == (item->StorageFile->Attributes & Windows::Storage::FileAttributes::ReadOnly))
+							getThumbnailTask.then([this, item, cancellationToken](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
 							{
-								item->Error = _resourceLoader->GetString("imageReadOnly");
-							}
+								concurrency::interruption_point();
 
-							// Set the bitmap as source of the Image control
-							item->Image = bitmapImage;
+								Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
 
-							storeData->Items->Append(item);
+								// Set the stream as source of the bitmap
+								bitmapImage->SetSource(thumbnail);
 
-						}, cancellationToken);
+								item->UUID = GetUUID();
+
+								// Add picked file to MostRecentlyUsedList
+								item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(item->StorageFile);
+
+								if (Windows::Storage::FileAttributes::ReadOnly == (item->StorageFile->Attributes & Windows::Storage::FileAttributes::ReadOnly))
+								{
+									item->Error = _resourceLoader->GetString("imageReadOnly");
+								}
+
+								// Set the bitmap as source of the Image control
+								item->Image = bitmapImage;
+
+								storeData->Items->Append(item);
+
+							}, cancellationToken);
+						}
 					}
-				}
 
-				// Important to increment this after the to-be-rotated count so that the monitor jobs don't race
-				imagesAnalysed++;
+					// Important to increment this after the to-be-rotated count so that the monitor jobs don't race
+					imagesAnalysed++;
 
-			}, cancellationToken);
-		}
+				}, cancellationToken);
+			}
+		}, cancellationToken);
 	}, cancellationToken);
 }
 

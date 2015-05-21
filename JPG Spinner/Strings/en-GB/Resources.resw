@@ -132,7 +132,7 @@
     <value>JPG Spinner</value>
   </data>
   <data name="ButtonSelectFiles.Content" xml:space="preserve">
-    <value>Select Files</value>
+    <value>Select Folder</value>
   </data>
   <data name="CheckBoxProgressive.Header" xml:space="preserve">
     <value>Progressive</value>
@@ -168,9 +168,6 @@
   <data name="processedAllOne" xml:space="preserve">
     <value>Rotated image</value>
   </data>
-  <data name="commitButtonText" xml:space="preserve">
-    <value>Rotate</value>
-  </data>
   <data name="initialising" xml:space="preserve">
     <value>Initialising...</value>
     <comment>GB</comment>
@@ -194,7 +191,7 @@
     <value>There were no rotatable images in your selection</value>
   </data>
   <data name="selectFiles" xml:space="preserve">
-    <value>Select Files</value>
+    <value>Select Folder</value>
   </data>
   <data name="imageReadOnly" xml:space="preserve">
     <value>This image is read-only</value>

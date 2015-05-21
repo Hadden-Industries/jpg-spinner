@@ -94,6 +94,7 @@
   <PropertyGroup>
     <PackageCertificateKeyFile>JPG Spinner_StoreKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>4244F6E820B9D885A364AB90A1117B5C9DC18931</PackageCertificateThumbprint>
+    <AppxBundle>Auto</AppxBundle>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>

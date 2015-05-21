@@ -130,7 +130,7 @@
     <value>JPG Spinner</value>
   </data>
   <data name="ButtonSelectFiles.Content" xml:space="preserve">
-    <value>Выбор Файлов</value>
+    <value>Выбор Папки</value>
   </data>
   <data name="CheckBoxProgressive.Header" xml:space="preserve">
     <value>Прогрессивная развертка</value>
@@ -166,9 +166,6 @@
   <data name="processedAllOne" xml:space="preserve">
     <value>Изображение обработанно</value>
   </data>
-  <data name="commitButtonText" xml:space="preserve">
-    <value>Повернуть</value>
-  </data>
   <data name="initialising" xml:space="preserve">
     <value>Инициализация...</value>
   </data>
@@ -191,7 +188,7 @@
     <value>В вашем выборе не было вращяемых изображений</value>
   </data>
   <data name="selectFiles" xml:space="preserve">
-    <value>Выбор Файлов</value>
+    <value>Выбор Папки</value>
   </data>
   <data name="imageReadOnly" xml:space="preserve">
     <value>У этого изображения атрибут только для чтения</value>
