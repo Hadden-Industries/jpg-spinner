@@ -203,8 +203,7 @@ concurrency::task<HRESULT> GetMetadataAsync(Item^ item, IWICImagingFactory * pIW
 		PropVariantClear(&propVariant);
 
 		// return early if the orientation value is unusable
-		if (!((item->Orientation >= 2U && item->Orientation <= 8U)
-			|| (item->OrientationXMP >= 2U && item->OrientationXMP <= 8U)))
+		if (!(item->OrientationCoalesced >= 2U && item->OrientationCoalesced <= 8U))
 		{
 			return S_OK;
 		}
@@ -585,7 +584,7 @@ HRESULT DeleteJPEGThumbnailData(Item^ item, IWICImagingFactory * pIWICImagingFac
 HRESULT FixMetadataOutOfPlace(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 {
 	// Set up the orientation helper
-	auto orientationHelper = new OrientationHelper(item->Orientation ? item->Orientation : item->OrientationXMP);
+	auto orientationHelper = new OrientationHelper(item->OrientationCoalesced);
 
 	if (VT_EMPTY == (reinterpret_cast<PROPVARIANT*>(item->PtrSubjectArea->Value))->vt &&
 		VT_EMPTY == (reinterpret_cast<PROPVARIANT*>(item->PtrSubjectLocation->Value))->vt &&
@@ -1131,7 +1130,7 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxM
 		jpeg_transform_info transformoption;
 		JCOPY_OPTION copyoption = JCOPYOPT_ALL;
 
-		switch (item->Orientation ? item->Orientation : item->OrientationXMP) {
+		switch (item->OrientationCoalesced) {
 		case 2U:
 		{
 			transformoption.transform = JXFORM_FLIP_H;
@@ -1434,7 +1433,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
     // A pointer back to the main page. This is needed if you want to call methods in MainPage
     rootPage = MainPage::Current;
 
-	auto cancellationToken = ((concurrency::cancellation_token_source*)(rootPage->cts->Value))->get_token();
+	auto cancellationToken = (reinterpret_cast<concurrency::cancellation_token_source*>(rootPage->cts->Value))->get_token();
 
 	storeData = ref new Data();
 
@@ -1947,8 +1946,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 				if (SUCCEEDED(hr))
 				{
-					if ((item->Orientation >= 2U && item->Orientation <= 8U)
-						|| (item->OrientationXMP >= 2U && item->OrientationXMP <= 8U))
+					if (item->OrientationCoalesced >= 2U && item->OrientationCoalesced <= 8U)
 					{
 						concurrency::interruption_point();
 

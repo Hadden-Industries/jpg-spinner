@@ -17,7 +17,7 @@
         <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="Margin" Value="0,0,0,10"/>
     </Style>
-
+    
     <Style x:Key="TagLineTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Light"/>
         <Setter Property="FontSize" Value="16"/>
@@ -27,7 +27,7 @@
         <Setter Property="FontFamily" Value="Segoe UI Light"/>
         <Setter Property="FontSize" Value="26.667"/>
     </Style>
-
+    
     <Style x:Key="ListItemTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Semilight"/>
         <Setter Property="FontSize" Value="18"/>
@@ -35,36 +35,40 @@
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
      </Style>
-
+    
     <Style x:Key="CopyrightTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
         <Setter Property="FontWeight" Value="Normal"/>
     </Style>
-
+    
     <Style x:Key="ScenarioHeaderTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Light"/>
         <Setter Property="FontSize" Value="26.667"/>
     </Style>
-
+    
     <Style x:Key="ScenarioDescriptionTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Light"/>
         <Setter Property="FontSize" Value="16"/>
     </Style>
-
+    
     <Style x:Key="BaseMessageStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Semilight"/>
         <Setter Property="FontSize" Value="14.667"/>
         <Setter Property="Margin" Value="0,0,0,5"/>
     </Style>
-
+    
     <Style x:Key="SeparatorStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="9"/>
         <Setter Property="Foreground" Value="Gray"/>
     </Style>
-
+    
     <Style x:Key="HyperlinkStyle" TargetType="HyperlinkButton">
         <Setter Property="Padding" Value="1"/>
         <Setter Property="Foreground" Value="Gray"/>
     </Style>
+    
+    <SolidColorBrush x:Key="JPGSpinnerBlue" Color="#140044"/>
+    
+    <SolidColorBrush x:Key="JPGSpinnerOrange" Color="#F05A29"/>
     
 </ResourceDictionary>

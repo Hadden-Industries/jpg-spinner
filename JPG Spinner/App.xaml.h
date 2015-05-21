@@ -203,6 +203,28 @@ namespace JPG_Spinner
 			}
 		}
 
+		//OrientationCoalesced
+		property unsigned char OrientationCoalesced
+		{
+			unsigned char get()
+			{
+				if (_Orientation >= 2U && _Orientation <= 8U)
+				{
+					return _Orientation;
+				}
+				else
+				{
+					// only check the XMP value if the EXIF value is horizontal or not given
+					if (_OrientationXMP >= 2U && _OrientationXMP <= 8U)
+					{
+						return _OrientationXMP;
+					}
+				}
+
+				return _Orientation;
+			}
+		}
+
 		/*//JPEGInterchangeFormat
 		property unsigned short JPEGInterchangeFormat
 		{

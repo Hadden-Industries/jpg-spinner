@@ -65,16 +65,18 @@ void ItemViewer::ShowImage()
     {
         image->Source = _item->Image;
 
-		// Only perform the matrix calculations if the orientation is not horizontal
-		if ((_item->Orientation ? _item->Orientation : _item->OrientationXMP) <= 1U)
+		// If the orientation is horizontal
+		if (!(_item->OrientationCoalesced >= 2U && _item->OrientationCoalesced <= 8U))
 		{
+			// Clear any current render transforms
 			image->ClearValue(Image::RenderTransformProperty);
 		}
+		// else perform the matrix calculations
 		else
 		{
 			Windows::UI::Xaml::Media::MatrixTransform^ _MatrixTransform = ref new Windows::UI::Xaml::Media::MatrixTransform();
 
-			_MatrixTransform->Matrix = OrientationHelper::GetInverseMatrix(_item->Orientation ? _item->Orientation : _item->OrientationXMP);
+			_MatrixTransform->Matrix = OrientationHelper::GetInverseMatrix(_item->OrientationCoalesced);
 
 			image->RenderTransform = _MatrixTransform;
 		}

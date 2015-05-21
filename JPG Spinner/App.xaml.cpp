@@ -130,7 +130,7 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 			|| wcstoul(value->Data(), nullptr, 0) > static_cast<unsigned long>(systemInfo.dwNumberOfProcessors))
 		{
 			// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
-			const float reductionFactor = 2.0;
+			const float reductionFactor = 2.0f;
 
 			unsigned long numberLogicalProcessorsToUse = static_cast<unsigned long>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
 

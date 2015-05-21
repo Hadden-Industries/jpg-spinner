@@ -8,7 +8,7 @@
     Title="Options"
     IconSource="Assets/Settings.png"
     HeaderForeground="White"
-    HeaderBackground="#F05A29"
+    HeaderBackground="{StaticResource JPGSpinnerOrange}"
     Background="White"
     mc:Ignorable="d"
                                   
@@ -16,6 +16,7 @@
     <StackPanel>
         <!--Dummy wide stack panel to force the sliders to expand to the full width available-->
         <StackPanel Margin="0,0,646,0" Style="{StaticResource SettingsFlyoutSectionStyle}"/>
+        
         <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
             <TextBlock x:Uid="SettingsFlyoutOptionsProcessor" Style="{StaticResource TitleTextBlockStyle}" Text="Processor"/>
             <TextBlock x:Uid="SettingsFlyoutOptionsTextBlockProcessor" Margin="6,0,0,0" Style="{StaticResource BodyTextBlockStyle}" Text="Maximum logical cores to use" TextWrapping="WrapWholeWords"/>
@@ -42,11 +43,6 @@
                     TickPlacement="Inline"/>
         </StackPanel>
         
-        <!--<StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
-            <TextBlock Text="Frequently Asked Questions" Style="{StaticResource TitleTextBlockStyle}"/>
-            <TextBlock Margin="0,0,0,25" Text="You will find answers to the most often asked questions here" Style="{StaticResource BodyTextBlockStyle}"/>
-            <HyperlinkButton Padding="-5,0,0,0" Content="FAQ" Tag="http://haddenindustries.com/jpg_spinner/faq.html" HorizontalAlignment="Left"/>
-        </StackPanel>-->
     </StackPanel>
 </SettingsFlyout>
 

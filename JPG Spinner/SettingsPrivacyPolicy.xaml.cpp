@@ -91,9 +91,9 @@ void JPG_Spinner::SettingsPrivacyPolicy::PrivacyPolicyDate_Loaded(Platform::Obje
 
 	SYSTEMTIME systemTime = { 0 };
 
-	systemTime.wYear = static_cast<WORD>(wcstoul(dateString.substr(0, 4).c_str(), nullptr, 0));
-	systemTime.wMonth = static_cast<WORD>(wcstoul(dateString.substr(5, 2).c_str(), nullptr, 0));
-	systemTime.wDay = static_cast<WORD>(wcstoul(dateString.substr(8, 2).c_str(), nullptr, 0));
+	systemTime.wYear = static_cast<WORD>(wcstoul(dateString.substr(0, 4).c_str(), nullptr, 10));
+	systemTime.wMonth = static_cast<WORD>(wcstoul(dateString.substr(5, 2).c_str(), nullptr, 10));
+	systemTime.wDay = static_cast<WORD>(wcstoul(dateString.substr(8, 2).c_str(), nullptr, 10));
 
 	FILETIME fileTime = { 0 };
 

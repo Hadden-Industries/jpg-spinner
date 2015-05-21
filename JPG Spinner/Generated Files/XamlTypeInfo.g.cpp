@@ -256,6 +256,7 @@
         userType->AddMemberName(L"PtrFocalPlaneXResolution");
         userType->AddMemberName(L"PtrSubjectLocation");
         userType->AddMemberName(L"PtrSubjectArea");
+        userType->AddMemberName(L"OrientationCoalesced");
         userType->AddMemberName(L"OrientationXMP");
         userType->AddMemberName(L"Orientation");
         userType->AddMemberName(L"Image");
@@ -480,6 +481,21 @@
                 auto that = (::JPG_Spinner::Item^)instance;
                 that->PtrSubjectArea = (::Platform::IBox<::default::int32>^)value;
             };
+        return xamlMember;
+    }
+
+    if (longMemberName == L"JPG_Spinner.Item.OrientationCoalesced")
+    {
+        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"OrientationCoalesced", L"Byte");
+        xamlMember->Getter =
+            [](Object^ instance) -> Object^
+            {
+                auto that = (::JPG_Spinner::Item^)instance;
+                auto value = ref new ::Platform::Box<::default::uint8>(that->OrientationCoalesced);
+                return value;
+            };
+
+        xamlMember->SetIsReadOnly();
         return xamlMember;
     }
 
