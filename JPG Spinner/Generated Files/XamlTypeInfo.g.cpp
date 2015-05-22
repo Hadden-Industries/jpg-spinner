@@ -262,7 +262,6 @@
         userType->AddMemberName(L"Image");
         userType->AddMemberName(L"Error");
         userType->AddMemberName(L"Title");
-        userType->AddMemberName(L"MRUToken");
         userType->AddMemberName(L"UUID");
         userType->AddMemberName(L"StorageFile");
         userType->SetIsBindable();
@@ -590,25 +589,6 @@
             };
 
         xamlMember->SetIsReadOnly();
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.Item.MRUToken")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"MRUToken", L"String");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                return that->MRUToken;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::Item^)instance;
-                that->MRUToken = (::Platform::String^)value;
-            };
         return xamlMember;
     }
 

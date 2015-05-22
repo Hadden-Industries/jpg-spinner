@@ -168,10 +168,15 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 /// <param name="e">Details about the suspend request.</param>
 void App::OnSuspending(Object^ sender, SuspendingEventArgs^ e)
 {
-	(void) sender;	// Unused parameter
-	(void) e;	// Unused parameter
+	// Unused parameter
+	(void)sender;
 
-	//TODO: Save application state and stop any background activity
+	auto suspendingDeferral = e->SuspendingOperation->GetDeferral();
+
+	// Cancel all processing
+	MainPage::Current->CancelProcessing();
+
+	suspendingDeferral->Complete();
 }
 
 /// <summary>
@@ -181,16 +186,22 @@ void App::OnSuspending(Object^ sender, SuspendingEventArgs^ e)
 /// <param name="e">Details about the navigation failure</param>
 void App::OnNavigationFailed(Platform::Object ^sender, Windows::UI::Xaml::Navigation::NavigationFailedEventArgs ^e)
 {
+	(void)sender;
+
 	throw ref new FailureException("Failed to load Page " + e->SourcePageType.Name);
 }
 
 void App::OnWindowCreated(Windows::UI::Xaml::WindowCreatedEventArgs^ args)
 {
+	(void)args;
+
 	Windows::UI::ApplicationSettings::SettingsPane::GetForCurrentView()->CommandsRequested += ref new Windows::Foundation::TypedEventHandler<Windows::UI::ApplicationSettings::SettingsPane^, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^>(this, &App::OnCommandsRequested);
 }
 
 void App::OnCommandsRequested(Windows::UI::ApplicationSettings::SettingsPane^ sender, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^ args)
 {
+	(void)sender;
+
 	Windows::UI::Popups::UICommandInvokedHandler^ handler = ref new Windows::UI::Popups::UICommandInvokedHandler(this, &App::OnSettingsCommand);
 
 	auto _resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
@@ -229,7 +240,7 @@ void App::OnSettingsCommand(Windows::UI::Popups::IUICommand^ command)
 Item::Item() :
 _StorageFile(nullptr),
 _UUID(Platform::Guid(GUID_NULL)),
-_MRUToken(""),
+//_MRUToken(""),
 _Error(""),
 _Image(nullptr),
 _Orientation(0U),

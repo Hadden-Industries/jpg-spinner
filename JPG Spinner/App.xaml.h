@@ -43,7 +43,7 @@ namespace JPG_Spinner
 	{
 		Windows::Storage::StorageFile^ _StorageFile;
 		Platform::Guid _UUID;
-		Platform::String^ _MRUToken;
+		//Platform::String^ _MRUToken;
 		Platform::String^  _Error;
 		Windows::UI::Xaml::Media::ImageSource^ _Image;
 		unsigned char _Orientation;
@@ -109,7 +109,7 @@ namespace JPG_Spinner
 			}
 		}
 
-		//MRUToken
+		/*//MRUToken
 		property Platform::String^ MRUToken
 		{
 			Platform::String^ get()
@@ -124,7 +124,7 @@ namespace JPG_Spinner
 					OnPropertyChanged("MRUToken");
 				}
 			}
-		}
+		}*/
 
 		//Title
 		property Platform::String^ Title

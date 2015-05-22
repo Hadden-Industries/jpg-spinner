@@ -1981,7 +1981,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								item->UUID = GetUUID();
 
 								// Add picked file to MostRecentlyUsedList
-								item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(item->StorageFile);
+								//item->MRUToken = Windows::Storage::AccessCache::StorageApplicationPermissions::MostRecentlyUsedList->Add(item->StorageFile);
 
 								if (Windows::Storage::FileAttributes::ReadOnly == (item->StorageFile->Attributes & Windows::Storage::FileAttributes::ReadOnly))
 								{

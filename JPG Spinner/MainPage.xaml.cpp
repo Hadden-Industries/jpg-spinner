@@ -61,6 +61,14 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 	}
 	else
 	{
+		CancelProcessing();
+	}
+}
+
+void JPG_Spinner::MainPage::CancelProcessing()
+{
+	if (!buttonIsSelectFiles)
+	{
 		_cts.cancel();
 
 		SpinLogo_Stop();
