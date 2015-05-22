@@ -1054,7 +1054,6 @@
   <ItemGroup>
     <PRIResource Include="Strings\en-GB\Resources.resw" />
     <PRIResource Include="Strings\en-US\Resources.resw" />
-    <PRIResource Include="Strings\ru\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Package.StoreAssociation.xml" />
