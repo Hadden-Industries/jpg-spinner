@@ -88,7 +88,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.xaml.h" />
     <ClInclude Include="MainPage.xaml.h" />
-    <ClInclude Include="cderror.h" />
     <ClInclude Include="jconfig.h" />
     <ClInclude Include="jerror.h" />
     <ClInclude Include="jinclude.h" />
@@ -115,6 +114,7 @@
     <None Include="JPG Spinner_TemporaryKey.pfx" />
     <None Include="Package.StoreAssociation.xml" />
     <None Include="JPG Spinner_StoreKey.pfx" />
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />

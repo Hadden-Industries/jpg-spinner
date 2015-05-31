@@ -118,7 +118,7 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 	});
 
 	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
-		.then([](Platform::String^ value)
+		.then([](IPropertyValue^ value)
 	{
 		SYSTEM_INFO systemInfo = SYSTEM_INFO();
 
@@ -127,12 +127,12 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 		// If you have not saved this setting before
 		if (nullptr == value
 			// or the saved value is greater than the total current number of processors
-			|| wcstoul(value->Data(), nullptr, 0) > static_cast<unsigned long>(systemInfo.dwNumberOfProcessors))
+			|| value->GetUInt32() > static_cast<UINT32>(systemInfo.dwNumberOfProcessors))
 		{
 			// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
 			const float reductionFactor = 2.0f;
 
-			unsigned long numberLogicalProcessorsToUse = static_cast<unsigned long>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
+			UINT32 numberLogicalProcessorsToUse = static_cast<UINT32>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
 
 			// Sanity check
 			if (0U == numberLogicalProcessorsToUse)
@@ -140,21 +140,21 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 				numberLogicalProcessorsToUse = 1U;
 			}
 
-			concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", numberLogicalProcessorsToUse.ToString()));
+			concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", PropertyValue::CreateUInt32(numberLogicalProcessorsToUse)));
 		}
 	});
 
 	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
-		.then([](Platform::String^ value)
+		.then([](IPropertyValue^ value)
 	{
-		unsigned long long megabytesRAMToUse = (MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL);
+		UINT64 megabytesRAMToUse = (MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL);
 
 		// If you have not saved this setting before
 		if (nullptr == value
 			// or the saved value is more than the current allowable
-			|| wcstoull(value->Data(), nullptr, 0) > megabytesRAMToUse)
+			|| value->GetUInt64() > megabytesRAMToUse)
 		{
-			concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", megabytesRAMToUse.ToString()));
+			concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", PropertyValue::CreateUInt64(megabytesRAMToUse)));
 		}
 	});
 }
@@ -253,12 +253,12 @@ _HasThumbnail(false)
 	PropVariantInit(&_SubjectLocation);
 }
 
-concurrency::task<Platform::String^> JPG_Spinner::LoadSettingAsync(Platform::String^ key)
+concurrency::task<Windows::Foundation::IPropertyValue^> JPG_Spinner::LoadSettingAsync(Platform::String^ key)
 {
 	return concurrency::create_task(Windows::System::UserProfile::UserInformation::GetDisplayNameAsync())
 		.then([key](Platform::String^ displayName)
 	{
-		Platform::String^ value = nullptr;
+		Windows::Foundation::IPropertyValue^ value = nullptr;
 
 		Windows::Storage::ApplicationDataContainer^ localSettings = Windows::Storage::ApplicationData::Current->LocalSettings;
 
@@ -277,13 +277,13 @@ concurrency::task<Platform::String^> JPG_Spinner::LoadSettingAsync(Platform::Str
 				return value;
 			}
 
-			return safe_cast<Platform::String^>(container->Values->Lookup(key));
+			return safe_cast<Windows::Foundation::IPropertyValue^>(container->Values->Lookup(key));
 		}
 		else
 		{
 			if (localSettings->Values->HasKey(key))
 			{
-				return safe_cast<Platform::String^>(localSettings->Values->Lookup(key));
+				return safe_cast<Windows::Foundation::IPropertyValue^>(localSettings->Values->Lookup(key));
 			}
 			else
 			{
@@ -293,7 +293,7 @@ concurrency::task<Platform::String^> JPG_Spinner::LoadSettingAsync(Platform::Str
 	});
 }
 
-concurrency::task<bool> JPG_Spinner::SaveSettingAsync(Platform::String^ key, Platform::String^ value)
+concurrency::task<bool> JPG_Spinner::SaveSettingAsync(Platform::String^ key, Platform::Object^ value)
 {
 	return concurrency::create_task(Windows::System::UserProfile::UserInformation::GetDisplayNameAsync())
 		.then([key, value](Platform::String^ displayName)

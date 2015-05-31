@@ -75,11 +75,11 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ sender
 	SliderProcessor->Maximum = static_cast<double>(systemInfo.dwNumberOfProcessors);
 
 	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
-		.then([this](Platform::String^ value)
+		.then([this](IPropertyValue^ value)
 	{
 		if (nullptr != value)
 		{
-			SliderProcessor->Value = static_cast<double>(wcstoul(value->Data(), nullptr, 0));
+			SliderProcessor->Value = static_cast<double>(value->GetUInt32());
 		}
 	});
 
@@ -95,11 +95,11 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ sender
 	}
 
 	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
-		.then([this](Platform::String^ value)
+		.then([this](IPropertyValue^ value)
 	{
 		if (nullptr != value)
 		{
-			SliderMemory->Value = static_cast<double>(wcstoull(value->Data(), nullptr, 0));
+			SliderMemory->Value = static_cast<double>(value->GetUInt64());
 		}
 	});
 }
@@ -110,9 +110,9 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Unloaded(Platform::Object^ send
 	(void)e;
 
 	// Save the setting values
-	concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", static_cast<unsigned long>(SliderProcessor->Value).ToString()));
+	concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", PropertyValue::CreateUInt32(static_cast<UINT32>(SliderProcessor->Value))));
 
-	concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", static_cast<unsigned long long>(SliderMemory->Value).ToString()));
+	concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", PropertyValue::CreateUInt64(static_cast<UINT64>(SliderMemory->Value))));
 
 	// Deregister accelerator keys 
 	if (_navigationShortcutsRegistered)

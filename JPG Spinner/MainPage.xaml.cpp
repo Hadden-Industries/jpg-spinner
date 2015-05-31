@@ -154,72 +154,51 @@ void JPG_Spinner::MainPage::FlipButton()
 	buttonIsSelectFiles = !buttonIsSelectFiles;
 }
 
-void JPG_Spinner::MainPage::CheckBoxProgressive_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void JPG_Spinner::MainPage::ToggleSwitch_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	concurrency::create_task(LoadSettingAsync("CheckBoxProgressive"))
-		.then([this](Platform::String^ value)
+	(void)e;
+
+	concurrency::create_task(LoadSettingAsync(safe_cast<ToggleSwitch^>(sender)->Name))
+		.then([this, sender](IPropertyValue^ value)
 	{
 		// if found a stored value
 		if (nullptr != value)
 		{
 			// if the current value is not the stored
-			if (CheckBoxProgressive->IsOn.ToString() != value)
+			if (safe_cast<ToggleSwitch^>(sender)->IsOn != value->GetBoolean())
 			{
 				// toggle
-				CheckBoxProgressive->IsOn = !CheckBoxProgressive->IsOn;
+				safe_cast<ToggleSwitch^>(sender)->IsOn = !safe_cast<ToggleSwitch^>(sender)->IsOn;
+				// Note: the toggling will fire ToggleSwitch_Toggled
 			}
 		}
 		// else new installation
 		else
 		{
-			// so set sensible default
-			CheckBoxProgressive->IsOn = true;
-			// and save it
-			concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", CheckBoxProgressive->IsOn.ToString()));
-		}
-	});
-}
-
-void JPG_Spinner::MainPage::CheckBoxProgressive_Toggled(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	(void)sender;
-	(void)e;
-
-	concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", CheckBoxProgressive->IsOn.ToString()));
-}
-
-void JPG_Spinner::MainPage::CheckBoxCrop_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	concurrency::create_task(LoadSettingAsync("CheckBoxCrop"))
-		.then([this](Platform::String^ value)
-	{
-		// if found a stored value
-		if (nullptr != value)
-		{
-			// if the current value is not the stored
-			if (CheckBoxCrop->IsOn.ToString() != value)
+			// so set sensible defaults
+			if (CheckBoxProgressive == safe_cast<ToggleSwitch^>(sender))
 			{
-				// toggle
-				CheckBoxCrop->IsOn = !CheckBoxCrop->IsOn;
+				safe_cast<ToggleSwitch^>(sender)->IsOn = true;
 			}
-		}
-		// else new installation
-		else
-		{
-			// so set sensible default
-			CheckBoxCrop->IsOn = false;
-			// and save it
-			concurrency::create_task(SaveSettingAsync("CheckBoxCrop", CheckBoxCrop->IsOn.ToString()));
+			else
+			{
+				safe_cast<ToggleSwitch^>(sender)->IsOn = false;
+			}
+			// the toggling will fire ToggleSwitch_Toggled, so no need to save the setting explicitly
 		}
 	});
 }
 
-void JPG_Spinner::MainPage::CheckBoxCrop_Toggled(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void JPG_Spinner::MainPage::ToggleSwitch_Toggled(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	(void)sender;
 	(void)e;
 
-	concurrency::create_task(SaveSettingAsync("CheckBoxCrop", CheckBoxCrop->IsOn.ToString()));
+	concurrency::create_task(
+		SaveSettingAsync(
+			safe_cast<ToggleSwitch^>(sender)->Name,
+			PropertyValue::CreateBoolean(safe_cast<ToggleSwitch^>(sender)->IsOn)
+			)
+		);
 }
 
 void JPG_Spinner::MainPage::Logo_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)

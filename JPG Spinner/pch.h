@@ -18,6 +18,7 @@
 #include <Wincodecsdk.h> // IWICMetadataBlockWriter
 #include "jpeglib.h" // jpeg_stdio_src
 #include "OrientationHelper.h" // OrientationHelper
+#include <iomanip> // std::get_time
 
 extern "C" {
 #include "transupp.h" // Support routines for jpegtran

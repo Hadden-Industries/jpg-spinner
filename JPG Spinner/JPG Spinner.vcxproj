@@ -178,7 +178,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="cderror.h" />
     <ClInclude Include="ExplanationCrop.xaml.h">
       <DependentUpon>ExplanationCrop.xaml</DependentUpon>
     </ClInclude>
@@ -246,6 +245,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="ClassDiagram.cd" />
     <None Include="JPG Spinner_StoreKey.pfx" />
     <None Include="JPG Spinner_TemporaryKey.pfx" />
   </ItemGroup>

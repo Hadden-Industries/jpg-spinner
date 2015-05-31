@@ -33,8 +33,8 @@ namespace JPG_Spinner
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
 		bool CoInitializeExSucceeded;
-		unsigned long numberProcessorsToUse;
-		unsigned long long bytesRAMToUse;
+		UINT32 numberProcessorsToUse;
+		UINT64 bytesRAMToUse;
 		volatile std::atomic_ulong imagesSelected;
 		volatile std::atomic_ulong imagesAnalysed;
 		volatile std::atomic_ulong imagesToBeRotated;

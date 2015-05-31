@@ -1385,11 +1385,11 @@ Scenario_AfterPick::Scenario_AfterPick()
 	numberProcessorsToUse = 1UL;
 
 	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
-		.then([this](Platform::String^ value)
+		.then([this](IPropertyValue^ value)
 	{
 		if (nullptr != value)
 		{
-			numberProcessorsToUse = wcstoul(value->Data(), nullptr, 0);
+			numberProcessorsToUse = value->GetUInt32();
 		}
 	});
 
@@ -1397,11 +1397,11 @@ Scenario_AfterPick::Scenario_AfterPick()
 	bytesRAMToUse = 512ULL * 1024ULL * 1024ULL;
 
 	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
-		.then([this](Platform::String^ value)
+		.then([this](IPropertyValue^ value)
 	{
 		if (nullptr != value)
 		{
-			bytesRAMToUse = wcstoull(value->Data(), nullptr, 0) * 1024ULL * 1024ULL;
+			bytesRAMToUse = value->GetUInt64() * 1024ULL * 1024ULL;
 		}
 	});
 }

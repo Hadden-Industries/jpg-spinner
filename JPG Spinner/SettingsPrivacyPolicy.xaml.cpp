@@ -86,31 +86,54 @@ void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_Unloaded(Platform
 
 void JPG_Spinner::SettingsPrivacyPolicy::PrivacyPolicyDate_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	// Extract the string from the XAML (in ISO 8601 YYYY-MM-DD format)
-	std::wstring dateString = PrivacyPolicyDate->Text->Data();
+	std::string privacyPolicyDate;
 
-	SYSTEMTIME systemTime = { 0 };
+	privacyPolicyDate.resize(static_cast<size_t>(PrivacyPolicyDate->Text->Length()));
 
-	systemTime.wYear = static_cast<WORD>(wcstoul(dateString.substr(0, 4).c_str(), nullptr, 10));
-	systemTime.wMonth = static_cast<WORD>(wcstoul(dateString.substr(5, 2).c_str(), nullptr, 10));
-	systemTime.wDay = static_cast<WORD>(wcstoul(dateString.substr(8, 2).c_str(), nullptr, 10));
+	size_t ReturnValue = 0;
 
-	FILETIME fileTime = { 0 };
-
-	if (SystemTimeToFileTime(&systemTime, &fileTime))
+	if (0 == wcstombs_s(
+		&ReturnValue,
+		// This is guaranteed to be contiguous in C++0x
+		&privacyPolicyDate[0],
+		// Add 1 to account for the trailing NULL
+		static_cast<size_t>(PrivacyPolicyDate->Text->Length() + 1U),
+		PrivacyPolicyDate->Text->Data(),
+		_TRUNCATE))
 	{
-		Windows::Foundation::DateTime dateTime;
+		std::istringstream ss(privacyPolicyDate);
 
-		ULARGE_INTEGER uLarge_Integer = { 0 };
+		std::tm t = { 0 };
 
-		uLarge_Integer.HighPart = fileTime.dwHighDateTime;
-		uLarge_Integer.LowPart = fileTime.dwLowDateTime;
+		// Parse the string in ISO 8601 YYYY-MM-DD format
+		ss >> std::get_time(&t, "%Y-%m-%d");
 
-		dateTime.UniversalTime = static_cast<long long>(uLarge_Integer.QuadPart);
+		if (!ss.fail())
+		{
+			SYSTEMTIME systemTime = { 0 };
 
-		Windows::Globalization::DateTimeFormatting::DateTimeFormatter^ dateTimeFormatter = Windows::Globalization::DateTimeFormatting::DateTimeFormatter::ShortDate::get();
+			systemTime.wYear = static_cast<WORD>(1900 + t.tm_year);
+			systemTime.wMonth = static_cast<WORD>(1 + t.tm_mon);
+			systemTime.wDay = static_cast<WORD>(t.tm_mday);
 
-		PrivacyPolicyDate->Text = dateTimeFormatter->Format(dateTime);
+			FILETIME fileTime = { 0 };
+
+			if (SystemTimeToFileTime(&systemTime, &fileTime))
+			{
+				Windows::Foundation::DateTime dateTime;
+
+				ULARGE_INTEGER uLarge_Integer = { 0 };
+
+				uLarge_Integer.HighPart = fileTime.dwHighDateTime;
+				uLarge_Integer.LowPart = fileTime.dwLowDateTime;
+
+				dateTime.UniversalTime = static_cast<long long>(uLarge_Integer.QuadPart);
+
+				Windows::Globalization::DateTimeFormatting::DateTimeFormatter^ dateTimeFormatter = Windows::Globalization::DateTimeFormatting::DateTimeFormatter::ShortDate::get();
+
+				PrivacyPolicyDate->Text = dateTimeFormatter->Format(dateTime);
+			}
+		}
 	}
 }
 

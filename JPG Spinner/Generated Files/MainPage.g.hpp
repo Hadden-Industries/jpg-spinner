@@ -72,9 +72,9 @@ void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target
         break;
     case 4:
         (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxCrop_Loaded);
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::ToggleSwitch_Loaded);
         (safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(target))->Toggled +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxCrop_Toggled);
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::ToggleSwitch_Toggled);
         break;
     case 5:
         (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
@@ -82,9 +82,9 @@ void ::JPG_Spinner::MainPage::Connect(int connectionId, Platform::Object^ target
         break;
     case 6:
         (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxProgressive_Loaded);
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::ToggleSwitch_Loaded);
         (safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(target))->Toggled +=
-            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::CheckBoxProgressive_Toggled);
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::MainPage::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&MainPage::ToggleSwitch_Toggled);
         break;
     case 7:
         (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
