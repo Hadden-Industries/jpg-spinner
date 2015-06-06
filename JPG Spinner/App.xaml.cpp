@@ -127,12 +127,12 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 		// If you have not saved this setting before
 		if (nullptr == value
 			// or the saved value is greater than the total current number of processors
-			|| value->GetUInt32() > static_cast<UINT32>(systemInfo.dwNumberOfProcessors))
+			|| value->GetUInt32() > static_cast<uint32_t>(systemInfo.dwNumberOfProcessors))
 		{
 			// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
 			const float reductionFactor = 2.0f;
 
-			UINT32 numberLogicalProcessorsToUse = static_cast<UINT32>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
+			uint32_t numberLogicalProcessorsToUse = static_cast<uint32_t>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
 
 			// Sanity check
 			if (0U == numberLogicalProcessorsToUse)
@@ -147,7 +147,7 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
 		.then([](IPropertyValue^ value)
 	{
-		UINT64 megabytesRAMToUse = (MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL);
+		uint64_t megabytesRAMToUse = (MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL);
 
 		// If you have not saved this setting before
 		if (nullptr == value

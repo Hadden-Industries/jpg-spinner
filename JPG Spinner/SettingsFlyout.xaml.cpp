@@ -110,9 +110,9 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Unloaded(Platform::Object^ send
 	(void)e;
 
 	// Save the setting values
-	concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", PropertyValue::CreateUInt32(static_cast<UINT32>(SliderProcessor->Value))));
+	concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", PropertyValue::CreateUInt32(static_cast<uint32_t>(SliderProcessor->Value))));
 
-	concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", PropertyValue::CreateUInt64(static_cast<UINT64>(SliderMemory->Value))));
+	concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", PropertyValue::CreateUInt64(static_cast<uint64_t>(SliderMemory->Value))));
 
 	// Deregister accelerator keys 
 	if (_navigationShortcutsRegistered)

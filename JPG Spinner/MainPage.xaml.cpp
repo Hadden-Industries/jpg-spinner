@@ -42,6 +42,7 @@ void JPG_Spinner::MainPage::ShowDebugText(Platform::String^ debugText)
 	{
 		DebugBorder->Visibility = Windows::UI::Xaml::Visibility::Visible;
 	}
+
 	DebugText->Text = debugText;
 }
 
@@ -132,7 +133,10 @@ void JPG_Spinner::MainPage::SpinLogo_Start()
 
 void JPG_Spinner::MainPage::SpinLogo_Stop()
 {
-	SpinLogoAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::FromCount(1.0);
+	if (Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::FromCount(1.0) != SpinLogoAnimation->RepeatBehavior)
+	{
+		SpinLogoAnimation->RepeatBehavior = Windows::UI::Xaml::Media::Animation::RepeatBehaviorHelper::FromCount(1.0);
+	}
 }
 
 void JPG_Spinner::MainPage::ButtonSelectFiles_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)

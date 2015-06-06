@@ -33,8 +33,8 @@ namespace JPG_Spinner
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
 		bool CoInitializeExSucceeded;
-		UINT32 numberProcessorsToUse;
-		UINT64 bytesRAMToUse;
+		uint32_t numberProcessorsToUse;
+		uint64_t bytesRAMToUse;
 		volatile std::atomic_ulong imagesSelected;
 		volatile std::atomic_ulong imagesAnalysed;
 		volatile std::atomic_ulong imagesToBeRotated;
@@ -43,6 +43,10 @@ namespace JPG_Spinner
 		volatile std::atomic_ulong imagesBeingRotated;
 		Windows::UI::Core::CoreDispatcher^ _dispatcher;
 		Windows::ApplicationModel::Resources::ResourceLoader^ _resourceLoader;
+
+		Windows::System::Threading::ThreadPoolTimer^ _updateStatusTextTimer;
+		volatile std::atomic_bool _stoppingUpdateStatusText;
+		void UpdateStatusText();
 
         void ItemGridView_ContainerContentChanging(ListViewBase^ sender, Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^ e);
 
