@@ -1,2 +1,2 @@
-MainPackage=C:\Users\Maksym Shostak\GitHub\jpg-spinner\Release\JPG Spinner\JPG Spinner_1.1.0.0_Win32.appx
-SymbolPackage=C:\Users\Maksym Shostak\GitHub\jpg-spinner\AppPackages\JPG Spinner\JPG Spinner_1.1.0.0_Test\JPG Spinner_1.1.0.0_Win32.appxsym
+MainPackage=C:\Users\Maksym Shostak\GitHub\jpg-spinner\Release\JPG Spinner\JPG Spinner_1.1.1.0_Win32.appx
+SymbolPackage=C:\Users\Maksym Shostak\GitHub\jpg-spinner\AppPackages\JPG Spinner\JPG Spinner_1.1.1.0_Test\JPG Spinner_1.1.1.0_Win32.appxsym

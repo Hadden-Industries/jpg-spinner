@@ -2037,15 +2037,15 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 }
 
 // We will visualize the data item in asynchronously in multiple phases for improved panning user experience 
-// of large lists.  In this sample scenario, we will visualize different parts of the data item
-// in the following order:
+// of large lists.  We will visualize different parts of the data item in the following order:
 // 
 //     1) Placeholders (visualized synchronously - Phase 0)
 //     2) Title (visualized asynchronously - Phase 1)
-//     3) Category and Image (visualized asynchronously - Phase 2)
+//     3) Error and Image (visualized asynchronously - Phase 2)
 void Scenario_AfterPick::ItemGridView_ContainerContentChanging(
     ListViewBase^ sender,
-    Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^ args)
+    Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs^ args
+	)
 {
     ItemViewer^ iv = safe_cast<ItemViewer^>(args->ItemContainer->ContentTemplateRoot);
 
@@ -2057,20 +2057,20 @@ void Scenario_AfterPick::ItemGridView_ContainerContentChanging(
         {
             iv->ClearData();
         }
-        else if (args->Phase == 0)
+        else if (args->Phase == 0U)
         {
             iv->ShowPlaceholder(safe_cast<Item^>(args->Item));
 
             // Register for async callback to visualize Title asynchronously
             args->RegisterUpdateCallback(ContainerContentChangingDelegate);
         }
-        else if (args->Phase == 1)
+        else if (args->Phase == 1U)
         {
             iv->ShowTitle();
 
             args->RegisterUpdateCallback(ContainerContentChangingDelegate);
         }
-        else if (args->Phase == 2)
+        else if (args->Phase == 2U)
         {
             iv->ShowError();
             iv->ShowImage();
