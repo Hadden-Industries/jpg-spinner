@@ -12,6 +12,8 @@ namespace Windows {
     namespace UI {
         namespace Xaml {
             namespace Controls {
+                ref class ToggleSwitch;
+                ref class TextBlock;
                 ref class Slider;
             }
         }
@@ -30,6 +32,10 @@ namespace JPG_Spinner
     private:
         bool _contentLoaded;
     
+        private: ::Windows::UI::Xaml::Controls::ToggleSwitch^ CheckBoxCrop;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockCrop;
+        private: ::Windows::UI::Xaml::Controls::ToggleSwitch^ CheckBoxProgressive;
+        private: ::Windows::UI::Xaml::Controls::TextBlock^ TextBlockProgressive;
         private: ::Windows::UI::Xaml::Controls::Slider^ SliderMemory;
         private: ::Windows::UI::Xaml::Controls::Slider^ SliderProcessor;
     };

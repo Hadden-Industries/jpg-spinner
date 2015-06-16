@@ -1407,6 +1407,24 @@ Scenario_AfterPick::Scenario_AfterPick()
 			bytesRAMToUse = value->GetUInt64() * 1024ULL * 1024ULL;
 		}
 	});
+
+	// Sensible default
+	_ProgressiveChecked = true;
+
+	concurrency::create_task(LoadSettingAsync("CheckBoxProgressive"))
+		.then([this](IPropertyValue^ value)
+	{
+		_ProgressiveChecked = value->GetBoolean();
+	});
+
+	// Sensible default
+	_CropChecked = false;
+
+	concurrency::create_task(LoadSettingAsync("CheckBoxCrop"))
+		.then([this](IPropertyValue^ value)
+	{
+		_CropChecked = value->GetBoolean();
+	});
 }
 
 Scenario_AfterPick::~Scenario_AfterPick()
@@ -1763,8 +1781,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						static_cast<size_t>(
 						(static_cast<double>(0.95) * static_cast<double>(bytesRAMToUse)) / static_cast<double>(numberProcessorsToUse)
 						),
-						rootPage->CropChecked,
-						rootPage->ProgressiveChecked);
+						_CropChecked,
+						_ProgressiveChecked);
 
 					createReorientedTempFileAsyncTask.then([this, cancellationToken, item](HRESULT hr)
 					{

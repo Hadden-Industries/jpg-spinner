@@ -55,11 +55,8 @@ void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_AcceleratorKeyAct
 	}
 }
 
-void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_Loaded(Platform::Object^ /*sender*/, Windows::UI::Xaml::RoutedEventArgs^ /*e*/)
 {
-	(void)sender;
-	(void)e;
-
 	rootPage = MainPage::Current;
 
 	// Register accelerator keys
@@ -70,11 +67,8 @@ void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_Loaded(Platform::
 	_navigationShortcutsRegistered = true;
 }
 
-void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_Unloaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_Unloaded(Platform::Object^ /*sender*/, Windows::UI::Xaml::RoutedEventArgs^ /*e*/)
 {
-	(void)sender;
-	(void)e;
-
 	// Deregister accelerator keys 
 	if (_navigationShortcutsRegistered)
 	{
@@ -137,10 +131,8 @@ void JPG_Spinner::SettingsPrivacyPolicy::PrivacyPolicyDate_Loaded(Platform::Obje
 	}
 }
 
-void JPG_Spinner::SettingsPrivacyPolicy::HyperlinkPrivacyPolicy_Click(Windows::UI::Xaml::Documents::Hyperlink^ sender, Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^ args)
+void JPG_Spinner::SettingsPrivacyPolicy::HyperlinkPrivacyPolicy_Click(Windows::UI::Xaml::Documents::Hyperlink^ sender, Windows::UI::Xaml::Documents::HyperlinkClickEventArgs^ /*args*/)
 {
-	(void)args;
-
 	Platform::String^ uri;
 	
 	if ("HyperlinkPrivacyPolicy" == sender->Name)

@@ -50,10 +50,6 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 {
 	if (buttonIsSelectFiles)
 	{
-		CropChecked = static_cast<BOOL>(CheckBoxCrop->IsOn);
-
-		ProgressiveChecked = static_cast<BOOL>(CheckBoxProgressive->IsOn);
-
 		_cts = concurrency::cancellation_token_source();
 
 		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.Scenario_AfterPick", Windows::UI::Xaml::Interop::TypeKind::Custom };
@@ -75,26 +71,6 @@ void JPG_Spinner::MainPage::CancelProcessing()
 		SpinLogo_Stop();
 
 		FlipButton();
-	}
-}
-
-void JPG_Spinner::MainPage::TextBlockCrop_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	if (buttonIsSelectFiles)
-	{
-		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationCrop", Windows::UI::Xaml::Interop::TypeKind::Custom };
-
-		ScenarioFrame->Navigate(scenarioType, this);
-	}
-}
-
-void JPG_Spinner::MainPage::TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
-{
-	if (buttonIsSelectFiles)
-	{
-		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationProgressive", Windows::UI::Xaml::Interop::TypeKind::Custom };
-
-		ScenarioFrame->Navigate(scenarioType, this);
 	}
 }
 
@@ -158,53 +134,6 @@ void JPG_Spinner::MainPage::FlipButton()
 	buttonIsSelectFiles = !buttonIsSelectFiles;
 }
 
-void JPG_Spinner::MainPage::ToggleSwitch_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	(void)e;
-
-	concurrency::create_task(LoadSettingAsync(safe_cast<ToggleSwitch^>(sender)->Name))
-		.then([this, sender](IPropertyValue^ value)
-	{
-		// if found a stored value
-		if (nullptr != value)
-		{
-			// if the current value is not the stored
-			if (safe_cast<ToggleSwitch^>(sender)->IsOn != value->GetBoolean())
-			{
-				// toggle
-				safe_cast<ToggleSwitch^>(sender)->IsOn = !safe_cast<ToggleSwitch^>(sender)->IsOn;
-				// Note: the toggling will fire ToggleSwitch_Toggled
-			}
-		}
-		// else new installation
-		else
-		{
-			// so set sensible defaults
-			if (CheckBoxProgressive == safe_cast<ToggleSwitch^>(sender))
-			{
-				safe_cast<ToggleSwitch^>(sender)->IsOn = true;
-			}
-			else
-			{
-				safe_cast<ToggleSwitch^>(sender)->IsOn = false;
-			}
-			// the toggling will fire ToggleSwitch_Toggled, so no need to save the setting explicitly
-		}
-	});
-}
-
-void JPG_Spinner::MainPage::ToggleSwitch_Toggled(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-	(void)e;
-
-	concurrency::create_task(
-		SaveSettingAsync(
-			safe_cast<ToggleSwitch^>(sender)->Name,
-			PropertyValue::CreateBoolean(safe_cast<ToggleSwitch^>(sender)->IsOn)
-			)
-		);
-}
-
 void JPG_Spinner::MainPage::Logo_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
 	if (buttonIsSelectFiles && Windows::UI::Xaml::Media::Animation::ClockState::Active != SpinLogo->GetCurrentState())
@@ -215,5 +144,13 @@ void JPG_Spinner::MainPage::Logo_PointerReleased(Platform::Object^ sender, Windo
 		}
 
 		SpinLogo->Begin();
+	}
+}
+
+void JPG_Spinner::MainPage::Navigate(Windows::UI::Xaml::Interop::TypeName type, Platform::Object^ obj)
+{
+	if (buttonIsSelectFiles)
+	{
+		ScenarioFrame->Navigate(type, obj);
 	}
 }

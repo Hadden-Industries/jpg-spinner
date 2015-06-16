@@ -33,7 +33,7 @@ JPG_Spinner::SettingsFlyout::SettingsFlyout()
 // Invoked on every keystroke, including system keys such as Alt key combinations, when this page is active and occupies the entire window.
 // Used to detect keyboard back navigation via Alt+Left key combination.
 //
-void JPG_Spinner::SettingsFlyout::SettingsFlyout_AcceleratorKeyActivated(CoreDispatcher^ sender, AcceleratorKeyEventArgs^ args)
+void JPG_Spinner::SettingsFlyout::SettingsFlyout_AcceleratorKeyActivated(CoreDispatcher^ /*sender*/, AcceleratorKeyEventArgs^ args)
 {
 	// Only investigate further when Left is pressed
 	if (args->EventType == CoreAcceleratorKeyEventType::SystemKeyDown && args->VirtualKey == VirtualKey::Left)
@@ -55,11 +55,8 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_AcceleratorKeyActivated(CoreDis
 	}
 }
 
-void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ /*sender*/, Windows::UI::Xaml::RoutedEventArgs^ /*e*/)
 {
-	(void)sender;
-	(void)e;
-
 	// Register accelerator keys
 	_acceleratorKeyEventToken = Window::Current->CoreWindow->Dispatcher->AcceleratorKeyActivated += ref new TypedEventHandler<CoreDispatcher^, AcceleratorKeyEventArgs^>(
 		this,
@@ -77,10 +74,7 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ sender
 	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
 		.then([this](IPropertyValue^ value)
 	{
-		if (nullptr != value)
-		{
-			SliderProcessor->Value = static_cast<double>(value->GetUInt32());
-		}
+		SliderProcessor->Value = static_cast<double>(value->GetUInt32());
 	});
 
 	SliderMemory->Maximum = static_cast<double>((MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL));
@@ -97,22 +91,44 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ sender
 	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
 		.then([this](IPropertyValue^ value)
 	{
-		if (nullptr != value)
-		{
-			SliderMemory->Value = static_cast<double>(value->GetUInt64());
-		}
+		SliderMemory->Value = static_cast<double>(value->GetUInt64());
 	});
 }
 
-void JPG_Spinner::SettingsFlyout::SettingsFlyout_Unloaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void JPG_Spinner::SettingsFlyout::SettingsFlyout_Unloaded(Platform::Object^ /*sender*/, Windows::UI::Xaml::RoutedEventArgs^ /*e*/)
 {
-	(void)sender;
-	(void)e;
-
 	// Save the setting values
-	concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", PropertyValue::CreateUInt32(static_cast<uint32_t>(SliderProcessor->Value))));
+	concurrency::create_task(
+		SaveSettingAsync(
+			"numberLogicalProcessorsToUse",
+			PropertyValue::CreateUInt32(
+				static_cast<uint32_t>(SliderProcessor->Value)
+				)
+			)
+		);
 
-	concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", PropertyValue::CreateUInt64(static_cast<uint64_t>(SliderMemory->Value))));
+	concurrency::create_task(
+		SaveSettingAsync(
+			"megabytesRAMToUse",
+			PropertyValue::CreateUInt64(
+				static_cast<uint64_t>(SliderMemory->Value)
+				)
+			)
+		);
+
+	concurrency::create_task(
+		SaveSettingAsync(
+			"CheckBoxProgressive",
+			PropertyValue::CreateBoolean(CheckBoxProgressive->IsOn)
+			)
+		);
+
+	concurrency::create_task(
+		SaveSettingAsync(
+			"CheckBoxCrop",
+			PropertyValue::CreateBoolean(CheckBoxCrop->IsOn)
+			)
+		);
 
 	// Deregister accelerator keys 
 	if (_navigationShortcutsRegistered)
@@ -121,4 +137,32 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Unloaded(Platform::Object^ send
 
 		_navigationShortcutsRegistered = false;
 	}
+}
+
+void JPG_Spinner::SettingsFlyout::TextBlockCrop_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationCrop", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+	MainPage::Current->Navigate(scenarioType, this);
+}
+
+void JPG_Spinner::SettingsFlyout::TextBlockProgressive_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+{
+	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.ExplanationProgressive", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+	MainPage::Current->Navigate(scenarioType, this);
+}
+
+void JPG_Spinner::SettingsFlyout::ToggleSwitch_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ /*e*/)
+{
+	concurrency::create_task(LoadSettingAsync(safe_cast<ToggleSwitch^>(sender)->Name))
+		.then([this, sender](IPropertyValue^ value)
+	{
+		// if the current value is not the stored
+		if (safe_cast<ToggleSwitch^>(sender)->IsOn != value->GetBoolean())
+		{
+			// toggle
+			safe_cast<ToggleSwitch^>(sender)->IsOn = !safe_cast<ToggleSwitch^>(sender)->IsOn;
+		}
+	});
 }

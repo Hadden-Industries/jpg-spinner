@@ -126,6 +126,8 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 
 		// If you have not saved this setting before
 		if (nullptr == value
+			// or the saved value is not of the correct type
+			|| value->Type != PropertyType::UInt32
 			// or the saved value is greater than the total current number of processors
 			|| value->GetUInt32() > static_cast<uint32_t>(systemInfo.dwNumberOfProcessors))
 		{
@@ -151,10 +153,36 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 
 		// If you have not saved this setting before
 		if (nullptr == value
+			// or the saved value is not of the correct type
+			|| value->Type != PropertyType::UInt64
 			// or the saved value is more than the current allowable
 			|| value->GetUInt64() > megabytesRAMToUse)
 		{
 			concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", PropertyValue::CreateUInt64(megabytesRAMToUse)));
+		}
+	});
+
+	concurrency::create_task(LoadSettingAsync("CheckBoxProgressive"))
+		.then([](IPropertyValue^ value)
+	{
+		// If you have not saved this setting before
+		if (nullptr == value
+			// or the saved value is not of the correct type
+			|| value->Type != PropertyType::Boolean)
+		{
+			concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", PropertyValue::CreateBoolean(true)));
+		}
+	});
+
+	concurrency::create_task(LoadSettingAsync("CheckBoxCrop"))
+		.then([](IPropertyValue^ value)
+	{
+		// If you have not saved this setting before
+		if (nullptr == value
+			// or the saved value is not of the correct type
+			|| value->Type != PropertyType::Boolean)
+		{
+			concurrency::create_task(SaveSettingAsync("CheckBoxCrop", PropertyValue::CreateBoolean(false)));
 		}
 	});
 }
@@ -166,11 +194,8 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 /// </summary>
 /// <param name="sender">The source of the suspend request.</param>
 /// <param name="e">Details about the suspend request.</param>
-void App::OnSuspending(Object^ sender, SuspendingEventArgs^ e)
+void App::OnSuspending(Object^ /*sender*/, SuspendingEventArgs^ e)
 {
-	// Unused parameter
-	(void)sender;
-
 	auto suspendingDeferral = e->SuspendingOperation->GetDeferral();
 
 	// Cancel all processing
@@ -184,24 +209,18 @@ void App::OnSuspending(Object^ sender, SuspendingEventArgs^ e)
 /// </summary>
 /// <param name="sender">The Frame which failed navigation</param>
 /// <param name="e">Details about the navigation failure</param>
-void App::OnNavigationFailed(Platform::Object ^sender, Windows::UI::Xaml::Navigation::NavigationFailedEventArgs ^e)
+void App::OnNavigationFailed(Platform::Object^ /*sender*/, Windows::UI::Xaml::Navigation::NavigationFailedEventArgs^ e)
 {
-	(void)sender;
-
 	throw ref new FailureException("Failed to load Page " + e->SourcePageType.Name);
 }
 
-void App::OnWindowCreated(Windows::UI::Xaml::WindowCreatedEventArgs^ args)
+void App::OnWindowCreated(Windows::UI::Xaml::WindowCreatedEventArgs^ /*args*/)
 {
-	(void)args;
-
 	Windows::UI::ApplicationSettings::SettingsPane::GetForCurrentView()->CommandsRequested += ref new Windows::Foundation::TypedEventHandler<Windows::UI::ApplicationSettings::SettingsPane^, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^>(this, &App::OnCommandsRequested);
 }
 
-void App::OnCommandsRequested(Windows::UI::ApplicationSettings::SettingsPane^ sender, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^ args)
+void App::OnCommandsRequested(Windows::UI::ApplicationSettings::SettingsPane^ /*sender*/, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^ args)
 {
-	(void)sender;
-
 	Windows::UI::Popups::UICommandInvokedHandler^ handler = ref new Windows::UI::Popups::UICommandInvokedHandler(this, &App::OnSettingsCommand);
 
 	auto _resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
@@ -271,24 +290,28 @@ concurrency::task<Windows::Foundation::IPropertyValue^> JPG_Spinner::LoadSetting
 			{
 				// then retrieve it
 				container = localSettings->Containers->Lookup(displayName);
-			}
-			else
-			{
-				return value;
-			}
 
-			return safe_cast<Windows::Foundation::IPropertyValue^>(container->Values->Lookup(key));
+				try
+				{
+					value = safe_cast<Windows::Foundation::IPropertyValue^>(container->Values->Lookup(key));
+				}
+				catch (InvalidCastException^ e) {}
+			}			
+
+			return value;
 		}
 		else
 		{
 			if (localSettings->Values->HasKey(key))
 			{
-				return safe_cast<Windows::Foundation::IPropertyValue^>(localSettings->Values->Lookup(key));
+				try
+				{
+					value = safe_cast<Windows::Foundation::IPropertyValue^>(localSettings->Values->Lookup(key));
+				}
+				catch (InvalidCastException^ e) {}
 			}
-			else
-			{
-				return value;
-			}
+
+			return value;
 		}
 	});
 }

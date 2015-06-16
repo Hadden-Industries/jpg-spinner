@@ -43,6 +43,8 @@ namespace JPG_Spinner
 		volatile std::atomic_ulong imagesBeingRotated;
 		Windows::UI::Core::CoreDispatcher^ _dispatcher;
 		Windows::ApplicationModel::Resources::ResourceLoader^ _resourceLoader;
+		bool _CropChecked;
+		bool _ProgressiveChecked;
 
 		Windows::System::Threading::ThreadPoolTimer^ _updateStatusTextTimer;
 		volatile std::atomic_bool _stoppingUpdateStatusText;

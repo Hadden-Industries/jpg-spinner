@@ -22,6 +22,14 @@ void ::JPG_Spinner::SettingsFlyout::InitializeComponent()
     // Call LoadComponent on ms-appx:///SettingsFlyout.xaml
     ::Windows::UI::Xaml::Application::LoadComponent(this, ref new ::Windows::Foundation::Uri(L"ms-appx:///SettingsFlyout.xaml"), ::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Application);
 
+    // Get the ToggleSwitch named 'CheckBoxCrop'
+    CheckBoxCrop = safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxCrop"));
+    // Get the TextBlock named 'TextBlockCrop'
+    TextBlockCrop = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockCrop"));
+    // Get the ToggleSwitch named 'CheckBoxProgressive'
+    CheckBoxProgressive = safe_cast<::Windows::UI::Xaml::Controls::ToggleSwitch^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"CheckBoxProgressive"));
+    // Get the TextBlock named 'TextBlockProgressive'
+    TextBlockProgressive = safe_cast<::Windows::UI::Xaml::Controls::TextBlock^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"TextBlockProgressive"));
     // Get the Slider named 'SliderMemory'
     SliderMemory = safe_cast<::Windows::UI::Xaml::Controls::Slider^>(static_cast<Windows::UI::Xaml::IFrameworkElement^>(this)->FindName(L"SliderMemory"));
     // Get the Slider named 'SliderProcessor'
@@ -37,6 +45,22 @@ void ::JPG_Spinner::SettingsFlyout::Connect(int connectionId, Platform::Object^ 
             ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::SettingsFlyout::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&SettingsFlyout::SettingsFlyout_Loaded);
         (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Unloaded +=
             ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::SettingsFlyout::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&SettingsFlyout::SettingsFlyout_Unloaded);
+        break;
+    case 2:
+        (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::SettingsFlyout::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&SettingsFlyout::ToggleSwitch_Loaded);
+        break;
+    case 3:
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::SettingsFlyout::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&SettingsFlyout::TextBlockCrop_PointerReleased);
+        break;
+    case 4:
+        (safe_cast<::Windows::UI::Xaml::FrameworkElement^>(target))->Loaded +=
+            ref new ::Windows::UI::Xaml::RoutedEventHandler(this, (void (::JPG_Spinner::SettingsFlyout::*)(Platform::Object^, Windows::UI::Xaml::RoutedEventArgs^))&SettingsFlyout::ToggleSwitch_Loaded);
+        break;
+    case 5:
+        (safe_cast<::Windows::UI::Xaml::UIElement^>(target))->PointerReleased +=
+            ref new ::Windows::UI::Xaml::Input::PointerEventHandler(this, (void (::JPG_Spinner::SettingsFlyout::*)(Platform::Object^, Windows::UI::Xaml::Input::PointerRoutedEventArgs^))&SettingsFlyout::TextBlockProgressive_PointerReleased);
         break;
     }
     (void)connectionId; // Unused parameter

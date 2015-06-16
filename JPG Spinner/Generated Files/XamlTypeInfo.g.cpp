@@ -86,11 +86,6 @@
         return ref new XamlSystemBaseType(typeName);
     }
 
-    if (typeName == L"Int32")
-    {
-        return ref new XamlSystemBaseType(typeName);
-    }
-
     if (typeName == L"Windows.UI.Xaml.Controls.SettingsFlyout")
     {
         return ref new XamlSystemBaseType(typeName);
@@ -175,8 +170,6 @@
                 return ref new ::JPG_Spinner::MainPage(); 
             };
         userType->AddMemberName(L"cts");
-        userType->AddMemberName(L"ProgressiveChecked");
-        userType->AddMemberName(L"CropChecked");
         userType->SetIsLocalType();
         return userType;
     }
@@ -327,48 +320,6 @@
             };
 
         xamlMember->SetIsReadOnly();
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.MainPage.ProgressiveChecked")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"ProgressiveChecked", L"Int32");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::MainPage^)instance;
-                auto value = ref new ::Platform::Box<::default::int32>(that->ProgressiveChecked);
-                return value;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::MainPage^)instance;
-                auto boxedValue = (::Platform::IBox<::default::int32>^)value;
-                that->ProgressiveChecked = boxedValue->Value;
-            };
-        return xamlMember;
-    }
-
-    if (longMemberName == L"JPG_Spinner.MainPage.CropChecked")
-    {
-        ::XamlTypeInfo::InfoProvider::XamlMember^ xamlMember = ref new ::XamlTypeInfo::InfoProvider::XamlMember(this, L"CropChecked", L"Int32");
-        xamlMember->Getter =
-            [](Object^ instance) -> Object^
-            {
-                auto that = (::JPG_Spinner::MainPage^)instance;
-                auto value = ref new ::Platform::Box<::default::int32>(that->CropChecked);
-                return value;
-            };
-
-        xamlMember->Setter =
-            [](Object^ instance, Object^ value) -> void
-            {
-                auto that = (::JPG_Spinner::MainPage^)instance;
-                auto boxedValue = (::Platform::IBox<::default::int32>^)value;
-                that->CropChecked = boxedValue->Value;
-            };
         return xamlMember;
     }
 
