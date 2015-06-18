@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest">
-  <Identity Name="HaddenIndustriesLtd.JPGSpinner" Publisher="CN=42458E53-5B1F-4F49-97F4-ABE6B4A48BB3" Version="1.1.1.0" />
+  <Identity Name="HaddenIndustriesLtd.JPGSpinner" Publisher="CN=42458E53-5B1F-4F49-97F4-ABE6B4A48BB3" Version="1.1.2.0" />
   <Properties>
     <DisplayName>JPG Spinner</DisplayName>
     <PublisherDisplayName>Hadden Industries Ltd</PublisherDisplayName>
