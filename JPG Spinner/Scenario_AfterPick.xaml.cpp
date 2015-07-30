@@ -1518,10 +1518,10 @@ void Scenario_AfterPick::UpdateStatusText()
 					ref new Windows::UI::Core::DispatchedHandler([this]()
 				{
 					// Flip the 'Cancel' button to 'Select Files'
-					rootPage->FlipButton();
+					MainPage::Current->FlipButton();
 
 					// Stop the logo spinning animation
-					rootPage->SpinLogo_Stop();
+					MainPage::Current->SpinLogo_Stop();
 				}));
 
 				_updateStatusTextTimer->Cancel();
@@ -1621,10 +1621,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 		return;
 	}
 
-    // A pointer back to the main page. This is needed if you want to call methods in MainPage
-    rootPage = MainPage::Current;
-
-	auto cancellationToken = (reinterpret_cast<concurrency::cancellation_token_source*>(rootPage->cts->Value))->get_token();
+	auto cancellationToken = (reinterpret_cast<concurrency::cancellation_token_source*>(MainPage::Current->cts->Value))->get_token();
 
 	auto openPicker = ref new Windows::Storage::Pickers::FolderPicker();
 
@@ -1676,9 +1673,9 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				concurrency::cancel_current_task();
 			}
 
-			rootPage->FlipButton();
+			MainPage::Current->FlipButton();
 
-			rootPage->SpinLogo_Start();
+			MainPage::Current->SpinLogo_Start();
 
 			InputTextBlock1->Text = _resourceLoader->GetString("initialising");		
 

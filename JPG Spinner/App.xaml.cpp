@@ -67,7 +67,7 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 		rootFrame = ref new Frame();
 
 		// Set the default language
-		rootFrame->Language = Windows::Globalization::ApplicationLanguages::Languages->GetAt(0);
+		rootFrame->Language = Windows::Globalization::ApplicationLanguages::Languages->GetAt(0U);
 
 		rootFrame->NavigationFailed += ref new Windows::UI::Xaml::Navigation::NavigationFailedEventHandler(this, &App::OnNavigationFailed);
 

@@ -28,7 +28,6 @@ namespace JPG_Spinner
 
     private:
 		~Scenario_AfterPick();
-        MainPage^ rootPage;
 		Data^ storeData;
         TypedEventHandler<ListViewBase^, ContainerContentChangingEventArgs^>^ _delegate;
 		IWICImagingFactory * pIWICImagingFactory;
