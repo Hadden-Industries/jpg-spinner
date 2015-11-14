@@ -115,9 +115,9 @@ FILE* CreateTempFile(const wchar_t* filePath)
 	return fp;
 }
 
-concurrency::task<HRESULT> GetMetadataAsync(Item^ item, IWICImagingFactory * pIWICImagingFactory)
+Concurrency::task<HRESULT> GetMetadataAsync(Item^ item, IWICImagingFactory * pIWICImagingFactory)
 {
-	return concurrency::create_task(item->StorageFile->OpenAsync(Windows::Storage::FileAccessMode::Read))
+	return Concurrency::create_task(item->StorageFile->OpenAsync(Windows::Storage::FileAccessMode::Read))
 		.then([item, pIWICImagingFactory](Windows::Storage::Streams::IRandomAccessStream^ fileStream)
 	{
 		Microsoft::WRL::ComPtr<IStream> pIStream;
@@ -942,9 +942,9 @@ Platform::Guid GetUUID()
 	return Platform::Guid(result);
 }
 
-concurrency::task<FILE *> StorageFileToFilePointerAsync(Windows::Storage::StorageFile^ storageFile)
+Concurrency::task<FILE *> StorageFileToFilePointerAsync(Windows::Storage::StorageFile^ storageFile)
 {
-	return concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(storageFile))
+	return Concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(storageFile))
 		.then([](Windows::Storage::Streams::IBuffer^ buffer)
 	{
 		FILE * filePointer = nullptr;
@@ -1106,9 +1106,9 @@ METHODDEF(void) my_error_exit(j_common_ptr cinfo)
 	longjmp(myerr->setjmp_buffer, 1);
 }
 
-concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxMemoryToUse, BOOL trim = FALSE, BOOL progressive = TRUE)
+Concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxMemoryToUse, BOOL trim = FALSE, BOOL progressive = TRUE)
 {
-	return concurrency::create_task(StorageFileToFilePointerAsync(item->StorageFile))
+	return Concurrency::create_task(StorageFileToFilePointerAsync(item->StorageFile))
 		.then([item, maxMemoryToUse, trim, progressive](FILE * fp)
 	{
 		struct jpeg_decompress_struct srcinfo;
@@ -1265,7 +1265,7 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxM
 		*/
 		fclose(fp);
 
-		concurrency::interruption_point();
+		//Concurrency::interruption_point();
 
 		fp = CreateTempFile(item->TempFilePath->Data());
 
@@ -1318,7 +1318,7 @@ concurrency::task<HRESULT> CreateReorientedTempFileAsync(Item^ item, size_t maxM
 		}*/
 		return S_OK;
 
-	}, concurrency::task_continuation_context::use_arbitrary());
+	}, Concurrency::task_continuation_context::use_arbitrary());
 }
 
 Scenario_AfterPick::Scenario_AfterPick()
@@ -1384,47 +1384,13 @@ Scenario_AfterPick::Scenario_AfterPick()
 	_updateStatusTextTimer = nullptr;
 	_stoppingUpdateStatusText = false;
 
-	// Sensible default of one processor
-	numberProcessorsToUse = 1UL;
+	numberProcessorsToUse = LoadSetting("numberLogicalProcessorsToUse")->GetUInt32();
 
-	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
-		.then([this](IPropertyValue^ value)
-	{
-		if (nullptr != value)
-		{
-			numberProcessorsToUse = value->GetUInt32();
-		}
-	});
+	bytesRAMToUse = LoadSetting("megabytesRAMToUse")->GetUInt64() * 1024ULL * 1024ULL;
 
-	// Sensible default of 512 MiB
-	bytesRAMToUse = 512ULL * 1024ULL * 1024ULL;
+	_ProgressiveChecked = LoadSetting("CheckBoxProgressive")->GetBoolean();
 
-	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
-		.then([this](IPropertyValue^ value)
-	{
-		if (nullptr != value)
-		{
-			bytesRAMToUse = value->GetUInt64() * 1024ULL * 1024ULL;
-		}
-	});
-
-	// Sensible default
-	_ProgressiveChecked = true;
-
-	concurrency::create_task(LoadSettingAsync("CheckBoxProgressive"))
-		.then([this](IPropertyValue^ value)
-	{
-		_ProgressiveChecked = value->GetBoolean();
-	});
-
-	// Sensible default
-	_CropChecked = false;
-
-	concurrency::create_task(LoadSettingAsync("CheckBoxCrop"))
-		.then([this](IPropertyValue^ value)
-	{
-		_CropChecked = value->GetBoolean();
-	});
+	_CropChecked = LoadSetting("CheckBoxCrop")->GetBoolean();
 }
 
 Scenario_AfterPick::~Scenario_AfterPick()
@@ -1621,7 +1587,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 		return;
 	}
 
-	auto cancellationToken = (reinterpret_cast<concurrency::cancellation_token_source*>(MainPage::Current->cts->Value))->get_token();
+	auto cancellationToken = (reinterpret_cast<Concurrency::cancellation_token_source*>(MainPage::Current->cts->Value))->get_token();
 
 	auto openPicker = ref new Windows::Storage::Pickers::FolderPicker();
 
@@ -1639,8 +1605,8 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 	openPicker->FileTypeFilter->Append(".jfi");
 
 	// All this work will be done asynchronously on a background thread:
-	// Wrap the async call inside a concurrency::task object
-	auto pickerTask = concurrency::create_task(openPicker->PickSingleFolderAsync());
+	// Wrap the async call inside a Concurrency::task object
+	auto pickerTask = Concurrency::create_task(openPicker->PickSingleFolderAsync());
 
 	pickerTask.then([this, cancellationToken, openPicker](Windows::Storage::StorageFolder^ folder)
 	{
@@ -1648,7 +1614,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 		if (nullptr == folder)
 		{
 			// Stop work and clean up.
-			concurrency::cancel_current_task();
+			Concurrency::cancel_current_task();
 		}
 
 		storeData = ref new Data();
@@ -1660,7 +1626,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 		auto storageFileQueryResult = folder->CreateFileQueryWithOptions(queryOptions);
 
-		auto getFilesAsyncTask = concurrency::create_task(storageFileQueryResult->GetFilesAsync());
+		auto getFilesAsyncTask = Concurrency::create_task(storageFileQueryResult->GetFilesAsync());
 
 		getFilesAsyncTask.then([this, cancellationToken](IVectorView<Windows::Storage::StorageFile^>^ files)
 		{
@@ -1670,7 +1636,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 			if (0UL == imagesSelected)
 			{
 				// Stop work and clean up.
-				concurrency::cancel_current_task();
+				Concurrency::cancel_current_task();
 			}
 
 			MainPage::Current->FlipButton();
@@ -1679,12 +1645,12 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 			InputTextBlock1->Text = _resourceLoader->GetString("initialising");		
 
-			concurrency::create_task([this]
+			Concurrency::create_task([this]
 			{
 				// wait for all the images to be analysed
 				while (imagesAnalysed.load() < imagesSelected.load())
 				{
-					concurrency::interruption_point();
+					//Concurrency::interruption_point();
 
 					Sleep(20);
 				}
@@ -1692,7 +1658,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				// we got here if all images have been analysed, hence imagesToBeRotated will have its final value
 				if (0UL == imagesToBeRotated.load())
 				{
-					concurrency::cancel_current_task();
+					Concurrency::cancel_current_task();
 				}
 
 				return;
@@ -1714,7 +1680,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 				for (unsigned int i = 0U; i < static_cast<unsigned int>(imagesToBeRotated.load()); ++i)
 				{
-					concurrency::interruption_point();
+					//Concurrency::interruption_point();
 
 					Item^ item = nullptr;
 
@@ -1757,7 +1723,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						}
 					}
 
-					concurrency::interruption_point();
+					//Concurrency::interruption_point();
 
 					if (!item->Error->IsEmpty())
 					{
@@ -1787,13 +1753,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 						if (SUCCEEDED(hr))
 						{
-							concurrency::interruption_point();
+							//Concurrency::interruption_point();
 
 							hr = FixMetadata(item, pIWICImagingFactory);
 
 							if (SUCCEEDED(hr))
 							{
-								concurrency::interruption_point();
+								//Concurrency::interruption_point();
 
 								hr = FixMetadataOutOfPlace(item, pIWICImagingFactory);
 							}
@@ -1802,39 +1768,39 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 								{
 									//if (rootPage->DeleteThumbnails) {DeleteJPEGThumbnailData(item, pIWICImagingFactory);}
 
-									concurrency::interruption_point();
+									//Concurrency::interruption_point();
 
 									//Sleep((((rand() % 100) + 1) / 100.0) * 1000.0);
 
-									auto getFileFromPathAsyncTask = concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(item->TempFilePath));
+									auto getFileFromPathAsyncTask = Concurrency::create_task(Windows::Storage::StorageFile::GetFileFromPathAsync(item->TempFilePath));
 
 									getFileFromPathAsyncTask.then([this, cancellationToken, item](Windows::Storage::StorageFile^ tempFile)
 									{
-										concurrency::interruption_point();
+										//Concurrency::interruption_point();
 
-										auto readBufferAsyncTask = concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(tempFile));
+										auto readBufferAsyncTask = Concurrency::create_task(Windows::Storage::FileIO::ReadBufferAsync(tempFile));
 
 										readBufferAsyncTask.then([this, cancellationToken, item, tempFile](Windows::Storage::Streams::IBuffer^ tempFileBuffer)
 										{
-											concurrency::interruption_point();
+											//Concurrency::interruption_point();
 
-											auto openAsyncTask = concurrency::create_task(item->StorageFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
+											auto openAsyncTask = Concurrency::create_task(item->StorageFile->OpenAsync(Windows::Storage::FileAccessMode::ReadWrite));
 
 											openAsyncTask.then([this, item, tempFile, tempFileBuffer](Windows::Storage::Streams::IRandomAccessStream^ randomAccessStream)
 											{
-												concurrency::interruption_point();
+												//Concurrency::interruption_point();
 
 												Windows::Storage::Streams::DataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter(randomAccessStream);
 
 												dataWriter->WriteBuffer(tempFileBuffer);
 
-												concurrency::interruption_point();
+												//Concurrency::interruption_point();
 
-												auto storeAsyncTask = concurrency::create_task(dataWriter->StoreAsync());
+												auto storeAsyncTask = Concurrency::create_task(dataWriter->StoreAsync());
 											
-												storeAsyncTask.then([this, item, tempFile, randomAccessStream, dataWriter](concurrency::task<unsigned int> task)
+												storeAsyncTask.then([this, item, tempFile, randomAccessStream, dataWriter](Concurrency::task<unsigned int> task)
 												{
-													(void)concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
+													(void)Concurrency::create_task(tempFile->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
 
 													unsigned int bytesWritten = 0U;
 
@@ -1977,7 +1943,7 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 				}							
 			},
 				cancellationToken,
-				concurrency::task_continuation_context::use_arbitrary()
+				Concurrency::task_continuation_context::use_arbitrary()
 				);
 
 			// Poll for updates via a periodic timer
@@ -1992,31 +1958,31 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 			for (unsigned int i = 0U; i < files->Size; ++i)
 			{
-				concurrency::interruption_point();
+				//Concurrency::interruption_point();
 
 				Item^ item = ref new Item();
 
 				item->StorageFile = files->GetAt(i);
 
-				auto getMetadataAsyncTask = concurrency::create_task(GetMetadataAsync(item, pIWICImagingFactory));
+				auto getMetadataAsyncTask = Concurrency::create_task(GetMetadataAsync(item, pIWICImagingFactory));
 
 				getMetadataAsyncTask.then([this, item, cancellationToken](HRESULT hr)
 				{
-					concurrency::interruption_point();
+					//Concurrency::interruption_point();
 
 					if (SUCCEEDED(hr))
 					{
 						if (item->OrientationCoalesced >= 2U && item->OrientationCoalesced <= 8U)
 						{
-							concurrency::interruption_point();
+							//Concurrency::interruption_point();
 
 							imagesToBeRotated++;
 
-							auto getThumbnailTask = concurrency::create_task(item->StorageFile->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
+							auto getThumbnailTask = Concurrency::create_task(item->StorageFile->GetThumbnailAsync(Windows::Storage::FileProperties::ThumbnailMode::SingleItem, 192U));
 
 							getThumbnailTask.then([this, item, cancellationToken](Windows::Storage::FileProperties::StorageItemThumbnail^ thumbnail)
 							{
-								concurrency::interruption_point();
+								//Concurrency::interruption_point();
 
 								Windows::UI::Xaml::Media::Imaging::BitmapImage^ bitmapImage = ref new Windows::UI::Xaml::Media::Imaging::BitmapImage();
 

@@ -1,26 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest">
+<Package
+    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+    xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+   IgnorableNamespaces= "uap mp">
   <Identity Name="HaddenIndustriesLtd.JPGSpinner" Publisher="CN=42458E53-5B1F-4F49-97F4-ABE6B4A48BB3" Version="1.1.2.0" />
+  <mp:PhoneIdentity PhoneProductId="1907e50e-c88b-4b00-a74e-0104d704392e" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
   <Properties>
     <DisplayName>JPG Spinner</DisplayName>
     <PublisherDisplayName>Hadden Industries Ltd</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
-  <Prerequisites>
-    <OSMinVersion>6.3.0</OSMinVersion>
-    <OSMaxVersionTested>6.3.0</OSMaxVersionTested>
-  </Prerequisites>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.10240.0" MaxVersionTested="10.0.10240.0" />
+  </Dependencies>
   <Resources>
     <Resource Language="x-generate" />
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="JPG_Spinner.App">
-      <m2:VisualElements DisplayName="ms-resource:appDisplayName" Square150x150Logo="Assets\Logo.png" Square30x30Logo="Assets\SmallLogo.png" Description="ms-resource:appDescription" ForegroundText="light" BackgroundColor="#F05A29" ToastCapable="false">
-        <m2:DefaultTile Square310x310Logo="Assets\Square310x310Logo.png" Wide310x150Logo="Assets\Wide310x150Logo.png" ShortName="ms-resource:shortName" Square70x70Logo="Assets\Square70x70Logo.png" DefaultSize="square150x150Logo">
-        </m2:DefaultTile>
-        <m2:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#F05A29" />
-        <m2:ApplicationView MinWidth="width500" />
-      </m2:VisualElements>
+      <uap:VisualElements DisplayName="ms-resource:appDisplayName" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\SmallLogo.png" Description="ms-resource:appDescription" BackgroundColor="#F05A29">
+        <uap:DefaultTile Square310x310Logo="Assets\Square310x310Logo.png" Wide310x150Logo="Assets\Wide310x150Logo.png" ShortName="ms-resource:shortName" Square71x71Logo="Assets\Square70x70Logo.png">
+        </uap:DefaultTile>
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#F05A29" />
+      </uap:VisualElements>
     </Application>
   </Applications>
   <Capabilities>

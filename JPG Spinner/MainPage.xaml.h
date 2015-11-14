@@ -36,7 +36,7 @@ namespace JPG_Spinner
 		static MainPage^ Current;
 
 	private:
-		concurrency::cancellation_token_source _cts;
+		Concurrency::cancellation_token_source _cts;
 		volatile std::atomic_bool buttonIsSelectFiles;
 
 		void ShowDebugText(Platform::String^ debugText);

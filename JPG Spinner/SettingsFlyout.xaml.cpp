@@ -71,11 +71,7 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ /*send
 
 	SliderProcessor->Maximum = static_cast<double>(systemInfo.dwNumberOfProcessors);
 
-	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
-		.then([this](IPropertyValue^ value)
-	{
-		SliderProcessor->Value = static_cast<double>(value->GetUInt32());
-	});
+	SliderProcessor->Value = static_cast<double>(LoadSetting("numberLogicalProcessorsToUse")->GetUInt32());
 
 	SliderMemory->Maximum = static_cast<double>((MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL));
 
@@ -88,46 +84,34 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_Loaded(Platform::Object^ /*send
 		SliderMemory->TickFrequency = 1024.0;
 	}
 
-	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
-		.then([this](IPropertyValue^ value)
-	{
-		SliderMemory->Value = static_cast<double>(value->GetUInt64());
-	});
+	SliderMemory->Value = static_cast<double>(LoadSetting("megabytesRAMToUse")->GetUInt64());
 }
 
 void JPG_Spinner::SettingsFlyout::SettingsFlyout_Unloaded(Platform::Object^ /*sender*/, Windows::UI::Xaml::RoutedEventArgs^ /*e*/)
 {
 	// Save the setting values
-	concurrency::create_task(
-		SaveSettingAsync(
-			"numberLogicalProcessorsToUse",
-			PropertyValue::CreateUInt32(
-				static_cast<uint32_t>(SliderProcessor->Value)
-				)
+	SaveSetting(
+		"numberLogicalProcessorsToUse",
+		PropertyValue::CreateUInt32(
+			static_cast<uint32_t>(SliderProcessor->Value)
 			)
 		);
 
-	concurrency::create_task(
-		SaveSettingAsync(
-			"megabytesRAMToUse",
-			PropertyValue::CreateUInt64(
-				static_cast<uint64_t>(SliderMemory->Value)
-				)
+	SaveSetting(
+		"megabytesRAMToUse",
+		PropertyValue::CreateUInt64(
+			static_cast<uint64_t>(SliderMemory->Value)
 			)
 		);
 
-	concurrency::create_task(
-		SaveSettingAsync(
-			"CheckBoxProgressive",
-			PropertyValue::CreateBoolean(CheckBoxProgressive->IsOn)
-			)
+	SaveSetting(
+		"CheckBoxProgressive",
+		PropertyValue::CreateBoolean(CheckBoxProgressive->IsOn)
 		);
 
-	concurrency::create_task(
-		SaveSettingAsync(
-			"CheckBoxCrop",
-			PropertyValue::CreateBoolean(CheckBoxCrop->IsOn)
-			)
+	SaveSetting(
+		"CheckBoxCrop",
+		PropertyValue::CreateBoolean(CheckBoxCrop->IsOn)
 		);
 
 	// Deregister accelerator keys 
@@ -155,14 +139,12 @@ void JPG_Spinner::SettingsFlyout::TextBlockProgressive_PointerReleased(Platform:
 
 void JPG_Spinner::SettingsFlyout::ToggleSwitch_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ /*e*/)
 {
-	concurrency::create_task(LoadSettingAsync(safe_cast<ToggleSwitch^>(sender)->Name))
-		.then([this, sender](IPropertyValue^ value)
+	IPropertyValue^ value = LoadSetting(safe_cast<ToggleSwitch^>(sender)->Name);
+
+	// if the current value is not the stored
+	if (safe_cast<ToggleSwitch^>(sender)->IsOn != value->GetBoolean())
 	{
-		// if the current value is not the stored
-		if (safe_cast<ToggleSwitch^>(sender)->IsOn != value->GetBoolean())
-		{
-			// toggle
-			safe_cast<ToggleSwitch^>(sender)->IsOn = !safe_cast<ToggleSwitch^>(sender)->IsOn;
-		}
-	});
+		// toggle
+		safe_cast<ToggleSwitch^>(sender)->IsOn = !safe_cast<ToggleSwitch^>(sender)->IsOn;
+	}
 }

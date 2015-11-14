@@ -103,7 +103,7 @@ namespace JPG_Spinner
 
 		ProgressiveData^ data;
 		
-		concurrency::task<void> LoadStorageFileAsync(Windows::Storage::StorageFile^ storageFile);
+		Concurrency::task<void> LoadStorageFileAsync(Windows::Storage::StorageFile^ storageFile);
 
 		void FlipView1_SizeChanged(Platform::Object^ sender, Windows::UI::Xaml::SizeChangedEventArgs^ e);
 		void ExplanationProgressiveButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);

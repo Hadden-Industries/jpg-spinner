@@ -50,7 +50,7 @@ void JPG_Spinner::MainPage::Button_Click(Platform::Object^ sender, Windows::UI::
 {
 	if (buttonIsSelectFiles)
 	{
-		_cts = concurrency::cancellation_token_source();
+		_cts = Concurrency::cancellation_token_source();
 
 		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.Scenario_AfterPick", Windows::UI::Xaml::Interop::TypeKind::Custom };
 

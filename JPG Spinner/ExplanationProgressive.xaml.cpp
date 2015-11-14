@@ -47,16 +47,16 @@ ExplanationProgressive::ExplanationProgressive()
 	FlipView1->ItemsSource = data->Items;
 }
 
-concurrency::task<void> ExplanationProgressive::LoadStorageFileAsync(Windows::Storage::StorageFile^ storageFile)
+Concurrency::task<void> ExplanationProgressive::LoadStorageFileAsync(Windows::Storage::StorageFile^ storageFile)
 {
 	if (nullptr == storageFile)
 	{
 		// Do not throw, just create an empty task
 		//throw Platform::COMException::CreateException(E_POINTER);
-		return concurrency::create_task([]{});
+		return Concurrency::create_task([]{});
 	}
 
-	return concurrency::create_task(storageFile->OpenAsync(Windows::Storage::FileAccessMode::Read))
+	return Concurrency::create_task(storageFile->OpenAsync(Windows::Storage::FileAccessMode::Read))
 		.then([this](Windows::Storage::Streams::IRandomAccessStream^ inputStream)
 	{
 		data->Items->Clear();
@@ -267,7 +267,7 @@ void ExplanationProgressive::OnNavigatedTo(NavigationEventArgs^ e)
 {
 	auto uri = ref new Uri("ms-appx:///assets/progressive.jpg");
 
-	concurrency::create_task(Windows::Storage::StorageFile::GetFileFromApplicationUriAsync(uri))
+	Concurrency::create_task(Windows::Storage::StorageFile::GetFileFromApplicationUriAsync(uri))
 		.then([this](Windows::Storage::StorageFile^ file)
 	{
 		return LoadStorageFileAsync(file);
@@ -296,12 +296,12 @@ void JPG_Spinner::ExplanationProgressive::ExplanationProgressiveButton_Click(Pla
 	openPicker->FileTypeFilter->Append(".png");
 #endif
 
-	concurrency::create_task(openPicker->PickSingleFileAsync())
+	Concurrency::create_task(openPicker->PickSingleFileAsync())
 		.then([this](Windows::Storage::StorageFile^ storageFile)
 	{
 		if (nullptr == storageFile)
 		{
-			concurrency::cancel_current_task();
+			Concurrency::cancel_current_task();
 		}
 
 		return LoadStorageFileAsync(storageFile);

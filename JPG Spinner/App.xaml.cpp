@@ -104,7 +104,7 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 	}
 
 	// Get the files in the temporary folder
-	concurrency::create_task(Windows::Storage::ApplicationData::Current->TemporaryFolder->GetFilesAsync())
+	Concurrency::create_task(Windows::Storage::ApplicationData::Current->TemporaryFolder->GetFilesAsync())
 		.then([](IVectorView<Windows::Storage::StorageFile^>^ filesInFolder)
 	{
 		// Iterate over the files
@@ -113,78 +113,69 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 			auto file = it->Current;
 
 			// Permanently delete the file
-			concurrency::create_task(file->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
+			Concurrency::create_task(file->DeleteAsync(Windows::Storage::StorageDeleteOption::PermanentDelete));
 		}
 	});
 
-	concurrency::create_task(LoadSettingAsync("numberLogicalProcessorsToUse"))
-		.then([](IPropertyValue^ value)
+	IPropertyValue^ value = LoadSetting("numberLogicalProcessorsToUse");
+	SYSTEM_INFO systemInfo = SYSTEM_INFO();
+
+	GetNativeSystemInfo(&systemInfo);
+
+	// If you have not saved this setting before
+	if (nullptr == value
+		// or the saved value is not of the correct type
+		|| value->Type != PropertyType::UInt32
+		// or the saved value is greater than the total current number of processors
+		|| value->GetUInt32() > static_cast<uint32_t>(systemInfo.dwNumberOfProcessors))
 	{
-		SYSTEM_INFO systemInfo = SYSTEM_INFO();
+		// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
+		const float reductionFactor = 2.0f;
 
-		GetNativeSystemInfo(&systemInfo);
+		uint32_t numberLogicalProcessorsToUse = static_cast<uint32_t>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
 
-		// If you have not saved this setting before
-		if (nullptr == value
-			// or the saved value is not of the correct type
-			|| value->Type != PropertyType::UInt32
-			// or the saved value is greater than the total current number of processors
-			|| value->GetUInt32() > static_cast<uint32_t>(systemInfo.dwNumberOfProcessors))
+		// Sanity check
+		if (0U == numberLogicalProcessorsToUse)
 		{
-			// To somewhat account for HyperThreading and to reduce occurrence of alloc errors within JPEG library
-			const float reductionFactor = 2.0f;
-
-			uint32_t numberLogicalProcessorsToUse = static_cast<uint32_t>(static_cast<float>(systemInfo.dwNumberOfProcessors) / reductionFactor);
-
-			// Sanity check
-			if (0U == numberLogicalProcessorsToUse)
-			{
-				numberLogicalProcessorsToUse = 1U;
-			}
-
-			concurrency::create_task(SaveSettingAsync("numberLogicalProcessorsToUse", PropertyValue::CreateUInt32(numberLogicalProcessorsToUse)));
+			numberLogicalProcessorsToUse = 1U;
 		}
-	});
 
-	concurrency::create_task(LoadSettingAsync("megabytesRAMToUse"))
-		.then([](IPropertyValue^ value)
+		SaveSetting("numberLogicalProcessorsToUse", PropertyValue::CreateUInt32(numberLogicalProcessorsToUse));
+	}
+
+	value = LoadSetting("megabytesRAMToUse");
+
+	uint64_t megabytesRAMToUse = (MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL);
+
+	// If you have not saved this setting before
+	if (nullptr == value
+		// or the saved value is not of the correct type
+		|| value->Type != PropertyType::UInt64
+		// or the saved value is more than the current allowable
+		|| value->GetUInt64() > megabytesRAMToUse)
 	{
-		uint64_t megabytesRAMToUse = (MAX_MEM_FOR_ALL_JPEGS) / (1024ULL * 1024ULL);
+		SaveSetting("megabytesRAMToUse", PropertyValue::CreateUInt64(megabytesRAMToUse));
+	}
 
-		// If you have not saved this setting before
-		if (nullptr == value
-			// or the saved value is not of the correct type
-			|| value->Type != PropertyType::UInt64
-			// or the saved value is more than the current allowable
-			|| value->GetUInt64() > megabytesRAMToUse)
-		{
-			concurrency::create_task(SaveSettingAsync("megabytesRAMToUse", PropertyValue::CreateUInt64(megabytesRAMToUse)));
-		}
-	});
+	value = LoadSetting("CheckBoxProgressive");
 
-	concurrency::create_task(LoadSettingAsync("CheckBoxProgressive"))
-		.then([](IPropertyValue^ value)
+	// If you have not saved this setting before
+	if (nullptr == value
+		// or the saved value is not of the correct type
+		|| value->Type != PropertyType::Boolean)
 	{
-		// If you have not saved this setting before
-		if (nullptr == value
-			// or the saved value is not of the correct type
-			|| value->Type != PropertyType::Boolean)
-		{
-			concurrency::create_task(SaveSettingAsync("CheckBoxProgressive", PropertyValue::CreateBoolean(true)));
-		}
-	});
+		SaveSetting("CheckBoxProgressive", PropertyValue::CreateBoolean(true));
+	}
 
-	concurrency::create_task(LoadSettingAsync("CheckBoxCrop"))
-		.then([](IPropertyValue^ value)
+	value = LoadSetting("CheckBoxCrop");
+
+	// If you have not saved this setting before
+	if (nullptr == value
+		// or the saved value is not of the correct type
+		|| value->Type != PropertyType::Boolean)
 	{
-		// If you have not saved this setting before
-		if (nullptr == value
-			// or the saved value is not of the correct type
-			|| value->Type != PropertyType::Boolean)
-		{
-			concurrency::create_task(SaveSettingAsync("CheckBoxCrop", PropertyValue::CreateBoolean(false)));
-		}
-	});
+		SaveSetting("CheckBoxCrop", PropertyValue::CreateBoolean(false));
+	}
 }
 
 /// <summary>
@@ -214,48 +205,6 @@ void App::OnNavigationFailed(Platform::Object^ /*sender*/, Windows::UI::Xaml::Na
 	throw ref new FailureException("Failed to load Page " + e->SourcePageType.Name);
 }
 
-void App::OnWindowCreated(Windows::UI::Xaml::WindowCreatedEventArgs^ /*args*/)
-{
-	Windows::UI::ApplicationSettings::SettingsPane::GetForCurrentView()->CommandsRequested += ref new Windows::Foundation::TypedEventHandler<Windows::UI::ApplicationSettings::SettingsPane^, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^>(this, &App::OnCommandsRequested);
-}
-
-void App::OnCommandsRequested(Windows::UI::ApplicationSettings::SettingsPane^ /*sender*/, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^ args)
-{
-	Windows::UI::Popups::UICommandInvokedHandler^ handler = ref new Windows::UI::Popups::UICommandInvokedHandler(this, &App::OnSettingsCommand);
-
-	auto _resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-
-	Windows::UI::ApplicationSettings::SettingsCommand^ settingsCommandOptions = ref new Windows::UI::ApplicationSettings::SettingsCommand(
-		"options",
-		_resourceLoader->GetString("settingsFlyoutOptions"),
-		handler);
-
-	args->Request->ApplicationCommands->Append(settingsCommandOptions);
-
-	Windows::UI::ApplicationSettings::SettingsCommand^ settingsCommandPrivacyPolicy = ref new Windows::UI::ApplicationSettings::SettingsCommand(
-		"privacy_policy",
-		_resourceLoader->GetString("settingsFlyoutPrivacyPolicy"),
-		handler);
-
-	args->Request->ApplicationCommands->Append(settingsCommandPrivacyPolicy);
-}
-
-void App::OnSettingsCommand(Windows::UI::Popups::IUICommand^ command)
-{
-	if ("options" == command->Id->ToString())
-	{
-		auto mySettings = ref new JPG_Spinner::SettingsFlyout();
-
-		mySettings->Show();
-	}
-	else if ("privacy_policy" == command->Id->ToString())
-	{
-		auto mySettings = ref new JPG_Spinner::SettingsPrivacyPolicy();
-
-		mySettings->Show();
-	}
-}
-
 Item::Item() :
 _StorageFile(nullptr),
 _UUID(Platform::Guid(GUID_NULL)),
@@ -272,79 +221,25 @@ _HasThumbnail(false)
 	PropVariantInit(&_SubjectLocation);
 }
 
-concurrency::task<Windows::Foundation::IPropertyValue^> JPG_Spinner::LoadSettingAsync(Platform::String^ key)
+Windows::Foundation::IPropertyValue^ JPG_Spinner::LoadSetting(Platform::String^ key)
 {
-	return concurrency::create_task(Windows::System::UserProfile::UserInformation::GetDisplayNameAsync())
-		.then([key](Platform::String^ displayName)
+	Windows::Foundation::IPropertyValue^ value = nullptr;
+
+	Windows::Storage::ApplicationDataContainer^ localSettings = Windows::Storage::ApplicationData::Current->LocalSettings;
+
+	if (localSettings->Values->HasKey(key))
 	{
-		Windows::Foundation::IPropertyValue^ value = nullptr;
-
-		Windows::Storage::ApplicationDataContainer^ localSettings = Windows::Storage::ApplicationData::Current->LocalSettings;
-
-		if (nullptr != displayName)
+		try
 		{
-			Windows::Storage::ApplicationDataContainer^ container;
-
-			// if there is a container with the user's name
-			if (localSettings->Containers->HasKey(displayName))
-			{
-				// then retrieve it
-				container = localSettings->Containers->Lookup(displayName);
-
-				try
-				{
-					value = safe_cast<Windows::Foundation::IPropertyValue^>(container->Values->Lookup(key));
-				}
-				catch (InvalidCastException^ e) {}
-			}			
-
-			return value;
+			value = safe_cast<Windows::Foundation::IPropertyValue^>(localSettings->Values->Lookup(key));
 		}
-		else
-		{
-			if (localSettings->Values->HasKey(key))
-			{
-				try
-				{
-					value = safe_cast<Windows::Foundation::IPropertyValue^>(localSettings->Values->Lookup(key));
-				}
-				catch (InvalidCastException^ e) {}
-			}
+		catch (InvalidCastException^ e) {}
+	}
 
-			return value;
-		}
-	});
+	return value;
 }
 
-concurrency::task<bool> JPG_Spinner::SaveSettingAsync(Platform::String^ key, Platform::Object^ value)
+bool JPG_Spinner::SaveSetting(Platform::String^ key, Platform::Object^ value)
 {
-	return concurrency::create_task(Windows::System::UserProfile::UserInformation::GetDisplayNameAsync())
-		.then([key, value](Platform::String^ displayName)
-	{
-		Windows::Storage::ApplicationDataContainer^ localSettings = Windows::Storage::ApplicationData::Current->LocalSettings;
-
-		if (nullptr != displayName)
-		{
-			Windows::Storage::ApplicationDataContainer^ container;
-
-			// if there is a container with the user's name
-			if (localSettings->Containers->HasKey(displayName))
-			{
-				// then retrieve it
-				container = localSettings->Containers->Lookup(displayName);
-			}
-			else
-			{
-				// else create one
-				container = localSettings->CreateContainer(displayName, Windows::Storage::ApplicationDataCreateDisposition::Always);
-			}
-
-			return container->Values->Insert(key, value);
-		}
-		else
-		{
-			// insert for all users
-			return localSettings->Values->Insert(key, value);
-		}
-	});
+	return Windows::Storage::ApplicationData::Current->LocalSettings->Values->Insert(key, value);
 }

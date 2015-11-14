@@ -25,7 +25,6 @@ namespace JPG_Spinner
 	{
 	protected:
 		virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ e) override;
-		virtual void OnWindowCreated(Windows::UI::Xaml::WindowCreatedEventArgs^ args) override;
 
 	internal:
 		App();
@@ -33,8 +32,6 @@ namespace JPG_Spinner
 	private:
 		void OnSuspending(Platform::Object^ sender, Windows::ApplicationModel::SuspendingEventArgs^ e);
 		void OnNavigationFailed(Platform::Object ^sender, Windows::UI::Xaml::Navigation::NavigationFailedEventArgs ^e);
-		void OnCommandsRequested(Windows::UI::ApplicationSettings::SettingsPane^ settingsPane, Windows::UI::ApplicationSettings::SettingsPaneCommandsRequestedEventArgs^ e);
-		void OnSettingsCommand(Windows::UI::Popups::IUICommand^ command);
 	};
 
 	[Windows::UI::Xaml::Data::Bindable]
@@ -399,6 +396,6 @@ namespace JPG_Spinner
 		}
 	};
 
-	concurrency::task<Windows::Foundation::IPropertyValue^> LoadSettingAsync(Platform::String^ key);
-	concurrency::task<bool> SaveSettingAsync(Platform::String^ key, Platform::Object^ value);
+	Windows::Foundation::IPropertyValue^ LoadSetting(Platform::String^ key);
+	bool SaveSetting(Platform::String^ key, Platform::Object^ value);
 }
