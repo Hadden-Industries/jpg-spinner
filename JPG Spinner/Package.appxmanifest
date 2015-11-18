@@ -1,11 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package
-    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-    xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
-   IgnorableNamespaces= "uap mp">
-  <Identity Name="HaddenIndustriesLtd.JPGSpinner" Publisher="CN=42458E53-5B1F-4F49-97F4-ABE6B4A48BB3" Version="1.1.2.0" />
-  <mp:PhoneIdentity PhoneProductId="1907e50e-c88b-4b00-a74e-0104d704392e" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" IgnorableNamespaces="uap mp">
+  <Identity Name="HaddenIndustriesLtd.JPGSpinner" Publisher="CN=42458E53-5B1F-4F49-97F4-ABE6B4A48BB3" Version="1.1.3.0" />
+  <mp:PhoneIdentity PhoneProductId="1907e50e-c88b-4b00-a74e-0104d704392e" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>JPG Spinner</DisplayName>
     <PublisherDisplayName>Hadden Industries Ltd</PublisherDisplayName>

@@ -1613,6 +1613,11 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 		// folder is null if user cancels the folder picker
 		if (nullptr == folder)
 		{
+			// Log the event
+			ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+			tc->TrackEvent(L"Folder Picker - Cancel");
+
 			// Stop work and clean up.
 			Concurrency::cancel_current_task();
 		}
@@ -1635,6 +1640,13 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 			// if there are no JPEG files in the folder
 			if (0UL == imagesSelected)
 			{
+				InputTextBlock1->Text = _resourceLoader->GetString("noJPEGsInDirectory");
+
+				// Log the event
+				ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+				tc->TrackEvent(L"Folder Picker - No JPEGs");
+
 				// Stop work and clean up.
 				Concurrency::cancel_current_task();
 			}
@@ -1643,7 +1655,12 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 
 			MainPage::Current->SpinLogo_Start();
 
-			InputTextBlock1->Text = _resourceLoader->GetString("initialising");		
+			InputTextBlock1->Text = _resourceLoader->GetString("initialising");
+
+			// Log the metric
+			ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+			tc->TrackMetric(L"JPEGs selected", static_cast<double>(imagesSelected.load()));
 
 			Concurrency::create_task([this]
 			{
@@ -1677,6 +1694,11 @@ void Scenario_AfterPick::OnNavigatedTo(NavigationEventArgs^ e)
 						GridView1->SelectionMode = Windows::UI::Xaml::Controls::ListViewSelectionMode::Extended;
 					}
 				}));
+
+				// Log the metric
+				ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+				tc->TrackMetric(L"JPEGs to be rotated", static_cast<double>(imagesToBeRotated.load()));
 
 				for (unsigned int i = 0U; i < static_cast<unsigned int>(imagesToBeRotated.load()); ++i)
 				{

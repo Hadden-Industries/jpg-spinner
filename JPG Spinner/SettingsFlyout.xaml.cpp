@@ -50,7 +50,7 @@ void JPG_Spinner::SettingsFlyout::SettingsFlyout_AcceleratorKeyActivated(CoreDis
 		if (menuKey && !controlKey && !shiftKey)
 		{
 			args->Handled = true;
-			this->Hide();
+			//this->Hide();
 		}
 	}
 }

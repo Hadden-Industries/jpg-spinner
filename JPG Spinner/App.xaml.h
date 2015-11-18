@@ -28,6 +28,7 @@ namespace JPG_Spinner
 
 	internal:
 		App();
+		ApplicationInsights::CX::SessionTracking^ _ApplicationInsightsSession;
 
 	private:
 		void OnSuspending(Platform::Object^ sender, Windows::ApplicationModel::SuspendingEventArgs^ e);

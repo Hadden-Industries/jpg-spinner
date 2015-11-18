@@ -35,3 +35,5 @@ inline void SafeRelease(Interface **ppInterfaceToRelease)
 }
 
 Platform::String^ HResultToHexString(HRESULT hr);
+
+extern Platform::String^ applicationInsightsKey;

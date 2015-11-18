@@ -50,7 +50,7 @@ void JPG_Spinner::SettingsPrivacyPolicy::SettingsPrivacyPolicy_AcceleratorKeyAct
 		if (menuKey && !controlKey && !shiftKey)
 		{
 			args->Handled = true;
-			this->Hide();
+			//this->Hide();
 		}
 	}
 }
@@ -138,10 +138,6 @@ void JPG_Spinner::SettingsPrivacyPolicy::HyperlinkPrivacyPolicy_Click(Windows::U
 	if ("HyperlinkPrivacyPolicy" == sender->Name)
 	{
 		uri = "http://haddenindustries.com/legal.html#privacy-policy";
-	}
-	else if ("HyperlinkAnalyzingCrashReports" == sender->Name)
-	{
-		uri = "https://msdn.microsoft.com/en-gb/library/windows/apps/jj933262.aspx";
 	}
 
 	rootPage->LoadWebPage(uri);

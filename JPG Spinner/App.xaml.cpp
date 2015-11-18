@@ -35,6 +35,9 @@ App::App()
 	InitializeComponent();
 
 	Suspending += ref new SuspendingEventHandler(this, &App::OnSuspending);
+
+	// this will do automatic session tracking and automatic page view collection
+	_ApplicationInsightsSession = ref new ApplicationInsights::CX::SessionTracking();
 }
 
 /// <summary>
@@ -176,6 +179,8 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 	{
 		SaveSetting("CheckBoxCrop", PropertyValue::CreateBoolean(false));
 	}
+
+	_ApplicationInsightsSession->Initialize(this, rootFrame, applicationInsightsKey);
 }
 
 /// <summary>

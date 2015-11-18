@@ -15,3 +15,5 @@ Platform::String^ HResultToHexString(HRESULT hr)
 
 	return ref new Platform::String(os.str().data());
 }
+
+Platform::String^ applicationInsightsKey = L"e0f00e28-5d50-42d7-8e09-f5de197c037c";

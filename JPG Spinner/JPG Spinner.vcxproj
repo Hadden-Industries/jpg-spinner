@@ -105,6 +105,30 @@
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\src\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\Win32\Release\AppInsights_Win10-UAP;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\src\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\Win32\Release\AppInsights_Win10-UAP;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <IncludePath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\src\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\ARM\Release\AppInsights_Win10-UAP;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <IncludePath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\src\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\ARM\Release\AppInsights_Win10-UAP;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\src\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\x64\Release\AppInsights_Win10-UAP;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\src\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\maksy\GitHub\jpg-spinner\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\x64\Release\AppInsights_Win10-UAP;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -253,9 +277,22 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="..\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\ARM\Release\AppInsights_Win10-UAP\AppInsights_Win10-UAP.dll">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</DeploymentContent>
+    </None>
+    <None Include="..\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\Win32\Release\AppInsights_Win10-UAP\AppInsights_Win10-UAP.dll">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+    </None>
+    <None Include="..\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\x64\Release\AppInsights_Win10-UAP\AppInsights_Win10-UAP.dll">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </None>
     <None Include="ClassDiagram.cd" />
     <None Include="JPG Spinner_StoreKey.pfx" />
     <None Include="JPG Spinner_TemporaryKey.pfx" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\BadgeLogo.scale-100.png">
@@ -1067,6 +1104,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Package.StoreAssociation.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="ApplicationInsights">
+      <HintPath>..\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\x64\Release\ApplicationInsights\ApplicationInsights.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+    </Reference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

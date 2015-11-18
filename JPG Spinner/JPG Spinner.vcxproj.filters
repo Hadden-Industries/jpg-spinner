@@ -115,6 +115,10 @@
     <None Include="Package.StoreAssociation.xml" />
     <None Include="JPG Spinner_StoreKey.pfx" />
     <None Include="ClassDiagram.cd" />
+    <None Include="packages.config" />
+    <None Include="..\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\x64\Release\AppInsights_Win10-UAP\AppInsights_Win10-UAP.dll" />
+    <None Include="..\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\ARM\Release\AppInsights_Win10-UAP\AppInsights_Win10-UAP.dll" />
+    <None Include="..\packages\ApplicationInsights-CPP.1.0.0-Beta\lib\native\Win32\Release\AppInsights_Win10-UAP\AppInsights_Win10-UAP.dll" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />

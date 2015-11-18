@@ -7,7 +7,7 @@
     mc:Ignorable="d">
     <Grid x:Name="LayoutRoot">
         <Grid.RowDefinitions>
-            <RowDefinition Height="100"/>
+            <RowDefinition Height="96"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid x:Name="Input" Grid.Row="0" Margin="20,0,20,10" VerticalAlignment="Bottom">

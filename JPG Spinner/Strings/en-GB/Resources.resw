@@ -143,7 +143,7 @@
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
     <value>Privacy Policy</value>
   </data>
-  <data name="HyperlinkButtonTerms.Content" xml:space="preserve">
+  <data name="AppBarButtonTerms.Label" xml:space="preserve">
     <value>Terms &amp; Conditions</value>
   </data>
   <data name="processedMany" xml:space="preserve">
@@ -205,9 +205,6 @@
   <data name="progressiveLevel" xml:space="preserve">
     <value>Progressive level</value>
   </data>
-  <data name="SettingsFlyout.Title" xml:space="preserve">
-    <value>Options</value>
-  </data>
   <data name="settingsFlyoutOptions" xml:space="preserve">
     <value>Options</value>
   </data>
@@ -229,10 +226,16 @@
   <data name="settingsFlyoutPrivacyPolicy" xml:space="preserve">
     <value>Privacy Policy</value>
   </data>
-  <data name="SettingsPrivacyPolicy.Title" xml:space="preserve">
-    <value>Privacy Policy</value>
-  </data>
   <data name="ToolTipPrivacyPolicyDate.Content" xml:space="preserve">
     <value>Date this policy was last changed</value>
+  </data>
+  <data name="noJPEGsInDirectory" xml:space="preserve">
+    <value>There were no JPG files in your selection</value>
+  </data>
+  <data name="AppBarButtonPrivacyPolicy.Label" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="AppBarButtonSettings.Label" xml:space="preserve">
+    <value>Settings</value>
   </data>
 </root>

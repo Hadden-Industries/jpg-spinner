@@ -74,14 +74,13 @@ void JPG_Spinner::MainPage::CancelProcessing()
 	}
 }
 
-void JPG_Spinner::MainPage::HyperLinkButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void JPG_Spinner::MainPage::HyperLink_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	if (buttonIsSelectFiles)
-	{
-		Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.WebPage", Windows::UI::Xaml::Interop::TypeKind::Custom };
-
-		ScenarioFrame->Navigate(scenarioType, sender);
-	}
+	LoadWebPage(
+		safe_cast<String^>(
+			safe_cast<FrameworkElement^>(sender)->Tag
+			)
+		);
 }
 
 void JPG_Spinner::MainPage::LoadWebPage(Platform::String^ uri)
@@ -93,6 +92,11 @@ void JPG_Spinner::MainPage::LoadWebPage(Platform::String^ uri)
 		auto hyperlinkButton = ref new HyperlinkButton();
 
 		hyperlinkButton->Tag = uri;
+
+		// Log the event
+		ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+		tc->TrackEvent(uri);
 
 		ScenarioFrame->Navigate(scenarioType, hyperlinkButton);
 	}
@@ -138,6 +142,11 @@ void JPG_Spinner::MainPage::Logo_PointerReleased(Platform::Object^ sender, Windo
 {
 	if (buttonIsSelectFiles && Windows::UI::Xaml::Media::Animation::ClockState::Active != SpinLogo->GetCurrentState())
 	{
+		// Log the event
+		ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+		tc->TrackEvent(L"Logo spun");
+
 		if (Windows::UI::Xaml::Media::Animation::ClockState::Filling == SpinLogo->GetCurrentState())
 		{
 			SpinLogo->Stop();
@@ -153,4 +162,28 @@ void JPG_Spinner::MainPage::Navigate(Windows::UI::Xaml::Interop::TypeName type, 
 	{
 		ScenarioFrame->Navigate(type, obj);
 	}
+}
+
+void JPG_Spinner::MainPage::PrivacyPolicyButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	// Log the event
+	ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+	tc->TrackEvent(L"Privacy Policy clicked");
+
+	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.SettingsPrivacyPolicy", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+	ScenarioFrame->Navigate(scenarioType, this);
+}
+
+void JPG_Spinner::MainPage::SettingsButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	// Log the event
+	ApplicationInsights::CX::TelemetryClient^ tc = ref new ApplicationInsights::CX::TelemetryClient(applicationInsightsKey);
+
+	tc->TrackEvent(L"Settings clicked");
+
+	Windows::UI::Xaml::Interop::TypeName scenarioType = { L"JPG_Spinner.SettingsFlyout", Windows::UI::Xaml::Interop::TypeKind::Custom };
+
+	ScenarioFrame->Navigate(scenarioType, this);
 }
