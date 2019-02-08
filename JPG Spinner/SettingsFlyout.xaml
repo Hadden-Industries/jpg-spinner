@@ -4,92 +4,114 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:local="using:JPG_Spinner"
       mc:Ignorable="d"
       Loaded="SettingsFlyout_Loaded"
       Unloaded="SettingsFlyout_Unloaded">
     <Page.Resources>
         <ResourceDictionary Source="ScenariosTemplateStyles.xaml"/>
     </Page.Resources>
-    <Grid x:Name="LayoutRoot">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="1*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="96"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <Grid x:Name="Input" Grid.Row="0" Margin="20,0,20,10" VerticalAlignment="Bottom">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" x:Name="InputTextBlock1" Style="{StaticResource SubheaderTextBlockStyle}" Text="" TextWrapping="Wrap"></TextBlock>
-        </Grid>
-        <ScrollViewer Grid.Column="1" Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="Output" HorizontalAlignment="Center" Margin="16,0,16,0" VerticalAlignment="Center">
-                <StackPanel>
+    <Pivot Margin="0,56,0,10">
+        <PivotItem Header="System">
+            <Grid x:Name="LayoutRoot">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
 
-                    <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
-                        <TextBlock x:Uid="SettingsFlyoutOptionsProcessor" Style="{StaticResource TitleTextBlockStyle}" Text="Processor"/>
-                        <TextBlock x:Uid="SettingsFlyoutOptionsTextBlockProcessor" Style="{StaticResource BodyTextBlockStyle}" Text="Maximum logical cores to use" TextWrapping="WrapWholeWords"/>
-                        <Slider x:Name="SliderProcessor"
-                    IsThumbToolTipEnabled="True"
-                    Maximum="8"
-                    Minimum="1"
-                    SnapsTo="StepValues"
-                    StepFrequency="1"
-                    TickFrequency="1"
-                    TickPlacement="Inline"/>
-                    </StackPanel>
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <Grid x:Name="Output" HorizontalAlignment="Center" Margin="16,0,16,0" VerticalAlignment="Center">
+                        <StackPanel>
 
-                    <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
-                        <TextBlock x:Uid="SettingsFlyoutOptionsMemory" Style="{StaticResource TitleTextBlockStyle}" Text="Memory"/>
-                        <TextBlock x:Uid="SettingsFlyoutOptionsTextBlockMemory" Text="Maximum RAM to use, in megabytes" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="WrapWholeWords"/>
-                        <Slider x:Name="SliderMemory"
-                    IsThumbToolTipEnabled="True"
-                    Maximum="1024"
-                    Minimum="128"
-                    SnapsTo="StepValues"
-                    StepFrequency="64"
-                    TickFrequency="128"
-                    TickPlacement="Inline"/>
-                    </StackPanel>
+                            <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
+                                <TextBlock x:Uid="SettingsFlyoutOptionsProcessor" Style="{StaticResource TitleTextBlockStyle}" Text="Processor"/>
+                                <TextBlock x:Uid="SettingsFlyoutOptionsTextBlockProcessor" Style="{StaticResource BodyTextBlockStyle}" Text="Maximum logical cores to use" TextWrapping="WrapWholeWords"/>
+                                <Slider x:Name="SliderProcessor"
+                                        IsThumbToolTipEnabled="True"
+                                        Maximum="8"
+                                        Minimum="1"
+                                        SnapsTo="StepValues"
+                                        StepFrequency="1"
+                                        TickFrequency="1"
+                                        TickPlacement="Inline"/>
+                            </StackPanel>
 
-                    <StackPanel Orientation="Vertical" Style="{StaticResource SettingsFlyoutSectionStyle}">
-                        <ToggleSwitch x:Name="CheckBoxProgressive" x:Uid="CheckBoxProgressive"
-                          Header="Progressive"
-                          Loaded="ToggleSwitch_Loaded"/>
-                        <TextBlock x:Name="TextBlockProgressive" x:Uid="TextBlockProgressive"
-                       Text="Apply progressive encoding to each rotated image …"
-                       TextTrimming="CharacterEllipsis"
-                       TextWrapping="Wrap"
-                       Style="{StaticResource BodyTextBlockStyle}"
-                       PointerReleased="TextBlockProgressive_PointerReleased">
-                <ToolTipService.ToolTip>
-            		<ToolTip x:Uid="ToolTipProgressive" Content="Click here to see more information about this option" Placement="Bottom"/>
-            	</ToolTipService.ToolTip>
-                        </TextBlock>
-                    </StackPanel>
+                            <StackPanel Style="{StaticResource SettingsFlyoutSectionStyle}">
+                                <TextBlock x:Uid="SettingsFlyoutOptionsMemory" Style="{StaticResource TitleTextBlockStyle}" Text="Memory"/>
+                                <TextBlock x:Uid="SettingsFlyoutOptionsTextBlockMemory" Text="Maximum RAM to use, in megabytes" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="WrapWholeWords"/>
+                                <Slider x:Name="SliderMemory"
+                                        IsThumbToolTipEnabled="True"
+                                        Maximum="1024"
+                                        Minimum="128"
+                                        SnapsTo="StepValues"
+                                        StepFrequency="64"
+                                        TickFrequency="128"
+                                        TickPlacement="Inline"/>
+                            </StackPanel>
 
-                    <StackPanel Orientation="Vertical" Style="{StaticResource SettingsFlyoutSectionStyle}">
-                        <ToggleSwitch x:Name="CheckBoxCrop" x:Uid="CheckBoxCrop"
-                          Header="Crop"
-                          Loaded="ToggleSwitch_Loaded"/>
-                        <TextBlock x:Name="TextBlockCrop" x:Uid="TextBlockCrop"
-                       Text="If necessary, remove some edge pixels to enable lossless rotation of the rest of the image …"
-                       TextTrimming="CharacterEllipsis"
-                       TextWrapping="Wrap"
-                       Style="{StaticResource BodyTextBlockStyle}"
-                       PointerReleased="TextBlockCrop_PointerReleased">
-                <ToolTipService.ToolTip>
-            		<ToolTip x:Uid="ToolTipCrop" Content="Click here to see more information about this option" Placement="Bottom"/>
-            	</ToolTipService.ToolTip>
-                        </TextBlock>
-                    </StackPanel>
-
-                </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
             </Grid>
-        </ScrollViewer>
-    </Grid>
+        </PivotItem>
+
+        <PivotItem Header="Crop">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <Grid HorizontalAlignment="Center" Margin="16,0,16,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Vertical" Style="{StaticResource SettingsFlyoutSectionStyle}">
+                            <ToggleSwitch x:Name="CheckBoxCrop" x:Uid="CheckBoxCrop"
+                                              Loaded="ToggleSwitch_Loaded"/>
+                            <TextBlock x:Name="TextBlockCrop" x:Uid="TextBlockCrop"
+                                           Text="If necessary, remove some edge pixels to enable lossless rotation of the rest of the image …"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap"
+                                           Style="{StaticResource BodyTextBlockStyle}"
+                                           PointerReleased="TextBlockCrop_PointerReleased">
+                                    <ToolTipService.ToolTip>
+            		                    <ToolTip x:Uid="ToolTipCrop" Content="Click here to see more information about this option" Placement="Bottom"/>
+            	                    </ToolTipService.ToolTip>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </PivotItem>
+
+        <PivotItem Header="Progressive">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <Grid HorizontalAlignment="Center" Margin="16,0,16,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Vertical" Style="{StaticResource SettingsFlyoutSectionStyle}">
+                            <ToggleSwitch x:Name="CheckBoxProgressive" x:Uid="CheckBoxProgressive"
+                                              Loaded="ToggleSwitch_Loaded"/>
+                            <TextBlock x:Name="TextBlockProgressive" x:Uid="TextBlockProgressive"
+                                           Text="Apply progressive encoding to each rotated image …"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap"
+                                           Style="{StaticResource BodyTextBlockStyle}"
+                                           PointerReleased="TextBlockProgressive_PointerReleased">
+                                    <ToolTipService.ToolTip>
+            		                    <ToolTip x:Uid="ToolTipProgressive" Content="Click here to see more information about this option" Placement="Bottom"/>
+            	                    </ToolTipService.ToolTip>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </PivotItem>
+    </Pivot>
 </Page>

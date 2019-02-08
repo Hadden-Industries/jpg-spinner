@@ -134,12 +134,6 @@
   <data name="ButtonSelectFiles.Content" xml:space="preserve">
     <value>Select Folder</value>
   </data>
-  <data name="CheckBoxProgressive.Header" xml:space="preserve">
-    <value>Progressive</value>
-  </data>
-  <data name="CheckBoxCrop.Header" xml:space="preserve">
-    <value>Crop</value>
-  </data>
   <data name="HyperlinkButtonPrivacyPolicy.Content" xml:space="preserve">
     <value>Privacy Policy</value>
   </data>
