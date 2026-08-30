@@ -71,6 +71,7 @@ The selected option follows the [single-project MSIX guidance](https://learn.mic
 - **No secret-bearing telemetry:** the old Application Insights key and dependency are removed; the key must be revoked or rotated in its owning service.
 - **No floating dependencies:** every package and CI action is pinned to a reviewed immutable version or commit.
 - **No silent loss:** trimming, metadata removal, skipped files, and unsupported coding processes are visible in the review and result models.
+- **No broad file authority:** the manifest rejects `broadFileSystemAccess`, known-folder library capabilities, `runFullTrust`, and unrelated restricted capabilities; source authority comes only from user-mediated picker grants.
 
 ## 3. Supported platform and pinned baseline
 
@@ -78,7 +79,7 @@ Versions below are the latest stable releases verified on 2026-08-30. Experiment
 
 | Tool or package | Required baseline | Rationale and authority |
 |---|---:|---|
-| Visual Studio | Visual Studio 2026, MSVC 14.51, PlatformToolset v145 | Current stable native toolchain; see [upgrading C++ projects to Visual Studio 2026](https://devblogs.microsoft.com/cppblog/upgrading-c-projects-to-visual-studio-2026/) and [MSVC 14.51 availability](https://devblogs.microsoft.com/cppblog/msvc-version-1451-available/) |
+| Visual Studio | Visual Studio 2026, MSVC 14.51, PlatformToolset v145, with the exact servicing tool directory pinned through `VCToolsVersion` after qualification | Current stable native toolchain; `PlatformToolset` selects the v145 family but does not freeze a particular 14.51 servicing installation. See [upgrading C++ projects to Visual Studio 2026](https://devblogs.microsoft.com/cppblog/upgrading-c-projects-to-visual-studio-2026/) and [MSVC 14.51 availability](https://devblogs.microsoft.com/cppblog/msvc-version-1451-available/) |
 | C++ language mode | C++20 with `/std:c++20` and `/permissive-` | C++23 remains a preview switch in this toolchain; production must not depend on preview language behavior. See [MSVC C++23 support](https://devblogs.microsoft.com/cppblog/c23-support-in-msvc-build-tools-14-51/) |
 | Windows App SDK | 2.4.0 | Latest stable Windows App SDK as of the design date; see [Windows App SDK downloads](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads) |
 | Windows SDK Build Tools | 10.0.28000.2705 | Latest stable SDK build-tools package as of the design date; see [Windows SDK downloads](https://learn.microsoft.com/en-us/windows/apps/windows-sdk/downloads) |
@@ -95,7 +96,7 @@ Versions below are the latest stable releases verified on 2026-08-30. Experiment
 
 The app must compile with a dynamic Universal CRT and statically linked vcpkg libraries using custom `x86-windows-static-md`, `x64-windows-static-md`, and `arm64-windows-static-md` triplets. This avoids separately packaged codec DLLs while retaining the platform-serviced CRT.
 
-The MSIX is framework-dependent (`WindowsAppSDKSelfContained=false`). Its Windows App SDK framework dependency is deployed and serviced through the package/Store mechanism; the app does not carry a private Windows App Runtime or invoke the unpackaged bootstrapper. This follows Microsoft’s [Windows App SDK deployment overview](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/deploy-overview).
+The MSIX is framework-dependent (`WindowsAppSDKSelfContained=false`). Its Windows App SDK framework dependency is deployed and serviced through the package/Store mechanism; the production app does not carry a private Windows App Runtime or invoke the unpackaged bootstrapper. A test executable that consumes Windows App SDK runtime types must instead run with test package identity or use the official test-only bootstrapper/auto-initializer; this test infrastructure is never included in the production package. This follows Microsoft’s [Windows App SDK deployment overview](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/deploy-overview) and [unpackaged deployment guidance](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged-apps).
 
 Scaffolding uses the installed stable [Visual Studio C++ WinUI Blank App (Packaged) template](https://learn.microsoft.com/en-us/windows/apps/dev-tools/visual-studio). The public-preview Windows App Development CLI is not a production bootstrap dependency. The solution remains `JpgSpinner.sln`, because every required stable C++/MSBuild/Store tool supports it and the [newer solution format](https://devblogs.microsoft.com/visualstudio/new-simpler-solution-file-format/) does not yet add product capability; revisit only after the full packaging, analysis, and runner toolchain officially supports the newer format.
 
@@ -224,7 +225,7 @@ The storage and codec abstractions are capability interfaces at deliberate seams
 |---|---|---|
 | `JpgSpinner.Domain` | Value types, orientation mapping, transform planning, error taxonomy, resource policies | WinRT handles, UI strings, file I/O, codec calls |
 | `JpgSpinner.JpegTransformation` | Bounds-checked marker inventory, lossless transform, metadata reconciliation, output validation | File replacement, folder traversal, XAML state |
-| `JpgSpinner.WindowsStorage` | Source revision hashing, staging, backup, journaling, atomic replacement, recovery | JPEG interpretation, localized messages |
+| `JpgSpinner.WindowsStorage` | Source revision hashing, staging, verified backup, journaled replacement, and deterministic recovery from observable states | JPEG interpretation, localized messages, undocumented power-failure guarantees |
 | `JpgSpinner.BatchProcessing` | Enumeration policy, sequential orchestration, cancellation boundaries, progress, summaries | Dialogs, concrete XAML controls, raw codec details |
 | `JpgSpinner.App` | Folder picker, review experience, options, localized errors, accessibility, dependency composition | JPEG parsing, transaction state machines, business invariants |
 
@@ -247,11 +248,14 @@ Each module must hide more policy and mechanism than its callers learn. The dele
 - Native namespace root: `jpg_spinner`; subnamespaces: `domain`, `jpeg`, `storage`, and `batch`.
 - WinRT presentation namespace: `JpgSpinner.Presentation`.
 - Types and enum members use PascalCase. Functions and local variables use camelCase. Private data members use an `m_` prefix.
+- Public WinRT/MIDL properties, methods, and events use PascalCase, including predicates such as `CanBeginProcessing`; native-only Boolean functions remain camelCase.
 - Native abstract bases describe capabilities and do not receive a mechanical `I` prefix: `JpegTransformationEngine`, `ImageFileTransactionEngine`.
 - Concrete adapter types identify the mechanism: `LibJpegTurboTransformationEngine`, `AppContainerImageFileTransactionEngine`.
 - Names such as `Manager`, `Helper`, `Utils`, `Data`, `Info`, `Item`, `Mode`, and `Handler` are prohibited unless that word is the precise domain term. Examples of correct replacements are `JpegSegmentScanner`, `SourceFileRevisionCalculator`, `BatchProcessingCoordinator`, and `ImageProcessingError`.
 - Boolean names state a predicate: `isPerfectTransformAvailable`, `hasEmbeddedIccProfile`, `wasSourceModified`.
 - Units appear in names for primitive quantities: `encodedFileLengthBytes`, `elapsedMilliseconds`, `maximumPixelCount`.
+
+`ImageProcessingResult<TValue>` is a narrow domain discriminated result implemented from stable C++20 facilities. It has exactly one active value or `ImageProcessingError`, exposes no monadic compatibility facade, and is not a backport of `std::expected`. Tests must prove construction, move-only values, value/error access preconditions, and the never-empty invariant for the selected storage representation. A future C++23 migration evaluates `std::expected` directly rather than preserving a project-owned compatibility surface.
 
 ### 5.5 Comment policy
 
@@ -259,7 +263,7 @@ Comments are required liberally where they preserve intent:
 
 - document every public interface contract and ownership rule;
 - explain Exif orientation geometry, MCU completeness, marker size bounds, and metadata reconciliation decisions;
-- state transaction invariants and why each recovery branch is safe;
+- state transaction recoverability invariants and why each recovery branch preserves validated artifacts;
 - identify apartment and thread transitions around WinRT coroutines;
 - explain privacy redaction and the mapping from internal errors to user-visible messages;
 - explain why a malformed or unsupported source is rejected.
@@ -290,7 +294,7 @@ Hash source into SourceFileRevision
 Create a ValidatedJpegOutput on a background thread
         │ transform coefficients → reconcile metadata → independently validate
         ▼
-Write a unique stage beside its final destination; flush/close; verify staged SHA-256
+Write a unique stage beside its final destination; request flush/close; verify staged SHA-256
         │
         ▼
 Re-hash source and require unchanged SourceFileRevision
@@ -298,7 +302,7 @@ Re-hash source and require unchanged SourceFileRevision
         ├── CreateCorrectedCopy: move staged file to unique batch destination
         │
         └── ReplaceOriginalWithVerifiedBackup:
-               copy and verify backup → journal state → MoveAndReplaceAsync
+               copy and verify backup → persist journal state → request MoveAndReplaceAsync
         │
         ▼
 Record per-file result, clean safe staging artifacts, retain backup
@@ -319,7 +323,6 @@ struct JpegResourceLimits final
     std::uint64_t maximumPixelCount;
     std::uint64_t maximumMetadataLengthBytes;
     std::uint32_t maximumProgressiveScanCount;
-    std::uint64_t maximumCodecMemoryBytes;
 
     [[nodiscard]] static consteval JpegResourceLimits production() noexcept
     {
@@ -328,13 +331,24 @@ struct JpegResourceLimits final
             268'435'456ULL,
             32ULL * 1024ULL * 1024ULL,
             100U,
-            512ULL * 1024ULL * 1024ULL,
         };
+    }
+};
+
+struct TurboJpegResourceLimits final
+{
+    // TJPARAM_MAXMEMORY is expressed in decimal megabytes and limits codec
+    // intermediate buffers; it is not an encoded-input-length limit.
+    std::int32_t maximumIntermediateBufferMemoryMegabytes;
+
+    [[nodiscard]] static consteval TurboJpegResourceLimits production() noexcept
+    {
+        return {512};
     }
 };
 ```
 
-These values are not hidden tuning knobs. Production composition always supplies `JpegResourceLimits::production()`. Focused tests may inject smaller immutable limits so boundary behavior can be proven without allocating hundreds of MiB. The values are logged by symbolic name, covered at the boundary and one unit beyond it, and documented in user-facing unsupported-file messages. Raising a production limit requires corpus evidence and memory measurements on the minimum supported device class.
+These values are not hidden tuning knobs. `JpegResourceLimits` is a public Domain policy; `TurboJpegResourceLimits` is an internal adapter policy so TurboJPEG's unusual unit never leaks into application callers. Production composition always supplies their `production()` values. The application enforces `maximumEncodedFileLengthBytes` before codec parsing; it is independent of TurboJPEG's working-memory control. Focused tests may inject smaller immutable limits so boundary behavior can be proven without allocating hundreds of MiB. The values are logged by symbolic name, covered at the boundary and one unit beyond it, and documented in user-facing unsupported-file messages. Raising a production limit requires corpus evidence and memory measurements on the minimum supported device class.
 
 Only one transform transaction runs at a time. This keeps peak codec memory bounded and makes cancellation, ordering, and file recovery deterministic. Folder analysis may use asynchronous I/O, but it does not create an unbounded task per file.
 
@@ -357,7 +371,7 @@ This scanner is a security boundary and receives both deterministic malformed-in
 
 Baseline, extended sequential, progressive, and arithmetic DCT JPEG are supported at the standard 8- and 12-bit lossy precisions when libjpeg-turbo reports the process as transformable. Grayscale, RGB, YCbCr, CMYK, and YCCK component organizations are retained without color conversion. Lossless predictive, hierarchical, invalid precision, and unknown SOF processes are rejected. MPO/MPF is rejected because its multi-image offsets and relationships cannot be preserved safely by a single-image transaction. Motion Photos and other payload-bearing data after EOI are rejected because transformation would invalidate XMP offsets or discard a second asset. C2PA Content Credentials are rejected because transformation invalidates their cryptographic asset binding; other JUMBF metadata is rejected because version 2.0 cannot prove its internal references remain truthful. No file is silently decoded and re-encoded in the pixel domain.
 
-The transform engine uses the public TurboJPEG 3 API, including `tj3Transform`; it must not include `transupp.h`, internal libjpeg headers, or copied codec source. Defense-in-depth configuration sets `TJPARAM_STOPONWARNING=1`, `TJPARAM_MAXMEMORY=512` because the interface unit is MiB, `TJPARAM_MAXPIXELS=268435456`, `TJPARAM_SCANLIMIT=100`, and `TJPARAM_SAVEMARKERS=0`. Marker copying is disabled inside TurboJPEG because the application’s bounds-checked reconciliation policy reassembles each permitted marker exactly once. The behavior is anchored in the official [libjpeg-turbo transform documentation](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/doc/usage.txt) and [TurboJPEG 3.2.0 interface](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.h).
+The transform engine uses the public TurboJPEG 3 API, including `tj3Transform`; it must not include `transupp.h`, internal libjpeg headers, or copied codec source. Defense-in-depth configuration sets `TJPARAM_STOPONWARNING=1`, `TJPARAM_MAXMEMORY=512` in TurboJPEG's decimal-megabyte unit for intermediate buffers, `TJPARAM_MAXPIXELS=268435456`, `TJPARAM_SCANLIMIT=100`, and `TJPARAM_SAVEMARKERS=0`. Every `tjtransform` also sets `TJXOPT_COPYNONE`, so marker suppression is local to the operation even if context parameters or upstream defaults change. After reading the source header, each transform sets `TJXOPT_PROGRESSIVE` and `TJXOPT_ARITHMETIC` explicitly when the transform plan requires them; it never relies on mutable `TJPARAM_*` state surviving another header or transform call. The application’s bounds-checked reconciliation policy reassembles each permitted marker exactly once. The behavior is anchored in the official [libjpeg-turbo transform documentation](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/doc/usage.txt) and [TurboJPEG 3.2.0 interface](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.h).
 
 ## 8. Metadata reconciliation
 
@@ -368,6 +382,7 @@ Metadata is user data. The default rule is “preserve byte content and marker o
 - Preserve an assembled ICC APP2 profile byte-for-byte and verify its SHA-256 hash after output assembly.
 - Preserve unknown APPn and COM payloads in source order when their framing is valid and the output codec can retain them.
 - Preserve non-derived Exif and XMP properties.
+- Treat standard and extended XMP as an application-owned segment set. Preserve complete extended-XMP chunks byte-for-byte only when no field that must change is stored in the extension packet and the retained standard packet remains truthful. Otherwise reject before transformation with `ExtendedXmpMutationNotSupported`; do not partially rewrite, silently drop, or canonicalize the extension.
 - Preserve IPTC IIM/Photoshop APP13 payloads and IPTC XMP properties, including rights and AI-disclosure fields, without semantic rewriting.
 - Set Exif and XMP orientation to canonical value 1 after a successful transform.
 - Update Exif `PixelXDimension`, `PixelYDimension`, `ImageWidth`, and `ImageLength` when present, plus their mapped XMP properties according to CIPA DC-010-2026.
@@ -376,7 +391,7 @@ Metadata is user data. The default rule is “preserve byte content and marker o
 - Reject C2PA/JUMBF before transformation rather than retaining invalid authenticity/provenance assertions or removing them without consent.
 - Reject malformed metadata rather than writing a partly repaired source without the user knowing.
 
-Exiv2 is used for supported Exif/XMP interpretation and mutation; the application does not grow its own TIFF or RDF parser. The bounded marker scanner still owns outer JPEG structural validation because it enforces application-specific aggregate limits before a general metadata library parses the source.
+Exiv2 is used for supported Exif/XMP interpretation and mutation; the application does not grow its own TIFF or RDF parser. The application supplies Exiv2 only isolated, owned Exif or standard-XMP payloads. It may supply a completely reassembled extended-XMP payload for read-only property inspection, but never asks Exiv2 to serialize that extension or the complete JPEG container. If the complete extension cannot be parsed unambiguously enough to prove that orientation, dimensions, and derived-thumbnail facts are unaffected, the transform is rejected. `JpegSegmentScanner` and the application-owned reconciler retain responsibility for marker framing, relative marker order, unknown APPn/COM payloads, ICC chunks, and extended-XMP chunk bytes. Before accessing IPTC 2025.1 properties whose namespace is not built into Exiv2 0.28.8, the metadata adapter registers the exact official namespace URI and prefix and tests the registration. The bounded marker scanner owns outer JPEG structural validation because it enforces application-specific aggregate limits before a general metadata library parses the source.
 
 ### 8.2 Output validation
 
@@ -391,7 +406,8 @@ A transformed byte sequence cannot become `ValidatedJpegOutput`, and is therefor
 7. The ICC profile hash equals the source profile hash.
 8. Required preserved marker payloads are present in the specified order.
 9. No stale Exif thumbnail or MPF metadata remains.
-10. The output SHA-256 hash is recorded for transaction recovery.
+10. Every retained extended-XMP chunk, GUID, full-length declaration, offset, and byte range satisfies the selected preservation policy.
+11. The output SHA-256 hash is recorded for transaction recovery.
 
 Coefficient-level tests, not merely decoded-pixel screenshots, prove that each lossless transform rearranges DCT coefficient blocks and signs correctly. Decoded comparisons may supplement these tests but cannot replace them.
 
@@ -421,15 +437,17 @@ Replacement is available only as `ReplaceOriginalWithVerifiedBackup`. Its backup
 
 `SourceFileRevision` includes encoded length, last-modified time, and SHA-256. The hash is authoritative; length and timestamp permit fast diagnostics and clearer messages. The revision is captured before transformation and recalculated immediately before commit. A mismatch produces `SourceChangedAfterAnalysis`, leaves the original untouched, and safely removes only the transaction’s own staged file.
 
-### 9.3 Staging and commit
+### 9.3 Staging, replacement, and recoverability
 
 - Create a unique staging file named `.jpg-spinner-staged-<transaction-guid>.jpg` beside the final destination. Copy output stages inside its unique batch destination tree; replacement output stages beside the original so `MoveAndReplaceAsync` remains on the same volume. A non-destructive copy therefore does not require a temporary write beside each source file.
-- Write the immutable `ValidatedJpegOutput` bytes, flush them, close every handle, hash the staged file through a new read handle, and require that hash to equal the validator-recorded SHA-256.
+- Write the immutable `ValidatedJpegOutput` bytes, request the strongest supported flush, close every handle, hash the staged file through a new read handle, and require that hash to equal the validator-recorded SHA-256. A successful WinRT flush is not described as a physical-media durability guarantee.
 - For copy output, move the hash-verified stage to its unique batch destination.
 - For replacement, create the backup first, close it, hash it, and require its hash to equal the captured source hash.
-- Persist journal state before the irreversible boundary.
-- Replace the original through `StorageFile.MoveAndReplaceAsync`, whose contract is documented by [Microsoft](https://learn.microsoft.com/en-us/uwp/API/windows.storage.istoragefile.moveandreplaceasync?view=winrt-22000).
+- Persist and close the next journal snapshot before requesting the replacement boundary.
+- Request replacement through `StorageFile.MoveAndReplaceAsync`, whose documented contract is move-and-replace behavior, not guaranteed power-fail atomicity or durable-media commitment. After any interruption, determine the observable outcome from source, stage, output, backup, and journal hashes rather than assuming whether the API completed. A Win32 alternative may replace this call only after an AppContainer capability prototype and the same fault-injection suite prove a stronger useful contract; `ReplaceFileW` is not assumed to provide an unsupported write-through guarantee.
 - Never delete a verified backup automatically.
+
+The supported guarantee is recoverability under the explicitly tested failure model, not immunity to physical-device loss. At every modeled interruption, the recovery procedure must retain at least one validated source-equivalent or committed-output artifact and must never delete the only validated copy. Qualification covers NTFS, supported removable filesystems, ReFS where the application is supported, and representative cloud-backed picker locations; unsupported provider behavior fails safely before replacement.
 
 ### 9.4 Journal state machine
 
@@ -447,7 +465,7 @@ enum class ImageFileTransactionState
 };
 ```
 
-Every transition is idempotent and flushed before the next state-changing operation. A journal stores transaction ID, source token or path identity, output destination, source revision, staged-output hash, backup identity, output disposition, and state. Logs redact path components by default; the journal retains the minimum path identity required for recovery inside local app data.
+Every transition is idempotent and written as an immutable generation rather than replacing an existing journal file. The writer creates a uniquely named pending file, requests flush, closes it, reopens and validates its complete JSON, then publishes it under a never-before-used monotonically numbered filename. Recovery ignores incomplete pending files and selects the highest complete generation whose predecessor and artifact hashes are consistent; earlier valid generations remain until a verified terminal state. This protocol avoids making correctness depend on undocumented atomic journal replacement. A generation stores schema version, generation number, transaction ID, source token or path identity, output destination, source revision, staged-output hash, backup identity, output disposition, and state. Logs redact path components by default; the journal retains the minimum path identity required for recovery inside local app data.
 
 The allowed paths are explicit. Copy transactions use `TransactionInitialized → StagedOutputWritten → StagedOutputHashVerified → OutputCommitted → OwnedStagingArtifactsCleaned`. Replacement transactions insert `VerifiedBackupCreated` between hash verification and commit. No other transition or backward transition is legal.
 
@@ -488,6 +506,7 @@ enum class ImageProcessingErrorCode
     ContentCredentialsWouldBeInvalidated,
     UnsupportedJumbfMetadata,
     UnsupportedEmbeddedPreviewMetadata,
+    ExtendedXmpMutationNotSupported,
     PerfectCoefficientTransformUnavailable,
     InsufficientStorageSpace,
     OutputRelativePathCollision,
@@ -524,6 +543,7 @@ enum class JpegAnalysisFindingCode
 ## 11. Batch behavior and cancellation
 
 - Candidate discovery recognizes `.jpg`, `.jpeg`, `.jpe`, and `.jfif` using an ordinal case-insensitive extension comparison, then requires a valid JPEG signature and scanner result. Output copies retain the source extension. The application does not inspect unrelated files or trust an extension as proof of format.
+- Candidate enumeration is lazy and paged. The initial AppContainer implementation uses supported Storage APIs with pages no larger than 500 items. A production-shaped 10,000-file spike measures first-result latency, throughput, memory, cancellation, reparse-point handling, inaccessible descendants, removable media, and cloud placeholders. A Win32 enumeration path is selected only if that evidence demonstrates a material benefit and picker-granted AppContainer access is proven on every supported storage class; any such path obtains handles through documented [`IStorageItemHandleAccess` interop](https://learn.microsoft.com/en-us/windows/win32/api/windowsstoragecom/nf-windowsstoragecom-istorageitemhandleaccess-create) and never infers unrestricted authority from a path string. Benchmark folklore is not an interface decision.
 - Recursive discovery does not follow directory reparse points. Every output relative path is derived from a source storage item proven to remain beneath the selected root; normalized string-prefix comparison alone is never used as a containment proof.
 - Enumeration order is a stable ordinal comparison of normalized relative paths so tests and user-visible results are reproducible.
 - Before processing begins, output relative paths are checked with conservative ordinal case-insensitive comparison. A collision is reported as `OutputRelativePathCollision` during review rather than failing after part of the batch commits. Unicode filenames remain user-visible unchanged; canonical path resolution and case folding are used only for comparison and never rewrite a name.
@@ -566,6 +586,8 @@ Every actionable control receives a programmatic name, role, state, and keyboard
 
 Existing `en-US`, `en-GB`, and `ru` resources are migrated. Resource keys use stable semantics such as `Error_MalformedJpegStructure_Explanation`, not English sentence fragments. Missing-resource tests enumerate every `ImageProcessingErrorCode` and visible view-model state in every supported locale.
 
+The C++/WinRT application declares `App` and `MainWindow` runtime classes in `App.idl` and `MainWindow.idl`; other projected presentation types live in focused IDL files. Every public projected member follows WinRT PascalCase conventions, including `CanSelectSourceFolder`, `CanBeginProcessing`, `CanCancelCurrentOperation`, and `CanReturnToSourceSelection`. Native implementation helpers remain camelCase. `x:Bind` compilation and WinMD inspection are executable contract checks for these names.
+
 ### 12.1 Fluent visual system and responsive layout
 
 The application uses first-party WinUI controls and theme resources instead of recreating Windows chrome. The primary long-lived window uses `MicaBackdrop`; WinUI supplies the solid-color fallback on Windows 10, high contrast, disabled transparency, battery saver, and unsupported hardware. An integrated WinUI title bar contains only app identity and window-level commands. `InfoBar` communicates non-modal information, warnings, and errors; it replaces custom colored status strips. Content cards use Windows layer/card theme brushes, and the system light/dark theme remains authoritative. These choices follow Microsoft’s current [modern WinUI 3 application structure](https://learn.microsoft.com/en-us/windows/apps/develop/ui/windows-app-sdk-app-structure) and [Mica guidance](https://learn.microsoft.com/en-us/windows/apps/design/style/mica).
@@ -585,11 +607,15 @@ A user-visible local diagnostic log contains application version, architecture, 
 ## 14. Reproducibility and supply-chain policy
 
 - `vcpkg.json` declares direct native dependencies and exact overrides. `builtin-baseline` is the reviewed commit `118bba14b94bc040c098c0c15e63c142148c05ca`.
-- `Directory.Packages.props` centrally pins NuGet versions. Repository `NuGet.config` clears inherited sources, declares only the official HTTPS nuget.org v3 endpoint, maps every package to that source, contains no credentials, and is passed explicitly to restore commands so machine-wide configuration cannot alter the graph.
-- `packages.lock.json` files are committed and locked restore is used in continuous integration.
+- The exact Visual Studio 2026 WinUI C++ project shape must first prove that `Directory.Packages.props`, versionless `PackageReference`, lock-file generation, and clean locked restore produce the same graph for every architecture. When that executable proof passes, central management is used. If the exact `.vcxproj` shape cannot satisfy it, each project carries the same explicit immutable package versions and the policy verifier rejects drift; no compatibility package or restore shim is introduced.
+- When the production-shaped NuGet proof passes, `packages.lock.json` files are committed and locked restore is used in continuous integration. Repository `NuGet.config` clears inherited sources, declares only the official HTTPS nuget.org v3 endpoint, maps every package to that source, contains no credentials, and is passed explicitly to restore commands so machine-wide configuration cannot alter the graph.
 - GitHub Actions use immutable commit SHAs. Human-readable version comments accompany each SHA.
+- Hosted jobs select `windows-2025-vs2026`, but the label is not treated as an immutable machine image; every job records runner `ImageVersion` and the exact toolchain described below.
 - Dependabot covers NuGet and GitHub Actions with grouped, review-required pull requests. vcpkg freshness is checked by a scheduled script because Dependabot does not natively own the vcpkg baseline workflow.
-- The release workflow downloads the exact Microsoft SBOM Tool CLI 4.1.5 Windows asset from its versioned release URL, verifies SHA-256 `625767b371b7fdd58f40f618b8a86da0247a33c89e419039c86b4edba1dad4b5`, and never invokes a moving `latest` URL. It recursively unpacks the exact signed bundle and architecture packages into a fresh read-only inspection tree, generates outside that tree with manifest selector `SPDX:3.0`, requires root `@context` `https://spdx.org/rdf/3.0.1/spdx-context.jsonld` and every emitted `CreationInfo.specVersion` to equal `3.0.1`, and validates with both the same tool and the official stable [SPDX 3.0.1 JSON schema](https://spdx.org/schema/3.0.1/spdx-json-schema.json). The outer signed-bundle SHA-256 is retained in release provenance. The release also generates `THIRD_PARTY_NOTICES.md`; licensing is checked before every dependency upgrade. The repository is GPL-3.0, and the selected Exiv2 GPL terms must be recorded explicitly.
+- Before release integration, a fixed payload fixture runs the exact Microsoft SBOM Tool CLI 4.1.5 Windows asset and proves selector `SPDX:3.0`, output location, root `@context` `https://spdx.org/rdf/3.0.1/spdx-context.jsonld`, every emitted `CreationInfo.specVersion` value `3.0.1`, expected relationships, and validation against the official [SPDX 3.0.1 JSON schema](https://spdx.org/schema/3.0.1/spdx-json-schema.json). The release workflow downloads that same versioned asset, verifies SHA-256 `625767b371b7fdd58f40f618b8a86da0247a33c89e419039c86b4edba1dad4b5`, never invokes a moving `latest` URL, recursively unpacks the exact signed bundle and architecture packages into a fresh read-only inspection tree, and generates outside that tree. The outer signed-bundle SHA-256 is retained in release provenance.
+- Clean builds produce a normalized unpacked-payload manifest containing relative path, byte length, and SHA-256. Reproducibility requires identical payload manifests under identical qualified inputs. Byte-identical unsigned MSIX/MSIXBUNDLE containers are claimed only if two independent clean builds prove that property; signed-container identity is the recorded hash of the exact qualified artifact.
+- Release provenance records runner `ImageVersion`, operating-system build, exact `VCToolsVersion`, `cl.exe`, `link.exe`, Windows SDK, MakeAppx, package locks, vcpkg baseline, action commits, and payload/container hashes.
+- The release generates `THIRD_PARTY_NOTICES.md`; licensing is checked before every dependency upgrade. The repository is GPL-3.0, and the selected Exiv2 GPL-2.0-or-later terms, corresponding-source disposition, build instructions, current [Microsoft Store Policies](https://learn.microsoft.com/en-us/windows/apps/publish/store-policies), and [Microsoft Publisher Agreement](https://learn.microsoft.com/en-us/legal/marketplace/msft-publisher-agreement) review must be recorded explicitly. A separate process or dynamic-loading boundary is not treated as a licensing shortcut.
 - No update is auto-merged. A dependency bump must pass transform exactness, malformed corpus, metadata preservation, transaction fault injection, sanitizer, static analysis, package, and accessibility gates.
 
 ## 15. Test strategy
@@ -602,10 +628,10 @@ A user-visible local diagnostic log contains application version, architecture, 
 | Codec module tests | Coefficient digests, scan organization, marker inventory, metadata preservation, full-decode validation |
 | Storage module tests | Real temporary files plus fault injection at every journal boundary, hash-based recovery, source-change detection |
 | Batch tests | Cancellation boundaries, progress accounting, app-owned-root exclusion, per-file outcome completeness |
-| Presentation tests | View-model state transitions, resource completeness, UI Automation names/roles/states, focus behavior |
+| Presentation tests | Hosted headless tests for view-model transitions, resources, projected metadata, and accessibility contracts; interactive-lane UI Automation for the real control tree and focus behavior |
 | Package tests | Manifest schema, identity equality, AppContainer trust, architecture bundles, upgrade installation |
 | Security tests | Fuzzing, AddressSanitizer, static analysis, CodeQL, malformed corpus, resource-limit boundaries |
-| Manual release checks | Narrator, keyboard-only, high contrast, text scaling, physical ARM64, Store update path, power interruption simulations |
+| Manual release checks | Narrator, keyboard-only, high contrast, text scaling, physical ARM64, Store update path, and storage-interruption simulations on qualified filesystems/providers |
 
 ### 15.2 Fixture rules
 
@@ -629,9 +655,9 @@ Production code added before the corresponding observed RED must be reverted and
 
 ## 16. Security build baseline
 
-All first-party native projects use warnings as errors and enable `/sdl`, `/guard:cf`, `/Qspectre`, and `/CETCOMPAT` where supported. Release builds enable link-time code generation and reproducible build flags; test and fuzz variants preserve symbols. The policy follows Microsoft’s [secure C++ build guidance](https://learn.microsoft.com/en-us/cpp/code-quality/build-reliable-secure-programs) and [buffer-overrun defense guidance](https://learn.microsoft.com/en-us/windows/win32/secbp/avoiding-buffer-overruns).
+All first-party native projects use warnings as errors and enable `/sdl`, `/guard:cf`, and qualified `/Qspectre` settings on supported architectures. `/CETCOMPAT` is enabled and PE-verified for x64 only under the current linker contract; it is not passed to x86 or ARM64. Compiler settings are expressed as `ClCompile` item-definition metadata and linker settings as `Link` metadata in a late-imported shared target, then verified from evaluated MSBuild state or binary logs. Release builds enable link-time code generation and reproducible build flags; test and fuzz variants preserve symbols. The policy follows Microsoft’s [C++ build customization guidance](https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-cpp-builds?view=visualstudio), [secure C++ build guidance](https://learn.microsoft.com/en-us/cpp/code-quality/build-reliable-secure-programs), [`/CETCOMPAT` reference](https://learn.microsoft.com/en-us/cpp/build/reference/cetcompat), and [buffer-overrun defense guidance](https://learn.microsoft.com/en-us/windows/win32/secbp/avoiding-buffer-overruns).
 
-Continuous integration builds x86, x64, and ARM64. Native tests execute on x86 and x64; ARM64 is cross-compiled on every change and executed on physical ARM64 hardware before release. AddressSanitizer runs the x64 codec, scanner, metadata, and transaction suites. CodeQL and MSVC `/analyze` must have no unresolved high-severity finding. The marker scanner’s fuzz target retains every coverage-increasing or crashing input in a reviewed corpus.
+Continuous integration builds x86, x64, and ARM64. Headless native tests execute on x86 and x64; ARM64 is cross-compiled on every change and executed on physical ARM64 hardware before release. Black-box UI Automation, Narrator, Accessibility Insights, and focus traversal run in an isolated interactive Windows VM or self-hosted release lane, never under an assumed GitHub-hosted interactive desktop. AddressSanitizer runs the x64 codec, scanner, metadata, and transaction suites. CodeQL and MSVC `/analyze` must have no unresolved high-severity finding. The marker scanner’s x64 `/fsanitize=fuzzer` target has an installed-toolchain smoke test and retains every coverage-increasing or crashing input in a reviewed corpus.
 
 ## 17. Store continuity and rollout
 
@@ -646,6 +672,8 @@ The new manifest increments the version to 2.0.0.0, declares AppContainer, targe
 
 Before Store submission, testing must install a signed 1.1.3.0 package, create representative app-local state and source folders, then install 2.0.0.0 as an update. It must prove package identity continuity, launch, user-selected file access, local-state migration or benign non-use, uninstall behavior, and no orphaned staging files.
 
+The manual platform matrix covers current Windows 10 22H2 ESU, maintained Windows 11 24H2 and 25H2 systems, and Windows 11 26H1 hardware where available. The 26H1 entry is a supported new-device hardware cohort, not an assumed in-place upgrade path for existing 24H2 or 25H2 systems.
+
 Release uses staged availability at 5%, then 25%, then 100%. Advancement requires the Partner Center health report to remain within the defined crash-free and hang-free thresholds and no evidence of source-file loss or backup failure. Any data-integrity incident stops rollout immediately; health thresholds never override correctness reports.
 
 ## 18. Acceptance criteria
@@ -654,15 +682,16 @@ JPG Spinner 2.0 is releasable only when all conditions hold:
 
 - All eight Exif orientations pass coefficient-exact tests across representative 4:4:4, 4:2:2, and 4:2:0 sampling.
 - Perfect transformations reject partial MCU edges; explicit trim tests prove only the documented edge is removed.
-- Metadata tests prove ICC byte preservation, orientation canonicalization, derived-dimension updates, stale thumbnail removal, unknown-marker preservation, and MPF rejection.
+- Metadata tests prove ICC byte preservation, orientation canonicalization, derived-dimension updates, stale thumbnail removal, unknown-marker preservation, extended-XMP preservation/rejection policy, registered IPTC 2025.1 namespaces, and MPF rejection.
 - Every malformed-input and resource-boundary test passes under AddressSanitizer.
-- Fault injection at every transaction transition proves that the source or a byte-identical verified backup remains recoverable.
+- Fault injection at every transaction transition and qualified storage-provider boundary proves recoverability from observable hashes without claiming undocumented power-fail atomicity or physical-media durability.
 - A changed source is never replaced using stale analysis.
 - x86 and x64 tests pass; x86, x64, and ARM64 packages build; physical ARM64 smoke and transform suites pass.
 - The new package upgrades an installed 1.1.3.0 package without changing Store identity.
 - Keyboard, Narrator, high contrast, and text-scaling checks pass in all supported locales.
 - No Application Insights reference, embedded key, C++/CX syntax, UWP XAML dependency, copied JPEG implementation, private `transupp` API, legacy adapter, or shim remains.
 - CI actions and dependencies are immutable and current against the implementation-date stable release audit.
+- NuGet resolution, effective MSBuild compiler/linker settings, exact `VCToolsVersion`, SBOM serialization, payload-manifest reproducibility, and runner provenance pass their executable policy fixtures.
 - `README.md`, `SECURITY.md`, architecture documentation, privacy disclosure, third-party notices, SBOM, and Store listing accurately describe the shipped behavior.
 
 ## 19. Decision log
@@ -675,7 +704,7 @@ JPG Spinner 2.0 is releasable only when all conditions hold:
 | Public TurboJPEG API rather than private libjpeg transforms | Stable supported surface and no copied internal code |
 | Exiv2 rather than a custom TIFF/XMP parser | Metadata parsing is an untrusted-input security problem with mature standards complexity |
 | Default create-copy output | Source preservation is safer than replacement |
-| Mandatory verified backup for replacement | A transformation utility must remain recoverable across crashes and power loss |
+| Mandatory verified backup for replacement | A transformation utility must retain validated recovery evidence across every supported and fault-injected interruption; physical storage-device survival is outside the software guarantee |
 | Reject imperfect transform by default | “Lossless” cannot silently discard edge pixels |
 | Remove stale thumbnail rather than regenerate it | Honest metadata without introducing a lossy thumbnail encoder or new quality policy |
 | Reject MPO/MPF in 2.0 | Offset-bearing multi-image metadata needs a separately designed transaction and validator |

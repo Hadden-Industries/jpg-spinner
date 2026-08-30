@@ -6,7 +6,7 @@
 
 **Architecture:** A single-project packaged MSIX presentation shell composes four native modules: domain policy, JPEG transformation, AppContainer storage transactions, and batch orchestration. Dependencies point inward toward immutable value types and capability contracts. The old application remains only as a temporary behavioral reference and is deleted at the verified cutover; no legacy code is wrapped.
 
-**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145; C++20; WinUI 3 and Windows App SDK 2.4.0; Microsoft.Windows.CppWinRT 3.0.260818.1; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.8 with XMP; Catch2 3.16.0; Microsoft SBOM Tool CLI 4.1.5; vcpkg manifest mode at baseline `118bba14b94bc040c098c0c15e63c142148c05ca`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026`.
+**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.4.0; Microsoft.Windows.CppWinRT 3.0.260818.1; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.8 with XMP; Catch2 3.16.0; Microsoft SBOM Tool CLI 4.1.5; vcpkg manifest mode at baseline `118bba14b94bc040c098c0c15e63c142148c05ca`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
 
 **Design specification:** `docs/specs/2026-08-30-jpg-spinner-modernization-design.md`
 
@@ -46,7 +46,7 @@ Add comments generously where they carry information that names and types cannot
 - DCT coefficient sign changes and MCU completeness;
 - checked marker arithmetic and resource-limit rationale;
 - why metadata is changed, preserved, removed, or rejected;
-- transaction durability and recovery invariants;
+- transaction recoverability invariants and the limits of OS flush/replacement guarantees;
 - coroutine lifetime, apartment, and UI-thread transitions;
 - cancellation boundaries around non-interruptible native work;
 - privacy redaction and diagnostic context;
@@ -65,13 +65,15 @@ JpgSpinner.sln
 .clang-format
 Directory.Build.props
 Directory.Build.targets
-Directory.Packages.props
+Directory.Packages.props    # retained only when Task 2 proves CPM for the exact C++ projects
 NuGet.config
 vcpkg.json
 vcpkg-triplets/
     x86-windows-static-md.cmake
     x64-windows-static-md.cmake
     arm64-windows-static-md.cmake
+eng/
+    toolchain-lock.json
 src/
     JpgSpinner.Domain/
     JpgSpinner.JpegTransformation/
@@ -111,7 +113,6 @@ The file lists under each task are authoritative and refine this compact tree.
 - Create: `.clang-format`
 - Create: `Directory.Build.props`
 - Create: `Directory.Build.targets`
-- Create: `Directory.Packages.props`
 - Create: `NuGet.config`
 - Create: `vcpkg.json`
 - Create: `vcpkg-triplets/x86-windows-static-md.cmake`
@@ -120,13 +121,17 @@ The file lists under each task are authoritative and refine this compact tree.
 - Create: `scripts/Find-MSBuild.ps1`
 - Create: `scripts/Test-RepositoryPolicy.ps1`
 - Create: `scripts/Test-DependencyFreshness.ps1`
+- Create: `scripts/Test-EffectiveBuildPolicy.ps1`
+- Create: `eng/toolchain-lock.json`
+- Create: `eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj`
+- Create: `eng/BuildPolicyProbe/BuildPolicyProbe.cpp`
 - Modify: `.gitignore`
 
 ### Step 1.1: Write the repository policy check before configuration
 
 - [ ] Add a dependency-free PowerShell verifier that parses JSON and XML rather than searching text.
-- [ ] Make it assert: toolset v145, C++20, Windows 10.0.19045.0 minimum, Windows 10.0.28000.0 target, x86/x64/ARM64, central NuGet management, an isolated credential-free nuget.org v3 source policy, App SDK 2.4.0, C++/WinRT 3.0.260818.1, SDK BuildTools 10.0.28000.2705, the pinned vcpkg baseline, libjpeg-turbo 3.2.0, Exiv2 0.28.8 with XMP, and Catch2 3.16.0.
-- [ ] Make it reject preview/experimental labels, floating ranges, `/std:c++latest`, `DynamicDependencyLifetimeManager`, ARM32, and any registry without an immutable baseline.
+- [ ] Make it assert: toolset v145 plus an exact 14.51.x `VCToolsVersion`, C++20, Windows 10.0.19045.0 minimum, Windows 10.0.28000.0 target, x86/x64/ARM64, an isolated credential-free nuget.org v3 source policy, App SDK 2.4.0, C++/WinRT 3.0.260818.1, SDK BuildTools 10.0.28000.2705, the pinned vcpkg baseline, libjpeg-turbo 3.2.0, Exiv2 0.28.8 with XMP, and Catch2 3.16.0.
+- [ ] Make it reject preview/experimental labels, floating ranges, `/std:c++latest`, ARM32, and any registry without an immutable baseline. Reject Windows App SDK bootstrapper/auto-initializer use in `JpgSpinner.App` and the production package; permit it only in an explicitly unpackaged test executable that consumes Windows App SDK runtime types.
 - [ ] Run it before creating the configuration:
 
 ```powershell
@@ -168,37 +173,22 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
 }
 ```
 
-- [ ] Add one triplet per architecture. Each sets `VCPKG_TARGET_ARCHITECTURE` precisely, `VCPKG_CRT_LINKAGE dynamic`, `VCPKG_LIBRARY_LINKAGE static`, and supported `/Qspectre` plus `/guard:cf` compile/link flags. Apply `/CETCOMPAT` at the final executable link where the selected architecture/toolset supports it, then inspect the PE load configuration rather than assuming the flag took effect.
+- [ ] Add one triplet per architecture. Each sets `VCPKG_TARGET_ARCHITECTURE` precisely, `VCPKG_CRT_LINKAGE dynamic`, `VCPKG_LIBRARY_LINKAGE static`, and supported `/Qspectre` plus `/guard:cf` compile/link flags. Apply `/CETCOMPAT` only to final x64 executable links, reject it for x86 and ARM64, and inspect the x64 PE load configuration rather than assuming the flag took effect.
 - [ ] Do not use a community overlay or a moving registry reference.
 
-### Step 1.3: Pin NuGet and first-party compiler policy
+### Step 1.3: Pin effective first-party compiler policy
 
-- [ ] Add central package management:
-
-```xml
-<Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
-    <PackageVersion Include="Microsoft.Windows.CppWinRT" Version="3.0.260818.1" />
-    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
-  </ItemGroup>
-</Project>
-```
-
-- [ ] Put shared first-party policy in `Directory.Build.props`: `PlatformToolset=v145`, `LanguageStandard=stdcpp20`, `ConformanceMode=true`, warning level 4, warnings as errors, `/utf-8`, `/Zc:__cplusplus`, `/sdl`, deterministic builds, `WindowsTargetPlatformMinVersion=10.0.19045.0`, `WindowsTargetPlatformVersion=10.0.28000.0`, and `WindowsAppSDKSelfContained=false`.
-- [ ] Put configuration-specific link policy in `Directory.Build.targets`: `/guard:cf`, `/CETCOMPAT`, release optimization, and link-time code generation. Classify third-party headers as external instead of suppressing first-party warnings.
+- [ ] Create the dependency-free `BuildPolicyProbe.vcxproj` for Debug/Release x86/x64/ARM64 and implement `Test-EffectiveBuildPolicy.ps1` to build it with a binary log, inspect the resolved tool paths plus actual `ClCompile`/`Link` command lines, and inspect the x64 PE load configuration. Before creating shared build policy, run the verifier. Expected RED names the absent language, warning, security, reproducibility, and architecture-specific settings; the probe itself must compile far enough to produce inspectable evaluation evidence.
+- [ ] Implement the discovery/initialization mode of `Find-MSBuild.ps1` now: resolve the latest installed stable Visual Studio 18 instance, read its exact 14.51.x tool-directory version, and write that value to absent `eng/toolchain-lock.json`. Initialization refuses to overwrite an existing lock. Put only early properties in `Directory.Build.props`: `PlatformToolset=v145`, the exact locked `VCToolsVersion`, `WindowsTargetPlatformMinVersion=10.0.19045.0`, `WindowsTargetPlatformVersion=10.0.28000.0`, and `WindowsAppSDKSelfContained=false`.
+- [ ] Put compiler and linker policy in correctly ordered `ItemDefinitionGroup` entries in `Directory.Build.targets` or a shared property sheet explicitly imported after `Microsoft.Cpp.props`: `ClCompile` owns `LanguageStandard=stdcpp20`, `ConformanceMode=true`, warning level 4, warnings as errors, `/utf-8`, `/Zc:__cplusplus`, and `/sdl`; `Link` owns `/guard:cf`, x64-only `/CETCOMPAT`, release optimization, link-time code generation, and reproducibility switches. Preserve inherited `AdditionalOptions`. Classify third-party headers as external instead of suppressing first-party warnings.
+- [ ] Make repository policy parse the XML structure and reject compiler/linker metadata placed as free properties, missing inherited `%(AdditionalOptions)`, or an unconditional `/CETCOMPAT`. Task 2 adds command-line verification once production-shaped projects exist; configuration text alone never becomes the final evidence.
 - [ ] Make repository `NuGet.config` clear inherited package sources, add only `https://api.nuget.org/v3/index.json`, map `*` to that source, and contain no credentials. Every documented and automated restore passes this file explicitly; repository policy rejects additional, HTTP, local, or credential-bearing feeds so a developer's machine configuration cannot change the resolved graph.
 - [ ] Add `.editorconfig` naming/whitespace rules and `.clang-format` with four-space indentation and a 120-column limit. Disable automatic include sorting where WinRT generated-header order is significant.
 - [ ] Add `.vsconfig` with stable native Windows application, x86/x64 C++, ARM64 C++, Spectre libraries, and C++ AddressSanitizer components. Do not include preview components.
 
 ### Step 1.4: Deterministic discovery and freshness checks
 
-- [ ] Implement `Find-MSBuild.ps1` using installed `vswhere.exe`, require Visual Studio major version 18, order eligible installations by product version descending, and return one resolved `MSBuild.exe` path.
+- [ ] Complete normal `Find-MSBuild.ps1` behavior using installed `vswhere.exe`: require Visual Studio major version 18, order eligible installations by product version descending, return one resolved `MSBuild.exe` path, and fail if the existing `eng/toolchain-lock.json` `VCToolsVersion` is not installed exactly. Normal builds never rewrite the lock or silently select another servicing version.
 - [ ] Implement `Test-DependencyFreshness.ps1` to compare pins with official NuGet metadata, the official vcpkg registry, and upstream GitHub stable releases. It reports stable upgrades but never rewrites manifests or accepts prereleases.
 - [ ] Update `.gitignore` for `.vs/`, `artifacts/`, `build/`, `out/`, vcpkg installation output, generated packages, test results, sanitizer reports, fuzz artifacts, and local signing material. Never ignore NuGet lock files, reviewed fuzz corpus inputs, or SBOMs.
 
@@ -208,11 +198,11 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
 
 Expected GREEN: exit code 0 and a line naming every verified package and toolchain version.
 
-- [ ] Run JSON and XML parsers over every created manifest.
+- [ ] Run JSON and XML parsers over every created manifest, require the structural build-policy checks green, then run `Test-EffectiveBuildPolicy.ps1`. Expected GREEN: every probe configuration selects the locked tool directory and exact effective settings; `/CETCOMPAT` is present and PE-verified only for x64.
 - [ ] Commit:
 
 ```powershell
-git add .vsconfig .editorconfig .clang-format Directory.Build.props Directory.Build.targets Directory.Packages.props NuGet.config vcpkg.json vcpkg-triplets scripts .gitignore
+git add .vsconfig .editorconfig .clang-format Directory.Build.props Directory.Build.targets NuGet.config vcpkg.json vcpkg-triplets scripts eng .gitignore
 git commit -m "build: pin the JPG Spinner 2.0 toolchain"
 ```
 
@@ -240,14 +230,18 @@ git commit -m "build: pin the JPG Spinner 2.0 toolchain"
 - Create: `tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj`
 - Create: `tests/TestData/README.md`
 - Create: `scripts/Invoke-Build.ps1`
-- Create: `scripts/Invoke-Tests.ps1`
+- Create: `scripts/Invoke-TestSuite.ps1`
+- Create: `scripts/Test-NuGetResolution.ps1`
+- Create if qualified by Step 2.2: `Directory.Packages.props`
 - Modify: `scripts/Test-RepositoryPolicy.ps1`
+- Modify: `scripts/Test-EffectiveBuildPolicy.ps1`
 
 ### Step 2.1: Extend policy validation and observe failure
 
 - [ ] Parse `JpgSpinner.sln`; require all named projects, x86/x64/ARM64 configurations, and the designed project-reference direction.
 - [ ] Reject a lower architecture layer referencing a higher layer, an ARM32 configuration, or more than one MSIX packaging project.
 - [ ] Require `JpgSpinner.App` to be a stable C++ WinUI Blank App (Packaged) single-project MSIX project.
+- [ ] Require production projects to use the locked `VCToolsVersion`, and require every unpackaged test executable that references Windows App SDK runtime types either to carry isolated test package identity or use the official test-only bootstrapper/auto-initializer. Reject bootstrapper files and initialization from the production project and package graph.
 - [ ] Run the policy test.
 
 Expected RED: the new solution/project assertions fail while Task 1 version assertions remain green.
@@ -258,14 +252,34 @@ Expected RED: the new solution/project assertions fail while Task 1 version asse
 - [ ] Add static libraries for Domain, JPEG Transformation, Windows Storage, Batch Processing, and Test Support.
 - [ ] Add Catch2 executable tests for Domain, JPEG Transformation, Windows Storage, Batch Processing, and Presentation.
 - [ ] Define references exactly: JPEG → Domain; Storage → Domain; Batch → Domain/JPEG plus abstract storage capability; App → all modules. Test projects reference only their subject and Test Support.
-- [ ] Add versionless `PackageReference` elements for centrally managed Microsoft packages.
+- [ ] Extend `Test-EffectiveBuildPolicy.ps1` from the probe to every production and test project, then run it. Expected GREEN confirms the probe policy actually survives each C++/WinUI project’s evaluated import graph and command lines; a project-level override that removes a required setting must make the verifier RED in its focused negative-control test.
+- [ ] Before adding Microsoft package references, implement `Test-NuGetResolution.ps1` to parse the exact `.vcxproj` files, require one coherent package-version strategy, restore into a clean isolated packages directory, generate/read lock files where supported, repeat with locked mode, and compare the complete resolved graph for x86, x64, and ARM64.
+- [ ] Run the resolution verifier with absent package references. Expected RED: precise diagnostics that the required Windows App SDK, C++/WinRT, and Windows SDK BuildTools graph is unresolved; the verifier itself must parse the C++ projects successfully.
+- [ ] First try versionless `PackageReference` elements with this exact `Directory.Packages.props` candidate:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <PackageVersion Include="Microsoft.Windows.CppWinRT" Version="3.0.260818.1" />
+    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+  </ItemGroup>
+</Project>
+```
+
+- [ ] If clean locked restore proves identical graphs on the exact C++ project shape, retain central management. If only central version management fails, remove `Directory.Packages.props`, put the same exact immutable versions directly in every consuming `.vcxproj`, retain per-project lock files, and update repository policy to reject version drift. If the exact projects cannot enforce a locked restore at all, Task 2 remains RED and implementation stops for a supported toolchain resolution; do not invent a custom lock format, compatibility target, restore wrapper, or package shim.
 - [ ] Enable vcpkg manifest mode and map each solution platform to its custom triplet.
-- [ ] Restore once successfully and commit every generated NuGet lock file.
+- [ ] Run `Test-NuGetResolution.ps1` again. Expected GREEN: clean restore and clean locked restore resolve identical transitive graphs for each architecture. Commit every generated NuGet lock file when the qualified project system supports them.
 
 ### Step 2.3: Add build and test entry points
 
 - [ ] `Invoke-Build.ps1` accepts only `Debug|Release` and `x86|x64|ARM64`, invokes resolved MSBuild with restoration and a binary log, and sets `ContinuousIntegrationBuild=true` in CI.
-- [ ] `Invoke-Tests.ps1` accepts a project, optional Catch2 test specification, architecture, and configuration; writes JUnit XML and propagates the executable exit code.
+- [ ] `Invoke-TestSuite.ps1` accepts one project or `HeadlessAll`, an optional Catch2 test specification, architecture, configuration, and `Headless|Interactive` execution environment; writes JUnit XML and propagates each executable's exit code. `HeadlessAll` rejects UI-Automation/assistive-technology tags, while `Interactive` first requires `Test-InteractiveUiEnvironment.ps1` once that script exists. The singular noun names the suite-level orchestration responsibility precisely.
 - [ ] Neither script changes machine-wide vcpkg integration.
 
 ### Step 2.4: Test the deterministic fixture contract first
@@ -290,16 +304,19 @@ Expected RED: compilation fails only because the named Test Support contracts ar
 
 ```powershell
 pwsh -NoProfile -File scripts/Invoke-Build.ps1 -Configuration Debug -Architecture x64
-pwsh -NoProfile -File scripts/Invoke-Tests.ps1 -Project JpgSpinner.JpegTransformation.Tests -TestSpecification "[test-support]"
+pwsh -NoProfile -File scripts/Invoke-TestSuite.ps1 -Project JpgSpinner.JpegTransformation.Tests -TestSpecification "[test-support]"
+pwsh -NoProfile -File scripts/Test-NuGetResolution.ps1
+pwsh -NoProfile -File scripts/Test-EffectiveBuildPolicy.ps1
 pwsh -NoProfile -File scripts/Test-RepositoryPolicy.ps1
 ```
 
-Expected GREEN: solution builds, Test Support contract tests pass, and policy validation confirms project direction and platforms.
+Expected GREEN: solution builds with the locked tool directory and effective compiler/linker settings, Test Support contract tests pass, clean NuGet restores reproduce one transitive graph, and policy validation confirms project direction, platforms, and production/test bootstrapper boundaries.
 
 - [ ] Commit:
 
 ```powershell
-git add JpgSpinner.sln src tests scripts Directory.Packages.props
+git add JpgSpinner.sln src tests scripts
+if (Test-Path -LiteralPath Directory.Packages.props) { git add -- Directory.Packages.props }
 git commit -m "build: scaffold the WinUI 3 solution and test harness"
 ```
 
@@ -323,6 +340,8 @@ git commit -m "build: scaffold the WinUI 3 solution and test harness"
 - Create: `src/JpgSpinner.Domain/src/JpegTransformPlanner.cpp`
 - Create: `tests/JpgSpinner.Domain.Tests/ExifOrientationTests.cpp`
 - Create: `tests/JpgSpinner.Domain.Tests/JpegTransformPlannerTests.cpp`
+- Create: `tests/JpgSpinner.Domain.Tests/ImageProcessingResultTests.cpp`
+- Create: `tests/JpgSpinner.Domain.Tests/DomainStringMakers.h`
 
 ### Step 3.1: RED for the eight-value semantic mapping
 
@@ -348,14 +367,18 @@ TEST_CASE("every Exif orientation maps to the transform that produces TopLeft", 
         OrientationTransformCase{ExifOrientation::LeftBottom, LosslessTransform::Rotate270Clockwise},
     };
 
-    for (const auto& testCase : cases)
+    const auto testCase = GENERATE_REF(Catch::Generators::from_range(cases));
+
+    DYNAMIC_SECTION(
+        "source "
+        << Catch::StringMaker<ExifOrientation>::convert(testCase.sourceOrientation))
     {
-        CAPTURE(testCase.sourceOrientation);
         REQUIRE(losslessTransformFor(testCase.sourceOrientation) == testCase.expectedTransform);
     }
 }
 ```
 
+- [ ] Before this test compiles, add test-only `Catch::StringMaker` specializations for `ExifOrientation`, `LosslessTransform`, `EdgeHandlingPolicy`, `OutputScanOrganization`, `ImageProcessingErrorCode`, and `JpegAnalysisFindingCode`. Require their strings to use the semantic enumerator names rather than underlying integers so a failing generated case identifies the behavior immediately.
 - [ ] Add parsing tests for raw values 0, 9, and 255 returning `std::nullopt`; never coerce an invalid tag to `TopLeft`.
 - [ ] Run only `[domain][orientation]` and observe a missing-contract compilation failure.
 
@@ -377,7 +400,8 @@ TEST_CASE("every Exif orientation maps to the transform that produces TopLeft", 
 ### Step 3.4: GREEN with the smallest planner
 
 - [ ] Define immutable aggregate types with strong width/height semantics and checked pixel-count multiplication.
-- [ ] Have `JpegTransformPlanner` return the project-owned discriminated result `ImageProcessingResult<JpegTransformPlan>`. C++20 does not provide `std::expected`; `ImageProcessingResult<TValue>` is a current domain result with value/error accessors, not a shim for or injection into `namespace std`.
+- [ ] Before implementing `ImageProcessingResult<TValue>`, add focused tests for success, failure, move-only values, `valueIfPresent()`/`errorIfPresent()` returning only the active alternative, and construction/move operations that cannot leave the result empty. Expected RED is the missing result contract.
+- [ ] Have `JpegTransformPlanner` return the project-owned discriminated result `ImageProcessingResult<JpegTransformPlan>`. Implement it from stable C++20 discriminated-storage facilities with an enforced never-empty invariant. It exposes only domain-named construction and inspection operations, not monadic methods or a `std::expected`-compatible facade; do not add `tl::expected`, Boost.Outcome, Abseil, or inject anything into `namespace std`.
 - [ ] Define the complete `ImageProcessingErrorCode` taxonomy from the design now so later modules extend diagnostic context without adding vague catch-all codes.
 - [ ] Define `JpegAnalysisFindingCode` with `ExifXmpOrientationConflict`, `EmbeddedThumbnailRemovalRequired`, and `PartialMinimumCodedUnitTrimRequired`; keep reviewable non-fatal facts separate from errors.
 - [ ] Reject over-limit dimensions before multiplication can overflow.
@@ -386,7 +410,7 @@ TEST_CASE("every Exif orientation maps to the transform that produces TopLeft", 
 
 ### Step 3.5: Verify and commit
 
-- [ ] Run `pwsh -NoProfile -File scripts/Invoke-Tests.ps1 -Project JpgSpinner.Domain.Tests -TestSpecification "[domain]"`.
+- [ ] Run `pwsh -NoProfile -File scripts/Invoke-TestSuite.ps1 -Project JpgSpinner.Domain.Tests -TestSpecification "[domain]"`.
 
 Expected GREEN: all mappings, invalid tags, axis swaps, bounds, perfect-transform cases, trim dimensions, and scan values pass.
 
@@ -413,7 +437,7 @@ git commit -m "feat: define lossless orientation transform semantics"
 
 - [ ] Hand-construct byte vectors for SOI/EOI, baseline SOF, APP1 Exif, APP1 XMP, APP2 ICC, APP2 MPF, COM, SOS, stuffed `0xFF00`, restart markers, and EOI.
 - [ ] Require a minimal valid baseline stream to produce exact marker offsets/dimensions and every truncation point of a length-bearing marker to return `MalformedJpegStructure` without reading past the span.
-- [ ] Use a Catch2 generator for each truncation length from zero through the complete marker.
+- [ ] Use a Catch2 generator for each truncation length from zero through the complete marker, with `DYNAMIC_SECTION` naming the marker kind and exact truncation offset.
 - [ ] Run `[jpeg][scanner]`; expected RED is absent scanner compilation.
 
 ### Step 4.2: GREEN with checked marker walking
@@ -432,6 +456,7 @@ git commit -m "feat: define lossless orientation transform semantics"
   - pixel count at and one pixel beyond 268,435,456;
   - progressive scan count at 100 and 101;
   - duplicate, incomplete, or out-of-order ICC chunks;
+  - extended-XMP `HasExtendedXMP` GUID parsing plus complete, missing, duplicate, overlapping, out-of-order, wrong-GUID, wrong-full-length, and out-of-range chunks;
   - MPF detection;
   - APP11 JUMBF detection, C2PA 2.4 manifest-store/reference detection, and distinction from non-C2PA JUMBF;
   - Motion Photo XMP plus appended payload detection, generic non-padding payload after EOI, and exact EOI termination;
@@ -445,7 +470,8 @@ git commit -m "feat: define lossless orientation transform semantics"
 
 - [ ] Add `LLVMFuzzerTestOneInput` that calls only `JpegSegmentScanner` under production limits.
 - [ ] Assert no exception crosses the C ABI, no successful offset/length range lies outside the recorded input length, and rescanning successful input produces the same inventory.
-- [ ] Build with AddressSanitizer and libFuzzer in a dedicated configuration.
+- [ ] Before relying on the fuzz configuration, add an installed-toolchain smoke target whose one-input corpus proves the locked x64 MSVC toolset accepts `/fsanitize=fuzzer` with `/fsanitize=address`, links the correct `LLVMFuzzerTestOneInput` entry point, runs, and reports a deliberately seeded crash in a disposable negative-control build. Remove the negative control after RED evidence, then keep the non-crashing smoke.
+- [ ] Build with AddressSanitizer and libFuzzer in a dedicated x64 configuration; do not advertise ARM64 fuzz execution without separate toolchain proof.
 - [ ] Seed with minimal test structures, never user photos.
 
 ### Step 4.5: Verify and commit
@@ -464,7 +490,9 @@ git commit -m "feat: validate JPEG structure before codec processing"
 
 - Create: `src/JpgSpinner.JpegTransformation/src/internal/LibJpegTurboCoefficientTransformer.h`
 - Create: `src/JpgSpinner.JpegTransformation/src/internal/LibJpegTurboCoefficientTransformer.cpp`
+- Create: `src/JpgSpinner.JpegTransformation/src/internal/TurboJpegResourceLimits.h`
 - Create: `tests/JpgSpinner.JpegTransformation.Tests/LibJpegTurboCoefficientTransformerTests.cpp`
+- Create: `tests/JpgSpinner.JpegTransformation.Tests/TurboJpegResourceLimitTests.cpp`
 - Modify: `src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj`
 
 ### Step 5.1: RED on all asymmetric transformations
@@ -480,16 +508,18 @@ git commit -m "feat: validate JPEG structure before codec processing"
 
 - [ ] Define the internal `LibJpegTurboCoefficientTransformer::transformCoefficients` around immutable bytes, `JpegTransformPlan`, and a bounded output sink. Application callers must not see this internal seam.
 - [ ] Own `tjhandle` in narrow RAII; always call `tj3Destroy`.
-- [ ] Before input parsing, set `TJPARAM_STOPONWARNING=1`, convert the 512 MiB byte policy to `TJPARAM_MAXMEMORY=512` because TurboJPEG’s unit is MiB, set `TJPARAM_MAXPIXELS=268435456`, set `TJPARAM_SCANLIMIT=100`, and set `TJPARAM_SAVEMARKERS=0` so marker reconciliation is explicit and non-duplicating.
-- [ ] Map each `LosslessTransform` to the exact `TJXOP` and edge policy to `TJXOPT_PERFECT` or `TJXOPT_TRIM`.
+- [ ] First write tests proving that `JpegResourceLimits::maximumEncodedFileLengthBytes` is enforced before codec parsing and is not used as TurboJPEG memory configuration. Separately require `TurboJpegResourceLimits::maximumIntermediateBufferMemoryMegabytes=512` to map unchanged to `TJPARAM_MAXMEMORY`; document and test that TurboJPEG interprets this value as 512,000,000 bytes of intermediate-buffer budget, not 512 MiB and not an encoded-file-size limit.
+- [ ] Before input parsing, set `TJPARAM_STOPONWARNING=1`, `TJPARAM_MAXMEMORY` from the decimal-megabyte adapter limit, `TJPARAM_MAXPIXELS=268435456`, `TJPARAM_SCANLIMIT=100`, and `TJPARAM_SAVEMARKERS=0`.
+- [ ] Map each `LosslessTransform` to the exact `TJXOP` and edge policy to `TJXOPT_PERFECT` or `TJXOPT_TRIM`. Set `TJXOPT_COPYNONE` on every `tjtransform`; this operation-local marker prohibition is deliberate defense in depth with `TJPARAM_SAVEMARKERS=0`.
 - [ ] Call `tj3Transform`; release TurboJPEG output through `tj3Free` RAII on every path. No codec-owned buffer escapes.
 - [ ] Comment why the C call is non-interruptible and cancellation is checked immediately before and after it.
 
 ### Step 5.3: RED/GREEN perfect edges and scan organization
 
 - [ ] Test each transform family on partial horizontal and vertical MCUs: perfect policy returns `PerfectCoefficientTransformUnavailable`; trim policy returns exact planned dimensions.
-- [ ] Test sequential and progressive sources with `PreserveSource`, `SequentialDct`, and `ProgressiveDct` separately.
-- [ ] Preserve Huffman versus arithmetic entropy coding when `PreserveSource` is selected, using the public TurboJPEG parameters. Preserve or geometrically reconcile restart intervals; do not invent restart markers silently.
+- [ ] Test sequential/Huffman, progressive/Huffman, sequential/arithmetic, and progressive/arithmetic sources with `PreserveSource`, `SequentialDct`, and `ProgressiveDct` separately.
+- [ ] After reading the source header, set `TJXOPT_PROGRESSIVE` and `TJXOPT_ARITHMETIC` explicitly on each transform according to the reviewed plan. Do not assume caller-set `TJPARAM_PROGRESSIVE` or `TJPARAM_ARITHMETIC` survives another header/transform operation. Preserve or geometrically reconcile restart intervals; do not invent restart markers silently.
+- [ ] Add a marker-ownership regression fixture containing Exif, XMP, ICC, APP13, unknown APPn, and COM markers. Require the raw TurboJPEG result to contain none of those copied markers before the application reconciler runs, proving `TJXOPT_COPYNONE` prevents duplication.
 - [ ] Return `UnsupportedJpegCodingProcess`, `UnsupportedJpegSamplePrecision`, or `UnsupportedJpegComponentOrganization` when the public interface cannot preserve the source; never convert silently.
 - [ ] Elevate codec warnings to structured failure and require zero output bytes on failure.
 
@@ -513,6 +543,7 @@ git commit -m "feat: transform JPEG coefficients with libjpeg-turbo"
 - Create: `src/JpgSpinner.JpegTransformation/src/internal/MetadataReconciler.h`
 - Create: `src/JpgSpinner.JpegTransformation/src/internal/MetadataReconciler.cpp`
 - Create: `tests/JpgSpinner.JpegTransformation.Tests/MetadataReconcilerTests.cpp`
+- Create: `tests/JpgSpinner.JpegTransformation.Tests/ExtendedXmpPolicyTests.cpp`
 - Create: `tests/JpgSpinner.JpegTransformation.Tests/JpegImageAnalyzerTests.cpp`
 
 ### Step 6.1: RED for truthful metadata after rotation
@@ -525,19 +556,21 @@ git commit -m "feat: transform JPEG coefficients with libjpeg-turbo"
 ### Step 6.2: GREEN with Exiv2 and an explicit marker policy
 
 - [ ] Parse supported Exif/XMP through public Exiv2 0.28.8 APIs only.
-- [ ] Feed Exiv2 an owned in-memory byte view; the JPEG Transformation module receives no path and cannot widen AppContainer file authority or reopen a user file behind the transaction engine.
+- [ ] Feed Exiv2 only isolated, owned Exif or standard-XMP payload bytes. A completely reassembled extended-XMP payload may be passed to the public XMP parser for read-only property inspection; never serialize that extension through Exiv2, never give Exiv2 the complete JPEG container, and never accept a JPEG serialization from it. `JpegSegmentScanner` and the application-owned reconciler exclusively own marker framing, source-relative ordering, unknown APPn/COM payloads, ICC chunks, and extended-XMP chunks. The JPEG Transformation module receives no path and cannot widen AppContainer file authority or reopen a user file behind the transaction engine.
 - [ ] Update every present orientation/dimension representation required by CIPA DC-008-Translation-2026 and DC-010-2026; do not invent unrelated tags.
+- [ ] Before accessing an IPTC 2025.1 property whose namespace is not built into Exiv2 0.28.8, call the public namespace-registration API with the exact official URI/prefix. Add a table-driven test for AI Prompt Information, AI Prompt Writer Name, AI System Used, and AI System Version Used that observes the unregistered failure first, then proves read/write after registration without changing rights, licensing, or disclosure values.
 - [ ] Remove Exif IFD1, JFIF/JFXX, XMP `xmp:Thumbnails`, and Photoshop IRB thumbnail resources whenever pixels are transformed; preserve JFIF density/version and all unrelated resources. Preserve a valid thumbnail only for `LosslessTransform::None`.
 - [ ] If a known preview container cannot be parsed and rewritten safely, return `UnsupportedEmbeddedPreviewMetadata`; never leave a stale preview or discard the whole metadata container silently.
 - [ ] Preserve assembled ICC bytes exactly and split them into legal APP2 chunks.
-- [ ] Preserve valid unknown APPn and COM payloads in source-relative order.
-- [ ] Preserve IPTC IIM/Photoshop APP13 and IPTC XMP properties byte-for-byte or semantically equivalent under canonical serialization; rights, licensing, and AI-disclosure values must remain unchanged.
+- [ ] Preserve valid unknown APPn and COM payload bytes exactly in source-relative order.
+- [ ] Preserve IPTC IIM/Photoshop APP13 bytes when no thumbnail resource must be removed. Where a standard XMP packet must be reserialized to update derived facts, require semantic equality for every unrelated IPTC/XMP value; rights, licensing, and AI-disclosure values must remain unchanged.
 - [ ] Explain in code why MPF and invalid authoritative metadata are rejected rather than silently dropped.
 - [ ] Explain why C2PA/JUMBF is rejected: coefficient changes invalidate asset bindings, and this app owns no signing identity with which to create a truthful update manifest.
 
 ### Step 6.3: RED/GREEN malformed and absent metadata
 
-- [ ] Add one cycle each for absent orientation, invalid orientation, Exif-only, XMP-only, conflicting Exif/XMP, malformed TIFF offsets, malformed RDF, extended XMP, duplicate ICC, and maximum legal metadata.
+- [ ] Add one cycle each for absent orientation, invalid orientation, Exif-only, XMP-only, conflicting Exif/XMP, malformed TIFF offsets, malformed RDF, duplicate ICC, and maximum legal metadata.
+- [ ] Add focused Extended XMP cycles for a complete packet, missing/duplicate/overlapping/out-of-order chunks, GUID mismatch, wrong full length, an unaffected extension packet, an unparseable extension, and orientation/dimension/thumbnail facts held in the extension. Reassemble complete chunks only for read-only property inspection. Preserve every complete unaffected chunk byte-for-byte only when parsing proves the affected facts are absent and the standard packet remains truthful. Return `ExtendedXmpMutationNotSupported` before transformation when inspection is ambiguous or the requested operation would require changing extension-held facts; never partially rewrite or silently drop the extension.
 - [ ] Apply one rule: valid Exif orientation is authoritative; otherwise valid XMP is used. Surface a conflict during analysis, then canonicalize both only after the reviewed transform succeeds.
 - [ ] Reject an invalid authoritative value; never pretend it is `TopLeft`.
 
@@ -574,7 +607,7 @@ git commit -m "feat: preserve and reconcile JPEG metadata"
 
 ### Step 7.1: RED for every validation invariant
 
-- [ ] Start from a known-good transformed fixture, mutate one property at a time, and require `OutputValidationFailed` for truncation, wrong dimensions, wrong scan organization, decode warning/failure, non-canonical Exif, non-canonical XMP, stale derived dimensions, changed ICC, missing preserved marker, stale thumbnail, and residual MPF.
+- [ ] Start from a known-good transformed fixture, mutate one property at a time, and require `OutputValidationFailed` for truncation, wrong dimensions, wrong scan organization, wrong Huffman/arithmetic mode, decode warning/failure, non-canonical Exif, non-canonical standard XMP, stale derived dimensions, changed ICC, missing/reordered preserved marker, changed extended-XMP chunk/GUID/offset, stale thumbnail, and residual MPF.
 - [ ] Require a stable symbolic validation-rule value in error context, never localized prose.
 - [ ] Run `[jpeg][validator]`; expected RED is absent validator compilation.
 
@@ -668,7 +701,7 @@ git commit -m "feat: detect source changes with authoritative revisions"
 
 - [ ] Define `ImageFileTransactionEngine::execute(request, validatedJpegOutput, cancellationToken)` as the only application operation for a new transaction. It returns a terminal result and never exposes journal/state-machine methods.
 - [ ] Put per-file phase transitions in internal `RecoverableImageFileTransaction`; privately retain transaction UUID, source identity/revision, stage identity, destination, and state.
-- [ ] Write stage output exclusively, flush, close all handles, SHA-256 the staged bytes, and require equality with `ValidatedJpegOutput`. This byte-equality proof ensures the closed staged file is the independently validated output without exposing the validator across the storage seam.
+- [ ] Write stage output exclusively, request the strongest supported flush, close all handles, SHA-256 the staged bytes through a new read handle, and require equality with `ValidatedJpegOutput`. This byte-equality proof ensures the closed staged file is the independently validated output without treating a WinRT flush as a physical-media durability guarantee.
 - [ ] Recalculate source revision after staged-output hash verification and immediately before commit. Mismatch returns `SourceChangedAfterAnalysis`.
 - [ ] Move the stage to the unique copy destination only after validation. Never overwrite an existing destination.
 - [ ] Make cleanup idempotent and prove canonical containment before deleting the owned stage.
@@ -693,13 +726,14 @@ git add src/JpgSpinner.Domain src/JpgSpinner.WindowsStorage tests/JpgSpinner.Win
 git commit -m "feat: commit validated transformations as corrected copies"
 ```
 
-## Task 10: Add mandatory backups, durable journals, and deterministic recovery
+## Task 10: Add mandatory backups, immutable journal generations, and deterministic recovery
 
 **Files:**
 
 - Create: `src/JpgSpinner.WindowsStorage/src/internal/ImageFileTransactionJournal.h`
 - Create: `src/JpgSpinner.WindowsStorage/src/internal/ImageFileTransactionJournal.cpp`
 - Create: `tests/JpgSpinner.WindowsStorage.Tests/ImageFileTransactionRecoveryTests.cpp`
+- Create: `tests/JpgSpinner.WindowsStorage.Tests/StorageProviderQualificationTests.cpp`
 - Modify: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/ImageFileTransactionEngine.h`
 - Modify: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/AppContainerImageFileTransactionEngine.h`
 - Modify: `src/JpgSpinner.WindowsStorage/src/AppContainerImageFileTransactionEngine.cpp`
@@ -717,9 +751,9 @@ git commit -m "feat: commit validated transformations as corrected copies"
 
 ### Step 10.2: GREEN through the backup boundary
 
-- [ ] Copy source to its unique backup path, flush/close, and verify SHA-256 against `SourceFileRevision`.
+- [ ] Copy source to its unique backup path, request the strongest supported flush, close it, reopen it, and verify SHA-256 against `SourceFileRevision`. Document that verification proves observable bytes, not survival of physical-device loss.
 - [ ] Re-hash the source immediately after backup verification.
-- [ ] Persist `VerifiedBackupCreated` before invoking `MoveAndReplaceAsync`.
+- [ ] Return an internal verified-backup fact and keep the original untouched. Do not invoke `MoveAndReplaceAsync` yet; the replacement portion of the focused test remains RED until the journal protocol is implemented in Step 10.4.
 - [ ] Retain verified backups; never use backup deletion as rollback.
 - [ ] Return `BackupCreationFailed`, `BackupVerificationFailed`, or `OriginalReplacementFailed` precisely and retain recoverable artifacts.
 
@@ -727,32 +761,35 @@ git commit -m "feat: commit validated transformations as corrected copies"
 
 - [ ] Define monotonic states `TransactionInitialized`, `StagedOutputWritten`, `StagedOutputHashVerified`, `VerifiedBackupCreated`, `OutputCommitted`, and `OwnedStagingArtifactsCleaned`.
 - [ ] Test the only legal graphs: copy skips the backup state; replacement requires it before commit. Reject every backward, repeated-with-different-data, or out-of-graph transition.
-- [ ] Inject failure after each state is durably written and before the next state-changing operation.
+- [ ] Inject failure before, during, and after each immutable state-generation write, validation, publication under its unique name, and next state-changing operation.
 - [ ] Restart against the persisted `Windows.Data.Json` journal and assert exact recovery.
-- [ ] Corrupt, truncate, and version-skew journals; require `RecoveryConflict` with no source/backup deletion.
+- [ ] Corrupt, truncate, duplicate, reorder, and version-skew journal generations; require recovery to select the highest complete valid monotonic generation. If no trustworthy generation explains the artifacts, return `RecoveryConflict` with no source/backup deletion.
 - [ ] Require repeated recovery to converge on the same state.
 
 ### Step 10.4: GREEN with a versioned monotonic journal
 
-- [ ] Store schema version, UUID, source identity, disposition, source revision, stage/output hash, stage identity, backup identity, destination identity, and state.
-- [ ] Write a new journal file, flush/close, and atomically replace the prior journal. Never mutate JSON in place.
+- [ ] Store schema version, UUID, monotonic generation number, source identity, disposition, source revision, stage/output hash, stage identity, backup identity, destination identity, and state.
+- [ ] Write each transition to a uniquely named pending file, request flush, close, reopen, parse, and validate it, then publish it under a never-before-used generation filename. Never mutate or replace an existing generation. Recovery ignores incomplete pending files and chooses the highest complete generation whose predecessor and artifact hashes are consistent. Retain earlier valid generations until the transaction reaches a verified terminal state.
 - [ ] Reject backward transitions and unknown future schema versions.
+- [ ] After publishing and re-reading the `VerifiedBackupCreated` generation, invoke `MoveAndReplaceAsync`; no code path may request replacement from an earlier state.
 - [ ] Implement exact hash recovery:
   - original equals captured source: commit did not occur; remove only a verified owned stage;
   - original equals transformed output: record committed and retain backup;
   - original missing, unknown, or ambiguous: retain all artifacts and return `RecoveryConflict`.
 - [ ] Explain the preservation proof for every branch.
 - [ ] Expose recovery only through `ImageFileTransactionEngine::recoverIncompleteTransactions`; keep journal parsing and state transitions internal.
+- [ ] Treat `MoveAndReplaceAsync` completion as an observation, not a power-fail atomicity guarantee. On restart, infer whether replacement occurred from the original, stage, output, backup, and journal hashes. Do not substitute `ReplaceFileW` unless a separate AppContainer prototype and this same fault suite prove a materially stronger supported contract.
 
 ### Step 10.5: Verify and commit
 
 - [ ] Run copy/replacement fault tests 100 times.
 - [ ] From a parent harness, kill the transaction test process at every journal boundary, restart, and require the same recovery results as in-process injection.
+- [ ] Run provider qualification on NTFS, supported removable filesystems, ReFS where supported, and representative cloud-backed picker folders. Exercise sharing violations, access revocation, offline placeholders, external mutation, interrupted flush/move/replace, and unsupported providers. Require a precise preflight refusal when the recoverability contract cannot be established.
 - [ ] Commit:
 
 ```powershell
 git add src/JpgSpinner.WindowsStorage tests/JpgSpinner.WindowsStorage.Tests
-git commit -m "feat: make original replacement durably recoverable"
+git commit -m "feat: make original replacement verifiably recoverable"
 ```
 
 ## Task 11: Orchestrate deterministic, bounded, cancellable batches
@@ -776,12 +813,14 @@ git commit -m "feat: make original replacement durably recoverable"
 - [ ] Add a directory reparse point that would escape or loop back into the root. Require it to be reported and skipped without traversal, output creation, or infinite enumeration.
 - [ ] Require normalized relative-path ordinal order independent of current locale.
 - [ ] Include long Unicode names, canonically equivalent Unicode spellings, and case-only path differences. Require original display names to remain unchanged and conservative ordinal case-insensitive output collisions to surface as `OutputRelativePathCollision` before processing.
+- [ ] Add a production-shaped 10,000-file fixture and measure first-result latency, total enumeration time, peak memory, cancellation latency, inaccessible descendants, directory reparse points, removable media, and cloud placeholders. Record a baseline before choosing a lower-level enumeration API.
 - [ ] Run `[batch][discovery]`; expected RED is absent coordinator compilation.
 
 ### Step 11.2: GREEN for discovery and analysis
 
 - [ ] Define `BatchIdentifier` around a full UUID; derive display directory from UTC `yyyyMMddTHHmmssZ-<first-eight-hex>` with invariant formatting.
-- [ ] Enumerate lazily and never materialize file bytes during discovery.
+- [ ] Enumerate lazily through supported AppContainer storage access and never materialize file bytes during discovery. Page Storage API results in batches no larger than 500. Consider a Win32 enumeration path only if the preceding benchmark proves a material benefit and picker-granted access succeeds across every supported storage/provider test; do not select `FindFirstFileEx` from an unverified performance assumption.
+- [ ] If the evidence selects a Win32 handle path, acquire handles from picker-granted storage items through the documented `IStorageItemHandleAccess` interop contract, keep authority beneath the selected root, and rerun the traversal/security/provider suite. Do not assume an unrestricted filesystem path from a broker grant.
 - [ ] Recognize only the four documented extensions with ordinal case-insensitive comparison, then require scanner proof before calling a file a JPEG. Preserve the source extension for copy output.
 - [ ] Analyze each JPEG sequentially through the one-operation `JpegImageAnalyzer` module and retain its immutable `JpegImageAnalysis`; callers do not orchestrate scanner, metadata, or planner internals.
 - [ ] Record unsupported candidates with exact error codes; never silently omit them.
@@ -808,7 +847,7 @@ git commit -m "feat: make original replacement durably recoverable"
 ### Step 11.5: Verify and commit
 
 - [ ] Run Batch, Storage, JPEG, and Domain suites; repeat cancellation tests 100 times.
-- [ ] Measure peak memory with a 512 MiB encoded-file boundary simulator and prove only one codec budget can be active.
+- [ ] Measure peak memory with separate simulators for the 512 MiB application encoded-file limit and TurboJPEG's 512-decimal-MB intermediate-buffer setting. Prove only one codec budget can be active and that neither limit is mistaken for the other.
 - [ ] Commit:
 
 ```powershell
@@ -834,13 +873,14 @@ git commit -m "feat: orchestrate safe deterministic image batches"
 
 - [ ] Define expected states `SourceSelection`, `Analysis`, `Review`, `Processing`, `Results`, and `RecoveryRequired` in tests before the view model.
 - [ ] Test valid transitions and reject invalid ones such as `SourceSelection → Processing` without a reviewed plan.
-- [ ] Require commands to expose predicates named by action: `canSelectSourceFolder`, `canBeginProcessing`, `canCancelCurrentOperation`, `canReturnToSourceSelection`.
+- [ ] Require projected commands to expose WinRT-conventional predicates named by action: `CanSelectSourceFolder`, `CanBeginProcessing`, `CanCancelCurrentOperation`, `CanReturnToSourceSelection`.
 - [ ] Require progress percentage to be absent while denominator is unknown, not represented as zero.
 - [ ] Run `[presentation][view-model]`; expected RED is missing generated/runtime types.
 
 ### Step 12.2: GREEN with no storage or codec behavior in presentation
 
 - [ ] Define WinRT-observable runtime classes in `JpgSpinner.Presentation`; keep the native domain values behind narrow projections.
+- [ ] Inspect generated WinMD and require every public property, method, and event to use PascalCase. Native-only helpers and local variables remain camelCase; do not mechanically rename their separate C++ convention.
 - [ ] Make the view model consume `BatchProcessingCoordinator` and `ImageFileTransactionEngine` recovery interface through constructor composition.
 - [ ] Marshal UI updates through `DispatcherQueue`; pass coroutine inputs by value across suspension and never call `.get()` on the UI thread.
 - [ ] Keep JPEG bytes, Exiv2 values, and transaction operations out of the view model.
@@ -856,7 +896,7 @@ git commit -m "feat: orchestrate safe deterministic image batches"
 ### Step 12.4: RED/GREEN replacement-review honesty
 
 - [ ] Require default disposition `CreateCorrectedCopy`, default traversal `SelectedFolderOnly`, default edge policy `RequirePerfectCoefficientTransform`, and default scans `PreserveSource`.
-- [ ] Require `ReplaceOriginalWithVerifiedBackup` to expose the computed backup root before `canBeginProcessing=true`.
+- [ ] Require `ReplaceOriginalWithVerifiedBackup` to expose the computed backup root before `CanBeginProcessing=true`.
 - [ ] Require trim review to expose exact discarded right/bottom pixel counts and a specific acknowledgment state.
 - [ ] Prohibit a view-model state representing replace-without-backup or implicit trim.
 
@@ -876,16 +916,20 @@ git commit -m "feat: model the image-processing experience precisely"
 **Files:**
 
 - Create: `src/JpgSpinner.App/App.xaml`
+- Create: `src/JpgSpinner.App/App.idl`
 - Create: `src/JpgSpinner.App/App.xaml.h`
 - Create: `src/JpgSpinner.App/App.xaml.cpp`
 - Create: `src/JpgSpinner.App/MainWindow.xaml`
+- Create: `src/JpgSpinner.App/MainWindow.idl`
 - Create: `src/JpgSpinner.App/MainWindow.xaml.h`
 - Create: `src/JpgSpinner.App/MainWindow.xaml.cpp`
 - Create: `tests/JpgSpinner.Presentation.Tests/WindowStateAutomationTests.cpp`
+- Create: `scripts/Test-InteractiveUiEnvironment.ps1`
 - Modify: `src/JpgSpinner.App/JpgSpinner.App.vcxproj`
 
 ### Step 13.1: RED with black-box UI Automation contracts
 
+- [ ] Implement `Test-InteractiveUiEnvironment.ps1` first. It requires an unlocked interactive desktop, a foreground-capable test user, UI Automation availability, isolated package deployment rights, and no service-session execution. It exits with a distinct environment-not-qualified result rather than misreporting an automation timeout as product failure.
 - [ ] Register and launch an isolated local test package from the integration test, then attach through Windows UI Automation by process ID.
 - [ ] Require stable automation IDs for the source picker, traversal scope, analysis status, result table, output disposition, edge handling, scan organization, backup destination, start, cancel, and results summary.
 - [ ] Require only controls relevant to the current semantic state to be enabled and focusable.
@@ -895,6 +939,7 @@ git commit -m "feat: model the image-processing experience precisely"
 ### Step 13.2: GREEN with one window and semantic states
 
 - [ ] Compose one `MainWindow` with state-specific regions; do not port old scenario pages, settings flyouts, or explanation pages.
+- [ ] Declare the projected `App` and `MainWindow` runtime classes in `App.idl` and `MainWindow.idl`, keep each IDL contract focused, and verify generated metadata before relying on `x:Bind`.
 - [ ] Apply `MicaBackdrop`, the stable WinUI integrated title-bar pattern, transparent root surfaces, layer/card theme brushes, and `InfoBar` for non-modal status. Rely on WinUI’s solid fallback rather than implementing a material shim.
 - [ ] Use only first-party WinUI controls. Use `ListView` for processing rows, standard buttons/pickers/progress, and labeled Segoe Fluent Icons where helpful; do not add a third-party control package or icon-only action.
 - [ ] Use `x:Bind` where compile-time binding catches naming errors; use observable properties only where state changes.
@@ -921,12 +966,12 @@ git commit -m "feat: model the image-processing experience precisely"
 
 ### Step 13.5: Verify and commit
 
-- [ ] Run view-model and black-box automation tests in a clean per-test package deployment.
+- [ ] Run view-model, localization-contract, WinMD, and x:Bind build tests on the normal headless lane. Run black-box automation only after `Test-InteractiveUiEnvironment.ps1` passes in the isolated interactive Windows VM/self-hosted lane; this lane remains required and cannot be converted to an optional hosted-runner skip.
 - [ ] Run the app manually once to verify picker ownership, resize behavior, minimum window size, and clean shutdown.
 - [ ] Commit:
 
 ```powershell
-git add src/JpgSpinner.App tests/JpgSpinner.Presentation.Tests
+git add src/JpgSpinner.App tests/JpgSpinner.Presentation.Tests scripts/Test-InteractiveUiEnvironment.ps1
 git commit -m "feat: add the accessible WinUI image workflow"
 ```
 
@@ -956,7 +1001,7 @@ git commit -m "feat: add the accessible WinUI image workflow"
 
 - [ ] Compose dependencies, open the local journal store, recover each incomplete transaction serially, then initialize the view model.
 - [ ] Keep the splash/window responsive using coroutines; never call `.get()`.
-- [ ] If the app closes during processing, request cancellation and allow the current non-interruptible/commit boundary to reach a journal-safe point. Do not claim that Windows guarantees unlimited shutdown time; journal durability remains the recovery mechanism.
+- [ ] If the app closes during processing, request cancellation and allow the current non-interruptible/commit boundary to reach an immutable journal-generation boundary. Do not claim that Windows guarantees unlimited shutdown time or physical-media durability; validated artifacts plus monotonic journal generations are the recovery mechanism.
 - [ ] Explain why recovery precedes normal folder selection and why ambiguous artifacts are never auto-resolved.
 
 ### Step 14.3: RED/GREEN privacy-preserving diagnostics
@@ -1007,11 +1052,12 @@ git commit -m "feat: recover transactions and record local diagnostics"
 
 ### Step 15.3: RED on programmatic accessibility
 
+- [ ] Run headless accessibility-contract tests for resource coverage, WinMD metadata, automation IDs, names/help-text declarations, and view-model state before launching a window. These tests belong on every pull request.
 - [ ] Use black-box UI Automation to require name, control type, enabled state, focusability, value/range semantics, and help text for every interactive control.
 - [ ] Require focus order to follow the visual workflow and focus restoration after picker/dialog dismissal.
 - [ ] Require analysis/progress/result changes to announce through a restrained live region without repeating the full table.
 - [ ] Require error rows to convey status through text and automation properties, never color alone.
-- [ ] Run `[presentation][accessibility]`; expected RED names the exact missing property/control.
+- [ ] Run `[presentation][accessibility]` in the qualified interactive lane; expected RED names the exact missing property/control rather than an absent desktop or service-session timeout.
 
 ### Step 15.4: GREEN and manual release protocol
 
@@ -1022,7 +1068,7 @@ git commit -m "feat: recover transactions and record local diagnostics"
 
 ### Step 15.5: Verify and commit
 
-- [ ] Run all Presentation tests in all three locales and attach Accessibility Insights results to release artifacts.
+- [ ] Run all headless Presentation tests in all three locales on hosted CI. Run black-box UI Automation, Narrator, keyboard, focus, and Accessibility Insights checks in the qualified interactive Windows lane and attach its results to release artifacts.
 - [ ] Commit:
 
 ```powershell
@@ -1046,7 +1092,7 @@ git commit -m "feat: localize and verify the accessible experience"
 
 - [ ] Write `Test-PackageManifest.ps1` before the new manifest. Parse XML and require exact identity name `HaddenIndustriesLtd.JPGSpinner`, publisher `CN=42458E53-5B1F-4F49-97F4-ABE6B4A48BB3`, application ID `App`, version 2.0.0.0, minimum 10.0.19045.0, tested maximum 10.0.28000.0, AppContainer trust, packaged-classic runtime, and Windows.Desktop family.
 - [ ] Compare Store association XML semantically and require Store ID `9NBLGGH3TVGW`.
-- [ ] Reject `internetClient`, broadLibraryAccess, runFullTrust, unvirtualizedResources, restricted capabilities, file-type association broadening, or medium-integrity trust.
+- [ ] Reject `internetClient`, `broadFileSystemAccess`, library capabilities, `runFullTrust`, `unvirtualizedResources`, other restricted capabilities, file-type association broadening, or medium-integrity trust. The application uses picker-mediated access and never substitutes a broad capability.
 - [ ] Run it against the absent manifest; expected RED is a precise missing-file diagnostic.
 
 ### Step 16.2: GREEN with the exact manifest core
@@ -1071,7 +1117,7 @@ git commit -m "feat: localize and verify the accessible experience"
 - [ ] Preserve package identity and Store association byte-for-byte where the format permits; update only package version and modern application metadata.
 - [ ] Rebuild required scale and target-size PNG assets deterministically from the highest-quality owned existing artwork under current Windows app-icon guidance. Inspect native-size shell rendering; do not invent or AI-generate a new brand during modernization.
 - [ ] Generate x86, x64, and ARM64 packages plus one `.msixbundle`; remove ARM32.
-- [ ] Verify the bundle declares the Windows App SDK framework dependency and contains no private Windows App Runtime/bootstrapper payload.
+- [ ] Verify the bundle declares the Windows App SDK framework dependency and contains no private Windows App Runtime, bootstrapper, auto-initializer, or test-support payload. Test-only initialization remains outside the package graph.
 
 ### Step 16.3: RED/GREEN the upgrade path
 
@@ -1097,6 +1143,13 @@ git commit -m "build: preserve Store identity in the WinUI package"
 
 - Create: `scripts/Invoke-StaticAnalysis.ps1`
 - Create: `scripts/Invoke-Sbom.ps1`
+- Create: `scripts/Test-SbomToolContract.ps1`
+- Create: `scripts/New-PayloadManifest.ps1`
+- Create: `scripts/Test-BuildProvenance.ps1`
+- Create: `tests/TestData/SbomContractFixture/payload/component.txt`
+- Create: `tests/TestData/SbomContractFixture/source/vcpkg.json`
+- Create: `tests/TestData/SbomContractFixture/source/packages.lock.json`
+- Create: `tests/TestData/SbomContractFixture/expected-contract.json`
 - Create: `.github/workflows/continuous-integration.yml`
 - Create: `.github/workflows/codeql.yml`
 - Create: `.github/workflows/nightly-fuzz.yml`
@@ -1114,11 +1167,14 @@ git commit -m "build: preserve Store identity in the WinUI package"
   - `actions/upload-artifact` v7.0.1 at `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`;
   - `github/codeql-action` v4.37.9 at `cdf488f595d80d6e07e03d4674febd5ab45fa938`.
 - [ ] Require `windows-2025-vs2026`, least-privilege workflow permissions, job timeouts, and concurrency cancellation for superseded pull requests.
+- [ ] Require every build/package job to capture runner `ImageVersion`, OS build, exact `VCToolsVersion`, full `cl.exe`/`link.exe` versions and paths, Windows SDK/MakeAppx versions, NuGet lock hashes, vcpkg baseline, action commits, and source commit. The runner label is selection policy, not immutable provenance.
+- [ ] Implement `Test-BuildProvenance.ps1` before workflow provenance emission. Give it an empty or deliberately incomplete JSON record and observe RED diagnostics for every missing field; then make the workflow emit one versioned, schema-checked record whose executable/file paths are normalized without leaking the developer profile path.
 - [ ] Run policy; expected RED names the absent workflows and the absent SBOM script/tool pin.
 
 ### Step 17.2: GREEN continuous integration matrix
 
-- [ ] On every pull request, restore locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all tests on x86/x64, compile Release ARM64, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure.
+- [ ] On every pull request, restore qualified locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all headless Domain/JPEG/Storage/Batch/Presentation-contract tests on x86/x64, compile Release ARM64, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure. Do not schedule black-box UI Automation, Narrator, or Accessibility Insights on a GitHub-hosted service session.
+- [ ] Define a required separate interactive Windows VM/self-hosted workflow or protected qualification job for black-box UI Automation and assistive-technology checks. It begins with `Test-InteractiveUiEnvironment.ps1`, never has pull-request secrets, and publishes signed test evidence; a hosted headless pass cannot substitute for this gate.
 - [ ] Use a separate package job for the unsigned x86/x64/ARM64 bundle. Package creation must not require Store credentials.
 - [ ] Cache only content-addressed dependency/build inputs whose key includes vcpkg baseline, manifest hash, architecture, toolset, and configuration. Never cache signing material or staged packages.
 - [ ] Require warnings as errors and fail on sanitizer findings, leaked handles, unhandled exceptions, or flaky-test retries.
@@ -1131,26 +1187,31 @@ git commit -m "build: preserve Store identity in the WinUI package"
 
 ### Step 17.4: Pin SBOM generation and dependency updates
 
+- [ ] Before implementing `Invoke-Sbom.ps1`, implement `Test-SbomToolContract.ps1` around the fixed `tests/TestData/SbomContractFixture` payload, source manifests, and reviewed expected-contract JSON. Run it with the verified 4.1.5 executable absent or an intentionally wrong selector. Expected RED names the missing exact tool/contract, not malformed fixture data.
 - [ ] Implement `Invoke-Sbom.ps1` around the versioned official asset `https://github.com/microsoft/sbom-tool/releases/download/v4.1.5/sbom-tool-win-x64.exe`. Download only into the ignored build-tool cache, compute SHA-256 before execution, require `625767b371b7fdd58f40f618b8a86da0247a33c89e419039c86b4edba1dad4b5`, and delete a mismatched file. Never fall back to another version or a moving URL.
 - [ ] Have the script recursively unpack the exact input `.msixbundle` and each contained architecture `.msix` into a newly created inspection directory. Reject path traversal, reparse points, duplicate output paths, an unexpected architecture, a package manifest that differs from the bundle declaration, or a signature/hash verification failure. Treat the extracted tree as read-only input and put the generated manifest outside it so the SBOM cannot inventory itself.
 - [ ] Invoke the tool with manifest selector `SPDX:3.0`, the extracted payload tree as `BuildDropPath`, and the repository as `BuildComponentPath`. Require Component Detection to inventory the locked NuGet and vcpkg manifests; compare the result against resolved runtime dependencies so a missed detector cannot silently omit a component.
 - [ ] Require root `@context` to equal `https://spdx.org/rdf/3.0.1/spdx-context.jsonld`, every emitted `CreationInfo.specVersion` to equal `3.0.1`, and every shipped payload file to have the expected SHA-256. Validate once with Microsoft SBOM Tool and once against `https://spdx.org/schema/3.0.1/spdx-json-schema.json`; preserve the SBOM beside the bundle and record the outer signed-bundle SHA-256 in provenance. Do not emit an obsolete-format duplicate without a named consumer requirement.
+- [ ] Run `Test-SbomToolContract.ps1` against the exact downloaded executable. Expected GREEN proves selector `SPDX:3.0`, output directory, 3.0.1 context/specVersion/schema, expected fixture file hash, and expected package/file relationships before any release bundle relies on the tool.
 - [ ] Dependabot version 2 monitors NuGet and GitHub Actions weekly, groups related Microsoft Windows packages, and never auto-merges.
 - [ ] Schedule `Test-DependencyFreshness.ps1` for vcpkg/upstream release drift. An upgrade updates baseline/override/notice together and runs the entire release suite.
 
 ### Step 17.5: Protected Store packaging workflow
 
 - [ ] Trigger Store packaging only from a signed release tag or manual protected environment.
-- [ ] Rebuild from clean immutable inputs, verify the source commit, produce the deterministic unsigned bundle, sign from protected secret material, verify the exact signed bundle, generate and validate the external SBOM from that bundle's recursively unpacked payloads, run WACK, and retain provenance.
+- [ ] Write `New-PayloadManifest.ps1` test-first. Given an unpacked package tree, it emits a path-ordinal, UTF-8 manifest of normalized relative path, byte length, and SHA-256 and rejects reparse points, duplicate normalized paths, or files outside the root. A one-byte fixture mutation must produce an observed RED mismatch before the final comparison is accepted.
+- [ ] Rebuild twice from separate clean directories with immutable inputs, verify the source commit, recursively unpack both unsigned bundles, and require identical payload manifests. Record each container hash separately. Claim byte-identical unsigned MSIX/MSIXBUNDLE output only if the two independent container hashes also match under the locked toolchain; payload reproducibility is the mandatory contract.
+- [ ] Sign the exact qualified container from protected secret material, verify that signed bundle, generate and validate the external SBOM from its recursively unpacked payloads, run WACK, and retain source, runner, toolchain, payload-manifest, unsigned-container, and signed-container provenance.
 - [ ] Do not submit or stage rollout automatically. Publishing remains a deliberate Partner Center operation after qualification evidence is reviewed.
 
 ### Step 17.6: Verify and commit
 
-- [ ] Validate every workflow locally with a YAML parser and repository policy; open a test pull request and require every job green.
+- [ ] Validate every workflow locally with a YAML parser and repository policy; open a test pull request and require every hosted headless job green. Separately exercise the interactive workflow in its qualified environment and require its environment check plus UI suite green.
+- [ ] Run `Test-BuildProvenance.ps1` against every job's record, `Test-SbomToolContract.ps1` against the pinned executable, and the two-clean-build payload-manifest comparison before accepting the workflow commit.
 - [ ] Commit:
 
 ```powershell
-git add scripts/Invoke-StaticAnalysis.ps1 scripts/Invoke-Sbom.ps1 .github
+git add scripts/Invoke-StaticAnalysis.ps1 scripts/Invoke-Sbom.ps1 scripts/Test-SbomToolContract.ps1 scripts/New-PayloadManifest.ps1 scripts/Test-BuildProvenance.ps1 tests/TestData/SbomContractFixture .github
 git commit -m "ci: enforce build security and supply-chain gates"
 ```
 
@@ -1177,7 +1238,7 @@ git commit -m "ci: enforce build security and supply-chain gates"
   - metadata preservation/removal/rejection rules;
   - resource limits and unsupported JPEG forms;
   - local-only processing, no network telemetry, diagnostic-log schema, and export behavior;
-  - recovery behavior and backup retention;
+  - tested recoverability behavior, backup retention, and explicit limits of flush/replacement guarantees;
   - build/test/package commands;
   - vulnerability reporting and supported release policy;
   - dependency names, versions, licenses, source links, and required notices.
@@ -1187,10 +1248,10 @@ git commit -m "ci: enforce build security and supply-chain gates"
 ### Step 18.2: GREEN public and maintainer documentation
 
 - [ ] `README.md` leads with what the app does, its safe defaults, supported formats, build prerequisites, reproducible build/test commands, and license.
-- [ ] `docs/architecture.md` links the approved design, maps module dependencies, names transaction invariants, describes AppContainer security boundaries, and states that capability interfaces live at current seams rather than preserving legacy abstractions.
+- [ ] `docs/architecture.md` links the approved design, maps module dependencies, names transaction recoverability invariants and documented guarantee limits, describes AppContainer security boundaries, and states that capability interfaces live at current seams rather than preserving legacy abstractions.
 - [ ] `docs/privacy.md` states no custom telemetry/network operation, exactly what local diagnostics contain/exclude, retention/rotation, and explicit export.
 - [ ] `SECURITY.md` defines supported versions, private vulnerability-reporting route, expected response process, malformed-image threat model, and disclosure coordination. Do not promise an SLA the maintainers cannot meet.
-- [ ] `docs/release-qualification.md` contains every automated/manual gate from Task 20 with evidence locations and sign-off roles.
+- [ ] `docs/release-qualification.md` contains every automated/manual gate from Task 20 with evidence locations and sign-off roles, including qualified legal review of the exact GPL-3.0 application, Exiv2 GPL-2.0-or-later terms, corresponding-source delivery, and then-current Microsoft Store agreements.
 - [ ] Keep comments and documentation synchronized by linking symbolic limits/error names rather than duplicating unstable implementation details unnecessarily.
 
 ### Step 18.3: Generate and verify third-party notices
@@ -1198,6 +1259,7 @@ git commit -m "ci: enforce build security and supply-chain gates"
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
 - [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.8, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, Microsoft SBOM Tool CLI 4.1.5 as release tooling, and each transitive native dependency actually present in the bundle.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
+- [ ] Prepare the exact corresponding source, patches, dependency locks, and reproducible build instructions for the distributed binary. Do not assume that static versus dynamic linkage or a separate process removes license obligations, and do not introduce a loader/process boundary merely as a licensing shim.
 - [ ] Include libjpeg-turbo’s applicable BSD-style and IJG notices verbatim from its packaged copyright files, not from memory.
 - [ ] Ensure test-only dependencies are not falsely described as runtime components.
 
@@ -1213,11 +1275,11 @@ git commit -m "ci: enforce build security and supply-chain gates"
 - [ ] Commit:
 
 ```powershell
-git add README.md SECURITY.md THIRD_PARTY_NOTICES.md docs scripts src Directory.Packages.props
+git add README.md SECURITY.md THIRD_PARTY_NOTICES.md docs scripts src
 git commit -m "docs: define support privacy and release contracts"
 ```
 
-## Task 19: Cut over atomically and delete the legacy implementation
+## Task 19: Cut over in one auditable change and delete the legacy implementation
 
 **Files:**
 
@@ -1262,10 +1324,12 @@ pwsh -NoProfile -File scripts/Test-RepositoryPolicy.ps1
 pwsh -NoProfile -File scripts/Invoke-Build.ps1 -Configuration Release -Architecture x86
 pwsh -NoProfile -File scripts/Invoke-Build.ps1 -Configuration Release -Architecture x64
 pwsh -NoProfile -File scripts/Invoke-Build.ps1 -Configuration Release -Architecture ARM64
-pwsh -NoProfile -File scripts/Invoke-Tests.ps1 -Project All -Architecture x64 -Configuration Release
+pwsh -NoProfile -File scripts/Invoke-TestSuite.ps1 -Project HeadlessAll -Architecture x64 -Configuration Release -ExecutionEnvironment Headless
+pwsh -NoProfile -File scripts/Test-InteractiveUiEnvironment.ps1
+pwsh -NoProfile -File scripts/Invoke-TestSuite.ps1 -Project JpgSpinner.Presentation.Tests -TestSpecification "[automation]" -Architecture x64 -Configuration Release -ExecutionEnvironment Interactive
 ```
 
-Expected GREEN: policy finds no prohibited legacy/shim surface; all architectures build and all executable x64 tests pass.
+Expected GREEN: policy finds no prohibited legacy/shim surface; all architectures build; every headless x64 suite passes; and the separately qualified interactive presentation suite passes.
 
 - [ ] Also run `rg` with explicit patterns for the old package, key, C++/CX, UWP XAML, private JPEG files, compatibility names, and shims. A no-match result is required except for the modernization documents’ historical descriptions.
 - [ ] Commit the auditable deletion separately:
@@ -1292,8 +1356,8 @@ git commit -m "refactor: remove the retired UWP implementation"
 ### Step 20.2: Clean-clone automated qualification
 
 - [ ] From a fresh clone with no global vcpkg integration or warm build output, restore locked inputs and run repository/documentation policy.
-- [ ] Build Debug and Release x86/x64, Release ARM64, and a deterministic unsigned Release bundle. Record its payload hash; the protected release workflow must reproduce that payload from the same source and locks before signing rather than accepting an unexplained rebuild difference.
-- [ ] Execute all tests on x86/x64; execute the transform, transaction, recovery, batch, and packaged-app smoke suites on physical ARM64.
+- [ ] Build Debug and Release x86/x64 and Release ARM64 twice from independent clean roots. Recursively unpack each unsigned bundle and require identical normalized payload manifests. Record both unsigned container hashes; require byte identity only if the locked packaging toolchain actually demonstrates it.
+- [ ] Execute all headless tests on x86/x64; execute the transform, transaction, recovery, batch, and packaged-app smoke suites on physical ARM64. Execute black-box UI Automation and assistive-technology checks in the separately qualified interactive Windows environment.
 - [ ] Run x64 AddressSanitizer, MSVC `/analyze`, CodeQL `security-extended`, and a minimum 24-hour aggregate fuzz campaign with the reviewed corpus.
 - [ ] Require no compiler warning, sanitizer finding, leak, static-analysis error, CodeQL high-severity alert, fuzz crash/hang, or flaky retry.
 
@@ -1302,34 +1366,36 @@ git commit -m "refactor: remove the retired UWP implementation"
 - [ ] Run every orientation across 8-bit and 12-bit lossy precision; 4:4:4, 4:2:2, 4:2:0; grayscale, RGB/YCbCr, CMYK/YCCK; sequential, progressive, Huffman, arithmetic; restart intervals; valid ICC v2/v4; Exif 3.1; XMP standard/extended; IPTC Photo Metadata 2025.1 in XMP/IIM; unknown APPn/COM; absent metadata; exact resource boundaries; and explicit rejection fixtures for C2PA 2.4, other JUMBF, MPF/Ultra HDR, Motion Photo, and generic trailing payloads.
 - [ ] Run reviewed malformed corpus: all marker truncations, integer boundaries, corrupt entropy, excessive scans, malformed Exif/XMP/ICC, MPF, unsupported SOF, and decompression-bomb dimensions.
 - [ ] Re-run coefficient equality and metadata hashes, not only screenshots or decode success.
-- [ ] Inject process termination and each storage error at every journal transition on NTFS and a removable filesystem supported by the app. Require original or verified backup recoverability in every case.
+- [ ] Inject process termination and each storage error before, during, and after every immutable journal-generation publication and replacement boundary on NTFS, supported removable filesystems, ReFS where supported, and representative cloud-backed picker providers. Infer outcome from validated hashes and require recoverability in every modeled case without asserting undocumented power-fail atomicity or physical-media durability.
 - [ ] Simulate source modification during analysis, transformation, validation, backup, and immediately before replacement. Require no stale-plan commit.
 
 ### Step 20.4: Performance and responsiveness qualification
 
 - [ ] Record reference hardware, power profile, OS build, architecture, corpus hashes, cold/warm state, and tool versions.
 - [ ] Measure cold launch to interactive source selection, analysis throughput for 10,000 small files, coefficient-transform throughput for representative large files, peak committed memory at resource limits, cancellation latency between safe boundaries, and UI-thread stalls through ETW/WPA.
+- [ ] Compare the supported paged Storage API path with any proposed Win32 enumeration candidate under the same AppContainer picker grant and corpus. Record first-result latency, total time, peak memory, cancellation, inaccessible descendants, reparse points, removable media, and cloud placeholders. Retain the simpler supported path unless the alternative proves a material, repeatable benefit without reducing authority or correctness.
 - [ ] Require no synchronous UI-thread operation longer than 50 ms during analysis/processing and no unbounded growth with file count.
 - [ ] Save the first accepted results as the 2.0 baseline. Future releases fail qualification on a statistically repeatable regression greater than 10% unless a reviewed correctness/accessibility change explains and accepts it.
 
 ### Step 20.5: Accessibility, localization, and package qualification
 
-- [ ] Repeat the full manual accessibility checklist on current Windows 10 22H2 ESU and maintained Windows 11 24H2, 25H2, and 26H1 test systems where available.
+- [ ] Repeat the full manual accessibility checklist on current Windows 10 22H2 ESU and maintained Windows 11 24H2 and 25H2 systems, plus Windows 11 26H1 hardware where available. Record that 26H1 is a supported new-device hardware cohort rather than an assumed in-place update path for existing 24H2/25H2 systems.
 - [ ] Review every screen and error in en-US, en-GB, and ru; run pseudo-localization for expansion and bidirectional layout defects.
 - [ ] Install 1.1.3.0, update to 2.0.0.0 for x86/x64 and native ARM64 paths, then verify identity, launch, processing, recovery, uninstall, and no orphan staging artifacts.
-- [ ] In the protected release workflow, reproduce the qualified unsigned payload, sign it, verify the exact signed bundle, generate and validate the external SPDX 3.0.1 SBOM from its recursively extracted packages, then run Windows App Certification Kit, bundle manifest validation, malware scanning, and Store package ingestion validation against that same bundle hash.
+- [ ] In the protected release workflow, reproduce the qualified unpacked payload manifest, record the produced unsigned container hash, sign that exact container, verify the exact signed bundle, generate and validate the external SPDX 3.0.1 SBOM from its recursively extracted packages, then run Windows App Certification Kit, bundle manifest validation, malware scanning, and Store package ingestion validation against that same signed-bundle hash.
 
 ### Step 20.6: Privacy and integrity go/no-go
 
 - [ ] Verify the final manifest has no network/restricted/full-trust capability and observe zero network traffic during the complete workflow.
 - [ ] Search the extracted bundle and symbols for the historical key, source paths, signing secrets, test data, private metadata, and local developer paths. Require no match.
 - [ ] Confirm local diagnostics contain only documented redacted fields and rotate at documented limits.
+- [ ] Require completed qualified legal review of the exact final dependency graph, GPL-3.0 distribution, Exiv2 GPL-2.0-or-later obligations, corresponding-source/build-instruction delivery, third-party notices, and current Store agreements. Do not accept process separation or dynamic loading as an unreviewed substitute.
 - [ ] A single unexplained source-hash mismatch, missing backup, recovery ambiguity caused by app behavior, or data-integrity report is an unconditional no-go.
 
 ### Step 20.7: Release evidence and staged Store rollout
 
 - [ ] Write `docs/releases/2.0.0.md` with supported systems, safe defaults, precise format limitations, user-visible changes, retired behavior, privacy statement, and backup/recovery guidance.
-- [ ] Archive the exact source commit, dependency locks, compiler/SDK versions, package hashes, SBOMs, provenance, test/analysis/fuzz reports, WACK output, accessibility checklist, performance baseline, and upgrade evidence.
+- [ ] Archive the exact source commit, dependency locks, runner `ImageVersion`, exact `VCToolsVersion` and compiler/linker paths/versions, SDK/MakeAppx versions, payload manifests, unsigned/signed package hashes, SBOMs, provenance, test/analysis/fuzz reports, WACK output, interactive accessibility evidence, performance baseline, legal approval record, and upgrade evidence.
 - [ ] Submit the existing Store product as version 2.0.0.0; never create a second product identity.
 - [ ] Release to 5%. Observe at least 48 hours and 200 active-device health samples; if volume is lower, observe seven days.
 - [ ] Advance to 25% only when no file-integrity incident exists, no new crash/hang signature affects 0.1% or more observed devices, and the affected-device rate is no more than 0.1 percentage point above the 1.1.3.0 baseline.
@@ -1363,6 +1429,8 @@ Implementation is complete only when:
 - source changes after analysis prevent commit;
 - AppContainer, Store identity, x86/x64 update continuity, and ARM64 operation are verified;
 - resource limits, metadata policy, accessibility, localization, privacy, security, and supply-chain gates pass;
+- encoded-file and TurboJPEG intermediate-memory limits remain distinct; Extended XMP follows the tested preservation/refusal policy; public WinRT metadata is PascalCase and complete;
+- hosted headless and interactive UI qualification lanes both pass; exact toolchain provenance and reproducible unpacked-payload manifests are archived;
 - final documentation describes the exact shipped behavior;
 - rollout evidence meets the staged health and zero-integrity-incident gates.
 
@@ -1377,16 +1445,35 @@ Implementation is complete only when:
 - [Microsoft responsive Windows application design](https://learn.microsoft.com/en-us/windows/apps/design/layout/responsive-design)
 - [Microsoft Windows app icon guidance](https://learn.microsoft.com/en-us/windows/apps/design/iconography/app-icon-design)
 - [Microsoft secure C++ build guidance](https://learn.microsoft.com/en-us/cpp/code-quality/build-reliable-secure-programs)
+- [Microsoft C++ MSBuild customization and import ordering](https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-cpp-builds?view=visualstudio)
+- [Microsoft C++ item-definition/property-page model](https://learn.microsoft.com/en-us/cpp/build/reference/property-page-xml-files?view=msvc-170)
+- [Microsoft `/CETCOMPAT` reference](https://learn.microsoft.com/en-us/cpp/build/reference/cetcompat?view=msvc-170)
+- [Microsoft unpackaged Windows App SDK deployment](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged-apps)
+- [Microsoft application capability declarations](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/app-capability-declarations)
+- [Microsoft C++/WinRT property binding and IDL requirements](https://learn.microsoft.com/en-us/windows/apps/develop/cpp-winrt/binding-property)
+- [Microsoft file replacement API contract](https://learn.microsoft.com/en-us/uwp/API/windows.storage.istoragefile.moveandreplaceasync?view=winrt-22000)
+- [Microsoft storage-item handle interop](https://learn.microsoft.com/en-us/windows/win32/api/windowsstoragecom/nf-windowsstoragecom-istorageitemhandleaccess-create)
+- [Microsoft large file-query paging guidance](https://learn.microsoft.com/en-us/windows/apps/develop/files/fast-file-properties)
 - [Microsoft MSIX health report](https://learn.microsoft.com/en-us/partner-center/insights/msix-health-report)
 - [Microsoft vcpkg version locking](https://learn.microsoft.com/en-us/vcpkg/consume/lock-package-versions)
 - [libjpeg-turbo releases and transform documentation](https://github.com/libjpeg-turbo/libjpeg-turbo/releases)
+- [TurboJPEG 3.2.0 public interface](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.h)
+- [TurboJPEG `TJPARAM_MAXMEMORY` decimal-megabyte rationale](https://github.com/libjpeg-turbo/libjpeg-turbo/issues/735)
 - [Exiv2 releases](https://github.com/Exiv2/exiv2/releases)
+- [Exiv2 maintainer statement on Extended XMP limitations](https://dev.exiv2.org/boards/3/topics/3124)
+- [Catch2 3.16.0 release](https://github.com/catchorg/Catch2/releases/tag/v3.16.0)
 - [CIPA camera and imaging standards](https://www.cipa.jp/e/std/std-sec.html)
 - [ITU-T T.81 JPEG specification](https://www.itu.int/ITU-T/recommendations/rec.aspx?lang=en&rec=2633)
 - [Adobe XMP specifications](https://developer.adobe.com/xmp/docs/xmp-specifications/)
 - [ICC.1:2022 profile specification](https://www.color.org/icc-1_specification/)
 - [W3C WCAG 2.2](https://www.w3.org/TR/WCAG22/)
 - [Microsoft SBOM Tool](https://github.com/microsoft/sbom-tool)
+- [Microsoft SBOM Tool 4.1.5](https://github.com/microsoft/sbom-tool/releases/tag/v4.1.5)
 - [SPDX 3.0.1 specification](https://spdx.github.io/spdx-spec/)
+- [SPDX 3.0.1 JSON schema](https://spdx.org/schema/3.0.1/spdx-json-schema.json)
 - [C2PA 2.4 Content Credentials specification](https://spec.c2pa.org/specifications/specifications/2.4/)
 - [IPTC Photo Metadata Standard 2025.1](https://www.iptc.org/std/photometadata/specification/IPTC-PhotoMetadata-2025.1.html)
+- [GitHub hosted-runner images](https://github.com/actions/runner-images)
+- [Windows 11 26H1 release status](https://learn.microsoft.com/en-us/windows/release-health/status-windows-11-26H1)
+- [Microsoft Store policies](https://learn.microsoft.com/en-us/windows/apps/publish/store-policies)
+- [Microsoft Publisher Agreement](https://learn.microsoft.com/en-us/legal/marketplace/msft-publisher-agreement)
