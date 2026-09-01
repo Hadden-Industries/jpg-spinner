@@ -28,12 +28,13 @@
 
 ### Repository-artifact hygiene after every task
 
+- Treat the currently observed backlog of hundreds of obsolete numbered or timestamped test-run directories and superseded build/dependency caches as implementation cleanup debt, not as a grandfathered baseline. Remove that backlog incrementally at each post-task hygiene pass, beginning with the oldest superseded runs, and do not carry an obsolete run merely because it predates the current task.
 - Inventory ignored/generated directories by exact repository-relative path and size. At minimum inspect `artifacts/`, `vcpkg_installed/`, every production/test `obj/` directory, `Generated Files/`, `TestResults/`, `AppPackages/`, `sanitizer-reports/`, and `fuzz-artifacts/`; also inspect any task-specific temporary restore or test-run root created by the task.
 - Keep the current task's RED/GREEN logs, binary logs, JUnit results, packages, and generated sources only until their salient evidence has been recorded and the coherent task commit succeeds. After the commit, remove obsolete run directories rather than accumulating numbered or timestamped copies.
 - Retain a dependency cache such as `vcpkg_installed/` across adjacent tasks only when the next task will reuse that exact locked graph and the retained size is reported. Remove it when the graph changes, the next task does not need it, or the milestone is handed off. Every removed cache must be reproducible from committed lock/configuration files.
 - Preserve tracked files and reviewed release evidence, including `artifacts/release/**/*.spdx.json`. Never use an indiscriminate `git clean -fdx`, wildcard recursive deletion, or a cleanup rooted at the repository itself.
 - Before each recursive removal, resolve the literal absolute target, prove it is a descendant of the repository and one of the inventoried ignored/generated roots, then remove that exact target with PowerShell `Remove-Item -LiteralPath`. Re-run `git status --short --ignored` afterward to prove no source, lock file, fixture, or required evidence was lost.
-- Record the removed paths, approximate reclaimed size, and any intentionally retained large cache in the implementation log or task handoff. The expected steady state between tasks is no obsolete test-run directory and no unexplained large ignored directory.
+- Record the removed paths, approximate reclaimed size, and any intentionally retained large cache in the implementation log or task handoff. A retained cache requires the exact next task and locked dependency graph that will consume it; “potentially useful later” is not sufficient. The expected steady state between tasks is no obsolete test-run directory and no unexplained large ignored directory.
 
 ### Cross-cutting prohibitions
 
@@ -1468,6 +1469,7 @@ Implementation is complete only when:
 - resource limits, metadata policy, accessibility, localization, privacy, security, and supply-chain gates pass;
 - encoded-file and TurboJPEG intermediate-memory limits remain distinct; Extended XMP follows the tested preservation/refusal policy; public WinRT metadata is PascalCase and complete;
 - hosted headless and interactive UI qualification lanes both pass; exact toolchain provenance and reproducible unpacked-payload manifests are archived;
+- every post-task artifact-hygiene pass is recorded, the pre-existing obsolete-run backlog is eliminated, and no unexplained build, test, fuzz, package, or dependency cache remains;
 - final documentation describes the exact shipped behavior;
 - rollout evidence meets the staged health and zero-integrity-incident gates.
 
