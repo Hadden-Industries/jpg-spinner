@@ -29,6 +29,12 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7c67da73-97ab-4ff4-a365-b3e34b36e3cd}</ProjectGuid>
     <RootNamespace>JPG_Spinner</RootNamespace>
+    <!--
+      This shipping project requires C++/CX's /ZW mode, which Microsoft
+      documents as incompatible with /std:c++20. Keep it outside the modern
+      repository C++ policy until the planned replacement becomes the app.
+    -->
+    <JpgSpinnerModernCppBuildPolicyEnabled>false</JpgSpinnerModernCppBuildPolicyEnabled>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>

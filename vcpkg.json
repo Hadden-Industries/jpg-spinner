@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "jpg-spinner",
+  "version-string": "2.0.0",
+  "builtin-baseline": "118bba14b94bc040c098c0c15e63c142148c05ca",
+  "dependencies": [
+    {
+      "name": "libjpeg-turbo",
+      "default-features": false
+    },
+    {
+      "name": "exiv2",
+      "default-features": false,
+      "features": ["xmp"]
+    },
+    {
+      "name": "catch2",
+      "default-features": false
+    }
+  ],
+  "overrides": [
+    {
+      "name": "libjpeg-turbo",
+      "version": "3.2.0"
+    },
+    {
+      "name": "exiv2",
+      "version": "0.28.8"
+    },
+    {
+      "name": "catch2",
+      "version": "3.16.0"
+    }
+  ]
+}

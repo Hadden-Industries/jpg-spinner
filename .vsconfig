@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "components": [
+    "Microsoft.VisualStudio.Workload.NativeDesktop",
+    "Microsoft.VisualStudio.Workload.Universal",
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+    "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
+    "Microsoft.VisualStudio.Component.VC.ASAN",
+    "Microsoft.VisualStudio.Component.VC.Llvm.Clang",
+    "Microsoft.VisualStudio.Component.VC.CMake.Project",
+    "Microsoft.VisualStudio.Component.Vcpkg",
+    "Microsoft.VisualStudio.Component.NuGet",
+    "Microsoft.VisualStudio.Component.NuGet.BuildTools",
+    "Microsoft.VisualStudio.Component.WindowsAppSdkSupport.Cpp",
+    "Microsoft.VisualStudio.Component.VC.14.51.x86.x64.Spectre",
+    "Microsoft.VisualStudio.Component.VC.14.51.ARM64.Spectre",
+    "Microsoft.VisualStudio.Component.Windows11SDK.28000"
+  ]
+}

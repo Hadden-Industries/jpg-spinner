@@ -1,0 +1,16 @@
+---
+# Microsoft is the closest predefined style to the surrounding WinUI and
+# C++/WinRT ecosystem. The explicit values below are repository invariants and
+# remain stable even if a future clang-format changes a style default.
+BasedOnStyle: Microsoft
+UseTab: Never
+IndentWidth: 4
+ContinuationIndentWidth: 4
+ColumnLimit: 120
+
+# C++/WinRT requires generated headers to precede declarations that consume
+# them. Formatting must never silently reorder that semantically significant
+# include sequence.
+SortIncludes:
+  Enabled: false
+...

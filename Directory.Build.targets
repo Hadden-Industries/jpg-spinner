@@ -1,0 +1,53 @@
+<Project>
+  <!--
+    These item definitions are evaluated after Microsoft.Cpp.props so they map
+    to real CL and LINK task parameters instead of becoming inert properties.
+    Every group honors the project-level modern-policy boundary established in
+    Directory.Build.props; the legacy C++/CX project disables that boundary
+    before its first MSBuild import because /ZW cannot consume /std:c++20.
+    Effective command lines and x64 PE metadata are verified independently by
+    scripts/Test-EffectiveBuildPolicy.ps1.
+  -->
+  <ItemDefinitionGroup
+    Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true'">
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus /guard:cf /Brepro %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/guard:cf /Brepro %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup
+    Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(Configuration)' == 'Debug'">
+    <ClCompile>
+      <!-- /ZI is incompatible with Control Flow Guard; /Zi retains PDBs. -->
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup
+    Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(Configuration)' == 'Release'">
+    <ClCompile>
+      <!-- Keep /O2 explicit so Release behavior cannot drift with imported defaults. -->
+      <Optimization>MaxSpeed</Optimization>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Link>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Intel CET shadow-stack compatibility is a final-image x64 contract. -->
+  <ItemDefinitionGroup
+    Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(Platform)' == 'x64'">
+    <Link>
+      <AdditionalOptions>/CETCOMPAT %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

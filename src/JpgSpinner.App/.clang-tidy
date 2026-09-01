@@ -1,0 +1,11 @@
+---
+# C++/WinRT's projected namespace and public ABI surface follow Windows Runtime
+# conventions. Inherit every root check, then override only the naming rules at
+# this language boundary; private implementation details stay lower camel case.
+InheritParentConfig: true
+CheckOptions:
+  readability-identifier-naming.NamespaceIgnoredRegexp: '^JpgSpinner$'
+  readability-identifier-naming.PublicMethodCase: CamelCase
+  readability-identifier-naming.ProtectedMethodCase: CamelCase
+  readability-identifier-naming.PrivateMethodCase: camelBack
+...

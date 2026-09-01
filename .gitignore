@@ -18,6 +18,15 @@
 x64/
 x86/
 build/
+# Build evidence is transient by default. SPDX documents beneath the versioned
+# release tree are reviewed supply-chain records and therefore remain visible.
+artifacts/**
+!artifacts/release/
+!artifacts/release/**/
+!artifacts/release/*.spdx.json
+!artifacts/release/**/*.spdx.json
+out/
+vcpkg_installed/
 bld/
 [Bb]in/
 [Oo]bj/
@@ -149,6 +158,10 @@ csx/
 
 # Windows Store app package directory
 AppPackages/
+packages/
+TestResults/
+sanitizer-reports/
+fuzz-artifacts/
 
 # Others
 *.[Cc]ache
@@ -159,6 +172,8 @@ ClientBin/
 *.dbmdl
 *.dbproj.schemaview
 *.pfx
+*.p12
+*.snk
 *.publishsettings
 node_modules/
 bower_components/

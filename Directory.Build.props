@@ -1,0 +1,40 @@
+<Project>
+  <!--
+    Directory.Build.props is imported early. Keep only selection properties
+    here; compiler and linker item metadata belongs in Directory.Build.targets,
+    after Microsoft.Cpp.props has defined the relevant item types.
+  -->
+  <PropertyGroup>
+    <!--
+      Modern projects participate by default. The still-shipping C++/CX
+      project sets this property to false in its Globals group, before
+      Microsoft.Cpp.Default.props imports this file, because /ZW cannot be
+      combined with the modern policy's /std:c++20 language mode.
+    -->
+    <JpgSpinnerModernCppBuildPolicyEnabled
+      Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == ''">true</JpgSpinnerModernCppBuildPolicyEnabled>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true'">
+    <PlatformToolset>v145</PlatformToolset>
+    <VCToolsVersion>14.51.36231</VCToolsVersion>
+    <!-- Select the installed 64-bit host tools consistently for every target. -->
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <!--
+      Keep VC include and library directories under MSBuild/toolset control.
+      UseEnv=true would replace those evaluated directories with unreviewed
+      INCLUDE, LIB, LIBPATH, and PATH values inherited from the calling shell.
+    -->
+    <UseEnv>false</UseEnv>
+    <!--
+      Use MSBuild's structured property rather than a raw /Qspectre token. In
+      addition to compiler instrumentation, this selects the installed,
+      architecture-specific Spectre-mitigated MSVC runtime libraries.
+    -->
+    <SpectreMitigation>Spectre</SpectreMitigation>
+    <WindowsTargetPlatformMinVersion>10.0.19045.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0.28000.0</WindowsTargetPlatformVersion>
+    <!-- The Store package supplies identity and framework dependencies. -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+  </PropertyGroup>
+</Project>
