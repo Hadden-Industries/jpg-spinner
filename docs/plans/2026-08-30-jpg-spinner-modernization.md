@@ -367,6 +367,7 @@ git commit -m "build: scaffold the WinUI 3 solution and test harness"
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/ImageDimensions.h`
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/JpegTransformRequest.h`
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/JpegTransformPlan.h`
+- Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/JpegTransformPlanner.h`
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/JpegImageAnalysis.h`
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/JpegAnalysisFinding.h`
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/JpegResourceLimits.h`

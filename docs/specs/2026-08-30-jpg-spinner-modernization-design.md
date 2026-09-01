@@ -247,7 +247,8 @@ Each module must hide more policy and mechanism than its callers learn. The dele
 
 - Native namespace root: `jpg_spinner`; subnamespaces: `domain`, `jpeg`, `storage`, and `batch`.
 - WinRT presentation namespace: `JpgSpinner.Presentation`.
-- Types and enum members use PascalCase. Functions and local variables use camelCase. Private data members use an `m_` prefix.
+- Types and enum members use PascalCase. Functions and local variables use camelCase. Private data members use lower
+  camel case with a trailing `_`, matching the repository's enforced clang-tidy policy.
 - Public WinRT/MIDL properties, methods, and events use PascalCase, including predicates such as `CanBeginProcessing`; native-only Boolean functions remain camelCase.
 - Native abstract bases describe capabilities and do not receive a mechanical `I` prefix: `JpegTransformationEngine`, `ImageFileTransactionEngine`.
 - Concrete adapter types identify the mechanism: `LibJpegTurboTransformationEngine`, `AppContainerImageFileTransactionEngine`.
