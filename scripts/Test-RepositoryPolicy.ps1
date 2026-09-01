@@ -828,6 +828,7 @@ function Test-DirectoryBuildProperties {
         WindowsTargetPlatformMinVersion = '10.0.19045.0'
         WindowsTargetPlatformVersion = '10.0.28000.0'
         WindowsAppSDKSelfContained = 'false'
+        EnableNativePackageReferenceSupport = 'true'
         PreferredToolArchitecture = 'x64'
         UseEnv = 'false'
         SpectreMitigation = 'Spectre'
@@ -873,6 +874,92 @@ function Test-DirectoryBuildProperties {
             if ($vcToolsVersion -notmatch '^14\.51\.\d+$') {
                 Add-PolicyFailure -Message "Directory.Build.props VCToolsVersion must identify an exact 14.51 servicing directory; found '$vcToolsVersion'."
             }
+        }
+
+        # Import vcpkg once at the repository boundary, using the instance
+        # selected by MSBuild itself. This is the official project-local
+        # integration path and does not depend on `vcpkg integrate install`.
+        foreach ($requiredVcpkgProperty in ([ordered]@{
+            VcpkgRoot = '$(VsInstallRoot)\VC\vcpkg\'
+            VcpkgEnableClassic = 'false'
+            VcpkgEnableManifest = 'true'
+            VcpkgManifestInstall = 'true'
+            VcpkgAutoBootstrap = 'false'
+            VcpkgManifestRoot = '$(MSBuildThisFileDirectory)'
+            VcpkgApplocalDeps = 'false'
+            VcpkgAdditionalInstallOptions = '--overlay-triplets="$(MSBuildThisFileDirectory)vcpkg-triplets"'
+        }).GetEnumerator()) {
+            $vcpkgPropertyElement = Get-RequiredSingleRootMSBuildPropertyElement `
+                -ProjectRootElement $projectRootElement `
+                -PropertyName $requiredVcpkgProperty.Key `
+                -Description $requiredVcpkgProperty.Key `
+                -SourceDescription 'Directory.Build.props' `
+                -ExpectedPropertyGroupCondition $modernCppBuildPolicyEnabledCondition
+            if ($null -ne $vcpkgPropertyElement) {
+                Assert-ExactValue `
+                    -Actual $vcpkgPropertyElement.Value `
+                    -Expected $requiredVcpkgProperty.Value `
+                    -Description $requiredVcpkgProperty.Key
+            }
+        }
+
+        $expectedTripletByPropertyCondition = [ordered]@{
+            "'`$(Platform)' == 'Win32'" = 'x86-windows-static-md'
+            "'`$(Platform)' == 'x64'" = 'x64-windows-static-md'
+            "'`$(Platform)' == 'ARM64'" = 'arm64-windows-static-md'
+        }
+        $tripletElements = @(
+            $projectRootElement.Properties |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.Name,
+                        'VcpkgTriplet'
+                    )
+                }
+        )
+        foreach ($expectedTriplet in $expectedTripletByPropertyCondition.GetEnumerator()) {
+            $matchingTripletElements = @(
+                $tripletElements |
+                    Where-Object {
+                        $_.Condition -ceq $expectedTriplet.Key -and
+                        $_.Parent.Condition -ceq $modernCppBuildPolicyEnabledCondition
+                    }
+            )
+            if (
+                $matchingTripletElements.Count -ne 1 -or
+                $matchingTripletElements[0].Value -cne $expectedTriplet.Value
+            ) {
+                Add-PolicyFailure -Message (
+                    "Directory.Build.props must map $($expectedTriplet.Key) to " +
+                    "'$($expectedTriplet.Value)' exactly once in the modern policy group."
+                )
+            }
+        }
+        if ($tripletElements.Count -ne $expectedTripletByPropertyCondition.Count) {
+            Add-PolicyFailure -Message (
+                'Directory.Build.props must contain only the three reviewed ' +
+                'platform-specific VcpkgTriplet mappings.'
+            )
+        }
+
+        $vcpkgPropsImports = @(
+            $projectRootElement.Imports |
+                Where-Object {
+                    $_.Project -match '(?i)vcpkg\.props$'
+                }
+        )
+        $expectedVcpkgImportCondition =
+            "$modernCppBuildPolicyEnabledCondition and '`$(VcpkgEnabled)' != 'false'"
+        if (
+            $vcpkgPropsImports.Count -ne 1 -or
+            $vcpkgPropsImports[0].Project -cne
+                '$(VcpkgRoot)scripts\buildsystems\msbuild\vcpkg.props' -or
+            $vcpkgPropsImports[0].Condition -cne $expectedVcpkgImportCondition
+        ) {
+            Add-PolicyFailure -Message (
+                'Directory.Build.props must import the selected Visual Studio ' +
+                'vcpkg.props exactly once for enabled modern projects.'
+            )
         }
     }
 
@@ -1030,11 +1117,38 @@ function Test-DirectoryBuildTargets {
             Add-PolicyFailure -Message "Directory.Build.targets contains forbidden floating language mode '/std:c++latest'."
         }
     }
+
+    $projectRootElement =
+        Read-MSBuildProjectRootElement -RelativePath 'Directory.Build.targets'
+    if ($null -ne $projectRootElement) {
+        $vcpkgTargetsImports = @(
+            $projectRootElement.Imports |
+                Where-Object {
+                    $_.Project -match '(?i)vcpkg\.targets$'
+                }
+        )
+        $expectedVcpkgImportCondition =
+            "$modernCppBuildPolicyEnabledCondition and '`$(VcpkgEnabled)' != 'false'"
+        if (
+            $vcpkgTargetsImports.Count -ne 1 -or
+            $vcpkgTargetsImports[0].Project -cne
+                '$(VcpkgRoot)scripts\buildsystems\msbuild\vcpkg.targets' -or
+            $vcpkgTargetsImports[0].Condition -cne $expectedVcpkgImportCondition
+        ) {
+            Add-PolicyFailure -Message (
+                'Directory.Build.targets must import the selected Visual Studio ' +
+                'vcpkg.targets exactly once for enabled modern projects.'
+            )
+        }
+    }
 }
 
 function Test-BuildPolicyProbeProject {
-    $document = Read-XmlDocument -RelativePath 'eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj'
-    if ($null -eq $document) {
+    $relativeProjectPath = 'eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj'
+    $document = Read-XmlDocument -RelativePath $relativeProjectPath
+    $projectRootElement =
+        Read-MSBuildProjectRootElement -RelativePath $relativeProjectPath
+    if ($null -eq $document -or $null -eq $projectRootElement) {
         return
     }
 
@@ -1046,6 +1160,34 @@ function Test-BuildPolicyProbeProject {
     foreach ($platformNode in $platformNodes) {
         if ([string]$platformNode.InnerText -ceq 'ARM') {
             Add-PolicyFailure -Message 'BuildPolicyProbe.vcxproj includes unsupported ARM32 platform ARM; only ARM64 is allowed.'
+        }
+    }
+
+
+    $vcpkgParticipationProperty = Get-RequiredSingleRootMSBuildPropertyElement `
+        -ProjectRootElement $projectRootElement `
+        -PropertyName 'VcpkgEnabled' `
+        -Description 'VcpkgEnabled' `
+        -SourceDescription $relativeProjectPath
+    if ($null -ne $vcpkgParticipationProperty) {
+        Assert-ExactValue `
+            -Actual $vcpkgParticipationProperty.Value `
+            -Expected 'false' `
+            -Description 'dependency-free build-policy probe vcpkg participation'
+        if ([string]$vcpkgParticipationProperty.Parent.Label -cne 'Globals') {
+            Add-PolicyFailure -Message (
+                "$relativeProjectPath must declare VcpkgEnabled in its Globals PropertyGroup."
+            )
+        }
+
+        $firstImport = @($projectRootElement.Imports)[0]
+        if (
+            $null -eq $firstImport -or
+            $vcpkgParticipationProperty.Location.Line -ge $firstImport.Location.Line
+        ) {
+            Add-PolicyFailure -Message (
+                "$relativeProjectPath must disable vcpkg before its first MSBuild import."
+            )
         }
     }
 }
@@ -1087,6 +1229,485 @@ function Test-LegacyCppCxProjectBuildPolicyScope {
             "$relativeProjectPath must opt out of the modern C++ build policy before " +
             'its first MSBuild import.'
         )
+    }
+}
+
+function Get-RepositoryRelativePath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    return [System.IO.Path]::GetRelativePath($repositoryRoot, $fullPath).Replace('\', '/')
+}
+
+function Test-OrdinalIgnoreCaseIdentityCollectionContains {
+    param(
+        [Parameter(Mandatory)]
+        [System.Collections.IEnumerable]$Identities,
+
+        [Parameter(Mandatory)]
+        [string]$Candidate
+    )
+
+    foreach ($identity in $Identities) {
+        if ([System.StringComparer]::OrdinalIgnoreCase.Equals(
+                [string]$identity,
+                $Candidate
+            )) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Test-ModernSolutionArchitecture {
+    # The reference graph is deliberately closed. A project may depend on the
+    # exact lower-level capabilities listed here and nothing else; keeping the
+    # graph as data makes additions visible during review instead of silently
+    # accepting every syntactically valid ProjectReference.
+    $expectedProjects = [ordered]@{
+        'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj' = [pscustomobject]@{
+            configurationType = 'StaticLibrary'
+            references = @()
+        }
+        'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj' = [pscustomobject]@{
+            configurationType = 'StaticLibrary'
+            references = @('src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj')
+        }
+        'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj' = [pscustomobject]@{
+            configurationType = 'StaticLibrary'
+            references = @('src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj')
+        }
+        'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj' = [pscustomobject]@{
+            configurationType = 'StaticLibrary'
+            references = @(
+                'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj',
+                'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj'
+            )
+        }
+        'src/JpgSpinner.App/JpgSpinner.App.vcxproj' = [pscustomobject]@{
+            configurationType = 'Application'
+            references = @(
+                'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj',
+                'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj',
+                'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj',
+                'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj'
+            )
+        }
+        'tests/TestSupport/TestSupport.vcxproj' = [pscustomobject]@{
+            configurationType = 'StaticLibrary'
+            references = @()
+        }
+        'tests/JpgSpinner.Domain.Tests/JpgSpinner.Domain.Tests.vcxproj' = [pscustomobject]@{
+            configurationType = 'Application'
+            references = @(
+                'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj',
+                'tests/TestSupport/TestSupport.vcxproj'
+            )
+        }
+        'tests/JpgSpinner.JpegTransformation.Tests/JpgSpinner.JpegTransformation.Tests.vcxproj' = [pscustomobject]@{
+            configurationType = 'Application'
+            references = @(
+                'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj',
+                'tests/TestSupport/TestSupport.vcxproj'
+            )
+        }
+        'tests/JpgSpinner.WindowsStorage.Tests/JpgSpinner.WindowsStorage.Tests.vcxproj' = [pscustomobject]@{
+            configurationType = 'Application'
+            references = @(
+                'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj',
+                'tests/TestSupport/TestSupport.vcxproj'
+            )
+        }
+        'tests/JpgSpinner.BatchProcessing.Tests/JpgSpinner.BatchProcessing.Tests.vcxproj' = [pscustomobject]@{
+            configurationType = 'Application'
+            references = @(
+                'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj',
+                'tests/TestSupport/TestSupport.vcxproj'
+            )
+        }
+        'tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj' = [pscustomobject]@{
+            configurationType = 'Application'
+            references = @(
+                'src/JpgSpinner.App/JpgSpinner.App.vcxproj',
+                'tests/TestSupport/TestSupport.vcxproj'
+            )
+        }
+    }
+    $expectedConfigurationNames = @(
+        'Debug|Win32',
+        'Debug|x64',
+        'Debug|ARM64',
+        'Release|Win32',
+        'Release|x64',
+        'Release|ARM64'
+    )
+
+    $solutionPath = Get-RepositoryPath -RelativePath 'JpgSpinner.sln'
+    if (-not (Test-Path -LiteralPath $solutionPath -PathType Leaf)) {
+        return
+    }
+    if ($null -eq $repositoryBuildToolchain) {
+        return
+    }
+
+    try {
+        # SolutionFile is MSBuild's parser for the Visual Studio solution
+        # format. It preserves configuration mappings and project identities
+        # without duplicating that format in repository-owned PowerShell.
+        $solution = [Microsoft.Build.Construction.SolutionFile]::Parse($solutionPath)
+    }
+    catch {
+        Add-PolicyFailure -Message "JpgSpinner.sln is not a valid Visual Studio solution: $($_.Exception.Message)"
+        return
+    }
+
+    $solutionProjectEntries = @(
+        $solution.ProjectsInOrder |
+            Where-Object ProjectType -EQ ([Microsoft.Build.Construction.SolutionProjectType]::KnownToBeMSBuildFormat) |
+            ForEach-Object {
+                [pscustomobject]@{
+                    Model = $_
+                    RelativePath = Get-RepositoryRelativePath -Path (
+                        Join-Path $repositoryRoot $_.RelativePath
+                    )
+                }
+            }
+    )
+    $solutionProjectPaths = @($solutionProjectEntries | ForEach-Object RelativePath)
+    foreach ($expectedProjectPath in $expectedProjects.Keys) {
+        $matchingProjectEntries = @(
+            $solutionProjectEntries |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.RelativePath,
+                        $expectedProjectPath
+                    )
+                }
+        )
+        $matchingProjectCount = $matchingProjectEntries.Count
+        if ($matchingProjectCount -ne 1) {
+            Add-PolicyFailure -Message (
+                "JpgSpinner.sln must contain project '$expectedProjectPath' exactly once; " +
+                "found $matchingProjectCount entries."
+            )
+            continue
+        }
+
+        # ProjectConfigurations is MSBuild's authoritative solution mapping
+        # model. Validate both ActiveCfg (FullName) and Build.0
+        # (IncludeInBuild) instead of reparsing the .sln text.
+        foreach ($expectedConfigurationName in $expectedConfigurationNames) {
+            $matchingConfigurationMappings = @(
+                $matchingProjectEntries[0].Model.ProjectConfigurations.GetEnumerator() |
+                    Where-Object {
+                        [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                            $_.Key,
+                            $expectedConfigurationName
+                        )
+                    }
+            )
+            if ($matchingConfigurationMappings.Count -ne 1) {
+                Add-PolicyFailure -Message (
+                    "$expectedProjectPath must map solution configuration " +
+                    "'$expectedConfigurationName' exactly once."
+                )
+                continue
+            }
+
+            $projectConfigurationMapping = $matchingConfigurationMappings[0].Value
+            if (-not [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                    $projectConfigurationMapping.FullName,
+                    $expectedConfigurationName
+                )) {
+                Add-PolicyFailure -Message (
+                    "$expectedProjectPath maps solution configuration " +
+                    "'$expectedConfigurationName' to '$($projectConfigurationMapping.FullName)'."
+                )
+            }
+            if (-not $projectConfigurationMapping.IncludeInBuild) {
+                Add-PolicyFailure -Message (
+                    "$expectedProjectPath is excluded from solution configuration " +
+                    "'$expectedConfigurationName'."
+                )
+            }
+        }
+    }
+    foreach ($solutionProjectPath in $solutionProjectPaths) {
+        if (-not (Test-OrdinalIgnoreCaseIdentityCollectionContains `
+                -Identities $expectedProjects.Keys `
+                -Candidate $solutionProjectPath)) {
+            Add-PolicyFailure -Message "JpgSpinner.sln contains unapproved project '$solutionProjectPath'."
+        }
+    }
+
+    $solutionConfigurationNames = @(
+        $solution.SolutionConfigurations | ForEach-Object FullName
+    )
+    foreach ($expectedConfigurationName in $expectedConfigurationNames) {
+        if ($expectedConfigurationName -cnotin $solutionConfigurationNames) {
+            Add-PolicyFailure -Message "JpgSpinner.sln is missing solution configuration '$expectedConfigurationName'."
+        }
+    }
+    foreach ($solutionConfigurationName in $solutionConfigurationNames) {
+        if ($solutionConfigurationName -cnotin $expectedConfigurationNames) {
+            Add-PolicyFailure -Message "JpgSpinner.sln contains unsupported solution configuration '$solutionConfigurationName'."
+        }
+    }
+
+    $msixPackagingProjectCount = 0
+    foreach ($expectedProject in $expectedProjects.GetEnumerator()) {
+        $relativeProjectPath = $expectedProject.Key
+        $projectRootElement = Read-MSBuildProjectRootElement -RelativePath $relativeProjectPath
+        if ($null -eq $projectRootElement) {
+            continue
+        }
+
+        $projectConfigurationNames = @(
+            $projectRootElement.Items |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.ItemType,
+                        'ProjectConfiguration'
+                    )
+                } |
+                ForEach-Object Include
+        )
+        foreach ($expectedConfigurationName in $expectedConfigurationNames) {
+            if (-not (Test-OrdinalIgnoreCaseIdentityCollectionContains `
+                    -Identities $projectConfigurationNames `
+                    -Candidate $expectedConfigurationName)) {
+                Add-PolicyFailure -Message "$relativeProjectPath is missing project configuration '$expectedConfigurationName'."
+            }
+        }
+        foreach ($projectConfigurationName in $projectConfigurationNames) {
+            if (-not (Test-OrdinalIgnoreCaseIdentityCollectionContains `
+                    -Identities $expectedConfigurationNames `
+                    -Candidate $projectConfigurationName)) {
+                Add-PolicyFailure -Message "$relativeProjectPath contains unsupported project configuration '$projectConfigurationName'."
+            }
+        }
+
+        $configurationTypeValues = @(
+            $projectRootElement.Properties |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.Name,
+                        'ConfigurationType'
+                    )
+                } |
+                ForEach-Object Value
+        )
+        if (
+            $configurationTypeValues.Count -ne 1 -or
+            $configurationTypeValues[0] -cne $expectedProject.Value.configurationType
+        ) {
+            Add-PolicyFailure -Message (
+                "$relativeProjectPath must declare ConfigurationType " +
+                "'$($expectedProject.Value.configurationType)' exactly once."
+            )
+        }
+
+        # Root policy owns these values. Repeating one after the shared props
+        # import can mask the reviewed selection even when it happens to use
+        # the same text today.
+        foreach ($rootOwnedPropertyName in @(
+            'PlatformToolset',
+            'VCToolsVersion',
+            'WindowsTargetPlatformVersion',
+            'UseEnv',
+            'VcpkgEnabled',
+            'VcpkgRoot',
+            'VcpkgEnableClassic',
+            'VcpkgEnableManifest',
+            'VcpkgManifestInstall',
+            'VcpkgAutoBootstrap',
+            'VcpkgManifestRoot',
+            'VcpkgApplocalDeps',
+            'VcpkgAdditionalInstallOptions',
+            'VcpkgTriplet'
+        )) {
+            $projectOwnedSelections = @(
+                $projectRootElement.Properties |
+                    Where-Object {
+                        [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                            $_.Name,
+                            $rootOwnedPropertyName
+                        )
+                    }
+            )
+            if ($projectOwnedSelections.Count -ne 0) {
+                Add-PolicyFailure -Message (
+                    "$relativeProjectPath must not redeclare root-owned property " +
+                    "'$rootOwnedPropertyName'."
+                )
+            }
+        }
+
+        $projectDirectory = Split-Path -Parent (Get-RepositoryPath -RelativePath $relativeProjectPath)
+        $actualReferencePaths = @(
+            $projectRootElement.Items |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.ItemType,
+                        'ProjectReference'
+                    )
+                } |
+                ForEach-Object {
+                    Get-RepositoryRelativePath -Path (
+                        Join-Path $projectDirectory $_.Include
+                    )
+                }
+        )
+        foreach ($expectedReferencePath in $expectedProject.Value.references) {
+            $matchingReferenceCount = @(
+                $actualReferencePaths |
+                    Where-Object {
+                        [System.StringComparer]::OrdinalIgnoreCase.Equals($_, $expectedReferencePath)
+                    }
+            ).Count
+            if ($matchingReferenceCount -ne 1) {
+                Add-PolicyFailure -Message (
+                    "$relativeProjectPath must reference '$expectedReferencePath' exactly once; " +
+                    "found $matchingReferenceCount entries."
+                )
+            }
+        }
+        foreach ($actualReferencePath in $actualReferencePaths) {
+            if (-not (Test-OrdinalIgnoreCaseIdentityCollectionContains `
+                    -Identities $expectedProject.Value.references `
+                    -Candidate $actualReferencePath)) {
+                Add-PolicyFailure -Message "$relativeProjectPath contains unapproved project reference '$actualReferencePath'."
+            }
+        }
+
+        $appxPackageValues = @(
+            $projectRootElement.Properties |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.Name,
+                        'AppxPackage'
+                    )
+                } |
+                ForEach-Object Value
+        )
+        $isMsixPackagingProject = $appxPackageValues -ccontains 'true'
+        if ($isMsixPackagingProject) {
+            ++$msixPackagingProjectCount
+        }
+
+        if ($relativeProjectPath -ceq 'src/JpgSpinner.App/JpgSpinner.App.vcxproj') {
+            foreach ($requiredAppProperty in ([ordered]@{
+                AppContainerApplication = 'false'
+                AppxPackage = 'true'
+                ApplicationType = 'Windows Store'
+                ApplicationTypeRevision = '10.0'
+                UseWinUI = 'true'
+                WinUISDKReferences = 'false'
+                EnableMsixTooling = 'true'
+                RuntimeIdentifiers = 'win;win-x86;win-x64;win-arm64'
+                WindowsAppSDKSelfContained = $null
+            }).GetEnumerator()) {
+                # WindowsAppSDKSelfContained is intentionally absent here: its
+                # framework-dependent false value is owned by root policy.
+                $matchingProperties = @(
+                    $projectRootElement.Properties |
+                        Where-Object {
+                            [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                                $_.Name,
+                                $requiredAppProperty.Key
+                            )
+                        }
+                )
+                if ($null -eq $requiredAppProperty.Value) {
+                    if ($matchingProperties.Count -ne 0) {
+                        Add-PolicyFailure -Message (
+                            "$relativeProjectPath must inherit root-owned property " +
+                            "'$($requiredAppProperty.Key)'."
+                        )
+                    }
+                }
+                elseif (
+                    $matchingProperties.Count -ne 1 -or
+                    $matchingProperties[0].Value -cne $requiredAppProperty.Value
+                ) {
+                    Add-PolicyFailure -Message (
+                        "$relativeProjectPath must declare $($requiredAppProperty.Key) " +
+                        "'$($requiredAppProperty.Value)' exactly once."
+                    )
+                }
+            }
+        }
+
+        $windowsPackageTypeValues = @(
+            $projectRootElement.Properties |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.Name,
+                        'WindowsPackageType'
+                    )
+                } |
+                ForEach-Object Value
+        )
+        $windowsAppSdkReferences = @(
+            $projectRootElement.Items |
+                Where-Object {
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.ItemType,
+                        'PackageReference'
+                    ) -and
+                    [System.StringComparer]::OrdinalIgnoreCase.Equals(
+                        $_.Include,
+                        'Microsoft.WindowsAppSDK'
+                    )
+                }
+        )
+        if ($relativeProjectPath.StartsWith('src/', [System.StringComparison]::Ordinal)) {
+            if ($windowsPackageTypeValues -ccontains 'None') {
+                Add-PolicyFailure -Message (
+                    "$relativeProjectPath is production code and must not enable the " +
+                    'Windows App SDK unpackaged bootstrapper.'
+                )
+            }
+        }
+        elseif (
+            $windowsAppSdkReferences.Count -gt 0 -and
+            -not $isMsixPackagingProject -and
+            $windowsPackageTypeValues -cnotcontains 'None'
+        ) {
+            Add-PolicyFailure -Message (
+                "$relativeProjectPath directly consumes Windows App SDK runtime types " +
+                "without package identity or the official WindowsPackageType=None test bootstrapper."
+            )
+        }
+    }
+
+    if ($msixPackagingProjectCount -ne 1) {
+        Add-PolicyFailure -Message (
+            'JpgSpinner.sln must contain exactly one single-project MSIX packaging project; ' +
+            "found $msixPackagingProjectCount."
+        )
+    }
+
+    # Packaged production startup receives its framework dependency through the
+    # package graph. Direct bootstrapper calls would create a second, conflicting
+    # initialization path and are reserved for explicitly unpackaged tests.
+    $productionSourceRoot = Get-RepositoryPath -RelativePath 'src'
+    if (Test-Path -LiteralPath $productionSourceRoot -PathType Container) {
+        foreach ($productionSourceFile in Get-ChildItem -LiteralPath $productionSourceRoot -Recurse -File) {
+            if ($productionSourceFile.Extension -cnotin @('.cpp', '.cxx', '.h', '.hpp', '.ixx')) {
+                continue
+            }
+            $sourceText = [System.IO.File]::ReadAllText($productionSourceFile.FullName)
+            if ($sourceText -match '(?i)\bMddBootstrap(?:Initialize2?|Shutdown)\b') {
+                Add-PolicyFailure -Message (
+                    "$(Get-RepositoryRelativePath -Path $productionSourceFile.FullName) " +
+                    'must not call the Windows App SDK bootstrapper from packaged production code.'
+                )
+            }
+        }
     }
 }
 
@@ -1562,7 +2183,20 @@ $requiredConfigurationFiles = @(
     'eng/toolchain-lock.json',
     'eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj',
     'eng/BuildPolicyProbe/BuildPolicyProbe.cpp',
-    'JPG Spinner/JPG Spinner.vcxproj'
+    'JPG Spinner/JPG Spinner.vcxproj',
+    'JpgSpinner.sln',
+    'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj',
+    'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj',
+    'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj',
+    'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj',
+    'src/JpgSpinner.App/JpgSpinner.App.vcxproj',
+    'tests/TestSupport/TestSupport.vcxproj',
+    'tests/JpgSpinner.Domain.Tests/JpgSpinner.Domain.Tests.vcxproj',
+    'tests/JpgSpinner.JpegTransformation.Tests/JpgSpinner.JpegTransformation.Tests.vcxproj',
+    'tests/JpgSpinner.WindowsStorage.Tests/JpgSpinner.WindowsStorage.Tests.vcxproj',
+    'tests/JpgSpinner.BatchProcessing.Tests/JpgSpinner.BatchProcessing.Tests.vcxproj',
+    'tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj',
+    'tests/TestData/README.md'
 )
 
 foreach ($relativePath in $requiredConfigurationFiles) {
@@ -1575,6 +2209,7 @@ Test-DirectoryBuildProperties
 Test-DirectoryBuildTargets
 Test-BuildPolicyProbeProject
 Test-LegacyCppCxProjectBuildPolicyScope
+Test-ModernSolutionArchitecture
 Test-NuGetConfiguration
 Test-EditorConfiguration
 Test-ClangFormatConfiguration

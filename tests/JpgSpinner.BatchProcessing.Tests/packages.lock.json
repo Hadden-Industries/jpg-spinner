@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "dependencies": {
+    "native,Version=v0.0": {
+      "jpgspinner.batchprocessing": {
+        "type": "Project",
+        "dependencies": {
+          "JpgSpinner.Domain": "[1.0.0, )",
+          "JpgSpinner.JpegTransformation": "[1.0.0, )"
+        }
+      },
+      "jpgspinner.domain": {
+        "type": "Project"
+      },
+      "jpgspinner.jpegtransformation": {
+        "type": "Project",
+        "dependencies": {
+          "JpgSpinner.Domain": "[1.0.0, )"
+        }
+      },
+      "testsupport": {
+        "type": "Project"
+      }
+    }
+  }
+}

@@ -29,7 +29,11 @@ function Copy-RepositoryFile {
 function Invoke-IsolatedEffectiveBuildPolicy {
     $powerShellExecutablePath = (Get-Process -Id $PID).Path
     $effectiveBuildPolicyPath = Join-Path $temporaryRepositoryRoot 'scripts/Test-EffectiveBuildPolicy.ps1'
-    $output = & $powerShellExecutablePath -NoProfile -File $effectiveBuildPolicyPath 2>&1
+    $output = & $powerShellExecutablePath `
+        -NoProfile `
+        -File $effectiveBuildPolicyPath `
+        -EvidenceScope ToolchainProbe `
+        2>&1
 
     return [pscustomobject]@{
         exitCode = $LASTEXITCODE

@@ -50,4 +50,8 @@
       <AdditionalOptions>/CETCOMPAT %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
+
+  <Import
+    Project="$(VcpkgRoot)scripts\buildsystems\msbuild\vcpkg.targets"
+    Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(VcpkgEnabled)' != 'false'" />
 </Project>

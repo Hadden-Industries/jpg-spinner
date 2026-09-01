@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "dependencies": {
+    "native,Version=v0.0": {
+      "jpgspinner.domain": {
+        "type": "Project"
+      },
+      "jpgspinner.windowsstorage": {
+        "type": "Project",
+        "dependencies": {
+          "JpgSpinner.Domain": "[1.0.0, )",
+          "Microsoft.Windows.CppWinRT": "[3.0.260818.1, )"
+        }
+      },
+      "testsupport": {
+        "type": "Project"
+      },
+      "Microsoft.Windows.CppWinRT": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.260818.1, )",
+        "resolved": "3.0.260818.1",
+        "contentHash": "jBwP7ycb35/qnvwh+iysvelATSoIjjFtQBg29Ns1f5OVPKa1rur3VhJVQD5p3n/ADE2IAeVo/bN+EiFfztTROw=="
+      }
+    }
+  }
+}

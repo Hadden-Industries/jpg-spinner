@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dependencies": {
+    "native,Version=v0.0": {
+      "jpgspinner.domain": {
+        "type": "Project"
+      },
+      "testsupport": {
+        "type": "Project"
+      }
+    }
+  }
+}

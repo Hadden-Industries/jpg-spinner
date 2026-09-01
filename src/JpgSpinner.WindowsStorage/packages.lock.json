@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dependencies": {
+    "native,Version=v0.0": {
+      "Microsoft.Windows.CppWinRT": {
+        "type": "Direct",
+        "requested": "[3.0.260818.1, )",
+        "resolved": "3.0.260818.1",
+        "contentHash": "jBwP7ycb35/qnvwh+iysvelATSoIjjFtQBg29Ns1f5OVPKa1rur3VhJVQD5p3n/ADE2IAeVo/bN+EiFfztTROw=="
+      },
+      "jpgspinner.domain": {
+        "type": "Project"
+      }
+    }
+  }
+}

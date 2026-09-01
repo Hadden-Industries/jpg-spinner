@@ -36,5 +36,36 @@
     <WindowsTargetPlatformVersion>10.0.28000.0</WindowsTargetPlatformVersion>
     <!-- The Store package supplies identity and framework dependencies. -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <!--
+      Visual Studio 2026 ships native vcxproj PackageReference support behind
+      this explicit opt-in. Enabling the project-system implementation is what
+      makes restore and build consume the same native dependency graph; do not
+      recreate that integration with package imports or compatibility targets.
+    -->
+    <EnableNativePackageReferenceSupport>true</EnableNativePackageReferenceSupport>
+
+    <!--
+      Use the vcpkg bundled with the selected Visual Studio instance. Explicit
+      repository imports avoid mutable user-wide `vcpkg integrate install`
+      state while retaining vcpkg's supported MSBuild integration targets.
+    -->
+    <VcpkgRoot>$(VsInstallRoot)\VC\vcpkg\</VcpkgRoot>
+    <VcpkgEnableClassic>false</VcpkgEnableClassic>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestInstall>true</VcpkgManifestInstall>
+    <!-- The bundled executable must already exist; never mutate the selected Visual Studio installation by bootstrapping. -->
+    <VcpkgAutoBootstrap>false</VcpkgAutoBootstrap>
+    <VcpkgManifestRoot>$(MSBuildThisFileDirectory)</VcpkgManifestRoot>
+    <!-- Every reviewed dependency is static, so app-local DLL discovery is unnecessary. -->
+    <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
+    <!-- Select only the three repository-owned triplets whose executed CMake command streams are policy-verified. -->
+    <VcpkgAdditionalInstallOptions>--overlay-triplets="$(MSBuildThisFileDirectory)vcpkg-triplets"</VcpkgAdditionalInstallOptions>
+    <VcpkgTriplet Condition="'$(Platform)' == 'Win32'">x86-windows-static-md</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)' == 'x64'">x64-windows-static-md</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)' == 'ARM64'">arm64-windows-static-md</VcpkgTriplet>
   </PropertyGroup>
+
+  <Import
+    Project="$(VcpkgRoot)scripts\buildsystems\msbuild\vcpkg.props"
+    Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(VcpkgEnabled)' != 'false'" />
 </Project>

@@ -31,6 +31,8 @@
     <ProjectGuid>{A58554F8-1D4A-4C45-9ED1-E4A41B985796}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>JpgSpinnerBuildPolicyProbe</RootNamespace>
+    <!-- This project proves first-party compiler/linker policy without any dependency graph. -->
+    <VcpkgEnabled>false</VcpkgEnabled>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

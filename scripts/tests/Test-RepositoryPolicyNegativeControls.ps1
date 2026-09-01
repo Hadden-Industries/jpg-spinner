@@ -57,12 +57,12 @@ try {
         '.editorconfig',
         '.clang-format',
         '.clang-tidy',
-        'src/JpgSpinner.App/.clang-tidy',
         '.gitignore',
         'Directory.Build.props',
         'Directory.Build.targets',
         'NuGet.config',
         'vcpkg.json',
+        'JpgSpinner.sln',
         'JPG Spinner/JPG Spinner.vcxproj'
     )) {
         $destinationPath = Join-Path $temporaryRoot $relativeFilePath
@@ -77,11 +77,328 @@ try {
         -LiteralPath (Join-Path $repositoryRoot 'vcpkg-triplets') `
         -Destination (Join-Path $temporaryRoot 'vcpkg-triplets') `
         -Recurse
+    Copy-Item `
+        -LiteralPath (Join-Path $repositoryRoot 'src') `
+        -Destination (Join-Path $temporaryRoot 'src') `
+        -Recurse
+    Copy-Item `
+        -LiteralPath (Join-Path $repositoryRoot 'tests') `
+        -Destination (Join-Path $temporaryRoot 'tests') `
+        -Recurse
 
     $baselineResult = Invoke-IsolatedRepositoryPolicy
     if ($baselineResult.exitCode -ne 0) {
         throw "The isolated valid configuration must pass before negative controls run.`n$($baselineResult.output)"
     }
+
+    $directoryBuildPropertiesRelativePath = 'Directory.Build.props'
+    $directoryBuildPropertiesPath =
+        Join-Path $temporaryRoot $directoryBuildPropertiesRelativePath
+    $directoryBuildPropertiesSourcePath =
+        Join-Path $repositoryRoot $directoryBuildPropertiesRelativePath
+    $directoryBuildPropertiesDocument = [System.Xml.XmlDocument]::new()
+    $directoryBuildPropertiesDocument.PreserveWhitespace = $true
+
+    # The repository-owned triplet directory is the sole approved extension to
+    # vcpkg's builtin triplet search. A second path could replace the reviewed
+    # CMake program while preserving the same triplet name.
+    $directoryBuildPropertiesDocument.Load($directoryBuildPropertiesPath)
+    $vcpkgInstallOptionsNode = $directoryBuildPropertiesDocument.SelectSingleNode(
+        '/Project/PropertyGroup/VcpkgAdditionalInstallOptions'
+    )
+    if ($null -eq $vcpkgInstallOptionsNode) {
+        throw 'The valid Directory.Build.props fixture lacks VcpkgAdditionalInstallOptions.'
+    }
+    $vcpkgInstallOptionsNode.InnerText =
+        '--overlay-triplets="C:\unapproved-triplets"'
+    $directoryBuildPropertiesDocument.Save($directoryBuildPropertiesPath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        'VcpkgAdditionalInstallOptions must be'
+    )
+    Copy-Item `
+        -LiteralPath $directoryBuildPropertiesSourcePath `
+        -Destination $directoryBuildPropertiesPath `
+        -Force
+
+    # Platform selection is a closed mapping. Falling back to a dynamically
+    # linked builtin triplet would change both linkage and dependency binaries.
+    $directoryBuildPropertiesDocument.Load($directoryBuildPropertiesPath)
+    $expectedX64TripletCondition = "'`$(Platform)' == 'x64'"
+    $x64TripletNodes = @(
+        $directoryBuildPropertiesDocument.SelectNodes('/Project/PropertyGroup/VcpkgTriplet') |
+            Where-Object {
+                $_.GetAttribute('Condition') -ceq $expectedX64TripletCondition
+            }
+    )
+    if ($x64TripletNodes.Count -ne 1) {
+        throw 'The valid Directory.Build.props fixture lacks its x64 VcpkgTriplet mapping.'
+    }
+    $x64TripletNode = $x64TripletNodes[0]
+    $x64TripletNode.InnerText = 'x64-windows'
+    $directoryBuildPropertiesDocument.Save($directoryBuildPropertiesPath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        "must map '`$(Platform)' == 'x64' to 'x64-windows-static-md'"
+    )
+    Copy-Item `
+        -LiteralPath $directoryBuildPropertiesSourcePath `
+        -Destination $directoryBuildPropertiesPath `
+        -Force
+
+    # The effective-policy probe intentionally has no dependency graph. If it
+    # inherits manifest installation, every policy check would perform a large
+    # unrelated package build and stop being a focused compiler/linker proof.
+    $buildPolicyProbeRelativePath = 'eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj'
+    $buildPolicyProbePath = Join-Path $temporaryRoot $buildPolicyProbeRelativePath
+    $buildPolicyProbeSourcePath = Join-Path $repositoryRoot $buildPolicyProbeRelativePath
+    $buildPolicyProbeDocument = [System.Xml.XmlDocument]::new()
+    $buildPolicyProbeDocument.PreserveWhitespace = $true
+    $buildPolicyProbeDocument.Load($buildPolicyProbePath)
+    $probeVcpkgEnabledNode = $buildPolicyProbeDocument.SelectSingleNode(
+        '/*[local-name()="Project"]/*[local-name()="PropertyGroup" and @Label="Globals"]/*[local-name()="VcpkgEnabled"]'
+    )
+    if ($null -eq $probeVcpkgEnabledNode) {
+        throw 'The valid build-policy probe fixture lacks VcpkgEnabled.'
+    }
+    [void]$probeVcpkgEnabledNode.ParentNode.RemoveChild($probeVcpkgEnabledNode)
+    $buildPolicyProbeDocument.Save($buildPolicyProbePath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        "$buildPolicyProbeRelativePath must declare VcpkgEnabled exactly once"
+    )
+    Copy-Item `
+        -LiteralPath $buildPolicyProbeSourcePath `
+        -Destination $buildPolicyProbePath `
+        -Force
+
+    $domainProjectRelativePath = 'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj'
+    $domainProjectPath = Join-Path $temporaryRoot $domainProjectRelativePath
+    $domainProjectSourcePath = Join-Path $repositoryRoot $domainProjectRelativePath
+    $domainProjectDocument = [System.Xml.XmlDocument]::new()
+    $domainProjectDocument.PreserveWhitespace = $true
+    $domainProjectDocument.Load($domainProjectPath)
+    $msBuildNamespace = $domainProjectDocument.DocumentElement.NamespaceURI
+
+    # The domain project is the dependency graph's innermost layer. A
+    # syntactically valid reference back to orchestration would create a cycle
+    # in the architectural direction and must be rejected as an unapproved edge.
+    $unapprovedReferenceItemGroup = $domainProjectDocument.CreateElement(
+        'ItemGroup',
+        $msBuildNamespace
+    )
+    $unapprovedReference = $domainProjectDocument.CreateElement(
+        'ProjectReference',
+        $msBuildNamespace
+    )
+    $unapprovedReference.SetAttribute(
+        'Include',
+        '..\JpgSpinner.BatchProcessing\JpgSpinner.BatchProcessing.vcxproj'
+    )
+    [void]$unapprovedReferenceItemGroup.AppendChild($unapprovedReference)
+    [void]$domainProjectDocument.DocumentElement.AppendChild($unapprovedReferenceItemGroup)
+    $domainProjectDocument.Save($domainProjectPath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        "$domainProjectRelativePath contains unapproved project reference " +
+        "'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj'"
+    )
+    Copy-Item -LiteralPath $domainProjectSourcePath -Destination $domainProjectPath -Force
+
+    # MSBuild property and item identities are case-insensitive even though XML
+    # element names are not. Vary both spellings so the policy must follow the
+    # build engine's semantic identity instead of the source text's casing.
+    $domainProjectDocument.Load($domainProjectPath)
+    $caseVariedPropertyGroup = $domainProjectDocument.CreateElement(
+        'PropertyGroup',
+        $msBuildNamespace
+    )
+    $caseVariedUseEnvironmentProperty = $domainProjectDocument.CreateElement(
+        'useenv',
+        $msBuildNamespace
+    )
+    $caseVariedUseEnvironmentProperty.InnerText = 'true'
+    [void]$caseVariedPropertyGroup.AppendChild($caseVariedUseEnvironmentProperty)
+    [void]$domainProjectDocument.DocumentElement.AppendChild($caseVariedPropertyGroup)
+
+    $caseVariedReferenceItemGroup = $domainProjectDocument.CreateElement(
+        'ItemGroup',
+        $msBuildNamespace
+    )
+    $caseVariedUnapprovedReference = $domainProjectDocument.CreateElement(
+        'projectreference',
+        $msBuildNamespace
+    )
+    $caseVariedUnapprovedReference.SetAttribute(
+        'Include',
+        '..\JpgSpinner.BatchProcessing\JpgSpinner.BatchProcessing.vcxproj'
+    )
+    [void]$caseVariedReferenceItemGroup.AppendChild($caseVariedUnapprovedReference)
+    [void]$domainProjectDocument.DocumentElement.AppendChild($caseVariedReferenceItemGroup)
+    $domainProjectDocument.Save($domainProjectPath)
+    Assert-RejectedMutation -ExpectedDiagnostics @(
+        "$domainProjectRelativePath must not redeclare root-owned property 'UseEnv'"
+        "$domainProjectRelativePath contains unapproved project reference " +
+            "'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj'"
+    )
+    Copy-Item -LiteralPath $domainProjectSourcePath -Destination $domainProjectPath -Force
+
+    # Win32 is MSBuild's canonical x86 platform name for these native projects.
+    # Adding the distinct legacy ARM platform must not be mistaken for ARM64.
+    $domainProjectDocument.Load($domainProjectPath)
+    $projectConfigurationItemGroup = $domainProjectDocument.SelectSingleNode(
+        '/*[local-name()="Project"]/*[local-name()="ItemGroup" and @Label="ProjectConfigurations"]'
+    )
+    if ($null -eq $projectConfigurationItemGroup) {
+        throw 'The valid domain project fixture lacks its ProjectConfigurations item group.'
+    }
+    $arm32ProjectConfiguration = $domainProjectDocument.CreateElement(
+        'ProjectConfiguration',
+        $msBuildNamespace
+    )
+    $arm32ProjectConfiguration.SetAttribute('Include', 'Debug|ARM')
+    $arm32Configuration = $domainProjectDocument.CreateElement('Configuration', $msBuildNamespace)
+    $arm32Configuration.InnerText = 'Debug'
+    $arm32Platform = $domainProjectDocument.CreateElement('Platform', $msBuildNamespace)
+    $arm32Platform.InnerText = 'ARM'
+    [void]$arm32ProjectConfiguration.AppendChild($arm32Configuration)
+    [void]$arm32ProjectConfiguration.AppendChild($arm32Platform)
+    [void]$projectConfigurationItemGroup.AppendChild($arm32ProjectConfiguration)
+    $domainProjectDocument.Save($domainProjectPath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        "$domainProjectRelativePath contains unsupported project configuration 'Debug|ARM'"
+    )
+    Copy-Item -LiteralPath $domainProjectSourcePath -Destination $domainProjectPath -Force
+
+    # Solution-level configuration names do not prove the per-project mapping.
+    # Redirect one ActiveCfg and remove its Build.0 entry to require both exact
+    # platform selection and participation for every project/configuration pair.
+    $solutionRelativePath = 'JpgSpinner.sln'
+    $solutionPath = Join-Path $temporaryRoot $solutionRelativePath
+    $solutionSourcePath = Join-Path $repositoryRoot $solutionRelativePath
+    $solutionText = [System.IO.File]::ReadAllText($solutionPath)
+    $domainProjectGuid = '{004936AC-71F4-4208-A8A2-B0AE7B18291E}'
+    $expectedActiveConfigurationLine =
+        "`t$domainProjectGuid.Release|ARM64.ActiveCfg = Release|ARM64"
+    $expectedBuildParticipationLine =
+        "`t$domainProjectGuid.Release|ARM64.Build.0 = Release|ARM64"
+    $solutionLineEnding = if ($solutionText.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $mutatedSolutionText = $solutionText.Replace(
+        $expectedActiveConfigurationLine,
+        "`t$domainProjectGuid.Release|ARM64.ActiveCfg = Release|x64"
+    ).Replace(
+        $expectedBuildParticipationLine + $solutionLineEnding,
+        ''
+    )
+    if (
+        $mutatedSolutionText -ceq $solutionText -or
+        $mutatedSolutionText.Contains($expectedActiveConfigurationLine) -or
+        $mutatedSolutionText.Contains($expectedBuildParticipationLine)
+    ) {
+        throw 'The valid solution fixture lacks the expected Domain Release|ARM64 mappings.'
+    }
+    [System.IO.File]::WriteAllText(
+        $solutionPath,
+        $mutatedSolutionText,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    Assert-RejectedMutation -ExpectedDiagnostics @(
+        "$domainProjectRelativePath maps solution configuration 'Release|ARM64' to 'Release|x64'"
+        "$domainProjectRelativePath is excluded from solution configuration 'Release|ARM64'"
+    )
+    Copy-Item -LiteralPath $solutionSourcePath -Destination $solutionPath -Force
+
+    # Toolchain selection is repository-owned and imported before every modern
+    # project. A project-local value after that import can mask the lock even if
+    # its current text happens to match, so the declaration itself is forbidden.
+    $domainProjectDocument.Load($domainProjectPath)
+    $maskedToolchainPropertyGroup = $domainProjectDocument.CreateElement(
+        'PropertyGroup',
+        $msBuildNamespace
+    )
+    $maskedToolchainProperty = $domainProjectDocument.CreateElement(
+        'VCToolsVersion',
+        $msBuildNamespace
+    )
+    $maskedToolchainProperty.InnerText = '14.51.36231'
+    [void]$maskedToolchainPropertyGroup.AppendChild($maskedToolchainProperty)
+    [void]$domainProjectDocument.DocumentElement.AppendChild($maskedToolchainPropertyGroup)
+    $domainProjectDocument.Save($domainProjectPath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        "$domainProjectRelativePath must not redeclare root-owned property 'VCToolsVersion'"
+    )
+    Copy-Item -LiteralPath $domainProjectSourcePath -Destination $domainProjectPath -Force
+
+    # Only the presentation shell owns package generation. A second AppxPackage
+    # flag would create an independently distributable artifact and violate the
+    # single-project MSIX boundary.
+    $domainProjectDocument.Load($domainProjectPath)
+    $secondMsixPropertyGroup = $domainProjectDocument.CreateElement(
+        'PropertyGroup',
+        $msBuildNamespace
+    )
+    $secondMsixProperty = $domainProjectDocument.CreateElement(
+        'AppxPackage',
+        $msBuildNamespace
+    )
+    $secondMsixProperty.InnerText = 'true'
+    [void]$secondMsixPropertyGroup.AppendChild($secondMsixProperty)
+    [void]$domainProjectDocument.DocumentElement.AppendChild($secondMsixPropertyGroup)
+    $domainProjectDocument.Save($domainProjectPath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        'JpgSpinner.sln must contain exactly one single-project MSIX packaging project; found 2'
+    )
+    Copy-Item -LiteralPath $domainProjectSourcePath -Destination $domainProjectPath -Force
+
+    $appProjectRelativePath = 'src/JpgSpinner.App/JpgSpinner.App.vcxproj'
+    $appProjectPath = Join-Path $temporaryRoot $appProjectRelativePath
+    $appProjectDocument = [System.Xml.XmlDocument]::new()
+    $appProjectDocument.PreserveWhitespace = $true
+    $appProjectDocument.Load($appProjectPath)
+    $appMsBuildNamespace = $appProjectDocument.DocumentElement.NamespaceURI
+
+    # WindowsPackageType=None activates the Windows App SDK's official
+    # unpackaged bootstrapper auto-initializer. Production is packaged and must
+    # obtain its runtime through the package graph instead.
+    $unpackagedProductionPropertyGroup = $appProjectDocument.CreateElement(
+        'PropertyGroup',
+        $appMsBuildNamespace
+    )
+    $unpackagedProductionProperty = $appProjectDocument.CreateElement(
+        'WindowsPackageType',
+        $appMsBuildNamespace
+    )
+    $unpackagedProductionProperty.InnerText = 'None'
+    [void]$unpackagedProductionPropertyGroup.AppendChild($unpackagedProductionProperty)
+    [void]$appProjectDocument.DocumentElement.AppendChild($unpackagedProductionPropertyGroup)
+    $appProjectDocument.Save($appProjectPath)
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        "$appProjectRelativePath is production code and must not enable the Windows App SDK unpackaged bootstrapper"
+    )
+    Copy-Item `
+        -LiteralPath (Join-Path $repositoryRoot $appProjectRelativePath) `
+        -Destination $appProjectPath `
+        -Force
+
+    $bootstrapperSourcePath = Join-Path $temporaryRoot 'src/JpgSpinner.App/BootstrapperNegativeControl.cpp'
+    [System.IO.File]::WriteAllText(
+        $bootstrapperSourcePath,
+        "void InvokeForbiddenBootstrapper() { MddBootstrapInitialize(); }`n",
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        'src/JpgSpinner.App/BootstrapperNegativeControl.cpp must not call the Windows App SDK bootstrapper'
+    )
+    [System.IO.File]::Delete($bootstrapperSourcePath)
+
+    # The current Windows App SDK exposes the options-bearing Initialize2 API
+    # alongside the original initializer. Its numeric suffix must remain within
+    # the packaged-production bootstrap prohibition.
+    [System.IO.File]::WriteAllText(
+        $bootstrapperSourcePath,
+        "void InvokeForbiddenBootstrapper() { MddBootstrapInitialize2(); }`n",
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    Assert-RejectedMutation -ExpectedDiagnostics (
+        'src/JpgSpinner.App/BootstrapperNegativeControl.cpp must not call the Windows App SDK bootstrapper'
+    )
+    [System.IO.File]::Delete($bootstrapperSourcePath)
 
     # The legacy project must establish its exception before the root policy is
     # imported. Flipping the project-owned switch recreates the reviewed
@@ -235,6 +552,26 @@ try {
     Assert-RejectedMutation -ExpectedDiagnostics 'SpectreMitigation'
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'Directory.Build.props') -Destination $buildPropertiesPath -Force
 
+    # Visual Studio 2026 keeps native vcxproj PackageReference support behind
+    # an explicit project-system opt-in. Removing it makes restore and build
+    # consume different dependency graphs, so repository policy must treat it
+    # as a unique toolchain-selection property rather than a template detail.
+    $buildPropertiesContent = [System.IO.File]::ReadAllText($buildPropertiesPath)
+    $mutatedBuildPropertiesContent = $buildPropertiesContent.Replace(
+        '    <EnableNativePackageReferenceSupport>true</EnableNativePackageReferenceSupport>' + "`n",
+        ''
+    )
+    if ($mutatedBuildPropertiesContent -ceq $buildPropertiesContent) {
+        throw 'The valid Directory.Build.props fixture lacks EnableNativePackageReferenceSupport.'
+    }
+    [System.IO.File]::WriteAllText(
+        $buildPropertiesPath,
+        $mutatedBuildPropertiesContent,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    Assert-RejectedMutation -ExpectedDiagnostics 'EnableNativePackageReferenceSupport'
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'Directory.Build.props') -Destination $buildPropertiesPath -Force
+
     # Early toolchain-selection properties are single-valued repository
     # contracts. Selecting only the first XML node would let a later declaration
     # change normal MSBuild evaluation while the structural gate reports the
@@ -246,7 +583,8 @@ try {
         [pscustomobject]@{ name = 'PlatformToolset'; value = 'JpgSpinnerInvalidToolset' },
         [pscustomobject]@{ name = 'VCToolsVersion'; value = '0.0.0' },
         [pscustomobject]@{ name = 'WindowsTargetPlatformVersion'; value = '0.0.0.0' },
-        [pscustomobject]@{ name = 'UseEnv'; value = 'true' }
+        [pscustomobject]@{ name = 'UseEnv'; value = 'true' },
+        [pscustomobject]@{ name = 'EnableNativePackageReferenceSupport'; value = 'false' }
     )) {
         $duplicateSelectionPropertyNode =
             $buildPropertiesDocument.CreateElement($duplicateSelectionProperty.name)
@@ -261,6 +599,7 @@ try {
         'Directory.Build.props must declare VCToolsVersion exactly once'
         'Directory.Build.props must declare WindowsTargetPlatformVersion exactly once'
         'Directory.Build.props must declare UseEnv exactly once'
+        'Directory.Build.props must declare EnableNativePackageReferenceSupport exactly once'
     )
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'Directory.Build.props') -Destination $buildPropertiesPath -Force
 
@@ -285,7 +624,8 @@ try {
         # than XML element-name casing.
         [pscustomobject]@{ name = 'vctoolsversion'; value = '0.0.0' },
         [pscustomobject]@{ name = 'WindowsTargetPlatformVersion'; value = '0.0.0.0' },
-        [pscustomobject]@{ name = 'useenv'; value = 'true' }
+        [pscustomobject]@{ name = 'useenv'; value = 'true' },
+        [pscustomobject]@{ name = 'enablenativepackagereferencesupport'; value = 'false' }
     )) {
         $conditionalSelectionPropertyNode =
             $buildPropertiesDocument.CreateElement($conditionalSelectionProperty.name)
@@ -302,6 +642,7 @@ try {
         'Directory.Build.props must declare VCToolsVersion exactly once'
         'Directory.Build.props must declare WindowsTargetPlatformVersion exactly once'
         'Directory.Build.props must declare UseEnv exactly once'
+        'Directory.Build.props must declare EnableNativePackageReferenceSupport exactly once'
     )
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'Directory.Build.props') -Destination $buildPropertiesPath -Force
 

@@ -1,13 +1,36 @@
 [CmdletBinding()]
-param()
+param(
+    [Parameter()]
+    [ValidateSet('Complete', 'ToolchainProbe', 'ModernSolution', IgnoreCase = $false)]
+    [string]$EvidenceScope = 'Complete',
+
+    [Parameter()]
+    [ValidateSet('Debug', 'Release', IgnoreCase = $false)]
+    [string[]]$ToolchainProbeConfigurations = @('Debug', 'Release'),
+
+    [Parameter()]
+    [ValidateSet('Win32', 'x64', 'ARM64', IgnoreCase = $false)]
+    [string[]]$ToolchainProbePlatforms = @('Win32', 'x64', 'ARM64'),
+
+    [Parameter()]
+    [ValidateSet('Debug', 'Release', IgnoreCase = $false)]
+    [string[]]$ModernSolutionConfigurations = @('Debug', 'Release'),
+
+    [Parameter()]
+    [ValidateSet('Win32', 'x64', 'ARM64', IgnoreCase = $false)]
+    [string[]]$ModernSolutionPlatforms = @('x64')
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $probeProjectPath = Join-Path $repositoryRoot 'eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj'
+$modernSolutionPath = Join-Path $repositoryRoot 'JpgSpinner.sln'
+$repositoryNuGetConfigurationPath = Join-Path $repositoryRoot 'NuGet.config'
 $resolverPath = Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1'
 $artifactsRoot = Join-Path $repositoryRoot 'artifacts/build-policy-probe'
+$modernSolutionArtifactsRoot = Join-Path $repositoryRoot 'artifacts/build-policy-modern-solution'
 $policyFailures = [System.Collections.Generic.List[string]]::new()
 
 $dumpbinImageMitigationMetadataModulePath =
@@ -386,6 +409,152 @@ function Test-RequiredEffectiveCommandOptionFamily {
     }
 }
 
+function Test-CompilerCommandPolicy {
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [string[]]$CommandArguments,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('Debug', 'Release')]
+        [string]$Configuration,
+
+        [Parameter(Mandatory)]
+        [string]$Context
+    )
+
+    Test-MsvcCommandFileArgumentsAbsent `
+        -CommandArguments $CommandArguments `
+        -Context $Context
+
+    foreach ($requiredCompilerOption in @('/utf-8', '/Brepro')) {
+        Test-RequiredMsvcCommandOption `
+            -CommandArguments $CommandArguments `
+            -Option $requiredCompilerOption `
+            -MsvcTool CL `
+            -Context $Context
+    }
+
+    # The locked v145 compiler diagnoses /utf-8 combined with either separate
+    # charset option as D8016, independent of token order. Report the policy
+    # conflict directly rather than relying on compiler diagnostic wording.
+    Test-ProhibitedMsvcCommandOptionFamily `
+        -CommandArguments $CommandArguments `
+        -OptionFamilyPattern '^/source-charset:.+$' `
+        -FamilyDescription 'source-character-set' `
+        -MsvcTool CL `
+        -Context $Context
+    Test-ProhibitedMsvcCommandOptionFamily `
+        -CommandArguments $CommandArguments `
+        -OptionFamilyPattern '^/execution-charset:.+$' `
+        -FamilyDescription 'execution-character-set' `
+        -MsvcTool CL `
+        -Context $Context
+
+    foreach ($compilerOptionFamilyRequirement in @(
+        @{ pattern = '^/std:[^\s]+$'; requiredOption = '/std:c++20'; description = 'language-standard' },
+        @{ pattern = '^/permissive-?$'; requiredOption = '/permissive-'; description = 'conformance' },
+        @{ pattern = '^/(?:W[0-4]|Wall|w)$'; requiredOption = '/W4'; description = 'warning-level' },
+        @{ pattern = '^/WX-?$'; requiredOption = '/WX'; description = 'warnings-as-errors' },
+        @{ pattern = '^/sdl-?$'; requiredOption = '/sdl'; description = 'SDL-check' },
+        @{
+            pattern = '^/guard:(?i:cf)-?$'
+            acceptedPattern = '^/guard:(?i:cf)$'
+            requiredOption = '/guard:cf'
+            description = 'compiler Control Flow Guard'
+        },
+        @{ pattern = '^/Qspectre-?$'; requiredOption = '/Qspectre'; description = 'Spectre-v1-mitigation' },
+        @{ pattern = '^/Zc:__cplusplus-?$'; requiredOption = '/Zc:__cplusplus'; description = 'updated-__cplusplus-macro' }
+    )) {
+        Test-RequiredEffectiveCommandOptionFamily `
+            -CommandArguments $CommandArguments `
+            -OptionFamilyPattern $compilerOptionFamilyRequirement.pattern `
+            -AcceptedEffectiveOptionPattern $compilerOptionFamilyRequirement['acceptedPattern'] `
+            -RequiredOption $compilerOptionFamilyRequirement.requiredOption `
+            -FamilyDescription $compilerOptionFamilyRequirement.description `
+            -MsvcTool CL `
+            -Context $Context
+    }
+
+    if ($Configuration -ceq 'Release') {
+        foreach ($releaseCompilerOptionFamilyRequirement in @(
+            @{ pattern = '^/O(?:d|1|2|x)$'; requiredOption = '/O2'; description = 'optimization' },
+            @{ pattern = '^/GL-?$'; requiredOption = '/GL'; description = 'whole-program-optimization' }
+        )) {
+            Test-RequiredEffectiveCommandOptionFamily `
+                -CommandArguments $CommandArguments `
+                -OptionFamilyPattern $releaseCompilerOptionFamilyRequirement.pattern `
+                -RequiredOption $releaseCompilerOptionFamilyRequirement.requiredOption `
+                -FamilyDescription $releaseCompilerOptionFamilyRequirement.description `
+                -MsvcTool CL `
+                -Context $Context
+        }
+    }
+}
+
+function Test-LinkerCommandPolicy {
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
+        [string[]]$CommandArguments,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('Debug', 'Release')]
+        [string]$Configuration,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('Win32', 'x64', 'ARM64')]
+        [string]$Platform,
+
+        [Parameter(Mandatory)]
+        [string]$Context
+    )
+
+    Test-MsvcCommandFileArgumentsAbsent `
+        -CommandArguments $CommandArguments `
+        -Context $Context
+    Test-RequiredMsvcCommandOption `
+        -CommandArguments $CommandArguments `
+        -Option '/Brepro' `
+        -MsvcTool LINK `
+        -Context $Context
+    Test-RequiredEffectiveCommandOptionFamily `
+        -CommandArguments $CommandArguments `
+        -OptionFamilyPattern '^/GUARD:(?:CF|NO)$' `
+        -RequiredOption '/guard:cf' `
+        -FamilyDescription 'linker Control Flow Guard' `
+        -MsvcTool LINK `
+        -Context $Context
+
+    if ($Configuration -ceq 'Release') {
+        Test-RequiredEffectiveCommandOptionFamily `
+            -CommandArguments $CommandArguments `
+            -OptionFamilyPattern '^/LTCG(?::[^\s]+)?$' `
+            -AcceptedEffectiveOptionPattern '^/LTCG(?::(?:INCREMENTAL|NOSTATUS|STATUS))?$' `
+            -RequiredOption '/LTCG' `
+            -FamilyDescription 'link-time-code-generation' `
+            -MsvcTool LINK `
+            -Context $Context
+    }
+
+    if ($Platform -ceq 'x64') {
+        Test-RequiredEffectiveCommandOptionFamily `
+            -CommandArguments $CommandArguments `
+            -OptionFamilyPattern '^/CETCOMPAT(?::NO)?$' `
+            -RequiredOption '/CETCOMPAT' `
+            -FamilyDescription 'CET-compatibility' `
+            -MsvcTool LINK `
+            -Context $Context
+    }
+    else {
+        Test-ProhibitedMsvcCommandOption `
+            -CommandArguments $CommandArguments `
+            -Option '/CETCOMPAT' `
+            -MsvcTool LINK `
+            -Context $Context
+    }
+}
+
 function ConvertTo-NormalizedLibraryDirectoryPath {
     param(
         [Parameter(Mandatory)]
@@ -519,6 +688,10 @@ function Get-ObservedMsvcToolCommand {
         [Parameter(Mandatory)]
         [string]$RequiredOperand,
 
+        [Parameter()]
+        [AllowEmptyCollection()]
+        [string[]]$RequiredArgumentSubstrings = @(),
+
         [Parameter(Mandatory)]
         [string]$Context
     )
@@ -560,7 +733,23 @@ function Get-ObservedMsvcToolCommand {
                         $_.IndexOf($RequiredOperand, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
                     }
             ).Count -gt 0
-            if ($containsRequiredOperand) {
+            $containsEveryRequiredArgumentSubstring = $true
+            foreach ($requiredArgumentSubstring in $RequiredArgumentSubstrings) {
+                $containsRequiredArgumentSubstring = @(
+                    $commandArguments |
+                        Where-Object {
+                            $_.IndexOf(
+                                $requiredArgumentSubstring,
+                                [System.StringComparison]::OrdinalIgnoreCase
+                            ) -ge 0
+                        }
+                ).Count -gt 0
+                if (-not $containsRequiredArgumentSubstring) {
+                    $containsEveryRequiredArgumentSubstring = $false
+                    break
+                }
+            }
+            if ($containsRequiredOperand -and $containsEveryRequiredArgumentSubstring) {
                 [void]$observedToolCommands.Add([pscustomobject]@{
                     executablePath = $ExecutablePath
                     argumentString = $argumentString
@@ -645,7 +834,6 @@ function Invoke-NormalizedChildProcess {
             [string]$inheritedEnvironment[$environmentVariableName]
     }
     $normalizedEnvironment['Path'] = [string]$env:PATH
-
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $ExecutablePath
     # MSVC resolves repository-relative response-file and other tool inputs
@@ -762,10 +950,20 @@ $resolvedToolchain = & $resolverPath -RepositoryRoot $repositoryRoot
 [void](New-Item -ItemType Directory -Path $artifactsRoot -Force)
 
 $requiredWindowsSdkVersion = '10.0.28000.0'
-$configurations = @('Debug', 'Release')
-$platforms = @('Win32', 'x64', 'ARM64')
-foreach ($configuration in $configurations) {
-    foreach ($platform in $platforms) {
+$probeConfigurations = if ($EvidenceScope -ceq 'ModernSolution') {
+    @()
+}
+else {
+    @($ToolchainProbeConfigurations)
+}
+$probePlatforms = if ($EvidenceScope -ceq 'ModernSolution') {
+    @()
+}
+else {
+    @($ToolchainProbePlatforms)
+}
+foreach ($configuration in $probeConfigurations) {
+    foreach ($platform in $probePlatforms) {
         $configurationName = "$configuration|$platform"
         $safeConfigurationName = "$($configuration.ToLowerInvariant())-$($platform.ToLowerInvariant())"
         $binaryLogPath = Join-Path $artifactsRoot "$safeConfigurationName.binlog"
@@ -868,13 +1066,6 @@ foreach ($configuration in $configurations) {
             $linkerCommandArguments = @($linkerToolCommand.commandArguments)
         }
 
-        Test-MsvcCommandFileArgumentsAbsent `
-            -CommandArguments $compilerCommandArguments `
-            -Context "$configurationName compiler"
-        Test-MsvcCommandFileArgumentsAbsent `
-            -CommandArguments $linkerCommandArguments `
-            -Context "$configurationName linker"
-
         $expectedSpectreMitigatedRuntimeLibraryDirectoryPath = Join-Path `
             $resolvedToolchain.vcToolsDirectoryPath `
             "lib/spectre/$expectedTargetArchitecture"
@@ -892,115 +1083,15 @@ foreach ($configuration in $configurations) {
                 -Context $configurationName
         }
 
-        foreach ($requiredCompilerOption in @(
-            '/utf-8',
-            '/Brepro'
-        )) {
-            Test-RequiredMsvcCommandOption `
-                -CommandArguments $compilerCommandArguments `
-                -Option $requiredCompilerOption `
-                -MsvcTool CL `
-                -Context "$configurationName compiler"
-        }
-
-        # The locked v145 compiler diagnoses /utf-8 combined with either
-        # separate charset option as D8016, independent of token order. Report
-        # that repository-policy conflict directly instead of relying on a
-        # secondary compiler failure whose wording or visibility may vary.
-        Test-ProhibitedMsvcCommandOptionFamily `
+        Test-CompilerCommandPolicy `
             -CommandArguments $compilerCommandArguments `
-            -OptionFamilyPattern '^/source-charset:.+$' `
-            -FamilyDescription 'source-character-set' `
-            -MsvcTool CL `
+            -Configuration $configuration `
             -Context "$configurationName compiler"
-        Test-ProhibitedMsvcCommandOptionFamily `
-            -CommandArguments $compilerCommandArguments `
-            -OptionFamilyPattern '^/execution-charset:.+$' `
-            -FamilyDescription 'execution-character-set' `
-            -MsvcTool CL `
-            -Context "$configurationName compiler"
-
-        foreach ($compilerOptionFamilyRequirement in @(
-            @{ pattern = '^/std:[^\s]+$'; requiredOption = '/std:c++20'; description = 'language-standard' },
-            @{ pattern = '^/permissive-?$'; requiredOption = '/permissive-'; description = 'conformance' },
-            @{ pattern = '^/(?:W[0-4]|Wall|w)$'; requiredOption = '/W4'; description = 'warning-level' },
-            @{ pattern = '^/WX-?$'; requiredOption = '/WX'; description = 'warnings-as-errors' },
-            @{ pattern = '^/sdl-?$'; requiredOption = '/sdl'; description = 'SDL-check' },
-            @{
-                pattern = '^/guard:(?i:cf)-?$'
-                acceptedPattern = '^/guard:(?i:cf)$'
-                requiredOption = '/guard:cf'
-                description = 'compiler Control Flow Guard'
-            },
-            @{ pattern = '^/Qspectre-?$'; requiredOption = '/Qspectre'; description = 'Spectre-v1-mitigation' },
-            @{ pattern = '^/Zc:__cplusplus-?$'; requiredOption = '/Zc:__cplusplus'; description = 'updated-__cplusplus-macro' }
-        )) {
-            Test-RequiredEffectiveCommandOptionFamily `
-                -CommandArguments $compilerCommandArguments `
-                -OptionFamilyPattern $compilerOptionFamilyRequirement.pattern `
-                -AcceptedEffectiveOptionPattern $compilerOptionFamilyRequirement['acceptedPattern'] `
-                -RequiredOption $compilerOptionFamilyRequirement.requiredOption `
-                -FamilyDescription $compilerOptionFamilyRequirement.description `
-                -MsvcTool CL `
-                -Context "$configurationName compiler"
-        }
-
-        foreach ($requiredLinkerOption in @('/Brepro')) {
-            Test-RequiredMsvcCommandOption `
-                -CommandArguments $linkerCommandArguments `
-                -Option $requiredLinkerOption `
-                -MsvcTool LINK `
-                -Context "$configurationName linker"
-        }
-        Test-RequiredEffectiveCommandOptionFamily `
+        Test-LinkerCommandPolicy `
             -CommandArguments $linkerCommandArguments `
-            -OptionFamilyPattern '^/GUARD:(?:CF|NO)$' `
-            -RequiredOption '/guard:cf' `
-            -FamilyDescription 'linker Control Flow Guard' `
-            -MsvcTool LINK `
+            -Configuration $configuration `
+            -Platform $platform `
             -Context "$configurationName linker"
-
-        if ($configuration -ceq 'Release') {
-            Test-RequiredEffectiveCommandOptionFamily `
-                -CommandArguments $compilerCommandArguments `
-                -OptionFamilyPattern '^/O(?:d|1|2|x)$' `
-                -RequiredOption '/O2' `
-                -FamilyDescription 'optimization' `
-                -MsvcTool CL `
-                -Context "$configurationName compiler"
-            Test-RequiredEffectiveCommandOptionFamily `
-                -CommandArguments $compilerCommandArguments `
-                -OptionFamilyPattern '^/GL-?$' `
-                -RequiredOption '/GL' `
-                -FamilyDescription 'whole-program-optimization' `
-                -MsvcTool CL `
-                -Context "$configurationName compiler"
-            Test-RequiredEffectiveCommandOptionFamily `
-                -CommandArguments $linkerCommandArguments `
-                -OptionFamilyPattern '^/LTCG(?::[^\s]+)?$' `
-                -AcceptedEffectiveOptionPattern '^/LTCG(?::(?:INCREMENTAL|NOSTATUS|STATUS))?$' `
-                -RequiredOption '/LTCG' `
-                -FamilyDescription 'link-time-code-generation' `
-                -MsvcTool LINK `
-                -Context "$configurationName linker"
-        }
-
-        if ($platform -ceq 'x64') {
-            Test-RequiredEffectiveCommandOptionFamily `
-                -CommandArguments $linkerCommandArguments `
-                -OptionFamilyPattern '^/CETCOMPAT(?::NO)?$' `
-                -RequiredOption '/CETCOMPAT' `
-                -FamilyDescription 'CET-compatibility' `
-                -MsvcTool LINK `
-                -Context "$configurationName linker"
-        }
-        else {
-            Test-ProhibitedMsvcCommandOption `
-                -CommandArguments $linkerCommandArguments `
-                -Option '/CETCOMPAT' `
-                -MsvcTool LINK `
-                -Context "$configurationName linker"
-        }
 
         $builtExecutablePath = Join-Path $artifactsRoot "$platform/$configuration/BuildPolicyProbe.exe"
         if (-not (Test-Path -LiteralPath $builtExecutablePath -PathType Leaf)) {
@@ -1040,15 +1131,234 @@ foreach ($configuration in $configurations) {
     }
 }
 
+if ($EvidenceScope -cne 'ToolchainProbe') {
+    if (-not (Test-Path -LiteralPath $modernSolutionPath -PathType Leaf)) {
+        throw "Modern solution is absent: $modernSolutionPath"
+    }
+    if (-not (Test-Path -LiteralPath $repositoryNuGetConfigurationPath -PathType Leaf)) {
+        throw "Repository NuGet configuration is absent: $repositoryNuGetConfigurationPath"
+    }
+
+    [void](New-Item -ItemType Directory -Path $modernSolutionArtifactsRoot -Force)
+
+    # Each evidence record selects a source command that belongs to exactly one
+    # project. The project-name qualifier binds shared sources such as
+    # Catch2TestMain.cpp to the project-specific /Fo or /Fd path produced by
+    # that project's IntDir. Application records also select their final LINK
+    # command through the project-specific output directory.
+    $modernProjectCommandEvidence = @(
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.Domain'
+            compilerOperand = 'DomainModule.cpp'
+            linkerOperand = $null
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.JpegTransformation'
+            compilerOperand = 'JpegTransformationModule.cpp'
+            linkerOperand = $null
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.WindowsStorage'
+            compilerOperand = 'WindowsStorageModule.cpp'
+            linkerOperand = $null
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.BatchProcessing'
+            compilerOperand = 'BatchProcessingModule.cpp'
+            linkerOperand = $null
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.App'
+            compilerOperand = 'pch.cpp'
+            linkerOperand = 'JpgSpinner.exe'
+        },
+        [pscustomobject]@{
+            projectName = 'TestSupport'
+            compilerOperand = 'TemporaryDirectory.cpp'
+            linkerOperand = $null
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.Domain.Tests'
+            compilerOperand = 'Catch2TestMain.cpp'
+            linkerOperand = 'JpgSpinner.Domain.Tests.exe'
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.JpegTransformation.Tests'
+            compilerOperand = 'TestSupportContracts.cpp'
+            linkerOperand = 'JpgSpinner.JpegTransformation.Tests.exe'
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.WindowsStorage.Tests'
+            compilerOperand = 'Catch2TestMain.cpp'
+            linkerOperand = 'JpgSpinner.WindowsStorage.Tests.exe'
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.BatchProcessing.Tests'
+            compilerOperand = 'Catch2TestMain.cpp'
+            linkerOperand = 'JpgSpinner.BatchProcessing.Tests.exe'
+        },
+        [pscustomobject]@{
+            projectName = 'JpgSpinner.Presentation.Tests'
+            compilerOperand = 'Catch2TestMain.cpp'
+            linkerOperand = 'JpgSpinner.Presentation.Tests.exe'
+        }
+    )
+
+    # The portable probe validates every locked compiler/linker architecture.
+    # Real-project evidence has a separate, explicit matrix because a packaged
+    # C++/WinUI ARM64 build additionally requires Visual Studio's optional
+    # Microsoft.VisualStudio.Component.UWP.VC.ARM64 component. Task 2's build
+    # contract is x64, so the default real-project matrix covers both policy-
+    # relevant configurations on x64. Callers with that optional component can
+    # request ARM64 explicitly without weakening or silently skipping evidence.
+    foreach ($configuration in $ModernSolutionConfigurations) {
+            foreach ($platform in $ModernSolutionPlatforms) {
+                $configurationName = "$configuration|$platform"
+                $modernSolutionContext = "$configurationName modern solution"
+                $safeConfigurationName = (
+                    "$($configuration.ToLowerInvariant())-$($platform.ToLowerInvariant())"
+                )
+                $binaryLogPath = Join-Path `
+                    $modernSolutionArtifactsRoot `
+                    "$safeConfigurationName.binlog"
+                $diagnosticLogPath = Join-Path `
+                    $modernSolutionArtifactsRoot `
+                    "$safeConfigurationName.log"
+
+                $modernSolutionBuildArguments = @(
+                    $modernSolutionPath,
+                    '/nologo',
+                    '-noAutoResponse',
+                    '/m:1',
+                    '/restore',
+                    '/t:Rebuild',
+                    '/v:minimal',
+                    "/p:Configuration=$configuration",
+                    "/p:Platform=$platform",
+                    "/p:RestoreConfigFile=$repositoryNuGetConfigurationPath",
+                    '/p:RestoreLockedMode=true',
+                    '/p:ContinuousIntegrationBuild=true',
+                    "/bl:$binaryLogPath",
+                    '/fl',
+                    "/flp:LogFile=$diagnosticLogPath;Verbosity=diagnostic"
+                )
+                $modernSolutionBuildResult = Invoke-NormalizedChildProcess `
+                    -ExecutablePath $resolvedToolchain.msBuildExecutablePath `
+                    -ArgumentList $modernSolutionBuildArguments `
+                    -WorkingDirectoryPath $repositoryRoot
+                if ($modernSolutionBuildResult.exitCode -ne 0) {
+                    $combinedBuildOutput = @(
+                        $modernSolutionBuildResult.standardOutput
+                        $modernSolutionBuildResult.standardError
+                    ) -join "`n"
+                    $retainedOutput = (
+                        $combinedBuildOutput -split "`r?`n" |
+                            Select-Object -Last 50
+                    ) -join "`n"
+                    Add-BuildPolicyFailure -Message (
+                        "$modernSolutionContext build failed with exit code " +
+                        "$($modernSolutionBuildResult.exitCode).`n$retainedOutput"
+                    )
+                }
+
+                foreach ($expectedLogPath in @($binaryLogPath, $diagnosticLogPath)) {
+                    if (-not (Test-Path -LiteralPath $expectedLogPath -PathType Leaf)) {
+                        Add-BuildPolicyFailure -Message (
+                            "$modernSolutionContext did not produce required evidence " +
+                            "file '$expectedLogPath'."
+                        )
+                    }
+                }
+                if (-not (Test-Path -LiteralPath $diagnosticLogPath -PathType Leaf)) {
+                    continue
+                }
+
+                $diagnosticLog = Get-Content -LiteralPath $diagnosticLogPath -Raw
+                $expectedTargetArchitecture = switch ($platform) {
+                    'Win32' { 'x86' }
+                    'x64' { 'x64' }
+                    'ARM64' { 'arm64' }
+                }
+                $expectedTargetTools =
+                    $resolvedToolchain.targetTools[$expectedTargetArchitecture]
+
+                foreach ($projectCommandEvidence in $modernProjectCommandEvidence) {
+                    $projectContext = (
+                        "$configurationName $($projectCommandEvidence.projectName)"
+                    )
+                    $compilerToolCommand = Get-ObservedMsvcToolCommand `
+                        -DiagnosticLog $diagnosticLog `
+                        -ExecutablePath $expectedTargetTools.compilerExecutablePath `
+                        -RequiredOperand $projectCommandEvidence.compilerOperand `
+                        -RequiredArgumentSubstrings @($projectCommandEvidence.projectName) `
+                        -Context $projectContext
+                    [string[]]$compilerCommandArguments = @()
+                    if ($null -ne $compilerToolCommand) {
+                        $compilerCommandArguments = @($compilerToolCommand.commandArguments)
+                    }
+                    Test-CompilerCommandPolicy `
+                        -CommandArguments $compilerCommandArguments `
+                        -Configuration $configuration `
+                        -Context "$projectContext compiler"
+
+                    if ($null -eq $projectCommandEvidence.linkerOperand) {
+                        continue
+                    }
+
+                    $linkerRequiredArgumentSubstrings = @(
+                        $projectCommandEvidence.projectName
+                    )
+                    if ($projectCommandEvidence.projectName -ceq 'JpgSpinner.App') {
+                        # The packaged C++/WinUI targets intentionally perform
+                        # an intermediate /WINMD:ONLY link followed by the
+                        # application-producing /WINMD:NO link. Policy for the
+                        # shipped executable must bind to the latter command.
+                        $linkerRequiredArgumentSubstrings += '/WINMD:NO'
+                    }
+                    $linkerToolCommand = Get-ObservedMsvcToolCommand `
+                        -DiagnosticLog $diagnosticLog `
+                        -ExecutablePath $expectedTargetTools.linkerExecutablePath `
+                        -RequiredOperand $projectCommandEvidence.linkerOperand `
+                        -RequiredArgumentSubstrings $linkerRequiredArgumentSubstrings `
+                        -Context $projectContext
+                    [string[]]$linkerCommandArguments = @()
+                    if ($null -ne $linkerToolCommand) {
+                        $linkerCommandArguments = @($linkerToolCommand.commandArguments)
+                    }
+                    Test-LinkerCommandPolicy `
+                        -CommandArguments $linkerCommandArguments `
+                        -Configuration $configuration `
+                        -Platform $platform `
+                        -Context "$projectContext linker"
+                }
+        }
+    }
+}
+
 if ($policyFailures.Count -gt 0) {
     Write-Error "Effective build policy failed with $($policyFailures.Count) violation(s):`n - $($policyFailures -join "`n - ")"
     exit 1
 }
 
+$verifiedCommandScopeDescriptions = [System.Collections.Generic.List[string]]::new()
+if ($EvidenceScope -cne 'ModernSolution') {
+    [void]$verifiedCommandScopeDescriptions.Add(
+        'toolchain probes for ' +
+        "$($ToolchainProbeConfigurations -join '/') on " +
+        "$($ToolchainProbePlatforms -join '/')"
+    )
+}
+if ($EvidenceScope -cne 'ToolchainProbe') {
+    [void]$verifiedCommandScopeDescriptions.Add(
+        'every modern production/test project command for ' +
+        "$($ModernSolutionConfigurations -join '/') on " +
+        "$($ModernSolutionPlatforms -join '/')"
+    )
+}
+
 Write-Output (
-    'Effective build policy verified for Debug/Release x86, x64, and ARM64 ' +
-    "with VCToolsVersion $($resolvedToolchain.vcToolsVersion) and Windows SDK " +
-    "$requiredWindowsSdkVersion; MSBuild controls VC directories and each architecture searches " +
-    'its Spectre-mitigated runtime before the ordinary MSVC runtime, while x64 PE images advertise ' +
-    'CFG/CET and their load configurations report CF instrumentation and function-ID tables.'
+    "Effective build policy scope '$EvidenceScope' verified " +
+    "$($verifiedCommandScopeDescriptions -join '; ') with VCToolsVersion " +
+    "$($resolvedToolchain.vcToolsVersion) and Windows SDK $requiredWindowsSdkVersion. " +
+    'ToolTask evidence proves the rightmost effective options in every selected command.'
 )

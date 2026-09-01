@@ -24,6 +24,16 @@
 8. For build files, package metadata, CI, documentation, and generated artifacts, add executable policy validation first, watch it fail, then change the artifact and watch it pass. Do not invent meaningless unit tests for declarative files.
 9. Record the exact RED and GREEN commands and salient outputs in the implementation log or pull-request description.
 10. If production code was written before its focused failing test, remove that production change and recreate it through RED → GREEN → REFACTOR.
+11. After each task's GREEN evidence is recorded and its commit is complete, perform the repository-artifact hygiene pass below before beginning the next task.
+
+### Repository-artifact hygiene after every task
+
+- Inventory ignored/generated directories by exact repository-relative path and size. At minimum inspect `artifacts/`, `vcpkg_installed/`, every production/test `obj/` directory, `Generated Files/`, `TestResults/`, `AppPackages/`, `sanitizer-reports/`, and `fuzz-artifacts/`; also inspect any task-specific temporary restore or test-run root created by the task.
+- Keep the current task's RED/GREEN logs, binary logs, JUnit results, packages, and generated sources only until their salient evidence has been recorded and the coherent task commit succeeds. After the commit, remove obsolete run directories rather than accumulating numbered or timestamped copies.
+- Retain a dependency cache such as `vcpkg_installed/` across adjacent tasks only when the next task will reuse that exact locked graph and the retained size is reported. Remove it when the graph changes, the next task does not need it, or the milestone is handed off. Every removed cache must be reproducible from committed lock/configuration files.
+- Preserve tracked files and reviewed release evidence, including `artifacts/release/**/*.spdx.json`. Never use an indiscriminate `git clean -fdx`, wildcard recursive deletion, or a cleanup rooted at the repository itself.
+- Before each recursive removal, resolve the literal absolute target, prove it is a descendant of the repository and one of the inventoried ignored/generated roots, then remove that exact target with PowerShell `Remove-Item -LiteralPath`. Re-run `git status --short --ignored` afterward to prove no source, lock file, fixture, or required evidence was lost.
+- Record the removed paths, approximate reclaimed size, and any intentionally retained large cache in the implementation log or task handoff. The expected steady state between tasks is no obsolete test-run directory and no unexplained large ignored directory.
 
 ### Cross-cutting prohibitions
 

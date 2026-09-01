@@ -1,0 +1,8 @@
+<Window
+    x:Class="JpgSpinner.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="JPG Spinner">
+    <!-- Product controls are introduced by presentation tests in later tasks. -->
+    <Grid />
+</Window>
