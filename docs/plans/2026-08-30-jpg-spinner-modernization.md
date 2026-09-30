@@ -493,16 +493,16 @@ git commit -m "feat: define lossless orientation transform semantics"
   - metadata aggregate at and one byte beyond 32 MiB through the numeric resource-policy function, plus scanner integration with a smaller injected immutable test limit;
   - pixel count at and one pixel beyond 268,435,456;
   - progressive scan count at 100 and 101;
-  - duplicate, incomplete, or out-of-order ICC chunks;
-  - extended-XMP `HasExtendedXMP` GUID parsing plus complete, missing, duplicate, overlapping, out-of-order, wrong-GUID, wrong-full-length, and out-of-range chunks;
+  - ICC chunks with duplicate, missing, zero, or out-of-range sequence numbers or inconsistent total counts; accept APP2 marker reordering and reconstruct logical order by the authoritative 1-based sequence number, matching the locked libjpeg-turbo 3.2 public ICC reader;
+  - extended-XMP uppercase GUID syntax plus complete, missing, duplicate, overlapping, wrong-GUID, wrong-full-length, and out-of-range chunk envelopes; accept APP1 marker reordering and reconstruct logical order by the Adobe-defined chunk offset. The scanner does not parse RDF; Task 6 extracts `xmpNote:HasExtendedXMP` through Exiv2 and correlates it with this structural inventory;
   - MPF detection;
-  - APP11 JUMBF detection, C2PA 2.4 manifest-store/reference detection, and distinction from non-C2PA JUMBF;
-  - Motion Photo XMP plus appended payload detection, generic non-padding payload after EOI, and exact EOI termination;
+  - APP11 JUMBF detection, C2PA 2.4 manifest-store detection, and distinction from non-C2PA JUMBF; external C2PA XMP references are interpreted through Exiv2 in Task 6;
+  - exact EOI termination and a checked range containing every appended byte, including zero-valued bytes; semantic interpretation of Motion Photo/container XMP belongs to Task 6;
   - 8-bit and 12-bit lossy precision plus rejection of lossless predictive, hierarchical, invalid-precision, unknown SOF, and unsupported component organizations;
   - duplicate SOF, missing SOI, missing EOI, impossible length, and offset overflow.
 - [ ] Keep `MultiPictureJpegNotSupported` distinct from corruption.
 - [ ] Return `ContentCredentialsWouldBeInvalidated` for C2PA and `UnsupportedJumbfMetadata` for other JUMBF; neither marker class may reach transformation or generic unknown-marker preservation.
-- [ ] Return `MotionPhotoNotSupported` for a recognized Motion Photo and `UnsupportedTrailingPayload` for other non-padding data after EOI; do not discard appended assets.
+- [ ] Expose every byte after the first EOI through the immutable inventory, without interpreting marker-shaped bytes in appended assets. Scan success is structural evidence, not permission to transform. Task 6 owns the rejection decision through the existing Exiv2 boundary, avoiding a second XML parser.
 
 ### Step 4.4: Add the fuzz target
 
@@ -594,6 +594,7 @@ git commit -m "feat: transform JPEG coefficients with libjpeg-turbo"
 ### Step 6.2: GREEN with Exiv2 and an explicit marker policy
 
 - [ ] Parse supported Exif/XMP through public Exiv2 0.28.8 APIs only.
+- [ ] Read the standard packet's `xmpNote:HasExtendedXMP` property through Exiv2, compare its value byte-for-byte with the scanner-validated uppercase extended-XMP GUID, and reject a missing or mismatched property as `MalformedImageMetadata`. Do not locate the property with substring, regular-expression, or application-owned XML parsing.
 - [ ] Feed Exiv2 only isolated, owned Exif or standard-XMP payload bytes. A completely reassembled extended-XMP payload may be passed to the public XMP parser for read-only property inspection; never serialize that extension through Exiv2, never give Exiv2 the complete JPEG container, and never accept a JPEG serialization from it. `JpegSegmentScanner` and the application-owned reconciler exclusively own marker framing, source-relative ordering, unknown APPn/COM payloads, ICC chunks, and extended-XMP chunks. The JPEG Transformation module receives no path and cannot widen AppContainer file authority or reopen a user file behind the transaction engine.
 - [ ] Update every present orientation/dimension representation required by CIPA DC-008-Translation-2026 and DC-010-2026; do not invent unrelated tags.
 - [ ] Before accessing an IPTC 2025.1 property whose namespace is not built into Exiv2 0.28.8, call the public namespace-registration API with the exact official URI/prefix. Add a table-driven test for AI Prompt Information, AI Prompt Writer Name, AI System Used, and AI System Version Used that observes the unregistered failure first, then proves read/write after registration without changing rights, licensing, or disclosure values.
@@ -608,12 +609,14 @@ git commit -m "feat: transform JPEG coefficients with libjpeg-turbo"
 ### Step 6.3: RED/GREEN malformed and absent metadata
 
 - [ ] Add one cycle each for absent orientation, invalid orientation, Exif-only, XMP-only, conflicting Exif/XMP, malformed TIFF offsets, malformed RDF, duplicate ICC, and maximum legal metadata.
-- [ ] Add focused Extended XMP cycles for a complete packet, missing/duplicate/overlapping/out-of-order chunks, GUID mismatch, wrong full length, an unaffected extension packet, an unparseable extension, and orientation/dimension/thumbnail facts held in the extension. Reassemble complete chunks only for read-only property inspection. Preserve every complete unaffected chunk byte-for-byte only when parsing proves the affected facts are absent and the standard packet remains truthful. Return `ExtendedXmpMutationNotSupported` before transformation when inspection is ambiguous or the requested operation would require changing extension-held facts; never partially rewrite or silently drop the extension.
+- [ ] Add focused Extended XMP cycles for a complete packet, missing/duplicate/overlapping chunks, accepted physical chunk reordering, GUID mismatch, wrong full length, an unaffected extension packet, an unparseable extension, and orientation/dimension/thumbnail facts held in the extension. Reassemble complete chunks only for read-only property inspection. Preserve every complete unaffected chunk byte-for-byte only when parsing proves the affected facts are absent and the standard packet remains truthful. Return `ExtendedXmpMutationNotSupported` before transformation when inspection is ambiguous or the requested operation would require changing extension-held facts; never partially rewrite or silently drop the extension.
 - [ ] Apply one rule: valid Exif orientation is authoritative; otherwise valid XMP is used. Surface a conflict during analysis, then canonicalize both only after the reviewed transform succeeds.
 - [ ] Reject an invalid authoritative value; never pretend it is `TopLeft`.
 
 ### Step 6.4: RED/GREEN the deep image-analyzer module
 
+- [ ] Inspect C2PA external-manifest XMP references through Exiv2 and return `ContentCredentialsWouldBeInvalidated` before transformation. APP11 manifest-store recognition remains the scanner's bounded envelope responsibility.
+- [ ] Correlate the scanner's exact trailing-data range with Motion Photo/container properties read through Exiv2. Return `MotionPhotoNotSupported` for a recognized Motion Photo and `UnsupportedTrailingPayload` for other unexplained appended bytes before any transform. Do not infer disposable padding from byte values or a Motion Photo solely from an XMP flag. Follow [Motion Photo format 1.0](https://developer.android.com/media/platform/motion-photo-format) for primary-item padding and positive secondary-item lengths; [T.81 B.2.1](https://www.w3.org/Graphics/JPEG/itu-t81.pdf) defines the JPEG EOI boundary. Responsibility clarification checked 2026-09-30.
 - [ ] Before composing the analyzer, add a failing `JpegImageAnalyzer` test proving one `analyze` call returns dimensions, sampling, coding process, authoritative orientation, exact transform plan, support status, and typed findings without exposing marker or Exiv2 types.
 - [ ] Implement the deep analyzer with the internal scanner, Exiv2 metadata reader, and Domain planner. Tests use real deterministic JPEGs; do not create an analyzer interface or fake when no behavior varies.
 

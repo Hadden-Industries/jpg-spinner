@@ -85,6 +85,10 @@ try {
         -LiteralPath (Join-Path $repositoryRoot 'tests') `
         -Destination (Join-Path $temporaryRoot 'tests') `
         -Recurse
+    Copy-Item `
+        -LiteralPath (Join-Path $repositoryRoot 'fuzz') `
+        -Destination (Join-Path $temporaryRoot 'fuzz') `
+        -Recurse
 
     $baselineResult = Invoke-IsolatedRepositoryPolicy
     if ($baselineResult.exitCode -ne 0) {

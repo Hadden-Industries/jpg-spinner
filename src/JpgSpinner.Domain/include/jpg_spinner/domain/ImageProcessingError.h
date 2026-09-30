@@ -25,6 +25,7 @@ enum class ImageProcessingErrorCode
     UnsupportedJpegCodingProcess,
     UnsupportedJpegSamplePrecision,
     UnsupportedJpegComponentOrganization,
+    UnsupportedJpegDeferredHeight,
     MultiPictureJpegNotSupported,
     MotionPhotoNotSupported,
     UnsupportedTrailingPayload,

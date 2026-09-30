@@ -30,7 +30,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\src;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -41,6 +41,7 @@
   <ItemGroup>
     <!-- Catch2 documents a compiled custom main as the supported alternative to Catch2Main. -->
     <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
+    <ClCompile Include="JpegSegmentScannerTests.cpp" />
     <ClCompile Include="TestSupportContracts.cpp" />
   </ItemGroup>
   <ItemGroup>

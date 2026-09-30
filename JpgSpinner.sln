@@ -24,6 +24,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JpgSpinner.BatchProcessing.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JpgSpinner.Presentation.Tests", "tests\JpgSpinner.Presentation.Tests\JpgSpinner.Presentation.Tests.vcxproj", "{E463CC96-D87F-4427-B9C8-025C0AA28E40}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JpgSpinner.FuzzToolchain.Smoke", "fuzz\JpgSpinner.FuzzToolchain.Smoke\JpgSpinner.FuzzToolchain.Smoke.vcxproj", "{06C4AF87-6B1B-47EE-9B25-CCFCF58D80BA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JpgSpinner.JpegSegmentScanner.Fuzz", "fuzz\JpgSpinner.JpegSegmentScanner.Fuzz\JpgSpinner.JpegSegmentScanner.Fuzz.vcxproj", "{76087416-906E-4697-ADBD-F2A6C9049085}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -34,6 +38,10 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06C4AF87-6B1B-47EE-9B25-CCFCF58D80BA}.Debug|x64.ActiveCfg = Fuzz|x64
+		{06C4AF87-6B1B-47EE-9B25-CCFCF58D80BA}.Release|x64.ActiveCfg = Fuzz|x64
+		{76087416-906E-4697-ADBD-F2A6C9049085}.Debug|x64.ActiveCfg = Fuzz|x64
+		{76087416-906E-4697-ADBD-F2A6C9049085}.Release|x64.ActiveCfg = Fuzz|x64
 		{004936AC-71F4-4208-A8A2-B0AE7B18291E}.Debug|ARM64.ActiveCfg = Debug|ARM64
 		{004936AC-71F4-4208-A8A2-B0AE7B18291E}.Debug|ARM64.Build.0 = Debug|ARM64
 		{004936AC-71F4-4208-A8A2-B0AE7B18291E}.Debug|Win32.ActiveCfg = Debug|Win32

@@ -1263,6 +1263,12 @@ function Test-OrdinalIgnoreCaseIdentityCollectionContains {
 }
 
 function Test-ModernSolutionArchitecture {
+    # These approved standalone targets instrument only x64 code. They are
+    # visible in the solution but never built by an ordinary Debug/Release run.
+    $fuzzProjectPaths = @(
+        'fuzz/JpgSpinner.FuzzToolchain.Smoke/JpgSpinner.FuzzToolchain.Smoke.vcxproj',
+        'fuzz/JpgSpinner.JpegSegmentScanner.Fuzz/JpgSpinner.JpegSegmentScanner.Fuzz.vcxproj'
+    )
     # The reference graph is deliberately closed. A project may depend on the
     # exact lower-level capabilities listed here and nothing else; keeping the
     # graph as data makes additions visible during review instead of silently
@@ -1344,6 +1350,12 @@ function Test-ModernSolutionArchitecture {
         'Release|x64',
         'Release|ARM64'
     )
+    foreach ($fuzzProjectPath in $fuzzProjectPaths) {
+        $expectedProjects[$fuzzProjectPath] = [pscustomobject]@{
+            configurationType = 'Application'
+            references = @()
+        }
+    }
 
     $solutionPath = Get-RepositoryPath -RelativePath 'JpgSpinner.sln'
     if (-not (Test-Path -LiteralPath $solutionPath -PathType Leaf)) {
@@ -1399,7 +1411,16 @@ function Test-ModernSolutionArchitecture {
         # ProjectConfigurations is MSBuild's authoritative solution mapping
         # model. Validate both ActiveCfg (FullName) and Build.0
         # (IncludeInBuild) instead of reparsing the .sln text.
-        foreach ($expectedConfigurationName in $expectedConfigurationNames) {
+        $isFuzzProject = $fuzzProjectPaths -ccontains $expectedProjectPath
+        $requiredMappingNames = if ($isFuzzProject) { @('Debug|x64', 'Release|x64') } else { $expectedConfigurationNames }
+        if ($isFuzzProject) {
+            foreach ($mapping in $matchingProjectEntries[0].Model.ProjectConfigurations.Values) {
+                if ($mapping.IncludeInBuild) {
+                    Add-PolicyFailure -Message "$expectedProjectPath must not participate in ordinary solution builds."
+                }
+            }
+        }
+        foreach ($expectedConfigurationName in $requiredMappingNames) {
             $matchingConfigurationMappings = @(
                 $matchingProjectEntries[0].Model.ProjectConfigurations.GetEnumerator() |
                     Where-Object {
@@ -1418,16 +1439,17 @@ function Test-ModernSolutionArchitecture {
             }
 
             $projectConfigurationMapping = $matchingConfigurationMappings[0].Value
+            $requiredMappedConfiguration = if ($isFuzzProject) { 'Fuzz|x64' } else { $expectedConfigurationName }
             if (-not [System.StringComparer]::OrdinalIgnoreCase.Equals(
                     $projectConfigurationMapping.FullName,
-                    $expectedConfigurationName
+                    $requiredMappedConfiguration
                 )) {
                 Add-PolicyFailure -Message (
                     "$expectedProjectPath maps solution configuration " +
                     "'$expectedConfigurationName' to '$($projectConfigurationMapping.FullName)'."
                 )
             }
-            if (-not $projectConfigurationMapping.IncludeInBuild) {
+            if (-not $isFuzzProject -and -not $projectConfigurationMapping.IncludeInBuild) {
                 Add-PolicyFailure -Message (
                     "$expectedProjectPath is excluded from solution configuration " +
                     "'$expectedConfigurationName'."
@@ -1460,6 +1482,11 @@ function Test-ModernSolutionArchitecture {
     $msixPackagingProjectCount = 0
     foreach ($expectedProject in $expectedProjects.GetEnumerator()) {
         $relativeProjectPath = $expectedProject.Key
+        $requiredProjectConfigurationNames = if ($fuzzProjectPaths -ccontains $relativeProjectPath) {
+            @('Fuzz|x64')
+        } else {
+            $expectedConfigurationNames
+        }
         $projectRootElement = Read-MSBuildProjectRootElement -RelativePath $relativeProjectPath
         if ($null -eq $projectRootElement) {
             continue
@@ -1475,7 +1502,7 @@ function Test-ModernSolutionArchitecture {
                 } |
                 ForEach-Object Include
         )
-        foreach ($expectedConfigurationName in $expectedConfigurationNames) {
+        foreach ($expectedConfigurationName in $requiredProjectConfigurationNames) {
             if (-not (Test-OrdinalIgnoreCaseIdentityCollectionContains `
                     -Identities $projectConfigurationNames `
                     -Candidate $expectedConfigurationName)) {
@@ -1484,7 +1511,7 @@ function Test-ModernSolutionArchitecture {
         }
         foreach ($projectConfigurationName in $projectConfigurationNames) {
             if (-not (Test-OrdinalIgnoreCaseIdentityCollectionContains `
-                    -Identities $expectedConfigurationNames `
+                    -Identities $requiredProjectConfigurationNames `
                     -Candidate $projectConfigurationName)) {
                 Add-PolicyFailure -Message "$relativeProjectPath contains unsupported project configuration '$projectConfigurationName'."
             }
