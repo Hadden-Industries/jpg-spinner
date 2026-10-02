@@ -2000,7 +2000,7 @@ function Test-VcpkgManifest {
 
     Assert-ExactValue -Actual $manifest.name -Expected 'jpg-spinner' -Description 'vcpkg manifest name'
     Assert-ExactValue -Actual $manifest.'version-string' -Expected '2.0.0' -Description 'vcpkg manifest version-string'
-    Assert-ExactValue -Actual $manifest.'builtin-baseline' -Expected '118bba14b94bc040c098c0c15e63c142148c05ca' -Description 'vcpkg builtin-baseline'
+    Assert-ExactValue -Actual $manifest.'builtin-baseline' -Expected 'c748cb44f2a435fcf015c35225c9d5545fe0021c' -Description 'vcpkg builtin-baseline'
 
     if ($manifest.Contains('configuration')) {
         Test-VcpkgResolutionAuthorityConfiguration `
@@ -2018,8 +2018,8 @@ function Test-VcpkgManifest {
     }
 
     $expectedVersions = [ordered]@{
-        'libjpeg-turbo' = '3.2.0'
-        'exiv2' = '0.28.8'
+        'libjpeg-turbo' = '3.2.0#1'
+        'exiv2' = '0.28.9'
         'catch2' = '3.16.0'
     }
 

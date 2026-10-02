@@ -198,7 +198,7 @@ function Get-UniquePackageReferenceMetadataValue {
 }
 
 $expectedCentralPackageVersions = [ordered]@{
-    'Microsoft.WindowsAppSDK' = '2.4.0'
+    'Microsoft.WindowsAppSDK' = '2.5.1'
     'Microsoft.Windows.CppWinRT' = '3.0.260818.1'
     'Microsoft.Windows.SDK.BuildTools' = '10.0.28000.2705'
 }
@@ -489,6 +489,6 @@ finally {
 }
 
 Write-Output (
-    'NuGet resolution verified for Win32, x64, and ARM64: Windows App SDK 2.4.0, ' +
+    'NuGet resolution verified for Win32, x64, and ARM64: Windows App SDK 2.5.1, ' +
     'C++/WinRT 3.0.260818.1, and Windows SDK BuildTools 10.0.28000.2705.'
 )

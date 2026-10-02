@@ -6,9 +6,11 @@
 
 **Architecture:** A single-project packaged MSIX presentation shell composes four native modules: domain policy, JPEG transformation, AppContainer storage transactions, and batch orchestration. Dependencies point inward toward immutable value types and capability contracts. The old application remains only as a temporary behavioral reference and is deleted at the verified cutover; no legacy code is wrapped.
 
-**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.4.0; Microsoft.Windows.CppWinRT 3.0.260818.1; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.8 with XMP; Catch2 3.16.0; Microsoft SBOM Tool CLI 4.1.5; vcpkg manifest mode at baseline `118bba14b94bc040c098c0c15e63c142148c05ca`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
+**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.5.1; Microsoft.Windows.CppWinRT 3.0.260818.1; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.9 with XMP; Catch2 3.16.0; Microsoft SBOM Tool CLI 4.1.5; vcpkg manifest mode at baseline `c748cb44f2a435fcf015c35225c9d5545fe0021c`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
 
 **Design specification:** `docs/specs/2026-08-30-jpg-spinner-modernization-design.md`
+
+**Dependency refresh, 2026-10-03:** Before Task 6, qualify Exiv2 0.28.9, Windows App SDK 2.5.1, and libjpeg-turbo 3.2.0 at vcpkg port revision 1 (`3.2.0#1`). The immutable registry baseline above supersedes the original Task 1 baseline. Historical implementation logs retain the versions actually tested at those milestones. See `docs/implementation/2026-10-03-dependency-refresh-log.md` for authority, scope, and evidence.
 
 ---
 
@@ -165,7 +167,7 @@ The file lists under each task are authoritative and refine this compact tree.
   Distinguish file absence from a successfully parsed JSON `null`, and validate each raw root kind before conversion:
   objects for `.vsconfig`, the toolchain lock, the vcpkg manifest, and any present standalone vcpkg configuration;
   arrays only where an authority's published schema requires one.
-- [x] Make Task 1 assert: toolset v145 plus an exact 14.51.x `VCToolsVersion`, C++20, Windows 10.0.19045.0 minimum, Windows 10.0.28000.0 target, x86/x64/ARM64, an isolated credential-free nuget.org v3 source policy, the pinned vcpkg baseline, libjpeg-turbo 3.2.0, Exiv2 0.28.8 with XMP, and Catch2 3.16.0. Task 2 extends the same verifier with App SDK 2.4.0, C++/WinRT 3.0.260818.1, and SDK BuildTools 10.0.28000.2705 only after real project references and locked restore evidence exist.
+- [x] Make Task 1 assert: toolset v145 plus an exact 14.51.x `VCToolsVersion`, C++20, Windows 10.0.19045.0 minimum, Windows 10.0.28000.0 target, x86/x64/ARM64, an isolated credential-free nuget.org v3 source policy, the pinned vcpkg baseline, libjpeg-turbo 3.2.0, Exiv2 0.28.9 with XMP, and Catch2 3.16.0. Task 2 extends the same verifier with App SDK 2.5.1, C++/WinRT 3.0.260818.1, and SDK BuildTools 10.0.28000.2705 only after real project references and locked restore evidence exist.
 - [x] Make Task 1 reject preview/experimental labels, floating native versions, `/std:c++latest`, ARM32, and every alternate vcpkg resolution authority: explicit default/additional registries, port/triplet overlays, and both current and legacy embedded configuration fields. Task 2 adds production/test Windows App SDK bootstrapper and auto-initializer boundary checks after those project graphs exist; it must reject their use in `JpgSpinner.App` and permit them only in an explicitly unpackaged test executable that consumes Windows App SDK runtime types.
 - [x] Run it before creating the configuration:
 
@@ -184,7 +186,7 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "jpg-spinner",
   "version-string": "2.0.0",
-  "builtin-baseline": "118bba14b94bc040c098c0c15e63c142148c05ca",
+  "builtin-baseline": "c748cb44f2a435fcf015c35225c9d5545fe0021c",
   "dependencies": [
     {
       "name": "libjpeg-turbo",
@@ -201,8 +203,8 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
     }
   ],
   "overrides": [
-    {"name": "libjpeg-turbo", "version": "3.2.0"},
-    {"name": "exiv2", "version": "0.28.8"},
+    {"name": "libjpeg-turbo", "version": "3.2.0#1"},
+    {"name": "exiv2", "version": "0.28.9"},
     {"name": "catch2", "version": "3.16.0"}
   ]
 }
@@ -302,7 +304,7 @@ Expected RED: the new solution/project assertions fail while Task 1 version asse
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageVersion Include="Microsoft.Windows.CppWinRT" Version="3.0.260818.1" />
     <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
   </ItemGroup>
@@ -602,11 +604,11 @@ git commit -m "feat: transform JPEG coefficients with libjpeg-turbo"
 
 ### Step 6.2: GREEN with Exiv2 and an explicit marker policy
 
-- [ ] Parse supported Exif/XMP through public Exiv2 0.28.8 APIs only.
+- [ ] Parse supported Exif/XMP through public Exiv2 0.28.9 APIs only.
 - [ ] Read the standard packet's `xmpNote:HasExtendedXMP` property through Exiv2, compare its value byte-for-byte with the scanner-validated uppercase extended-XMP GUID, and reject a missing or mismatched property as `MalformedImageMetadata`. Do not locate the property with substring, regular-expression, or application-owned XML parsing.
 - [ ] Feed Exiv2 only isolated, owned Exif or standard-XMP payload bytes. A completely reassembled extended-XMP payload may be passed to the public XMP parser for read-only property inspection; never serialize that extension through Exiv2, never give Exiv2 the complete JPEG container, and never accept a JPEG serialization from it. `JpegSegmentScanner` and the application-owned reconciler exclusively own marker framing, source-relative ordering, unknown APPn/COM payloads, ICC chunks, and extended-XMP chunks. The JPEG Transformation module receives no path and cannot widen AppContainer file authority or reopen a user file behind the transaction engine.
 - [ ] Update every present orientation/dimension representation required by CIPA DC-008-Translation-2026 and DC-010-2026; do not invent unrelated tags.
-- [ ] Before accessing an IPTC 2025.1 property whose namespace is not built into Exiv2 0.28.8, call the public namespace-registration API with the exact official URI/prefix. Add a table-driven test for AI Prompt Information, AI Prompt Writer Name, AI System Used, and AI System Version Used that observes the unregistered failure first, then proves read/write after registration without changing rights, licensing, or disclosure values.
+- [ ] Before accessing an IPTC 2025.1 property whose namespace is not built into Exiv2 0.28.9, call the public namespace-registration API with the exact official URI/prefix. Add a table-driven test for AI Prompt Information, AI Prompt Writer Name, AI System Used, and AI System Version Used that observes the unregistered failure first, then proves read/write after registration without changing rights, licensing, or disclosure values.
 - [ ] Remove Exif IFD1, JFIF/JFXX, XMP `xmp:Thumbnails`, and Photoshop IRB thumbnail resources whenever pixels are transformed; preserve JFIF density/version and all unrelated resources. Preserve a valid thumbnail only for `LosslessTransform::None`.
 - [ ] If a known preview container cannot be parsed and rewritten safely, return `UnsupportedEmbeddedPreviewMetadata`; never leave a stale preview or discard the whole metadata container silently.
 - [ ] Preserve assembled ICC bytes exactly and split them into legal APP2 chunks.
@@ -1307,7 +1309,7 @@ git commit -m "ci: enforce build security and supply-chain gates"
 ### Step 18.3: Generate and verify third-party notices
 
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
-- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.8, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, Microsoft SBOM Tool CLI 4.1.5 as release tooling, and each transitive native dependency actually present in the bundle.
+- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, Microsoft SBOM Tool CLI 4.1.5 as release tooling, and each transitive native dependency actually present in the bundle.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
 - [ ] Prepare the exact corresponding source, patches, dependency locks, and reproducible build instructions for the distributed binary. Do not assume that static versus dynamic linkage or a separate process removes license obligations, and do not introduce a loader/process boundary merely as a licensing shim.
 - [ ] Include libjpeg-turbo’s applicable BSD-style and IJG notices verbatim from its packaged copyright files, not from memory.
