@@ -96,6 +96,13 @@ try {
     }
 
     $directoryBuildPropertiesRelativePath = 'Directory.Build.props'
+    # A separate sanitizer triplet must actually instrument its dependencies;
+    # the name alone is not evidence of annotation-ABI consistency.
+    $sanitizerTripletPath = Join-Path $temporaryRoot 'vcpkg-triplets/x64-windows-static-md-asan.cmake'
+    $sanitizerTripletText = [System.IO.File]::ReadAllText($sanitizerTripletPath)
+    [System.IO.File]::WriteAllText($sanitizerTripletPath, $sanitizerTripletText.Replace(' /fsanitize=address', ''))
+    Assert-RejectedMutation -ExpectedDiagnostics 'VCPKG_CXX_FLAGS'
+    [System.IO.File]::WriteAllText($sanitizerTripletPath, $sanitizerTripletText)
     $directoryBuildPropertiesPath =
         Join-Path $temporaryRoot $directoryBuildPropertiesRelativePath
     $directoryBuildPropertiesSourcePath =
@@ -127,7 +134,7 @@ try {
     # Platform selection is a closed mapping. Falling back to a dynamically
     # linked builtin triplet would change both linkage and dependency binaries.
     $directoryBuildPropertiesDocument.Load($directoryBuildPropertiesPath)
-    $expectedX64TripletCondition = "'`$(Platform)' == 'x64'"
+    $expectedX64TripletCondition = "'`$(Platform)' == 'x64' and '`$(EnableASAN)' != 'true'"
     $x64TripletNodes = @(
         $directoryBuildPropertiesDocument.SelectNodes('/Project/PropertyGroup/VcpkgTriplet') |
             Where-Object {
@@ -141,7 +148,7 @@ try {
     $x64TripletNode.InnerText = 'x64-windows'
     $directoryBuildPropertiesDocument.Save($directoryBuildPropertiesPath)
     Assert-RejectedMutation -ExpectedDiagnostics (
-        "must map '`$(Platform)' == 'x64' to 'x64-windows-static-md'"
+        "must map $expectedX64TripletCondition to 'x64-windows-static-md'"
     )
     Copy-Item `
         -LiteralPath $directoryBuildPropertiesSourcePath `

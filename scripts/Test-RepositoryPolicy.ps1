@@ -513,6 +513,14 @@ function Assert-CMakeTraceContainsClosedTripletSettings {
         VCPKG_CXX_FLAGS = '/guard:cf /Qspectre'
         VCPKG_LINKER_FLAGS = '/guard:cf'
     }
+    if ($RelativePath -ceq 'vcpkg-triplets/x64-windows-static-md-asan.cmake') {
+        # The sanitizer profile has a distinct dependency ABI and cache key.
+        # Its exact native settings remain closed, not an arbitrary flag allowlist.
+        $expectedSettings['VCPKG_BUILD_TYPE'] = 'release'
+        $expectedSettings['VCPKG_C_FLAGS'] = '/guard:cf /Qspectre /fsanitize=address /Zi'
+        $expectedSettings['VCPKG_CXX_FLAGS'] = '/guard:cf /Qspectre /fsanitize=address /Zi'
+        $expectedSettings['VCPKG_LINKER_FLAGS'] = '/guard:cf /DEBUG /INCREMENTAL:NO'
+    }
     $executedSetCommands = [System.Collections.Generic.List[object]]::new()
     foreach ($traceRecord in $TraceRecords) {
         $commandName = $traceRecord['cmd']
@@ -905,7 +913,8 @@ function Test-DirectoryBuildProperties {
 
         $expectedTripletByPropertyCondition = [ordered]@{
             "'`$(Platform)' == 'Win32'" = 'x86-windows-static-md'
-            "'`$(Platform)' == 'x64'" = 'x64-windows-static-md'
+            "'`$(Platform)' == 'x64' and '`$(EnableASAN)' != 'true'" = 'x64-windows-static-md'
+            "'`$(Platform)' == 'x64' and '`$(EnableASAN)' == 'true'" = 'x64-windows-static-md-asan'
             "'`$(Platform)' == 'ARM64'" = 'arm64-windows-static-md'
         }
         $tripletElements = @(
@@ -937,7 +946,7 @@ function Test-DirectoryBuildProperties {
         }
         if ($tripletElements.Count -ne $expectedTripletByPropertyCondition.Count) {
             Add-PolicyFailure -Message (
-                'Directory.Build.props must contain only the three reviewed ' +
+                'Directory.Build.props must contain only the four reviewed ' +
                 'platform-specific VcpkgTriplet mappings.'
             )
         }
@@ -2172,10 +2181,14 @@ function Test-VcpkgTriplet {
     param(
         [Parameter(Mandatory)]
         [ValidateSet('x86', 'x64', 'arm64')]
-        [string]$Architecture
+        [string]$Architecture,
+        [switch]$AddressSanitizer
     )
 
     $relativePath = "vcpkg-triplets/$Architecture-windows-static-md.cmake"
+    if ($AddressSanitizer) {
+        $relativePath = 'vcpkg-triplets/x64-windows-static-md-asan.cmake'
+    }
     $path = Get-RepositoryPath -RelativePath $relativePath
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         return
@@ -2184,7 +2197,7 @@ function Test-VcpkgTriplet {
     # A triplet is executable CMake, so source-line pattern matching cannot
     # establish what the interpreter consumed. CMake's versioned JSON trace is
     # the native semantic boundary: validate the executed command stream as a
-    # closed six-record set with exact argument arrays.
+    # closed reviewed record set with exact argument arrays.
     $traceRecords = @(
         Invoke-CMakeScriptJsonTrace -RelativePath $relativePath
     )
@@ -2206,6 +2219,7 @@ $requiredConfigurationFiles = @(
     'vcpkg.json',
     'vcpkg-triplets/x86-windows-static-md.cmake',
     'vcpkg-triplets/x64-windows-static-md.cmake',
+    'vcpkg-triplets/x64-windows-static-md-asan.cmake',
     'vcpkg-triplets/arm64-windows-static-md.cmake',
     'eng/toolchain-lock.json',
     'eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj',
@@ -2246,6 +2260,7 @@ Test-VcpkgManifest
 Test-VcpkgConfigurationFile
 Test-VcpkgTriplet -Architecture x86
 Test-VcpkgTriplet -Architecture x64
+Test-VcpkgTriplet -Architecture x64 -AddressSanitizer
 Test-VcpkgTriplet -Architecture arm64
 
 if ($policyFailures.Count -gt 0) {

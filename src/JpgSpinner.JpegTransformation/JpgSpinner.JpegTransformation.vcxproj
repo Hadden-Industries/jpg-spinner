@@ -40,10 +40,13 @@
   <ItemGroup>
     <ClInclude Include="src\internal\JpegMarkerInventory.h" />
     <ClInclude Include="src\internal\JpegSegmentScanner.h" />
+    <ClInclude Include="src\internal\TurboJpegResourceLimits.h" />
+    <ClInclude Include="src\internal\LibJpegTurboCoefficientTransformer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JpegTransformationModule.cpp" />
     <ClCompile Include="src\internal\JpegSegmentScanner.cpp" />
+    <ClCompile Include="src\internal\LibJpegTurboCoefficientTransformer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\JpgSpinner.Domain\JpgSpinner.Domain.vcxproj">

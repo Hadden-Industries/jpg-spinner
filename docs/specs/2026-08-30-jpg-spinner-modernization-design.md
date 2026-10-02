@@ -338,9 +338,9 @@ struct JpegResourceLimits final
 
 struct TurboJpegResourceLimits final
 {
-    // TJPARAM_MAXMEMORY is expressed in decimal megabytes and limits codec
+    // TJPARAM_MAXMEMORY is expressed in mebibytes and limits codec
     // intermediate buffers; it is not an encoded-input-length limit.
-    std::int32_t maximumIntermediateBufferMemoryMegabytes;
+    std::int32_t maximumIntermediateBufferMemoryMebibytes;
 
     [[nodiscard]] static consteval TurboJpegResourceLimits production() noexcept
     {
@@ -372,7 +372,7 @@ This scanner is a security boundary and receives both deterministic malformed-in
 
 Baseline, extended sequential, progressive, and arithmetic DCT JPEG are supported at the standard 8- and 12-bit lossy precisions when libjpeg-turbo reports the process as transformable. Grayscale, RGB, YCbCr, CMYK, and YCCK component organizations are retained without color conversion. Lossless predictive, hierarchical, invalid precision, and unknown SOF processes are rejected. MPO/MPF is rejected because its multi-image offsets and relationships cannot be preserved safely by a single-image transaction. Motion Photos and other payload-bearing data after EOI are rejected because transformation would invalidate XMP offsets or discard a second asset. C2PA Content Credentials are rejected because transformation invalidates their cryptographic asset binding; other JUMBF metadata is rejected because version 2.0 cannot prove its internal references remain truthful. No file is silently decoded and re-encoded in the pixel domain.
 
-The transform engine uses the public TurboJPEG 3 API, including `tj3Transform`; it must not include `transupp.h`, internal libjpeg headers, or copied codec source. Defense-in-depth configuration sets `TJPARAM_STOPONWARNING=1`, `TJPARAM_MAXMEMORY=512` in TurboJPEG's decimal-megabyte unit for intermediate buffers, `TJPARAM_MAXPIXELS=268435456`, `TJPARAM_SCANLIMIT=100`, and `TJPARAM_SAVEMARKERS=0`. Every `tjtransform` also sets `TJXOPT_COPYNONE`, so marker suppression is local to the operation even if context parameters or upstream defaults change. After reading the source header, each transform sets `TJXOPT_PROGRESSIVE` and `TJXOPT_ARITHMETIC` explicitly when the transform plan requires them; it never relies on mutable `TJPARAM_*` state surviving another header or transform call. The application’s bounds-checked reconciliation policy reassembles each permitted marker exactly once. The behavior is anchored in the official [libjpeg-turbo transform documentation](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/doc/usage.txt) and [TurboJPEG 3.2.0 interface](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.h).
+The transform engine uses the public TurboJPEG 3 API, including `tj3Transform`; it must not include `transupp.h`, internal libjpeg headers, or copied codec source. Defense-in-depth configuration sets `TJPARAM_STOPONWARNING=1`, `TJPARAM_MAXMEMORY=512` in TurboJPEG's mebibyte unit for intermediate buffers, `TJPARAM_MAXPIXELS=268435456`, `TJPARAM_SCANLIMIT=100`, and `TJPARAM_SAVEMARKERS=0`. Every `tjtransform` also sets `TJXOPT_COPYNONE`, so marker suppression is local to the operation even if context parameters or upstream defaults change. After reading the source header, each transform sets `TJXOPT_PROGRESSIVE` and `TJXOPT_ARITHMETIC` explicitly when the transform plan requires them; it never relies on mutable `TJPARAM_*` state surviving another header or transform call. The application’s bounds-checked reconciliation policy reassembles each permitted marker exactly once. The behavior is anchored in the official [libjpeg-turbo transform documentation](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/doc/usage.txt) and [TurboJPEG 3.2.0 interface](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.h).
 
 ## 8. Metadata reconciliation
 

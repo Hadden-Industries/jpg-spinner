@@ -26,7 +26,7 @@ struct JpegResourceLimitViolation final
 };
 
 /// Application-level limits for untrusted encoded JPEG input. These are
-/// deliberately separate from TurboJPEG's decimal-megabyte working-memory
+/// deliberately separate from TurboJPEG's mebibyte working-memory
 /// parameter, which is an adapter concern rather than an input-size limit.
 struct JpegResourceLimits final
 {

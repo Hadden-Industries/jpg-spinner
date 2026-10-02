@@ -524,6 +524,15 @@ git commit -m "feat: validate JPEG structure before codec processing"
 
 ## Task 5: Implement coefficient-exact transforms through TurboJPEG 3
 
+Implementation clarification (2026-10-03): `TJPARAM_MAXMEMORY=512` is 512 MiB,
+as established by the pinned upstream implementation, not decimal MB. An axis
+exchange also transposes frequency-indexed quantization tables. The x64 ASan
+suite uses a fourth, exact policy-validated `x64-windows-static-md-asan` triplet
+and Release configuration so every dependency shares MSVC's annotation ABI;
+ordinary application triplets remain unchanged. Do not disable container
+annotations to link ordinary libraries into the sanitizer executable. See the
+[Task 5 evidence record](../implementation/2026-10-03-modernization-task-5-log.md).
+
 **Files:**
 
 - Create: `src/JpgSpinner.JpegTransformation/src/internal/LibJpegTurboCoefficientTransformer.h`
@@ -546,8 +555,8 @@ git commit -m "feat: validate JPEG structure before codec processing"
 
 - [ ] Define the internal `LibJpegTurboCoefficientTransformer::transformCoefficients` around immutable bytes, `JpegTransformPlan`, and a bounded output sink. Application callers must not see this internal seam.
 - [ ] Own `tjhandle` in narrow RAII; always call `tj3Destroy`.
-- [ ] First write tests proving that `JpegResourceLimits::maximumEncodedFileLengthBytes` is enforced before codec parsing and is not used as TurboJPEG memory configuration. Separately require `TurboJpegResourceLimits::maximumIntermediateBufferMemoryMegabytes=512` to map unchanged to `TJPARAM_MAXMEMORY`; document and test that TurboJPEG interprets this value as 512,000,000 bytes of intermediate-buffer budget, not 512 MiB and not an encoded-file-size limit.
-- [ ] Before input parsing, set `TJPARAM_STOPONWARNING=1`, `TJPARAM_MAXMEMORY` from the decimal-megabyte adapter limit, `TJPARAM_MAXPIXELS=268435456`, `TJPARAM_SCANLIMIT=100`, and `TJPARAM_SAVEMARKERS=0`.
+- [ ] First write tests proving that `JpegResourceLimits::maximumEncodedFileLengthBytes` is enforced before codec parsing and is not used as TurboJPEG memory configuration. Separately require `TurboJpegResourceLimits::maximumIntermediateBufferMemoryMebibytes=512` to map unchanged to `TJPARAM_MAXMEMORY`; document and test that TurboJPEG interprets this value as 536,870,912 bytes (512 MiB) of intermediate-buffer budget and not an encoded-file-size limit.
+- [ ] Before input parsing, set `TJPARAM_STOPONWARNING=1`, `TJPARAM_MAXMEMORY` from the mebibyte adapter limit, `TJPARAM_MAXPIXELS=268435456`, `TJPARAM_SCANLIMIT=100`, and `TJPARAM_SAVEMARKERS=0`.
 - [ ] Map each `LosslessTransform` to the exact `TJXOP` and edge policy to `TJXOPT_PERFECT` or `TJXOPT_TRIM`. Set `TJXOPT_COPYNONE` on every `tjtransform`; this operation-local marker prohibition is deliberate defense in depth with `TJPARAM_SAVEMARKERS=0`.
 - [ ] Call `tj3Transform`; release TurboJPEG output through `tj3Free` RAII on every path. No codec-owned buffer escapes.
 - [ ] Comment why the C call is non-interruptible and cancellation is checked immediately before and after it.
@@ -888,7 +897,7 @@ git commit -m "feat: make original replacement verifiably recoverable"
 ### Step 11.5: Verify and commit
 
 - [ ] Run Batch, Storage, JPEG, and Domain suites; repeat cancellation tests 100 times.
-- [ ] Measure peak memory with separate simulators for the 512 MiB application encoded-file limit and TurboJPEG's 512-decimal-MB intermediate-buffer setting. Prove only one codec budget can be active and that neither limit is mistaken for the other.
+- [ ] Measure peak memory with separate simulators for the 512 MiB application encoded-file limit and TurboJPEG's 512-MiB intermediate-buffer setting. Prove only one codec budget can be active and that neither limit is mistaken for the other.
 - [ ] Commit:
 
 ```powershell
@@ -1500,7 +1509,7 @@ Implementation is complete only when:
 - [Microsoft vcpkg version locking](https://learn.microsoft.com/en-us/vcpkg/consume/lock-package-versions)
 - [libjpeg-turbo releases and transform documentation](https://github.com/libjpeg-turbo/libjpeg-turbo/releases)
 - [TurboJPEG 3.2.0 public interface](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.h)
-- [TurboJPEG `TJPARAM_MAXMEMORY` decimal-megabyte rationale](https://github.com/libjpeg-turbo/libjpeg-turbo/issues/735)
+- [TurboJPEG 3.2.0 `TJPARAM_MAXMEMORY` implementation (1,048,576 bytes per unit)](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.c)
 - [Exiv2 releases](https://github.com/Exiv2/exiv2/releases)
 - [Exiv2 maintainer statement on Extended XMP limitations](https://dev.exiv2.org/boards/3/topics/3124)
 - [Catch2 3.16.0 release](https://github.com/catchorg/Catch2/releases/tag/v3.16.0)

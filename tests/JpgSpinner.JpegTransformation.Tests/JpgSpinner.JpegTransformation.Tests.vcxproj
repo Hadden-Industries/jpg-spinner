@@ -24,6 +24,12 @@
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(EnableASAN)' == 'true' and '$(Platform)' == 'x64'">
+    <!-- ASan's runtime is shipped outside the Spectre library directory.
+         Append its native path without changing Spectre CRT precedence. -->
+    <LibraryPath>$(LibraryPath);$(VCToolsInstallDir)lib\x64</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
   <PropertyGroup>
     <OutDir>$(MSBuildThisFileDirectory)..\..\artifacts\bin\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</OutDir>
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
@@ -42,6 +48,8 @@
     <!-- Catch2 documents a compiled custom main as the supported alternative to Catch2Main. -->
     <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
     <ClCompile Include="JpegSegmentScannerTests.cpp" />
+    <ClCompile Include="TurboJpegResourceLimitTests.cpp" />
+    <ClCompile Include="LibJpegTurboCoefficientTransformerTests.cpp" />
     <ClCompile Include="TestSupportContracts.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -49,5 +57,10 @@
     <ProjectReference Include="..\TestSupport\TestSupport.vcxproj"><Project>{F04F20B2-B900-46F1-BC12-182B6E6A8A43}</Project></ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="ValidateSanitizerConfiguration" BeforeTargets="PrepareForBuild"
+          Condition="'$(EnableASAN)' == 'true'">
+    <Error Condition="'$(Configuration)' != 'Release' or '$(Platform)' != 'x64'"
+           Text="The qualified sanitizer profile requires Release x64 and matching instrumented dependencies." />
+  </Target>
   <ImportGroup Label="ExtensionTargets" />
 </Project>

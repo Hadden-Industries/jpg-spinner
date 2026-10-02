@@ -58,10 +58,11 @@
     <VcpkgManifestRoot>$(MSBuildThisFileDirectory)</VcpkgManifestRoot>
     <!-- Every reviewed dependency is static, so app-local DLL discovery is unnecessary. -->
     <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
-    <!-- Select only the three repository-owned triplets whose executed CMake command streams are policy-verified. -->
+    <!-- Select only repository-owned triplets whose executed CMake command streams are policy-verified. -->
     <VcpkgAdditionalInstallOptions>--overlay-triplets="$(MSBuildThisFileDirectory)vcpkg-triplets"</VcpkgAdditionalInstallOptions>
     <VcpkgTriplet Condition="'$(Platform)' == 'Win32'">x86-windows-static-md</VcpkgTriplet>
-    <VcpkgTriplet Condition="'$(Platform)' == 'x64'">x64-windows-static-md</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)' == 'x64' and '$(EnableASAN)' != 'true'">x64-windows-static-md</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)' == 'x64' and '$(EnableASAN)' == 'true'">x64-windows-static-md-asan</VcpkgTriplet>
     <VcpkgTriplet Condition="'$(Platform)' == 'ARM64'">arm64-windows-static-md</VcpkgTriplet>
   </PropertyGroup>
 
