@@ -30,14 +30,21 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="CoefficientDigest.h" />
+    <ClInclude Include="DeterministicJpegTransformationEngine.h" />
     <ClInclude Include="DeterministicJpegFixtureFactory.h" />
     <ClInclude Include="TemporaryDirectory.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CoefficientDigest.cpp" />
+    <ClCompile Include="DeterministicJpegTransformationEngine.cpp" />
     <ClCompile Include="DeterministicJpegFixtureFactory.cpp" />
     <ClCompile Include="TemporaryDirectory.cpp" />
   </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

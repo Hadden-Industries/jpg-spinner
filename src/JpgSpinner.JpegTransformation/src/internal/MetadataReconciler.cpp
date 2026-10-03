@@ -584,26 +584,39 @@ ImageProcessingResult<ReconciledMetadataBytes> MetadataReconciler::reconcileStan
         Exiv2::XmpData xmp;
         if (Exiv2::XmpParser::decode(xmp, ownedPacket) != 0 || nativeDiagnosticObserved)
             return reject(ImageProcessingErrorCode::MalformedImageMetadata);
+        bool requiresMetadataRewrite = plan.transform != LosslessTransform::None;
         for (auto &entry : xmp)
         {
             const auto key = entry.key();
             // TIFF/Exif dimensions are non-negative integer properties. Do not
             // overwrite malformed source values and thereby hide invalid input.
-            if ((key == "Xmp.tiff.ImageWidth" || key == "Xmp.tiff.ImageLength" || key == "Xmp.exif.PixelXDimension" ||
-                 key == "Xmp.exif.PixelYDimension") &&
-                !xmpUnsignedInteger(&entry))
-                return reject(ImageProcessingErrorCode::MalformedImageMetadata);
+            const bool width = key == "Xmp.tiff.ImageWidth" || key == "Xmp.exif.PixelXDimension";
+            const bool height = key == "Xmp.tiff.ImageLength" || key == "Xmp.exif.PixelYDimension";
+            if (width || height)
+            {
+                const auto pixels = xmpUnsignedInteger(&entry);
+                if (!pixels)
+                    return reject(ImageProcessingErrorCode::MalformedImageMetadata);
+                requiresMetadataRewrite |=
+                    *pixels != (width ? plan.outputDimensions.width.pixels : plan.outputDimensions.height.pixels);
+            }
             if (key == "Xmp.tiff.Orientation")
             {
                 const auto *value = dynamic_cast<const Exiv2::XmpValue *>(&entry.value());
                 if (entry.typeId() != Exiv2::xmpText || !value || value->xmpStruct() != Exiv2::XmpValue::xsNone ||
                     value->xmpArrayType() != Exiv2::XmpValue::xaNone || !parseXmpOrientation(entry.toString()))
                     return reject(ImageProcessingErrorCode::InvalidOrientationMetadata);
-                if (plan.transform != LosslessTransform::None)
+                if (plan.transform != LosslessTransform::None ||
+                    parseXmpOrientation(entry.toString()) != ExifOrientation::TopLeft)
+                {
+                    requiresMetadataRewrite = true;
                     entry = "1";
+                }
             }
         }
-        if (plan.transform == LosslessTransform::None)
+        // Identity describes the pixels, not a guarantee that all derived
+        // metadata already agrees. Avoid rewriting an already-correct packet.
+        if (!requiresMetadataRewrite)
             return PayloadResult::success({{packet.begin(), packet.end()}, false});
         if (plan.outputDimensions.width.pixels == 0 || plan.outputDimensions.width.pixels > 65535 ||
             plan.outputDimensions.height.pixels == 0 || plan.outputDimensions.height.pixels > 65535)
@@ -614,8 +627,9 @@ ImageProcessingResult<ReconciledMetadataBytes> MetadataReconciler::reconcileStan
             const auto key = entry->key();
             // Remove the complete native property family, not unrelated keys
             // that happen to start with "Thumbnails". This is an RDF path, not XML.
-            if (key == "Xmp.xmp.Thumbnails" || key.starts_with("Xmp.xmp.Thumbnails[") ||
-                key.starts_with("Xmp.xmp.Thumbnails/"))
+            if (plan.transform != LosslessTransform::None &&
+                (key == "Xmp.xmp.Thumbnails" || key.starts_with("Xmp.xmp.Thumbnails[") ||
+                 key.starts_with("Xmp.xmp.Thumbnails/")))
             {
                 entry = xmp.erase(entry);
                 removedThumbnail = true;
@@ -675,6 +689,7 @@ ImageProcessingResult<ReconciledMetadataBytes> MetadataReconciler::reconcileExif
         if (byteOrder == Exiv2::invalidByteOrder || nativeDiagnosticObserved)
             return reject(ImageProcessingErrorCode::MalformedImageMetadata);
         bool orientationObserved = false;
+        bool requiresMetadataRewrite = plan.transform != LosslessTransform::None;
         for (auto &entry : exif)
             if (entry.key() == "Exif.Image.Orientation")
             {
@@ -682,11 +697,12 @@ ImageProcessingResult<ReconciledMetadataBytes> MetadataReconciler::reconcileExif
                     !tryParseExifOrientation(static_cast<std::uint16_t>(entry.toInt64())))
                     return reject(ImageProcessingErrorCode::InvalidOrientationMetadata);
                 orientationObserved = true;
-                if (plan.transform != LosslessTransform::None)
+                if (entry.toInt64() != 1)
+                {
+                    requiresMetadataRewrite = true;
                     entry = static_cast<std::uint16_t>(1);
+                }
             }
-        if (plan.transform == LosslessTransform::None)
-            return PayloadResult::success({{tiffPayload.begin(), tiffPayload.end()}, false});
         if (plan.outputDimensions.width.pixels == 0 || plan.outputDimensions.width.pixels > 65535 ||
             plan.outputDimensions.height.pixels == 0 || plan.outputDimensions.height.pixels > 65535)
             return reject(ImageProcessingErrorCode::OutputValidationFailed);
@@ -703,15 +719,20 @@ ImageProcessingResult<ReconciledMetadataBytes> MetadataReconciler::reconcileExif
                     (entry.typeId() != Exiv2::unsignedShort && entry.typeId() != Exiv2::unsignedLong))
                     return reject(ImageProcessingErrorCode::MalformedImageMetadata);
                 const auto pixels = width ? plan.outputDimensions.width.pixels : plan.outputDimensions.height.pixels;
+                requiresMetadataRewrite |= entry.toInt64() != static_cast<std::int64_t>(pixels);
                 if (entry.setValue(std::to_string(pixels)) != 0)
                     return reject(ImageProcessingErrorCode::MalformedImageMetadata);
             }
         }
         // A transformed image cannot truthfully retain an untransformed IFD1.
         // The supported Exiv2 operation removes both its tags and owned bytes.
+        if (!requiresMetadataRewrite)
+            return PayloadResult::success({{tiffPayload.begin(), tiffPayload.end()}, false});
         const bool removedThumbnail =
+            plan.transform != LosslessTransform::None &&
             std::ranges::any_of(exif, [](const auto &entry) { return entry.groupName() == "Thumbnail"; });
-        Exiv2::ExifThumb{exif}.erase();
+        if (plan.transform != LosslessTransform::None)
+            Exiv2::ExifThumb{exif}.erase();
         const auto expectedMetadata = exifPreservationSnapshot(exif);
         const bool hasOpaqueMakerNote = exif.findKey(Exiv2::ExifKey{"Exif.Photo.MakerNote"}) != exif.end() &&
                                         exif.findKey(Exiv2::ExifKey{"Exif.MakerNote.Offset"}) == exif.end();
@@ -811,5 +832,353 @@ ImageProcessingResult<OrientationMetadata> MetadataReconciler::analyzeOrientatio
     {
         return fail(ImageProcessingErrorCode::MalformedImageMetadata);
     }
+}
+namespace
+{
+using MetadataValidationResult = ImageProcessingResult<std::monostate>;
+MetadataValidationResult rejectMetadata(JpegOutputValidationRule rule)
+{
+    return MetadataValidationResult::failure(
+        {ImageProcessingErrorCode::OutputValidationFailed, ImageProcessingStage::OutputValidation, {}, rule});
+}
+
+// These predicates identify the application's permitted semantic delta; native
+// Exiv2 still owns all TIFF/RDF decoding, types, links and value representation.
+bool isExifWidth(std::string_view key)
+{
+    return key == "Exif.Image.ImageWidth" || key == "Exif.Photo.PixelXDimension";
+}
+bool isExifHeight(std::string_view key)
+{
+    return key == "Exif.Image.ImageLength" || key == "Exif.Photo.PixelYDimension";
+}
+bool isXmpWidth(std::string_view key)
+{
+    return key == "Xmp.tiff.ImageWidth" || key == "Xmp.exif.PixelXDimension";
+}
+bool isXmpHeight(std::string_view key)
+{
+    return key == "Xmp.tiff.ImageLength" || key == "Xmp.exif.PixelYDimension";
+}
+bool isXmpThumbnail(std::string_view key)
+{
+    return key == "Xmp.xmp.Thumbnails" || key.starts_with("Xmp.xmp.Thumbnails[") ||
+           key.starts_with("Xmp.xmp.Thumbnails/");
+}
+
+MetadataValidationResult comparePhotoshopResources(std::span<const std::byte> source, std::span<const std::byte> output,
+                                                   bool &removedThumbnail)
+{
+    const std::lock_guard lock{metadataLibraryMutex};
+    const MetadataDiagnostics diagnostics;
+    try
+    {
+        if (!hasIdentifier(output, {"Photoshop 3.0\0", 14}))
+            return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+        // Inspect native record boundaries in both immutable sequences. Do not
+        // call the writer or synthesize its expected serialization: a faulty
+        // writer must not be able to authorize its own thumbnail omissions.
+        struct Resource final
+        {
+            std::uint16_t identifier;
+            std::span<const std::byte> encodedBytes;
+        };
+        const auto read = [](std::span<const std::byte> payload) -> std::optional<std::vector<Resource>> {
+            std::vector<Resource> resources;
+            auto remaining = payload.subspan(14);
+            while (!remaining.empty())
+            {
+                // The public Exiv2 locator has a byte-sized Pascal-name
+                // calculation. Reject the two overflowing lengths before
+                // entering it; it remains the owner of IRB parsing semantics.
+                if (remaining.size() < 12 || std::to_integer<unsigned>(remaining[6]) >= 254)
+                    return std::nullopt;
+                const auto *begin = reinterpret_cast<const Exiv2::byte *>(remaining.data());
+                const auto identifier = Exiv2::getUShort(begin + 4, Exiv2::bigEndian);
+                const Exiv2::byte *record = nullptr;
+                std::uint32_t headerLength = 0, dataLength = 0;
+                if (Exiv2::Photoshop::locateIrb(begin, remaining.size(), identifier, &record, headerLength,
+                                                dataLength) != 0 ||
+                    record != begin || nativeDiagnosticObserved)
+                    return std::nullopt;
+                const auto length = static_cast<std::uint64_t>(headerLength) + dataLength + (dataLength & 1U);
+                if (length < 12 || length > remaining.size())
+                    return std::nullopt;
+                resources.push_back({identifier, remaining.first(static_cast<std::size_t>(length))});
+                remaining = remaining.subspan(static_cast<std::size_t>(length));
+            }
+            return resources;
+        };
+        const auto original = read(source);
+        const auto observed = read(output);
+        if (!original || !observed)
+            return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+        const auto isThumbnail = [](const Resource &resource) {
+            return resource.identifier == 1033 || resource.identifier == 1036;
+        };
+        if (std::ranges::any_of(*observed, isThumbnail))
+            return rejectMetadata(JpegOutputValidationRule::RemovedEmbeddedThumbnails);
+        std::size_t index = 0;
+        for (const auto &resource : *original)
+        {
+            if (isThumbnail(resource))
+            {
+                removedThumbnail = true;
+                continue;
+            }
+            if (index == observed->size() ||
+                !std::ranges::equal(resource.encodedBytes, (*observed)[index++].encodedBytes))
+                return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+        }
+        return index == observed->size() ? MetadataValidationResult::success({})
+                                         : rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+    }
+    catch (const Exiv2::Error &)
+    {
+        return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+    }
+}
+
+MetadataValidationResult compareExifMetadata(std::span<const std::byte> source, std::span<const std::byte> output,
+                                             const JpegTransformPlan &plan, bool &removedThumbnail)
+{
+    const std::lock_guard lock{metadataLibraryMutex};
+    const MetadataDiagnostics diagnostics;
+    try
+    {
+        Exiv2::ExifData original, observed;
+        if (Exiv2::ExifParser::decode(original, reinterpret_cast<const Exiv2::byte *>(source.data()), source.size()) ==
+                Exiv2::invalidByteOrder ||
+            Exiv2::ExifParser::decode(observed, reinterpret_cast<const Exiv2::byte *>(output.data()), output.size()) ==
+                Exiv2::invalidByteOrder ||
+            nativeDiagnosticObserved)
+            return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+        for (const auto &entry : observed)
+            if (entry.key() == "Exif.Image.Orientation" &&
+                (entry.typeId() != Exiv2::unsignedShort || entry.count() != 1 || entry.toInt64() != 1))
+                return rejectMetadata(JpegOutputValidationRule::CanonicalExifOrientation);
+        {
+            // Every present derived field must describe the validated pixels,
+            // including identity transforms. Only non-identity transforms may
+            // discard thumbnails; identity must preserve their native facts.
+            for (const auto key : {"Exif.Image.Orientation", "Exif.Image.ImageWidth", "Exif.Image.ImageLength",
+                                   "Exif.Photo.PixelXDimension", "Exif.Photo.PixelYDimension"})
+            {
+                const auto originalCount =
+                    std::ranges::count_if(original, [=](const auto &entry) { return entry.key() == key; });
+                const auto observedCount =
+                    std::ranges::count_if(observed, [=](const auto &entry) { return entry.key() == key; });
+                if (originalCount != observedCount || originalCount > 1)
+                    return rejectMetadata(key == std::string_view{"Exif.Image.Orientation"}
+                                              ? JpegOutputValidationRule::CanonicalExifOrientation
+                                              : JpegOutputValidationRule::DerivedDimensions);
+            }
+            for (const auto &entry : observed)
+            {
+                const auto key = entry.key();
+                if (key == "Exif.Image.Orientation" &&
+                    (entry.typeId() != Exiv2::unsignedShort || entry.count() != 1 || entry.toInt64() != 1))
+                    return rejectMetadata(JpegOutputValidationRule::CanonicalExifOrientation);
+                if (isExifWidth(key) || isExifHeight(key))
+                {
+                    const auto originalEntry = original.findKey(Exiv2::ExifKey{key});
+                    const auto expected =
+                        isExifWidth(key) ? plan.outputDimensions.width.pixels : plan.outputDimensions.height.pixels;
+                    if (entry.count() != 1 || originalEntry == original.end() ||
+                        originalEntry->typeId() != entry.typeId() ||
+                        (entry.typeId() != Exiv2::unsignedShort && entry.typeId() != Exiv2::unsignedLong) ||
+                        entry.toInt64() != static_cast<std::int64_t>(expected))
+                        return rejectMetadata(JpegOutputValidationRule::DerivedDimensions);
+                }
+                if (plan.transform != LosslessTransform::None && entry.groupName() == "Thumbnail")
+                    return rejectMetadata(JpegOutputValidationRule::RemovedEmbeddedThumbnails);
+            }
+            removedThumbnail |=
+                plan.transform != LosslessTransform::None &&
+                std::ranges::any_of(original, [](const auto &entry) { return entry.groupName() == "Thumbnail"; });
+            // Compare all other native facts after removing only explicitly
+            // permitted fields. No writer-derived expected bytes are involved.
+            for (auto *metadata : {&original, &observed})
+                for (auto entry = metadata->begin(); entry != metadata->end();)
+                    if (entry->key() == "Exif.Image.Orientation" || isExifWidth(entry->key()) ||
+                        isExifHeight(entry->key()) ||
+                        (plan.transform != LosslessTransform::None && entry->groupName() == "Thumbnail"))
+                        entry = metadata->erase(entry);
+                    else
+                        ++entry;
+        }
+        if (exifPreservationSnapshot(original) != exifPreservationSnapshot(observed))
+            return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+        return MetadataValidationResult::success({});
+    }
+    catch (const Exiv2::Error &)
+    {
+        return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+    }
+}
+
+MetadataValidationResult compareXmpMetadata(std::span<const std::byte> source, std::span<const std::byte> output,
+                                            const JpegTransformPlan &plan, bool &removedThumbnail)
+{
+    const std::lock_guard lock{metadataLibraryMutex};
+    const MetadataDiagnostics diagnostics;
+    try
+    {
+        Exiv2::XmpData original, observed;
+        if (Exiv2::XmpParser::decode(original, {reinterpret_cast<const char *>(source.data()), source.size()}) != 0 ||
+            Exiv2::XmpParser::decode(observed, {reinterpret_cast<const char *>(output.data()), output.size()}) != 0 ||
+            nativeDiagnosticObserved)
+            return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+        for (const auto &entry : observed)
+            if (entry.key() == "Xmp.tiff.Orientation" && xmpUnsignedInteger(&entry) != 1)
+                return rejectMetadata(JpegOutputValidationRule::CanonicalStandardXmpOrientation);
+        {
+            for (const auto key : {"Xmp.tiff.Orientation", "Xmp.tiff.ImageWidth", "Xmp.tiff.ImageLength",
+                                   "Xmp.exif.PixelXDimension", "Xmp.exif.PixelYDimension"})
+            {
+                const auto originalCount =
+                    std::ranges::count_if(original, [=](const auto &entry) { return entry.key() == key; });
+                const auto observedCount =
+                    std::ranges::count_if(observed, [=](const auto &entry) { return entry.key() == key; });
+                if (originalCount != observedCount || originalCount > 1)
+                    return rejectMetadata(key == std::string_view{"Xmp.tiff.Orientation"}
+                                              ? JpegOutputValidationRule::CanonicalStandardXmpOrientation
+                                              : JpegOutputValidationRule::DerivedDimensions);
+            }
+            for (const auto &entry : observed)
+            {
+                const auto key = entry.key();
+                if (key == "Xmp.tiff.Orientation" && xmpUnsignedInteger(&entry) != 1)
+                    return rejectMetadata(JpegOutputValidationRule::CanonicalStandardXmpOrientation);
+                if ((isXmpWidth(key) || isXmpHeight(key)) &&
+                    xmpUnsignedInteger(&entry) !=
+                        (isXmpWidth(key) ? plan.outputDimensions.width.pixels : plan.outputDimensions.height.pixels))
+                    return rejectMetadata(JpegOutputValidationRule::DerivedDimensions);
+                if (plan.transform != LosslessTransform::None && isXmpThumbnail(key))
+                    return rejectMetadata(JpegOutputValidationRule::RemovedEmbeddedThumbnails);
+            }
+            removedThumbnail |=
+                plan.transform != LosslessTransform::None &&
+                std::ranges::any_of(original, [](const auto &entry) { return isXmpThumbnail(entry.key()); });
+            for (auto *metadata : {&original, &observed})
+                for (auto entry = metadata->begin(); entry != metadata->end();)
+                    if (entry->key() == "Xmp.tiff.Orientation" || isXmpWidth(entry->key()) ||
+                        isXmpHeight(entry->key()) ||
+                        (plan.transform != LosslessTransform::None && isXmpThumbnail(entry->key())))
+                        entry = metadata->erase(entry);
+                    else
+                        ++entry;
+        }
+        if (xmpPreservationSnapshot(original) != xmpPreservationSnapshot(observed))
+            return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+        return MetadataValidationResult::success({});
+    }
+    catch (const Exiv2::Error &)
+    {
+        return rejectMetadata(JpegOutputValidationRule::MetadataPreservation);
+    }
+}
+
+std::vector<JpegMarkerReference> metadataMarkers(const JpegMarkerInventory &inventory)
+{
+    std::vector<JpegMarkerReference> markers;
+    for (const auto &marker : inventory.markers())
+        if ((marker.markerCode >= 0xe0 && marker.markerCode <= 0xef) || marker.markerCode == 0xfe)
+            markers.push_back(marker);
+    return markers;
+}
+} // namespace
+
+ImageProcessingResult<JpegOutputMetadataEvidence> MetadataReconciler::validateReconciledMetadata(
+    std::span<const std::byte> source, const JpegMarkerInventory &sourceInventory, std::span<const std::byte> output,
+    const JpegMarkerInventory &outputInventory, const JpegTransformPlan &plan)
+{
+    using Result = ImageProcessingResult<JpegOutputMetadataEvidence>;
+    const auto reject = [](JpegOutputValidationRule rule) {
+        return Result::failure(
+            {ImageProcessingErrorCode::OutputValidationFailed, ImageProcessingStage::OutputValidation, {}, rule});
+    };
+    const auto payload = [](std::span<const std::byte> bytes, const JpegMarkerReference &marker) {
+        return bytes.subspan(static_cast<std::size_t>(marker.payloadRange.offsetBytes),
+                             static_cast<std::size_t>(marker.payloadRange.lengthBytes));
+    };
+    const auto sourceMarkers = metadataMarkers(sourceInventory);
+    const auto outputMarkers = metadataMarkers(outputInventory);
+    std::size_t outputIndex = 0;
+    bool removedThumbnail = false;
+    const bool transformed = plan.transform != LosslessTransform::None;
+    for (const auto &sourceMarker : sourceMarkers)
+    {
+        const auto sourcePayload = payload(source, sourceMarker);
+        if (transformed && sourceMarker.markerCode == 0xe0 && hasIdentifier(sourcePayload, {"JFXX\0", 5}))
+        {
+            removedThumbnail = true;
+            continue;
+        }
+        if (outputIndex == outputMarkers.size())
+            return reject(JpegOutputValidationRule::PreservedMarkerSequence);
+        const auto &outputMarker = outputMarkers[outputIndex++];
+        const auto outputPayload = payload(output, outputMarker);
+        if (outputMarker.markerCode != sourceMarker.markerCode)
+            return reject(JpegOutputValidationRule::PreservedMarkerSequence);
+        if (sourceMarker.markerCode == 0xe1 && hasIdentifier(sourcePayload, {"Exif\0\0", 6}))
+        {
+            if (!hasIdentifier(outputPayload, {"Exif\0\0", 6}))
+                return reject(JpegOutputValidationRule::PreservedMarkerSequence);
+            const auto compared =
+                compareExifMetadata(sourcePayload.subspan(6), outputPayload.subspan(6), plan, removedThumbnail);
+            if (const auto *error = compared.errorIfPresent())
+                return Result::failure(*error);
+        }
+        else if (sourceMarker.markerCode == 0xe1 &&
+                 hasIdentifier(sourcePayload, {"http://ns.adobe.com/xap/1.0/\0", 29}))
+        {
+            if (!hasIdentifier(outputPayload, {"http://ns.adobe.com/xap/1.0/\0", 29}))
+                return reject(JpegOutputValidationRule::PreservedMarkerSequence);
+            const auto compared =
+                compareXmpMetadata(sourcePayload.subspan(29), outputPayload.subspan(29), plan, removedThumbnail);
+            if (const auto *error = compared.errorIfPresent())
+                return Result::failure(*error);
+        }
+        else if (transformed && sourceMarker.markerCode == 0xe0 && hasIdentifier(sourcePayload, {"JFIF\0", 5}))
+        {
+            if (sourcePayload.size() < 14 || outputPayload.size() != 14 || outputPayload[12] != std::byte{0} ||
+                outputPayload[13] != std::byte{0})
+                return reject(JpegOutputValidationRule::RemovedEmbeddedThumbnails);
+            if (!std::equal(sourcePayload.begin(), sourcePayload.begin() + 12, outputPayload.begin()))
+                return reject(JpegOutputValidationRule::PreservedMarkerSequence);
+            removedThumbnail |= sourcePayload[12] != std::byte{0} && sourcePayload[13] != std::byte{0};
+        }
+        else if (transformed && sourceMarker.markerCode == 0xed &&
+                 hasIdentifier(sourcePayload, {"Photoshop 3.0\0", 14}))
+        {
+            const auto compared = comparePhotoshopResources(sourcePayload, outputPayload, removedThumbnail);
+            if (const auto *error = compared.errorIfPresent())
+                return Result::failure(*error);
+        }
+        else
+        {
+            const auto original = source.subspan(static_cast<std::size_t>(sourceMarker.encodedRange.offsetBytes),
+                                                 static_cast<std::size_t>(sourceMarker.encodedRange.lengthBytes));
+            const auto observed = output.subspan(static_cast<std::size_t>(outputMarker.encodedRange.offsetBytes),
+                                                 static_cast<std::size_t>(outputMarker.encodedRange.lengthBytes));
+            if (!std::ranges::equal(original, observed))
+            {
+                if (sourceMarker.markerCode == 0xe2 && hasIdentifier(sourcePayload, {"ICC_PROFILE\0", 12}))
+                    return reject(JpegOutputValidationRule::IccProfilePreservation);
+                if (sourceMarker.markerCode == 0xe1 &&
+                    hasIdentifier(sourcePayload, {"http://ns.adobe.com/xmp/extension/\0", 35}))
+                    return reject(JpegOutputValidationRule::ExtendedXmpPreservation);
+                return reject(JpegOutputValidationRule::PreservedMarkerSequence);
+            }
+        }
+    }
+    if (outputIndex != outputMarkers.size())
+        return reject(JpegOutputValidationRule::PreservedMarkerSequence);
+    const auto orientation = analyzeOrientation(output, outputInventory);
+    if (!orientation.valueIfPresent())
+        return reject(JpegOutputValidationRule::MetadataPreservation);
+    return Result::success({orientation.valueIfPresent()->exifOrientation.has_value(),
+                            orientation.valueIfPresent()->xmpOrientation.has_value(), removedThumbnail});
 }
 } // namespace jpg_spinner::jpeg::internal

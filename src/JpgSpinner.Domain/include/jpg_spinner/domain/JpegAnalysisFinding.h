@@ -20,17 +20,24 @@ struct ExifXmpOrientationConflictFinding final
     const ExifOrientation exifOrientation;
     const ExifOrientation xmpOrientation;
     const ExifOrientation authoritativeOrientation;
+    [[nodiscard]] friend constexpr bool operator==(const ExifXmpOrientationConflictFinding &,
+                                                   const ExifXmpOrientationConflictFinding &) noexcept = default;
 };
 
 /// Marker finding: any embedded thumbnail must be removed because its
 /// pixels and orientation metadata would otherwise disagree with output.
 struct EmbeddedThumbnailRemovalRequiredFinding final
 {
+    [[nodiscard]] friend constexpr bool operator==(const EmbeddedThumbnailRemovalRequiredFinding &,
+                                                   const EmbeddedThumbnailRemovalRequiredFinding &) noexcept = default;
 };
 
 struct PartialMinimumCodedUnitTrimRequiredFinding final
 {
     const DiscardedSourceEdgePixels discardedSourceEdgePixels;
+    [[nodiscard]] friend constexpr bool operator==(const PartialMinimumCodedUnitTrimRequiredFinding &,
+                                                   const PartialMinimumCodedUnitTrimRequiredFinding &) noexcept =
+        default;
 };
 
 using JpegAnalysisFinding = std::variant<ExifXmpOrientationConflictFinding, EmbeddedThumbnailRemovalRequiredFinding,

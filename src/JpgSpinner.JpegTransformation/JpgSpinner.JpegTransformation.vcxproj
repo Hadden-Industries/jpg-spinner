@@ -43,14 +43,21 @@
     <ClInclude Include="src\internal\TurboJpegResourceLimits.h" />
     <ClInclude Include="src\internal\LibJpegTurboCoefficientTransformer.h" />
     <ClInclude Include="src\internal\MetadataReconciler.h" />
+    <ClInclude Include="src\internal\JpegOutputValidator.h" />
+    <ClInclude Include="src\internal\Sha256DigestCalculator.h" />
     <ClInclude Include="include\jpg_spinner\jpeg\JpegImageAnalyzer.h" />
+    <ClInclude Include="include\jpg_spinner\jpeg\JpegTransformationEngine.h" />
+    <ClInclude Include="include\jpg_spinner\jpeg\LibJpegTurboTransformationEngine.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JpegTransformationModule.cpp" />
     <ClCompile Include="src\internal\JpegSegmentScanner.cpp" />
     <ClCompile Include="src\internal\LibJpegTurboCoefficientTransformer.cpp" />
     <ClCompile Include="src\internal\MetadataReconciler.cpp" />
+    <ClCompile Include="src\internal\JpegOutputValidator.cpp" />
+    <ClCompile Include="src\internal\Sha256DigestCalculator.cpp" />
     <ClCompile Include="src\JpegImageAnalyzer.cpp" />
+    <ClCompile Include="src\LibJpegTurboTransformationEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\JpgSpinner.Domain\JpgSpinner.Domain.vcxproj">

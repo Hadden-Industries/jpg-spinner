@@ -55,6 +55,8 @@
     <ClCompile Include="MarkerReconciliationTests.cpp" />
     <ClCompile Include="SourceAssetPolicyTests.cpp" />
     <ClCompile Include="JpegImageAnalyzerTests.cpp" />
+    <ClCompile Include="JpegOutputValidatorTests.cpp" />
+    <ClCompile Include="JpegTransformationEngineTests.cpp" />
     <ClCompile Include="TestSupportContracts.cpp" />
   </ItemGroup>
   <ItemGroup>

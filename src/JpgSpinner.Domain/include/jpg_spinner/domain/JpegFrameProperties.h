@@ -17,7 +17,7 @@ enum class JpegCodingProcess
 };
 
 /// One frame component's identity, sampling and quantization-table selection.
-/// These are encoded source facts, not an inference about its color space.
+/// These are encoded frame facts, not an inference about its color space.
 struct JpegComponentDescription final
 {
     std::uint8_t componentIdentifier;
@@ -29,13 +29,16 @@ struct JpegComponentDescription final
                                                    const JpegComponentDescription &) noexcept = default;
 };
 
-/// Owned source facts suitable for review without exposing parser ranges,
-/// native metadata objects or borrowed encoded bytes.
-struct JpegSourceProperties final
+/// Owned JPEG frame-header facts for either source or output, without parser
+/// ranges, native metadata objects or borrowed encoded bytes. These are the
+/// coding process, precision, dimensions and component parameters, not metadata.
+struct JpegFrameProperties final
 {
     JpegCodingProcess codingProcess;
     std::uint8_t samplePrecisionBits;
     ImageDimensions dimensions;
     std::vector<JpegComponentDescription> components;
+
+    [[nodiscard]] friend bool operator==(const JpegFrameProperties &, const JpegFrameProperties &) = default;
 };
 } // namespace jpg_spinner::domain

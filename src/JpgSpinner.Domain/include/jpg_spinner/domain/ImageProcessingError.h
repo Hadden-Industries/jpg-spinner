@@ -1,6 +1,7 @@
 #pragma once
 
 #include "JpegResourceLimits.h"
+#include "JpegOutputValidationRule.h"
 
 #include <cstdint>
 #include <system_error>
@@ -38,6 +39,7 @@ enum class ImageProcessingErrorCode
     PerfectCoefficientTransformUnavailable,
     CoefficientTransformationFailed,
     OutputBufferTooSmall,
+    WorkingMemoryAllocationFailed,
     InsufficientStorageSpace,
     OutputRelativePathCollision,
     StagingFileCreationFailed,
@@ -88,7 +90,8 @@ struct WindowsHResult final
 };
 
 using NativeErrorProjection = std::variant<std::monostate, std::error_code, WindowsHResult>;
-using ImageProcessingDiagnosticContext = std::variant<std::monostate, JpegResourceLimitViolation>;
+using ImageProcessingDiagnosticContext =
+    std::variant<std::monostate, JpegResourceLimitViolation, JpegOutputValidationRule>;
 
 struct ImageProcessingError final
 {

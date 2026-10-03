@@ -19,6 +19,9 @@ struct JpegTransformPlan final
     const InterleavedMinimumCodedUnitDimensions sourceInterleavedMinimumCodedUnitDimensions;
     const DiscardedSourceEdgePixels discardedSourceEdgePixels;
 
+    [[nodiscard]] friend constexpr bool operator==(const JpegTransformPlan &,
+                                                   const JpegTransformPlan &) noexcept = default;
+
     [[nodiscard]] constexpr bool willDiscardEdgePixels() const noexcept
     {
         return discardedSourceEdgePixels.rightEdgeWidth.pixels != 0 ||

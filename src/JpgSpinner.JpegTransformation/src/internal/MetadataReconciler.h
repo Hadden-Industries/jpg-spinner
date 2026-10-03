@@ -4,6 +4,7 @@
 #include <jpg_spinner/domain/ExifOrientation.h>
 #include <jpg_spinner/domain/ImageProcessingResult.h>
 #include <jpg_spinner/domain/JpegTransformPlan.h>
+#include <jpg_spinner/domain/ValidatedJpegOutput.h>
 #include <optional>
 #include <span>
 #include <vector>
@@ -78,5 +79,15 @@ class MetadataReconciler final
     /// trailing range, never a flag alone. Performs no network or file access.
     [[nodiscard]] static jpg_spinner::domain::ImageProcessingResult<std::monostate> validateSourceAssetBindings(
         std::span<const std::byte> source, const JpegMarkerInventory &inventory);
+
+    /// Independently reads source/output metadata and compares the allowed
+    /// semantic delta. Does not invoke Exif/XMP serialization. Unknown markers,
+    /// ICC and Extended XMP remain byte-exact and in source-relative order;
+    /// output errors carry a stable validation rule. Inventories must describe
+    /// the exact immutable borrows supplied for this synchronous call.
+    [[nodiscard]] static jpg_spinner::domain::ImageProcessingResult<jpg_spinner::domain::JpegOutputMetadataEvidence>
+    validateReconciledMetadata(std::span<const std::byte> source, const JpegMarkerInventory &sourceInventory,
+                               std::span<const std::byte> output, const JpegMarkerInventory &outputInventory,
+                               const jpg_spinner::domain::JpegTransformPlan &plan);
 };
 } // namespace jpg_spinner::jpeg::internal

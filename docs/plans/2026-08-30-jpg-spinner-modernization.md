@@ -646,6 +646,12 @@ git commit -m "feat: preserve and reconcile JPEG metadata"
 
 ## Task 7: Expose one deep transform-and-validate interface
 
+**Approved semantic naming amendment, 2026-10-03:** Use `JpegFrameProperties`
+for the owned coding-process, precision, dimension and component facts shared by
+source analysis and validated output. The source-only name is replaced outright
+in its header and all consumers; no compatibility alias is retained. These facts
+correspond to JPEG frame-header parameters, not the complete codestream or metadata.
+
 **Files:**
 
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/ValidatedJpegOutput.h`
@@ -687,7 +693,7 @@ git commit -m "feat: preserve and reconcile JPEG metadata"
 - [ ] Commit:
 
 ```powershell
-git add src/JpgSpinner.Domain src/JpgSpinner.JpegTransformation tests/JpgSpinner.JpegTransformation.Tests
+git add src/JpgSpinner.Domain src/JpgSpinner.JpegTransformation tests/JpgSpinner.JpegTransformation.Tests tests/TestSupport docs/implementation/2026-10-03-modernization-task-7-log.md docs/plans/2026-08-30-jpg-spinner-modernization.md
 git commit -m "feat: validate transformed JPEGs before commit"
 ```
 

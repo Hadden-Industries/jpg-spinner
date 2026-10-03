@@ -1,7 +1,7 @@
 #pragma once
 
 #include <jpg_spinner/domain/ImageDimensions.h>
-#include <jpg_spinner/domain/JpegSourceProperties.h>
+#include <jpg_spinner/domain/JpegFrameProperties.h>
 
 #include <array>
 #include <cstdint>
