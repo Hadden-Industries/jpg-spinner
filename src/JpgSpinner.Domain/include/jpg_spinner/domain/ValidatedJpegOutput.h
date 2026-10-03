@@ -1,7 +1,7 @@
 #pragma once
 
 #include "JpegFrameProperties.h"
-#include <array>
+#include "Sha256Digest.h"
 #include <cstddef>
 #include <optional>
 #include <span>
@@ -15,9 +15,6 @@ class JpegOutputValidator;
 
 namespace jpg_spinner::domain
 {
-/// Fixed-size cryptographic identity of encoded bytes, independent of text format.
-using Sha256Digest = std::array<std::byte, 32>;
-
 /// Facts independently observed in approved metadata, not a writer's claim.
 struct JpegOutputMetadataEvidence final
 {

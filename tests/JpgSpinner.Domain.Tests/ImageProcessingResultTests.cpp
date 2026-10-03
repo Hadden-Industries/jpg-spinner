@@ -96,6 +96,8 @@ TEST_CASE("every image-processing error code has a semantic diagnostic name", "[
 
     constexpr std::array cases{
         NamedErrorCode{ImageProcessingErrorCode::SourceAccessDenied, "SourceAccessDenied"},
+        NamedErrorCode{ImageProcessingErrorCode::SourceSharingViolation, "SourceSharingViolation"},
+        NamedErrorCode{ImageProcessingErrorCode::SourceRevisionCaptureFailed, "SourceRevisionCaptureFailed"},
         NamedErrorCode{ImageProcessingErrorCode::SourceChangedAfterAnalysis, "SourceChangedAfterAnalysis"},
         NamedErrorCode{ImageProcessingErrorCode::DestinationAccessDenied, "DestinationAccessDenied"},
         NamedErrorCode{ImageProcessingErrorCode::EncodedFileTooLarge, "EncodedFileTooLarge"},

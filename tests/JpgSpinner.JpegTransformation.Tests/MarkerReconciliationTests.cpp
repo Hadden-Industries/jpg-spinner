@@ -238,10 +238,14 @@ iptc:AISystemUsed="Synthetic system" iptc:AISystemVersionUsed="1">
     REQUIRE(outputScan.valueIfPresent()->exifTiffDataRanges().size() == 1);
     REQUIRE(outputScan.valueIfPresent()->standardXmpPacketRanges().size() == 1);
     const auto exifRange = outputScan.valueIfPresent()->exifTiffDataRanges().front();
+    // Scanner ranges use uint64_t, while Exiv2 consumes native size_t. Prove
+    // containment in this actual vector before narrowing on 32-bit builds.
+    REQUIRE(exifRange.offsetBytes <= output.size());
+    REQUIRE(exifRange.lengthBytes <= output.size() - static_cast<std::size_t>(exifRange.offsetBytes));
     Exiv2::ExifData observedExif;
     REQUIRE(Exiv2::ExifParser::decode(observedExif,
                                       reinterpret_cast<const Exiv2::byte *>(output.data() + exifRange.offsetBytes),
-                                      exifRange.lengthBytes) == Exiv2::littleEndian);
+                                      static_cast<std::size_t>(exifRange.lengthBytes)) == Exiv2::littleEndian);
     CHECK(observedExif["Exif.Image.Orientation"].toInt64() == 1);
     CHECK(observedExif["Exif.Photo.PixelXDimension"].toInt64() == 32);
     CHECK(observedExif["Exif.Photo.PixelYDimension"].toInt64() == 48);

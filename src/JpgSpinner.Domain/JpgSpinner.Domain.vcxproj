@@ -48,6 +48,8 @@
     <ClInclude Include="include\jpg_spinner\domain\JpegFrameProperties.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegOutputValidationRule.h" />
     <ClInclude Include="include\jpg_spinner\domain\ValidatedJpegOutput.h" />
+    <ClInclude Include="include\jpg_spinner\domain\Sha256Digest.h" />
+    <ClInclude Include="include\jpg_spinner\domain\SourceFileRevision.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegResourceLimits.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegTransformPlan.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegTransformPlanner.h" />

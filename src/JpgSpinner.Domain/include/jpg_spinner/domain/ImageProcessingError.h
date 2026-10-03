@@ -14,6 +14,8 @@ namespace jpg_spinner::domain
 enum class ImageProcessingErrorCode
 {
     SourceAccessDenied,
+    SourceSharingViolation,
+    SourceRevisionCaptureFailed,
     SourceChangedAfterAnalysis,
     DestinationAccessDenied,
     EncodedFileTooLarge,

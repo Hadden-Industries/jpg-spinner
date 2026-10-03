@@ -711,7 +711,7 @@ git commit -m "feat: validate transformed JPEGs before commit"
 - [ ] Use `TemporaryDirectory` and real files, not mocked streams.
 - [ ] Require a revision to contain encoded length, normalized UTC last-write instant, and hand-checked SHA-256.
 - [ ] Modify bytes without changing length and restore the timestamp; require the SHA-256 difference to make revisions unequal.
-- [ ] Replace a file between open and hash completion through a controlled test barrier; require a structured change/access error, never a digest of mixed content.
+- [ ] Attempt replacement between open and hash completion through a controlled test barrier. Reader-only sharing may reject replacement with a native access/sharing error; then prove retained source bytes and a consistent original revision. If a provider permits replacement, require a structured capture-change/access error and no digest. Never loosen the production lock to manufacture a mutation; also exercise a permitted metadata-only modification during hashing and require digest rejection. See the Task 8 native qualification in `docs/implementation/2026-10-03-modernization-task-8-log.md`.
 - [ ] Run `[storage][revision]`; expected RED is absent calculator compilation.
 
 ### Step 8.2: GREEN with streamed SHA-256
@@ -721,6 +721,7 @@ git commit -m "feat: validate transformed JPEGs before commit"
 - [ ] Capture file metadata before and after streaming. If length or timestamp differs, discard the digest and return `SourceChangedAfterAnalysis`.
 - [ ] Translate access denied, sharing violation, cancellation, and I/O failure to structured error context.
 - [ ] Explain why length/time aid diagnostics but SHA-256 is authoritative at commit.
+- [ ] Expose a synchronous initialized-MTA worker operation, matching the JPEG engine; reject UI/STA and uninitialized callers before I/O. Task 11 owns scheduling. The native PPL task holder is incompatible with the accepted never-empty/nonassignable result contract; do not weaken it or introduce a task shim.
 
 ### Step 8.3: Verify and commit
 

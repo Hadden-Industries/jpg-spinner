@@ -33,8 +33,16 @@
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="src\WindowsStorageModule.cpp" />
+    <ClCompile Include="src\SourceFileRevisionCalculator.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\jpg_spinner\storage\SourceFileRevisionCalculator.h" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;$(MSBuildThisFileDirectory)..\JpgSpinner.Domain\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <!-- The storage adapter will consume Windows Runtime storage types without depending on WinUI. -->
     <PackageReference Include="Microsoft.Windows.CppWinRT" />

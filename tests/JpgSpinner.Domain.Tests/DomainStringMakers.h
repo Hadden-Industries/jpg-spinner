@@ -124,6 +124,10 @@ template <> struct StringMaker<jpg_spinner::domain::ImageProcessingErrorCode> fi
         {
         case ImageProcessingErrorCode::SourceAccessDenied:
             return "SourceAccessDenied";
+        case ImageProcessingErrorCode::SourceSharingViolation:
+            return "SourceSharingViolation";
+        case ImageProcessingErrorCode::SourceRevisionCaptureFailed:
+            return "SourceRevisionCaptureFailed";
         case ImageProcessingErrorCode::SourceChangedAfterAnalysis:
             return "SourceChangedAfterAnalysis";
         case ImageProcessingErrorCode::DestinationAccessDenied:

@@ -1159,7 +1159,7 @@ if ($EvidenceScope -cne 'ToolchainProbe') {
         },
         [pscustomobject]@{
             projectName = 'JpgSpinner.WindowsStorage'
-            compilerOperand = 'WindowsStorageModule.cpp'
+            compilerOperand = 'SourceFileRevisionCalculator.cpp'
             linkerOperand = $null
         },
         [pscustomobject]@{

@@ -218,7 +218,9 @@ $expectedProjectPackageReferences = [ordered]@{
     'tests/JpgSpinner.Domain.Tests/JpgSpinner.Domain.Tests.vcxproj' = @()
     'tests/JpgSpinner.JpegTransformation.Tests/JpgSpinner.JpegTransformation.Tests.vcxproj' = @()
     'tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj' = @()
-    'tests/JpgSpinner.WindowsStorage.Tests/JpgSpinner.WindowsStorage.Tests.vcxproj' = @()
+    'tests/JpgSpinner.WindowsStorage.Tests/JpgSpinner.WindowsStorage.Tests.vcxproj' = @(
+        'Microsoft.Windows.CppWinRT'
+    )
     'tests/TestSupport/TestSupport.vcxproj' = @()
 }
 
