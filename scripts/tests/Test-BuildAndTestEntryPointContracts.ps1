@@ -184,6 +184,32 @@ foreach ($relativeScriptPath in @(
     }
 }
 
+# This static invocation contract complements the real governed build: MSBuild
+# defaults to retaining parallel workers, which violates the script's bounded
+# process lifetime. Parse PowerShell syntax rather than matching comments.
+$buildTokens = $null
+$buildParseErrors = $null
+$buildSyntax = [System.Management.Automation.Language.Parser]::ParseFile(
+    (Join-Path $repositoryRoot 'scripts/Invoke-Build.ps1'),
+    [ref]$buildTokens,
+    [ref]$buildParseErrors
+)
+if ($buildParseErrors.Count -ne 0) { throw 'Build entry point has PowerShell syntax errors.' }
+$argumentLoops = @($buildSyntax.FindAll({
+    param($node)
+    $node -is [System.Management.Automation.Language.ForEachStatementAst] -and
+        $node.Variable.VariablePath.UserPath -ceq 'argument'
+}, $true))
+if ($argumentLoops.Count -ne 1) { throw 'Expected one MSBuild argument construction loop.' }
+$nodeReuseArguments = @($argumentLoops[0].Condition.FindAll({
+    param($node)
+    $node -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+        $node.Value -match '^[-/](nodeReuse|nr)(:|$)'
+}, $true))
+if ($nodeReuseArguments.Count -ne 1 -or $nodeReuseArguments[0].Value -cne '-nodeReuse:false') {
+    throw 'Build entry point must explicitly disable MSBuild node reuse.'
+}
+
 Write-Output (
     'PASS: build and test entry points reject unsupported configurations, architectures, ' +
     'project scopes, option-shaped test specifications, and execution environments without ' +

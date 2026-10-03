@@ -328,11 +328,78 @@ $upstreamGitHubRepositories = @{
     catch2 = 'catchorg/Catch2'
 }
 
+# Overlay ports take precedence over registry version selection. Their local
+# packaging revision is not an official registry revision with the same number.
+# Recognize only the approved pair; repository policy validates the full build
+# configuration, while this read-only check verifies the selected version source.
+$usesMetadataOverlays = $false
+$configurationProperty = $vcpkgManifest.PSObject.Properties['configuration']
+$resolutionConfiguration = if ($null -ne $configurationProperty) { $configurationProperty.Value } else { $null }
+$standaloneConfigurationPath = Join-Path $resolvedRepositoryRoot 'vcpkg-configuration.json'
+if (Test-Path -LiteralPath $standaloneConfigurationPath -PathType Leaf) {
+    if ($null -ne $configurationProperty) {
+        throw "vcpkg-configuration.json cannot coexist with vcpkg.json embedded 'configuration'."
+    }
+    # Use the same strict raw-JSON boundary for both native representations.
+    $resolutionConfiguration = Read-JsonFile -Path $standaloneConfigurationPath `
+        -Description 'standalone vcpkg configuration' -RequiredRootValueKind Object
+}
+if ($null -ne $resolutionConfiguration) {
+    $overlayProperty = $resolutionConfiguration.PSObject.Properties['overlay-ports']
+    if ($null -ne $overlayProperty) {
+        $paths = $overlayProperty.Value
+        if ($paths -isnot [array] -or $paths.Count -ne 2 -or
+            $paths[0] -cne 'vcpkg-ports/adobe-xmp-core' -or
+            $paths[1] -cne 'vcpkg-ports/exiv2') {
+            throw 'Dependency freshness supports only the approved metadata overlay paths.'
+        }
+        $usesMetadataOverlays = $true
+    }
+}
+
+if ($usesMetadataOverlays) {
+    $localExivManifest = Read-JsonFile `
+        -Path (Join-Path $resolvedRepositoryRoot 'vcpkg-ports/exiv2/vcpkg.json') `
+        -Description 'local Exiv2 overlay manifest' -RequiredRootValueKind Object
+    $adobeManifest = Read-JsonFile `
+        -Path (Join-Path $resolvedRepositoryRoot 'vcpkg-ports/adobe-xmp-core/vcpkg.json') `
+        -Description 'local Adobe XMP overlay manifest' -RequiredRootValueKind Object
+    if ($adobeManifest.name -cne 'adobe-xmp-core') {
+        throw 'The approved Adobe overlay must declare adobe-xmp-core.'
+    }
+    $adobeReleases = Read-OfficialJsonMetadata `
+        -Uri 'https://api.github.com/repos/adobe/XMP-Toolkit-SDK/releases?per_page=100' `
+        -SnapshotRelativePath 'github/adobe-xmp-core.releases.json' `
+        -Description 'upstream Adobe XMP Toolkit releases' -RequiredRootValueKind Array
+    $adobeStableTags = @($adobeReleases | Where-Object {
+        $_.draft -eq $false -and $_.prerelease -eq $false
+    } | ForEach-Object { $_.tag_name })
+    Assert-PinnedVersionExistsInAuthority -DependencyName 'adobe-xmp-core' `
+        -PinnedVersion $adobeManifest.'version-string' `
+        -AuthorityVersions $adobeStableTags -Authority 'upstream Adobe XMP Toolkit'
+    Add-AvailableUpdate -DependencyName 'adobe-xmp-core' `
+        -PinnedVersion $adobeManifest.'version-string' `
+        -AvailableVersion (Get-NewestStableVersion -Candidates $adobeStableTags -Description 'Adobe XMP releases') `
+        -Authority 'upstream Adobe XMP Toolkit'
+    [void]$approvedPackageAuthorities.Add('approved local metadata overlays and upstream Adobe XMP Toolkit')
+}
+
 foreach ($override in $vcpkgOverrides) {
     $dependencyName = [string]$override.name
     $pinnedVersion = [string]$override.version
     if ([string]::IsNullOrWhiteSpace($dependencyName) -or [string]::IsNullOrWhiteSpace($pinnedVersion)) {
         throw 'Every vcpkg override must contain a dependency name and exact version.'
+    }
+
+    $isLocalExivOverlay = $usesMetadataOverlays -and $dependencyName -ceq 'exiv2'
+    if ($isLocalExivOverlay) {
+        if ($localExivManifest.name -cne 'exiv2' -or
+            $pinnedVersion -cne "$($localExivManifest.version)#$($localExivManifest.'port-version')") {
+            throw 'The local exiv2 overlay does not match the exact root override.'
+        }
+        # Compare upstream source versions below, never unrelated revision
+        # counters maintained by two different package authorities.
+        $pinnedVersion = [string]$localExivManifest.version
     }
 
     $registryBucket = "$($dependencyName.Substring(0, 1).ToLowerInvariant())-"
@@ -386,6 +453,9 @@ foreach ($override in $vcpkgOverrides) {
             }
         }
     )
+    if ($isLocalExivOverlay) {
+        $registryVersions = @($registryVersions | ForEach-Object { ($_ -split '#')[0] })
+    }
     Assert-PinnedVersionExistsInAuthority `
         -DependencyName $dependencyName `
         -PinnedVersion $pinnedVersion `
@@ -420,7 +490,8 @@ foreach ($override in $vcpkgOverrides) {
             -Description "upstream GitHub releases for $dependencyName"
         $pinnedVersionRecord = ConvertTo-StableVersionRecord -CandidateVersion $pinnedVersion
         if ((Compare-StableVersion -Left $newestGitHubVersion -Right $pinnedVersionRecord) -gt 0) {
-            if ((Compare-StableVersion -Left $newestRegistryVersion -Right $newestGitHubVersion) -ge 0) {
+            if ($isLocalExivOverlay -or
+                (Compare-StableVersion -Left $newestRegistryVersion -Right $newestGitHubVersion) -ge 0) {
                 Add-AvailableUpdate `
                     -DependencyName $dependencyName `
                     -PinnedVersion $pinnedVersion `

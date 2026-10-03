@@ -32,7 +32,8 @@ struct ImageDimensions final
 
 /// Sampling factors determine the iMCU geometry. It is supplied explicitly
 /// so transform policy never guesses 8x8, 16x8, or 16x16 from an unrelated
-/// image property.
+/// image property. For single-component transforms the codec normalizes this
+/// geometry to 8x8 irrespective of redundant relative sampling factors.
 struct InterleavedMinimumCodedUnitDimensions final
 {
     PixelWidth width;

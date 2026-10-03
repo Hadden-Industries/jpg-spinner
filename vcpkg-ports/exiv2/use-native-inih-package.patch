@@ -1,0 +1,26 @@
+diff --git a/cmake/findDependencies.cmake b/cmake/findDependencies.cmake
+--- a/cmake/findDependencies.cmake
++++ b/cmake/findDependencies.cmake
+@@ -79,7 +79,9 @@ if( ICONV_FOUND )
+ endif()
+ 
+ if( EXIV2_ENABLE_INIH )
+-  find_package(inih)
++  find_package(unofficial-inih CONFIG REQUIRED)
++  add_library(inih::libinih ALIAS unofficial::inih::libinih)
++  add_library(inih::inireader ALIAS unofficial::inih::inireader)
+   message ( "-- inih_INCLUDE_DIRS : " ${inih_INCLUDE_DIRS} )
+   message ( "-- inih_LIBRARIES : " ${inih_LIBRARIES} )
+   message ( "-- inih_inireader_INCLUDE_DIRS : " ${inih_inireader_INCLUDE_DIRS} )
+diff --git a/cmake/exiv2Config.cmake.in b/cmake/exiv2Config.cmake.in
+--- a/cmake/exiv2Config.cmake.in
++++ b/cmake/exiv2Config.cmake.in
+@@ -39,7 +39,7 @@ if(NOT @BUILD_SHARED_LIBS@) # if(NOT BUILD_SHARED_LIBS)
+   endif()
+ 
+   if(@EXIV2_ENABLE_INIH@) # if(EXIV2_ENABLE_INIH)
+-    find_package(inih QUIET)
++    find_dependency(inih NAMES unofficial-inih)
+     if (NOT inih_FOUND)
+       message(FATAL_ERROR
+         "Static builds of exiv2 require inih. "

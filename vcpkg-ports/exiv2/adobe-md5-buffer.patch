@@ -1,0 +1,13 @@
+diff --git a/src/convert.cpp b/src/convert.cpp
+--- a/src/convert.cpp
++++ b/src/convert.cpp
+@@ -1265,7 +1265,8 @@ std::string Converter::computeExifDigest(bool tiff) {
+         continue;
+       DataBuf data(pos->size());
+       pos->copy(data.data(), littleEndian /* FIXME ? */);
+-      MD5Update(&context, data.c_data(), static_cast<uint32_t>(data.size()));
++      // Adobe's selected native SDK takes a mutable pointer to this owned copy.
++      MD5Update(&context, data.data(), static_cast<uint32_t>(data.size()));
+     }
+   }
+   MD5Final(digest, &context);

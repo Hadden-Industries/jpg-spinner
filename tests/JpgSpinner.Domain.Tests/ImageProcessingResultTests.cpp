@@ -105,6 +105,7 @@ TEST_CASE("every image-processing error code has a semantic diagnostic name", "[
                        "ProgressiveScanCountLimitExceeded"},
         NamedErrorCode{ImageProcessingErrorCode::MalformedJpegStructure, "MalformedJpegStructure"},
         NamedErrorCode{ImageProcessingErrorCode::MalformedImageMetadata, "MalformedImageMetadata"},
+        NamedErrorCode{ImageProcessingErrorCode::MetadataPreservationFailed, "MetadataPreservationFailed"},
         NamedErrorCode{ImageProcessingErrorCode::InvalidOrientationMetadata, "InvalidOrientationMetadata"},
         NamedErrorCode{ImageProcessingErrorCode::UnsupportedJpegCodingProcess, "UnsupportedJpegCodingProcess"},
         NamedErrorCode{ImageProcessingErrorCode::UnsupportedJpegSamplePrecision, "UnsupportedJpegSamplePrecision"},

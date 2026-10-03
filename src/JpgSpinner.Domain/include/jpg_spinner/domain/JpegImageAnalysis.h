@@ -3,6 +3,7 @@
 #include "ExifOrientation.h"
 #include "JpegAnalysisFinding.h"
 #include "JpegTransformPlan.h"
+#include "JpegSourceProperties.h"
 
 #include <vector>
 
@@ -13,6 +14,7 @@ namespace jpg_spinner::domain
 /// that require explicit user review; no localized strings enter Domain.
 struct JpegImageAnalysis final
 {
+    const JpegSourceProperties sourceProperties;
     const ExifOrientation authoritativeOrientation;
     const JpegTransformPlan transformPlan;
     const std::vector<JpegAnalysisFinding> findings;

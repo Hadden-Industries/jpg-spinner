@@ -707,9 +707,9 @@ function Test-VcpkgResolutionAuthorityConfiguration {
     # vcpkg accepts the same resolution configuration beside the manifest or
     # embedded in it. A declared default registry can replace the builtin one,
     # while registries and overlays can supersede selected ports or triplets.
-    # This repository approves only the manifest's immutable builtin baseline
-    # and its reviewed vcpkg-triplets directory, so every alternate authority
-    # surface must remain absent (an explicitly empty array is harmless).
+    # The baseline remains authoritative except for the two explicitly approved
+    # native metadata ports. Exact paths prevent an overlay-directory expansion
+    # from silently replacing unrelated dependencies.
     if ($Configuration.Contains('default-registry')) {
         Add-PolicyFailure -Message (
             "$SourceDescription must not declare 'default-registry'; omit it so " +
@@ -719,7 +719,6 @@ function Test-VcpkgResolutionAuthorityConfiguration {
 
     foreach ($collectionFieldPolicy in @(
         @{ name = 'registries'; description = "additional 'registries'" },
-        @{ name = 'overlay-ports'; description = "'overlay-ports'" },
         @{ name = 'overlay-triplets'; description = "'overlay-triplets'" }
     )) {
         if (
@@ -731,6 +730,25 @@ function Test-VcpkgResolutionAuthorityConfiguration {
                 'the repository policy permits no alternate vcpkg resolution authority.'
             )
         }
+    }
+
+    $approvedOverlayPorts = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2')
+    $overlayPorts = $Configuration['overlay-ports']
+    $hasExactApprovedPorts = $overlayPorts -is [System.Collections.IList] -and
+        $overlayPorts.Count -eq $approvedOverlayPorts.Count
+    if ($hasExactApprovedPorts) {
+        for ($portIndex = 0; $portIndex -lt $approvedOverlayPorts.Count; $portIndex++) {
+            if ($overlayPorts[$portIndex] -isnot [string] -or
+                $overlayPorts[$portIndex] -cne $approvedOverlayPorts[$portIndex]) {
+                $hasExactApprovedPorts = $false
+            }
+        }
+    }
+    if (-not $hasExactApprovedPorts) {
+        Add-PolicyFailure -Message (
+            "$SourceDescription must not declare 'overlay-ports' outside the exact approved " +
+            'JSON array [vcpkg-ports/adobe-xmp-core, vcpkg-ports/exiv2]; both ports are required.'
+        )
     }
 }
 
@@ -2007,6 +2025,9 @@ function Test-VcpkgManifest {
             -Configuration $manifest.configuration `
             -SourceDescription 'vcpkg.json embedded configuration'
     }
+    elseif (-not (Test-Path -LiteralPath (Get-RepositoryPath -RelativePath 'vcpkg-configuration.json'))) {
+        Add-PolicyFailure -Message 'vcpkg configuration must select both approved metadata overlay ports.'
+    }
     if ($manifest.Contains('vcpkg-configuration')) {
         Add-PolicyFailure -Message (
             "vcpkg.json legacy 'vcpkg-configuration' spelling is prohibited; " +
@@ -2019,7 +2040,7 @@ function Test-VcpkgManifest {
 
     $expectedVersions = [ordered]@{
         'libjpeg-turbo' = '3.2.0#1'
-        'exiv2' = '0.28.9'
+        'exiv2' = '0.28.9#1'
         'catch2' = '3.16.0'
     }
 

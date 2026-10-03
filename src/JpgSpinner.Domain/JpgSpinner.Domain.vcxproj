@@ -45,6 +45,7 @@
     <ClInclude Include="include\jpg_spinner\domain\ImageProcessingResult.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegAnalysisFinding.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegImageAnalysis.h" />
+    <ClInclude Include="include\jpg_spinner\domain\JpegSourceProperties.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegResourceLimits.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegTransformPlan.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegTransformPlanner.h" />

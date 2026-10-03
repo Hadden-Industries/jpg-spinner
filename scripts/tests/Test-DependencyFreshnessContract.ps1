@@ -205,6 +205,62 @@ try {
     }
     Assert-FileHashUnchanged -ExpectedHashes $originalHashes
 
+    # Overlay revisions belong to this repository, not Microsoft's registry.
+    # An official #0 plus our #1 is valid only when the selected local manifest
+    # agrees with the root pin. Upstream releases must still be monitored.
+    $overlayManifest = $originalVcpkgManifestContent | ConvertFrom-Json -AsHashtable
+    $overlayManifest.configuration = @{ 'overlay-ports' = @(
+        'vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2'
+    ) }
+    $overlayManifest.overrides[1].version = '0.28.8#1'
+    $localExivManifestPath = Join-Path $fixtureRepositoryRoot 'vcpkg-ports/exiv2/vcpkg.json'
+    Write-JsonFixture -Path $localExivManifestPath -Value @{
+        name = 'exiv2'; version = '0.28.8'; 'port-version' = 1
+    }
+    Write-JsonFixture -Path (Join-Path $fixtureRepositoryRoot 'vcpkg-ports/adobe-xmp-core/vcpkg.json') -Value @{
+        name = 'adobe-xmp-core'; 'version-string' = '2025.03'; 'port-version' = 1
+    }
+    $adobeReleasesPath = Join-Path $metadataSnapshotDirectory 'github/adobe-xmp-core.releases.json'
+    Write-JsonFixture -Path $adobeReleasesPath -Value @(
+        @{ tag_name = 'v2025.03'; draft = $false; prerelease = $false },
+        @{ tag_name = 'v2024.12'; draft = $false; prerelease = $false }
+    )
+    Write-JsonFixture -Path $manifestPaths[0] -Value $overlayManifest
+    $overlayResult = Invoke-FreshnessCheck
+    if ($overlayResult.exitCode -ne 0) {
+        throw "The approved local port revision should pass independently of registry revisions.`n$($overlayResult.output)"
+    }
+    $standaloneConfigurationPath = Join-Path $fixtureRepositoryRoot 'vcpkg-configuration.json'
+    Write-JsonFixture -Path $standaloneConfigurationPath -Value $overlayManifest.configuration
+    $standaloneManifest = $overlayManifest.Clone()
+    [void]$standaloneManifest.Remove('configuration')
+    Write-JsonFixture -Path $manifestPaths[0] -Value $standaloneManifest
+    $standaloneResult = Invoke-FreshnessCheck
+    if ($standaloneResult.exitCode -ne 0) {
+        throw "The equivalent standalone overlay configuration must use the same package authority.`n$($standaloneResult.output)"
+    }
+    [System.IO.File]::Delete($standaloneConfigurationPath)
+    Write-JsonFixture -Path $manifestPaths[0] -Value $overlayManifest
+    Write-JsonFixture -Path $localExivManifestPath -Value @{
+        name = 'exiv2'; version = '0.28.8'; 'port-version' = 2
+    }
+    $mismatchResult = Invoke-FreshnessCheck
+    if ($mismatchResult.exitCode -eq 0 -or $mismatchResult.output -notmatch 'local exiv2 overlay does not match') {
+        throw "Local overlay/root pin disagreement was not diagnosed.`n$($mismatchResult.output)"
+    }
+    Write-JsonFixture -Path $localExivManifestPath -Value @{
+        name = 'exiv2'; version = '0.28.8'; 'port-version' = 1
+    }
+    Write-JsonFixture -Path $adobeReleasesPath -Value @(
+        @{ tag_name = 'v2025.03'; draft = $false; prerelease = $false },
+        @{ tag_name = 'v2026.01'; draft = $false; prerelease = $false }
+    )
+    $adobeUpdateResult = Invoke-FreshnessCheck
+    if ($adobeUpdateResult.exitCode -eq 0 -or $adobeUpdateResult.output -notmatch 'adobe-xmp-core: pinned 2025\.03') {
+        throw "A newer Adobe SDK release was not reported.`n$($adobeUpdateResult.output)"
+    }
+    Write-Utf8TextFile -Path $manifestPaths[0] -Content $originalVcpkgManifestContent.TrimEnd()
+
     # NuGet's flat-container index is the package authority for an exact
     # PackageVersion. A syntactically valid pin above every published version
     # is unavailable, not current.

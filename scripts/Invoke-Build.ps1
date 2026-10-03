@@ -68,6 +68,10 @@ foreach ($argument in @(
     '-noAutoResponse',
     '-restore',
     '-m',
+    # A scripted build owns its worker lifetime. Do not retain MSBuild nodes
+    # after exit: they keep directories open and prevent producer quiescence.
+    # https://learn.microsoft.com/azure/devops/pipelines/troubleshooting/troubleshooting#msbuild-and-nodereusefalse
+    '-nodeReuse:false',
     '-verbosity:minimal',
     "-p:Configuration=$Configuration",
     "-p:Platform=$msBuildPlatform",

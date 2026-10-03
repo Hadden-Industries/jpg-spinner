@@ -2,3 +2,8 @@
 # - Auto-detect text vs binary files
 # - Normalise text files to LF on commit and keep LF on checkout
 * text=auto eol=lf
+
+# Unified patches retain upstream context verbatim: the context prefix before
+# a tab and blank context lines are patch syntax, not first-party indentation.
+# Keep all other whitespace checks and normal source-file checks unchanged.
+vcpkg-ports/**/*.patch whitespace=-blank-at-eol,-space-before-tab

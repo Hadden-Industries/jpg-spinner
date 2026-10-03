@@ -1,0 +1,27 @@
+diff --git a/XMPCore/source/XMPCore_Impl.cpp b/XMPCore/source/XMPCore_Impl.cpp
+index 20f446c..37d8b98 100644
+--- a/XMPCore/source/XMPCore_Impl.cpp
++++ b/XMPCore/source/XMPCore_Impl.cpp
+@@ -1413,9 +1413,10 @@ NormalizeLangValue ( XMP_VarString * value )
+ // NormalizeLangArray
+ // ==================
+ //
+-// Make sure the x-default item is first. Touch up "single value" arrays that have a default plus
+-// one real language. This case should have the same value for both items. Older Adobe apps were
+-// hardwired to only use the 'x-default' item, so we copy that value to the other item.
++// Make sure the x-default item is first without changing any localized text.
++// XMP recommends repeating the default under its actual language, but does not
++// require it. Replacing a different translation would lose source metadata.
++// https://developer.adobe.com/xmp/docs/xmp-namespaces/xmp-data-types/
+ 
+ void
+ NormalizeLangArray ( XMP_Node * array )
+@@ -1448,8 +1449,6 @@ NormalizeLangArray ( XMP_Node * array )
+ 			array->children[itemNum] = temp;
+ 		}
+ 
+-		if ( itemLim == 2 ) array->children[1]->value = array->children[0]->value;
+-
+ 	}
+ 	
+ }	// NormalizeLangArray

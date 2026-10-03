@@ -20,6 +20,8 @@ using jpg_spinner::domain::ImageProcessingError;
 using jpg_spinner::domain::ImageProcessingErrorCode;
 using jpg_spinner::domain::ImageProcessingResult;
 using jpg_spinner::domain::ImageProcessingStage;
+using jpg_spinner::domain::JpegCodingProcess;
+using jpg_spinner::domain::JpegComponentDescription;
 using jpg_spinner::domain::JpegResourceLimit;
 using jpg_spinner::domain::JpegResourceLimitViolation;
 using jpg_spinner::domain::PixelHeight;
@@ -718,7 +720,7 @@ struct ActiveJpegXtBox final
         return frameHeaderPixelLimitError(pixelCount, maximumPixelCount);
     }
 
-    std::vector<JpegComponentSampling> components;
+    std::vector<JpegComponentDescription> components;
     components.reserve(componentCount);
     std::array<bool, 256> observedComponentIdentifiers{};
     for (std::uint16_t componentIndex = 0; componentIndex < componentCount; ++componentIndex)

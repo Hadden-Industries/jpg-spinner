@@ -851,9 +851,33 @@ try {
         -Force
 
     # vcpkg's configuration file and the manifest's embedded `configuration`
-    # field are equivalent package-authority surfaces. Reject every alternate
-    # registry and overlay path so the immutable builtin baseline remains the
-    # sole source of ports and the repository triplets remain authoritative.
+    # field are equivalent package-authority surfaces. Only the two approved
+    # native metadata overlay ports may supersede the immutable baseline.
+    $vcpkgManifestPath = Join-Path $temporaryRoot 'vcpkg.json'
+    $validOverlayManifestText = [System.IO.File]::ReadAllText($vcpkgManifestPath)
+    foreach ($invalidOverlayPaths in @(
+        @{ value = $null },
+        @{ value = 'vcpkg-ports/exiv2' },
+        @{ value = @{} },
+        @{ value = @() },
+        @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/adobe-xmp-core') },
+        @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/exiv2') },
+        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'unapproved') },
+        @{ value = @('VCPKG-PORTS/adobe-xmp-core', 'vcpkg-ports/exiv2') },
+        @{ value = @('vcpkg-ports/adobe-xmp-core', 42) }
+    )) {
+        $manifestMutation = $validOverlayManifestText | ConvertFrom-Json -AsHashtable
+        $manifestMutation.configuration['overlay-ports'] = $invalidOverlayPaths.value
+        [System.IO.File]::WriteAllText(
+            $vcpkgManifestPath, ($manifestMutation | ConvertTo-Json -Depth 20),
+            [System.Text.UTF8Encoding]::new($false)
+        )
+        Assert-RejectedMutation -ExpectedDiagnostics "must not declare 'overlay-ports' outside the exact approved"
+    }
+    [System.IO.File]::WriteAllText(
+        $vcpkgManifestPath, $validOverlayManifestText, [System.Text.UTF8Encoding]::new($false)
+    )
+
     $unapprovedVcpkgConfiguration = [ordered]@{
         'default-registry' = [ordered]@{
             kind = 'git'

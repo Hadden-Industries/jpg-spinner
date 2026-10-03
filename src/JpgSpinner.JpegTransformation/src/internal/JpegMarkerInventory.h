@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jpg_spinner/domain/ImageDimensions.h>
+#include <jpg_spinner/domain/JpegSourceProperties.h>
 
 #include <array>
 #include <cstdint>
@@ -26,34 +27,12 @@ struct EncodedByteRange final
                                                    const EncodedByteRange &) noexcept = default;
 };
 
-/// Coding process identified by the Start Of Frame marker. Task 4 extends
-/// this closed vocabulary as each standard process receives a policy test.
-enum class JpegCodingProcess
-{
-    BaselineDctHuffman,
-    ExtendedSequentialDctHuffman,
-    ProgressiveDctHuffman,
-    ExtendedSequentialDctArithmetic,
-    ProgressiveDctArithmetic,
-};
-
-struct JpegComponentSampling final
-{
-    std::uint8_t componentIdentifier;
-    std::uint8_t horizontalSamplingFactor;
-    std::uint8_t verticalSamplingFactor;
-    std::uint8_t quantizationTableSelector;
-
-    [[nodiscard]] friend constexpr bool operator==(const JpegComponentSampling &,
-                                                   const JpegComponentSampling &) noexcept = default;
-};
-
 struct JpegFrameHeader final
 {
-    JpegCodingProcess codingProcess;
+    jpg_spinner::domain::JpegCodingProcess codingProcess;
     std::uint8_t samplePrecisionBits;
     jpg_spinner::domain::ImageDimensions dimensions;
-    std::vector<JpegComponentSampling> components;
+    std::vector<jpg_spinner::domain::JpegComponentDescription> components;
     EncodedByteRange encodedRange;
 
     [[nodiscard]] friend bool operator==(const JpegFrameHeader &, const JpegFrameHeader &) = default;

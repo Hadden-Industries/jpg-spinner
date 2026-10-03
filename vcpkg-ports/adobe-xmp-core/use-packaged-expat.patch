@@ -1,0 +1,25 @@
+diff --git a/XMPCore/build/CMakeListsCommon.txt b/XMPCore/build/CMakeListsCommon.txt
+--- a/XMPCore/build/CMakeListsCommon.txt
++++ b/XMPCore/build/CMakeListsCommon.txt
+@@ -89,9 +89,6 @@ source_group("Source Files\\Core Classes" FILES ${CORECLASS_SOURCE_FILES})
+ 
+ file (GLOB ZUID_SOURCE_FILES ${TP_ZUID_PATH}/*.cpp)
+ list (APPEND THIRDPARTY_SOURCE_FILES
+-	${TP_EXPAT_PATH}/xmlparse.c
+-	${TP_EXPAT_PATH}/xmlrole.c
+-	${TP_EXPAT_PATH}/xmltok.c
+ 	${ZUID_SOURCE_FILES}
+ 	)
+ if(WIN32)
+diff --git a/XMPCore/source/ExpatAdapter.cpp b/XMPCore/source/ExpatAdapter.cpp
+--- a/XMPCore/source/ExpatAdapter.cpp
++++ b/XMPCore/source/ExpatAdapter.cpp
+@@ -12,7 +12,7 @@
+ #include "source/ExpatAdapter.hpp"
+ #include "XMPCore/source/XMPMeta.hpp"
+ 
+-#include "third-party/expat/lib/expat.h"
++#include <expat.h>
+ #include <string.h>
+ 
+ using namespace std;

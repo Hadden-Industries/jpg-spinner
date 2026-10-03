@@ -140,6 +140,8 @@ template <> struct StringMaker<jpg_spinner::domain::ImageProcessingErrorCode> fi
             return "MalformedJpegStructure";
         case ImageProcessingErrorCode::MalformedImageMetadata:
             return "MalformedImageMetadata";
+        case ImageProcessingErrorCode::MetadataPreservationFailed:
+            return "MetadataPreservationFailed";
         case ImageProcessingErrorCode::InvalidOrientationMetadata:
             return "InvalidOrientationMetadata";
         case ImageProcessingErrorCode::UnsupportedJpegCodingProcess:

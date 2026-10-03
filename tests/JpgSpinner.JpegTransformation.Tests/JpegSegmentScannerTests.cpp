@@ -22,13 +22,13 @@ namespace
 using jpg_spinner::domain::ImageDimensions;
 using jpg_spinner::domain::ImageProcessingErrorCode;
 using jpg_spinner::domain::ImageProcessingStage;
+using jpg_spinner::domain::JpegCodingProcess;
 using jpg_spinner::domain::JpegResourceLimit;
 using jpg_spinner::domain::JpegResourceLimits;
 using jpg_spinner::domain::JpegResourceLimitViolation;
 using jpg_spinner::domain::PixelHeight;
 using jpg_spinner::domain::PixelWidth;
 using jpg_spinner::jpeg::internal::EncodedByteRange;
-using jpg_spinner::jpeg::internal::JpegCodingProcess;
 using jpg_spinner::jpeg::internal::JpegMarkerReference;
 using jpg_spinner::jpeg::internal::JpegSegmentScanner;
 

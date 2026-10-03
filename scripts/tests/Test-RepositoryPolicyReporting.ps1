@@ -20,7 +20,7 @@ foreach ($requiredEvidenceLabel in @(
     'MSVC 14.51.36231',
     'Windows SDK 10.0.28000.0',
     'libjpeg-turbo 3.2.0#1',
-    'Exiv2 0.28.9+xmp',
+    'Exiv2 0.28.9#1+xmp',
     'Catch2 3.16.0'
 )) {
     if ($successReport.IndexOf($requiredEvidenceLabel, [System.StringComparison]::Ordinal) -lt 0) {
