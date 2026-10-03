@@ -27,13 +27,17 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\src;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+    <!-- The real JPEG fixture pipeline consumes Exiv2's Windows library inventory. -->
+    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>windowsapp.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
     <ClCompile Include="SourceFileRevisionCalculatorTests.cpp" />
+    <ClCompile Include="ImageFileTransactionTests.cpp" />
+    <!-- Shared storage-only test adapter; keep neutral TestSupport free of WinRT. -->
+    <ClCompile Include="..\TestSupport\DeterministicImageFileTransactionEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <!-- The tests consume the same supported native projections as the adapter. -->
@@ -42,6 +46,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\JpgSpinner.WindowsStorage\JpgSpinner.WindowsStorage.vcxproj"><Project>{84F8BC68-06E4-416A-A14B-F3E1FF4464AF}</Project></ProjectReference>
     <ProjectReference Include="..\TestSupport\TestSupport.vcxproj"><Project>{F04F20B2-B900-46F1-BC12-182B6E6A8A43}</Project></ProjectReference>
+    <ProjectReference Include="..\..\src\JpgSpinner.JpegTransformation\JpgSpinner.JpegTransformation.vcxproj"><Project>{5BF16AEA-B87F-481D-AB2B-E991CA8736C7}</Project></ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

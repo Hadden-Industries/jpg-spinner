@@ -11,6 +11,12 @@
       "jpgspinner.domain": {
         "type": "Project"
       },
+      "jpgspinner.jpegtransformation": {
+        "type": "Project",
+        "dependencies": {
+          "JpgSpinner.Domain": "[1.0.0, )"
+        }
+      },
       "jpgspinner.windowsstorage": {
         "type": "Project",
         "dependencies": {

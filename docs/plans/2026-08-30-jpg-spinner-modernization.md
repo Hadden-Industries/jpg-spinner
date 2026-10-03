@@ -741,8 +741,8 @@ git commit -m "feat: detect source changes with authoritative revisions"
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/OutputDisposition.h`
 - Create: `src/JpgSpinner.Domain/include/jpg_spinner/domain/TraversalScope.h`
 - Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/ImageFileTransactionEngine.h`
-- Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/AppContainerImageFileTransactionEngine.h`
-- Create: `src/JpgSpinner.WindowsStorage/src/AppContainerImageFileTransactionEngine.cpp`
+- Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h`
+- Create: `src/JpgSpinner.WindowsStorage/src/WindowsStorageImageFileTransactionEngine.cpp`
 - Create: `src/JpgSpinner.WindowsStorage/src/internal/RecoverableImageFileTransaction.h`
 - Create: `src/JpgSpinner.WindowsStorage/src/internal/RecoverableImageFileTransaction.cpp`
 - Create: `tests/JpgSpinner.WindowsStorage.Tests/ImageFileTransactionTests.cpp`
@@ -750,6 +750,10 @@ git commit -m "feat: detect source changes with authoritative revisions"
 - Create: `tests/TestSupport/DeterministicImageFileTransactionEngine.cpp`
 
 ### Step 9.1: RED on stage ownership and copy commit
+
+The approved concrete name denotes the Windows Storage API mechanism, not a claim
+that the process is isolated. AppContainer deployment and capability restrictions
+remain required separately; using `StorageFile` does not establish that boundary.
 
 - [ ] Use real temporary source/output directories and a `ValidatedJpegOutput` produced by the real test fixture pipeline.
 - [ ] Require stage name `.jpg-spinner-staged-<transaction-guid>.jpg` and uniqueness across repeated transactions. For copy output it lives beside the final file in the unique batch tree; for replacement it lives beside the original.
@@ -796,8 +800,8 @@ git commit -m "feat: commit validated transformations as corrected copies"
 - Create: `tests/JpgSpinner.WindowsStorage.Tests/ImageFileTransactionRecoveryTests.cpp`
 - Create: `tests/JpgSpinner.WindowsStorage.Tests/StorageProviderQualificationTests.cpp`
 - Modify: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/ImageFileTransactionEngine.h`
-- Modify: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/AppContainerImageFileTransactionEngine.h`
-- Modify: `src/JpgSpinner.WindowsStorage/src/AppContainerImageFileTransactionEngine.cpp`
+- Modify: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h`
+- Modify: `src/JpgSpinner.WindowsStorage/src/WindowsStorageImageFileTransactionEngine.cpp`
 - Modify: `src/JpgSpinner.WindowsStorage/src/internal/RecoverableImageFileTransaction.h`
 - Modify: `src/JpgSpinner.WindowsStorage/src/internal/RecoverableImageFileTransaction.cpp`
 - Modify: `tests/JpgSpinner.WindowsStorage.Tests/ImageFileTransactionTests.cpp`

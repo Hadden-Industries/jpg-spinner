@@ -180,10 +180,16 @@ template <> struct StringMaker<jpg_spinner::domain::ImageProcessingErrorCode> fi
             return "StagingWriteFailed";
         case ImageProcessingErrorCode::StagingFlushFailed:
             return "StagingFlushFailed";
+        case ImageProcessingErrorCode::StagingCloseFailed:
+            return "StagingCloseFailed";
+        case ImageProcessingErrorCode::StagedOutputVerificationFailed:
+            return "StagedOutputVerificationFailed";
         case ImageProcessingErrorCode::StagedOutputHashMismatch:
             return "StagedOutputHashMismatch";
         case ImageProcessingErrorCode::OutputValidationFailed:
             return "OutputValidationFailed";
+        case ImageProcessingErrorCode::CorrectedCopyDestinationCreationFailed:
+            return "CorrectedCopyDestinationCreationFailed";
         case ImageProcessingErrorCode::CorrectedCopyCommitFailed:
             return "CorrectedCopyCommitFailed";
         case ImageProcessingErrorCode::BackupCreationFailed:

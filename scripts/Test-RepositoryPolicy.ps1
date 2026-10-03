@@ -1351,6 +1351,9 @@ function Test-ModernSolutionArchitecture {
             configurationType = 'Application'
             references = @(
                 'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj',
+                # Transaction tests obtain immutable capabilities through the
+                # real native JPEG validator; production Storage stays Domain-only.
+                'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj',
                 'tests/TestSupport/TestSupport.vcxproj'
             )
         }

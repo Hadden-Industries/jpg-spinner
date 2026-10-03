@@ -238,7 +238,7 @@ Each module must hide more policy and mechanism than its callers learn. The dele
 | `JpgSpinner.Domain` | Immutable values plus pure orientation/planning functions | Exif geometry, checked dimension math, MCU policy, exhaustive errors/findings | In-process; no adapter or hypothetical seam |
 | `JpegImageAnalyzer` within JPEG Transformation | One `analyze` operation | Marker scan, Exif/XMP precedence, coding-process support, resource policy, transform planning | Concrete deep module; tests use real deterministic JPEGs |
 | `JpegTransformationEngine` | One `createValidatedOutput` operation | TurboJPEG lifetime/parameters, coefficient transform, marker copy, metadata reconciliation, independent scan/full decode, metadata/ICC invariants, output digest, native-error translation | `LibJpegTurboTransformationEngine` production adapter plus deterministic batch-test adapter |
-| `ImageFileTransactionEngine` | `execute` and `recoverIncompleteTransactions` | stage naming/ownership, handle lifetime, staged-byte hash verification, source recheck, destination uniqueness, backup, journal, replacement, recovery | `AppContainerImageFileTransactionEngine` production adapter plus deterministic batch-test adapter; fault operations remain an internal seam |
+| `ImageFileTransactionEngine` | `execute` and `recoverIncompleteTransactions` | stage naming/ownership, handle lifetime, staged-byte hash verification, source recheck, destination uniqueness, backup, journal, replacement, recovery | `WindowsStorageImageFileTransactionEngine` production adapter plus deterministic batch-test adapter; fault operations remain an internal seam |
 | `BatchProcessingCoordinator` | `analyzeBatch` and `processReviewedBatch` | safe traversal, stable ordering, progress accounting, one-at-a-time execution, cancellation, summary completeness | In-process module; module tests use real analyzer and deterministic engine/transaction adapters |
 
 `JpegSegmentScanner`, `LibJpegTurboCoefficientTransformer`, `MetadataReconciler`, `JpegOutputValidator`, codec RAII handles, `RecoverableImageFileTransaction`, journal serialization, and fault-operation controls are internal seams. They are not exposed merely to make tests easy. Security-focused tests and fuzzers may exercise an internal seam from within its owning module, but application callers cannot depend on it. Tests of externally observable behavior cross the same module interface as production callers.
@@ -251,7 +251,11 @@ Each module must hide more policy and mechanism than its callers learn. The dele
   camel case with a trailing `_`, matching the repository's enforced clang-tidy policy.
 - Public WinRT/MIDL properties, methods, and events use PascalCase, including predicates such as `CanBeginProcessing`; native-only Boolean functions remain camelCase.
 - Native abstract bases describe capabilities and do not receive a mechanical `I` prefix: `JpegTransformationEngine`, `ImageFileTransactionEngine`.
-- Concrete adapter types identify the mechanism: `LibJpegTurboTransformationEngine`, `AppContainerImageFileTransactionEngine`.
+- Concrete adapter types identify the mechanism: `LibJpegTurboTransformationEngine`, `WindowsStorageImageFileTransactionEngine`.
+
+`WindowsStorageImageFileTransactionEngine` identifies the native API mechanism.
+AppContainer is the separately required process deployment/security environment,
+not an isolation property conferred by `StorageFile` or by the adapter's name.
 - Names such as `Manager`, `Helper`, `Utils`, `Data`, `Info`, `Item`, `Mode`, and `Handler` are prohibited unless that word is the precise domain term. Examples of correct replacements are `JpegSegmentScanner`, `SourceFileRevisionCalculator`, `BatchProcessingCoordinator`, and `ImageProcessingError`.
 - Boolean names state a predicate: `isPerfectTransformAvailable`, `hasEmbeddedIccProfile`, `wasSourceModified`.
 - Units appear in names for primitive quantities: `encodedFileLengthBytes`, `elapsedMilliseconds`, `maximumPixelCount`.

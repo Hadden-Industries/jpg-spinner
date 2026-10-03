@@ -1,5 +1,9 @@
 [CmdletBinding()]
-param()
+param(
+    # Cheap follow-up for the Task 9 test-only capability edge. The default
+    # continues to execute every existing negative control without filtering.
+    [switch]$StorageTransactionReferenceControlsOnly
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -93,6 +97,50 @@ try {
     $baselineResult = Invoke-IsolatedRepositoryPolicy
     if ($baselineResult.exitCode -ne 0) {
         throw "The isolated valid configuration must pass before negative controls run.`n$($baselineResult.output)"
+    }
+
+    # Real validation capabilities belong in transaction tests, not in the
+    # production Storage dependency graph. Exercise both sides of that boundary.
+    $storageReferenceControls = @(
+        [pscustomobject]@{
+            relativePath = 'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj'
+            addReference = $true
+            includePath = '..\JpgSpinner.JpegTransformation\JpgSpinner.JpegTransformation.vcxproj'
+            diagnostic = 'contains unapproved project reference'
+        },
+        [pscustomobject]@{
+            relativePath = 'tests/JpgSpinner.WindowsStorage.Tests/JpgSpinner.WindowsStorage.Tests.vcxproj'
+            addReference = $false
+            includePath = '..\..\src\JpgSpinner.JpegTransformation\JpgSpinner.JpegTransformation.vcxproj'
+            diagnostic = "must reference 'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj' exactly once"
+        }
+    )
+    foreach ($control in $storageReferenceControls) {
+        $projectPath = Join-Path $temporaryRoot $control.relativePath
+        $projectDocument = [System.Xml.XmlDocument]::new()
+        $projectDocument.PreserveWhitespace = $true
+        $projectDocument.Load($projectPath)
+        if ($control.addReference) {
+            $itemGroup = $projectDocument.CreateElement('ItemGroup', $projectDocument.DocumentElement.NamespaceURI)
+            $reference = $projectDocument.CreateElement('ProjectReference', $projectDocument.DocumentElement.NamespaceURI)
+            $reference.SetAttribute('Include', $control.includePath)
+            [void]$itemGroup.AppendChild($reference)
+            [void]$projectDocument.DocumentElement.AppendChild($itemGroup)
+        } else {
+            $reference = @($projectDocument.SelectNodes('//*[local-name()="ProjectReference"]') |
+                Where-Object { $_.GetAttribute('Include') -ceq $control.includePath })
+            if ($reference.Count -ne 1) {
+                throw 'The valid Storage test fixture must contain exactly one real JPEG capability reference.'
+            }
+            [void]$reference[0].ParentNode.RemoveChild($reference[0])
+        }
+        $projectDocument.Save($projectPath)
+        Assert-RejectedMutation -ExpectedDiagnostics "$($control.relativePath) $($control.diagnostic)"
+        Copy-Item -LiteralPath (Join-Path $repositoryRoot $control.relativePath) -Destination $projectPath -Force
+    }
+    if ($StorageTransactionReferenceControlsOnly) {
+        Write-Output 'Both Storage transaction reference controls passed; production edge rejected and test edge required.'
+        return
     }
 
     $directoryBuildPropertiesRelativePath = 'Directory.Build.props'
