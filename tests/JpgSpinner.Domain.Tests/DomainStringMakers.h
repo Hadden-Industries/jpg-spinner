@@ -202,6 +202,10 @@ template <> struct StringMaker<jpg_spinner::domain::ImageProcessingErrorCode> fi
             return "JournalPersistenceFailed";
         case ImageProcessingErrorCode::RecoveryConflict:
             return "RecoveryConflict";
+        case ImageProcessingErrorCode::StorageProviderRecoveryContractNotEstablished:
+            return "StorageProviderRecoveryContractNotEstablished";
+        case ImageProcessingErrorCode::JournalStoreBusy:
+            return "JournalStoreBusy";
         case ImageProcessingErrorCode::Cancelled:
             return "Cancelled";
         }

@@ -825,11 +825,13 @@ git commit -m "feat: commit validated transformations as corrected copies"
 ### Step 10.3: RED on every journal transition
 
 - [ ] Define monotonic states `TransactionInitialized`, `StagedOutputWritten`, `StagedOutputHashVerified`, `VerifiedBackupCreated`, `OutputCommitted`, and `OwnedStagingArtifactsCleaned`.
+- [ ] Approved lifecycle amendment (2026-10-04): add terminal `TransactionAbandonedBeforeCommit`, reachable from a non-committed state only after proving no commit occurred and removing the identity-bound owned stage. Preserve source/backup files and all immutable generations. Skip verified terminal records rather than reopening recovery after legitimate later user edits. Do not infer abandonment from a missing stage or a failed native move alone; uncertain outcomes remain `RecoveryConflict`.
 - [ ] Test the only legal graphs: copy skips the backup state; replacement requires it before commit. Reject every backward, repeated-with-different-data, or out-of-graph transition.
 - [ ] Inject failure before, during, and after each immutable state-generation write, validation, publication under its unique name, and next state-changing operation.
 - [ ] Restart against the persisted `Windows.Data.Json` journal and assert exact recovery.
 - [ ] Corrupt, truncate, duplicate, reorder, and version-skew journal generations; require recovery to select the highest complete valid monotonic generation. If no trustworthy generation explains the artifacts, return `RecoveryConflict` with no source/backup deletion.
 - [ ] Require repeated recovery to converge on the same state.
+- [ ] Isolate transaction reconciliation: a conflicting record must not prevent examination of other incomplete records. Limit reconciliation to the granted selected root; do not open another root merely because its record shares the application store. Aggregate unresolved conflicts without deleting their artifacts.
 
 ### Step 10.4: GREEN with a versioned monotonic journal
 

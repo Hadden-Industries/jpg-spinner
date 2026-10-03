@@ -15,6 +15,71 @@ class FileTransactionOperations
 {
   public:
     virtual ~FileTransactionOperations() = default;
+    virtual winrt::Windows::Storage::StorageFolder createTransactionJournalFolder(
+        const winrt::Windows::Storage::StorageFolder &journalStore, const winrt::hstring &identifier) const
+    {
+        return journalStore
+            .CreateFolderAsync(identifier, winrt::Windows::Storage::CreationCollisionOption::FailIfExists)
+            .get();
+    }
+    /// Immutable journal I/O remains granular: no convenience writer may hide a
+    /// replaced file or publication boundary from the recovery protocol.
+    virtual winrt::Windows::Storage::StorageFile createPendingJournalGeneration(
+        const winrt::Windows::Storage::StorageFolder &folder, const winrt::hstring &name) const
+    {
+        return folder.CreateFileAsync(name, winrt::Windows::Storage::CreationCollisionOption::FailIfExists).get();
+    }
+    virtual winrt::Windows::Storage::Streams::IRandomAccessStream openJournalGeneration(
+        const winrt::Windows::Storage::StorageFile &file, winrt::Windows::Storage::FileAccessMode access) const
+    {
+        return file.OpenAsync(access, winrt::Windows::Storage::StorageOpenOptions::AllowOnlyReaders).get();
+    }
+    virtual std::uint32_t writeJournalBytes(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream,
+                                            const winrt::Windows::Storage::Streams::IBuffer &bytes) const
+    {
+        return stream.WriteAsync(bytes).get();
+    }
+    virtual bool flushJournalBytes(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const
+    {
+        return stream.FlushAsync().get();
+    }
+    virtual void closeJournalGeneration(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const
+    {
+        stream.Close();
+    }
+    virtual void publishJournalGeneration(const winrt::Windows::Storage::StorageFile &pending,
+                                          const winrt::hstring &name) const
+    {
+        pending.RenameAsync(name, winrt::Windows::Storage::NameCollisionOption::FailIfExists).get();
+    }
+    /// Backups are exclusively named copies; no existing retained backup may be
+    /// overwritten. Separate effects let faults leave the actual copy protocol real.
+    virtual winrt::Windows::Storage::StorageFolder createBackupRoot(
+        const winrt::Windows::Storage::StorageFolder &selectedRoot) const
+    {
+        return selectedRoot
+            .CreateFolderAsync(L"JPG Spinner Backups", winrt::Windows::Storage::CreationCollisionOption::OpenIfExists)
+            .get();
+    }
+    virtual winrt::Windows::Storage::StorageFile copySourceToBackup(
+        const winrt::Windows::Storage::StorageFile &source, const winrt::Windows::Storage::StorageFolder &destination,
+        const winrt::hstring &name) const
+    {
+        return source.CopyAsync(destination, name, winrt::Windows::Storage::NameCollisionOption::FailIfExists).get();
+    }
+    virtual bool flushBackup(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const
+    {
+        return stream.FlushAsync().get();
+    }
+    virtual void closeBackup(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const
+    {
+        stream.Close();
+    }
+    virtual domain::ImageProcessingResult<domain::SourceFileRevision> captureBackupRevision(
+        const winrt::Windows::Storage::StorageFile &backup, std::stop_token cancellation) const
+    {
+        return SourceFileRevisionCalculator{}.calculate(backup, cancellation);
+    }
     virtual winrt::Windows::Storage::StorageFolder createCorrectedCopyOutputRoot(
         const winrt::Windows::Storage::StorageFolder &selectedRoot) const
     {
@@ -75,6 +140,20 @@ class FileTransactionOperations
                                           const winrt::hstring &name) const
     {
         stage.MoveAsync(destination, name, winrt::Windows::Storage::NameCollisionOption::FailIfExists).get();
+    }
+    /// This effect is reachable only after a published, independently reread
+    /// VerifiedBackupCreated generation. Completion is not power-fail atomicity.
+    virtual void replaceOriginalWithStage(const winrt::Windows::Storage::StorageFile &stage,
+                                          const winrt::Windows::Storage::StorageFile &source) const
+    {
+        stage.MoveAndReplaceAsync(source).get();
+    }
+    virtual domain::ImageProcessingResult<domain::SourceFileRevision> captureCommittedRevision(
+        const winrt::Windows::Storage::StorageFile &committedFile) const
+    {
+        // Commit completion is non-interruptible: a late cancellation token must
+        // not relabel already committed I/O as if the original were untouched.
+        return SourceFileRevisionCalculator{}.calculate(committedFile);
     }
 };
 } // namespace jpg_spinner::storage::internal

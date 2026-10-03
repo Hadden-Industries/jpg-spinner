@@ -36,6 +36,9 @@
     <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
     <ClCompile Include="SourceFileRevisionCalculatorTests.cpp" />
     <ClCompile Include="ImageFileTransactionTests.cpp" />
+    <ClCompile Include="ImageFileTransactionRecoveryTests.cpp" />
+    <ClCompile Include="StorageProviderQualificationTests.cpp" />
+    <ClCompile Include="TransactionProcessTerminationTests.cpp" />
     <!-- Shared storage-only test adapter; keep neutral TestSupport free of WinRT. -->
     <ClCompile Include="..\TestSupport\DeterministicImageFileTransactionEngine.cpp" />
   </ItemGroup>

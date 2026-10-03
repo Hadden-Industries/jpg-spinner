@@ -96,6 +96,8 @@ TEST_CASE("every image-processing error code has a semantic diagnostic name", "[
 
     constexpr std::array cases{
         NamedErrorCode{ImageProcessingErrorCode::SourceAccessDenied, "SourceAccessDenied"},
+        NamedErrorCode{ImageProcessingErrorCode::StorageProviderRecoveryContractNotEstablished,
+                       "StorageProviderRecoveryContractNotEstablished"},
         NamedErrorCode{ImageProcessingErrorCode::SourceSharingViolation, "SourceSharingViolation"},
         NamedErrorCode{ImageProcessingErrorCode::SourceRevisionCaptureFailed, "SourceRevisionCaptureFailed"},
         NamedErrorCode{ImageProcessingErrorCode::SourceChangedAfterAnalysis, "SourceChangedAfterAnalysis"},
@@ -141,6 +143,7 @@ TEST_CASE("every image-processing error code has a semantic diagnostic name", "[
         NamedErrorCode{ImageProcessingErrorCode::OriginalReplacementFailed, "OriginalReplacementFailed"},
         NamedErrorCode{ImageProcessingErrorCode::JournalPersistenceFailed, "JournalPersistenceFailed"},
         NamedErrorCode{ImageProcessingErrorCode::RecoveryConflict, "RecoveryConflict"},
+        NamedErrorCode{ImageProcessingErrorCode::JournalStoreBusy, "JournalStoreBusy"},
         NamedErrorCode{ImageProcessingErrorCode::Cancelled, "Cancelled"},
     };
 

@@ -10,8 +10,10 @@
 #include "internal/FileTransactionOperations.h"
 #include "internal/RecoverableImageFileTransaction.h"
 #include "internal/CorrectedCopyPathPolicy.h"
+#include "internal/ImageFileTransactionJournal.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Storage.h>
@@ -87,6 +89,7 @@ struct TransactionFixture final
     const domain::ImageProcessingResult<domain::ValidatedJpegOutput> output = createOutput();
     const winrt::Windows::Storage::StorageFolder root =
         winrt::Windows::Storage::StorageFolder::GetFolderFromPathAsync(directory.directoryPath().wstring()).get();
+    const winrt::Windows::Storage::StorageFolder journalStore = root.CreateFolderAsync(L"app-journal-store").get();
 
     domain::ImageProcessingResult<domain::ValidatedJpegOutput> createOutput() const
     {
@@ -147,7 +150,8 @@ TEST_CASE("a corrected copy commits the exact real validator capability without 
     REQUIRE(revision.valueIfPresent() != nullptr);
     const auto root =
         winrt::Windows::Storage::StorageFolder::GetFolderFromPathAsync(directory.directoryPath().wstring()).get();
-    storage::WindowsStorageImageFileTransactionEngine nativeEngine{root};
+    const auto journalStore = root.CreateFolderAsync(L"app-journal-store").get();
+    storage::WindowsStorageImageFileTransactionEngine nativeEngine{root, journalStore};
     const storage::ImageFileTransactionEngine &engine = nativeEngine;
     const auto result =
         engine.execute({sourceFile, *revision.valueIfPresent(), domain::OutputDisposition::CreateCorrectedCopy},
@@ -179,7 +183,7 @@ TEST_CASE("one batch preserves nested relative paths and refuses an existing fin
 {
     TransactionTestApartment apartment;
     TransactionFixture fixture;
-    storage::WindowsStorageImageFileTransactionEngine engine{fixture.root};
+    storage::WindowsStorageImageFileTransactionEngine engine{fixture.root, fixture.journalStore};
     const auto firstSource = fixture.createSource("first/camera.jpg");
     const auto secondSource = fixture.createSource("second/camera.jpg");
     const auto firstRequest = fixture.requestFor(firstSource);
@@ -245,8 +249,8 @@ TEST_CASE("a Unicode stage beyond MAX_PATH commits exact bytes without requiring
             }
         }
     } cleanup{fixture.root};
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     REQUIRE(operations.stagePathLength > MAX_PATH);
     REQUIRE(result.valueIfPresent() != nullptr);
@@ -267,9 +271,9 @@ TEST_CASE("different batch instances create distinct roots without suffixing sou
     TransactionFixture fixture;
     const auto source = fixture.createSource("camera.jpg");
     const auto request = fixture.requestFor(source);
-    const auto first = storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(
+    const auto first = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
         request, *fixture.output.valueIfPresent());
-    const auto second = storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(
+    const auto second = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
         request, *fixture.output.valueIfPresent());
     REQUIRE(first.valueIfPresent() != nullptr);
     REQUIRE(second.valueIfPresent() != nullptr);
@@ -288,7 +292,7 @@ TEST_CASE("cancel before staging leaves even the output root absent", "[storage]
     const auto request = fixture.requestFor(source);
     std::stop_source cancellation;
     cancellation.request_stop();
-    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
         request, *fixture.output.valueIfPresent(), cancellation.get_token());
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::Cancelled);
@@ -304,7 +308,7 @@ TEST_CASE("authoritative source digest mismatch blocks a copy even with equal le
     const auto source = fixture.createSource("camera.jpg");
     auto request = fixture.requestFor(source);
     request.expectedSourceRevision.encodedSha256[0] ^= std::byte{1};
-    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
         request, *fixture.output.valueIfPresent());
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceChangedAfterAnalysis);
@@ -336,8 +340,8 @@ TEST_CASE("a partial native stage write is rejected and only its owned stage is 
             return FileTransactionOperations::writeStagedBytes(stream, buffer);
         }
     } operations;
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.calls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
@@ -366,8 +370,8 @@ TEST_CASE("a close failure is distinct from a successful flush and cannot commit
             throw winrt::hresult_error{E_FAIL};
         }
     } operations;
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.calls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
@@ -375,7 +379,7 @@ TEST_CASE("a close failure is distinct from a successful flush and cannot commit
     CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::StagingClose);
     CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
     fixture.requireNoStages();
-    CHECK(batch.folder.GetFilesAsync().get().Size() == 0);
+    CHECK(batch.correctedCopyFolder.GetFilesAsync().get().Size() == 0);
 }
 
 TEST_CASE("a real stage reopen denial is not reported as an observed hash mismatch",
@@ -411,8 +415,8 @@ TEST_CASE("a real stage reopen denial is not reported as an observed hash mismat
             return observed;
         }
     } operations;
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.calls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
@@ -423,7 +427,7 @@ TEST_CASE("a real stage reopen denial is not reported as an observed hash mismat
     CHECK(native->signedValue == operations.observedNativeFailure);
     CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
     fixture.requireNoStages();
-    CHECK(batch.folder.GetFilesAsync().get().Size() == 0);
+    CHECK(batch.correctedCopyFolder.GetFilesAsync().get().Size() == 0);
 }
 
 TEST_CASE("a replaced batch folder is not adopted merely because its canonical pathname matches",
@@ -431,7 +435,7 @@ TEST_CASE("a replaced batch folder is not adopted merely because its canonical p
 {
     TransactionTestApartment apartment;
     TransactionFixture fixture;
-    storage::WindowsStorageImageFileTransactionEngine engine{fixture.root};
+    storage::WindowsStorageImageFileTransactionEngine engine{fixture.root, fixture.journalStore};
     const auto first =
         engine.execute(fixture.requestFor(fixture.createSource("first.jpg")), *fixture.output.valueIfPresent());
     REQUIRE(first.valueIfPresent() != nullptr);
@@ -492,14 +496,15 @@ TEST_CASE("an interrupted move cannot make cleanup delete an already committed c
       private:
         const bool usesStaleProjection_;
     } operations{usesStaleProjection};
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.calls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
     CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::TransactionRecovery);
-    const std::filesystem::path committedPath = std::filesystem::path{batch.folder.Path().c_str()} / "camera.jpg";
+    const std::filesystem::path committedPath =
+        std::filesystem::path{batch.correctedCopyFolder.Path().c_str()} / "camera.jpg";
     REQUIRE(std::filesystem::exists(committedPath));
     CHECK(readBytes(committedPath) == std::vector<std::byte>(fixture.output.valueIfPresent()->encodedBytes().begin(),
                                                              fixture.output.valueIfPresent()->encodedBytes().end()));
@@ -542,8 +547,8 @@ TEST_CASE("different real staged bytes never reach commit", "[storage][transacti
             ++moveCalls;
         }
     } operations;
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.hashCalls == 1);
     CHECK(operations.moveCalls == 0);
@@ -551,7 +556,7 @@ TEST_CASE("different real staged bytes never reach commit", "[storage][transacti
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::StagedOutputHashMismatch);
     CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
     fixture.requireNoStages();
-    CHECK(batch.folder.GetFilesAsync().get().Size() == 0);
+    CHECK(batch.correctedCopyFolder.GetFilesAsync().get().Size() == 0);
 }
 
 TEST_CASE("cancel after stage verification preserves unrelated stages and uses distinct native transaction UUIDs",
@@ -606,11 +611,11 @@ TEST_CASE("cancel after stage verification preserves unrelated stages and uses d
       private:
         std::stop_source &cancellation_;
     } operations{cancellation};
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
     for (unsigned attempt = 0; attempt < 2; ++attempt)
     {
         cancellation = std::stop_source{};
-        const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+        const auto result = storage::internal::RecoverableImageFileTransaction::execute(
             batch, request, *fixture.output.valueIfPresent(), cancellation.get_token(), operations);
         REQUIRE(result.errorIfPresent() != nullptr);
         CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::Cancelled);
@@ -619,13 +624,13 @@ TEST_CASE("cancel after stage verification preserves unrelated stages and uses d
     CHECK(operations.hashCalls == 2);
     REQUIRE(operations.stageNames.size() == 2);
     CHECK(operations.stageNames[0] != operations.stageNames[1]);
-    const std::filesystem::path batchPath{batch.folder.Path().c_str()};
+    const std::filesystem::path batchPath{batch.correctedCopyFolder.Path().c_str()};
     for (const auto &ownedName : operations.stageNames)
         CHECK(!std::filesystem::exists(batchPath / ownedName));
     CHECK(!std::filesystem::exists(batchPath / "camera.jpg"));
     const std::vector<std::byte> sentinel{std::byte{1}, std::byte{2}, std::byte{3}};
     CHECK(readBytes(batchPath / L".jpg-spinner-staged-{00000000-0000-0000-0000-000000000001}.jpg") == sentinel);
-    CHECK(batch.folder.GetFilesAsync().get().Size() == 1);
+    CHECK(batch.correctedCopyFolder.GetFilesAsync().get().Size() == 1);
 }
 
 TEST_CASE("destination creation failure is not mislabeled as a stage creation failure",
@@ -645,8 +650,8 @@ TEST_CASE("destination creation failure is not mislabeled as a stage creation fa
             throw winrt::hresult_error{E_FAIL};
         }
     } operations;
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.calls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
@@ -783,8 +788,8 @@ TEST_CASE("each unavailable native effect fails closed without changing source b
         }
         const FailedEffect effect_;
     } operations{failureCase.effect};
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.failureCalls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
@@ -792,8 +797,8 @@ TEST_CASE("each unavailable native effect fails closed without changing source b
     CHECK(result.errorIfPresent()->stage == failureCase.stage);
     CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
     fixture.requireNoStages();
-    if (batch.folder)
-        CHECK(batch.folder.GetFilesAsync().get().Size() == 0);
+    if (batch.correctedCopyFolder)
+        CHECK(batch.correctedCopyFolder.GetFilesAsync().get().Size() == 0);
     const auto *native = std::get_if<domain::WindowsHResult>(&result.errorIfPresent()->nativeErrorProjection);
     REQUIRE(native != nullptr);
     if (failureCase.effect == FailedEffect::DiskFull)
@@ -809,7 +814,7 @@ TEST_CASE("a sibling source root is not authorized by a common textual path pref
     std::filesystem::create_directory(selectedPath);
     const auto source = fixture.createSource("selected-other/camera.jpg");
     const auto selected = winrt::Windows::Storage::StorageFolder::GetFolderFromPathAsync(selectedPath.wstring()).get();
-    const auto result = storage::WindowsStorageImageFileTransactionEngine{selected}.execute(
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{selected, fixture.journalStore}.execute(
         fixture.requestFor(source), *fixture.output.valueIfPresent());
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceRevisionCaptureFailed);
@@ -860,7 +865,7 @@ TEST_CASE("an in-root directory symlink is not silently followed while deriving 
     const auto aliasedSourcePath = (aliasPath / "camera.jpg").make_preferred();
     const auto source = winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(aliasedSourcePath.wstring()).get();
     REQUIRE(std::filesystem::path{source.Path().c_str()}.parent_path() == aliasPath);
-    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
         fixture.requestFor(source), *fixture.output.valueIfPresent());
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceRevisionCaptureFailed);
@@ -901,7 +906,7 @@ TEST_CASE("missing or denied sources preserve source-side diagnostics and never 
     }
     else
         REQUIRE(std::filesystem::remove(fixture.directory.directoryPath() / "camera.jpg"));
-    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
         request, *fixture.output.valueIfPresent());
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == expectedCode);
@@ -933,8 +938,8 @@ TEST_CASE("a moved-from validation capability is rejected before any filesystem 
     const auto retained = std::move(*produced.valueIfPresent());
     REQUIRE(!retained.encodedBytes().empty());
     REQUIRE(produced.valueIfPresent()->encodedBytes().empty());
-    const auto result =
-        storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(request, *produced.valueIfPresent());
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
+        request, *produced.valueIfPresent());
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::OutputValidationFailed);
     CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::OutputValidation);
@@ -948,7 +953,7 @@ TEST_CASE("the batch test adapter preserves a completed transaction when cancell
     TransactionTestApartment apartment;
     TransactionFixture fixture;
     const auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
-    storage::WindowsStorageImageFileTransactionEngine nativeEngine{fixture.root};
+    storage::WindowsStorageImageFileTransactionEngine nativeEngine{fixture.root, fixture.journalStore};
     std::stop_source cancellation;
     unsigned factoryCalls = 0;
     test_support::DeterministicImageFileTransactionEngine adapter{
@@ -1014,8 +1019,8 @@ TEST_CASE("a real source edit after stage hashing is detected despite restored l
         const std::filesystem::file_time_type originalWriteTime_;
     } operations{source, sourcePath, originalWriteTime};
     REQUIRE(fixture.sourceBytes[0] == std::byte{0xff});
-    storage::internal::CorrectedCopyBatch batch{fixture.root};
-    const auto result = storage::internal::RecoverableImageFileTransaction::executeCorrectedCopy(
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
         batch, request, *fixture.output.valueIfPresent(), {}, operations);
     CHECK(operations.calls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
@@ -1024,7 +1029,7 @@ TEST_CASE("a real source edit after stage hashing is detected despite restored l
     CHECK(std::filesystem::last_write_time(sourcePath) == originalWriteTime);
     CHECK(readBytes(sourcePath) == externallyChangedBytes);
     fixture.requireNoStages();
-    CHECK(batch.folder.GetFilesAsync().get().Size() == 0);
+    CHECK(batch.correctedCopyFolder.GetFilesAsync().get().Size() == 0);
 }
 
 TEST_CASE("an implicit process MTA cannot supply the transaction worker's COM lifetime",
@@ -1033,7 +1038,7 @@ TEST_CASE("an implicit process MTA cannot supply the transaction worker's COM li
     TransactionTestApartment apartment;
     TransactionFixture fixture;
     const auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
-    storage::WindowsStorageImageFileTransactionEngine engine{fixture.root};
+    storage::WindowsStorageImageFileTransactionEngine engine{fixture.root, fixture.journalStore};
     const auto observed = std::async(std::launch::async, [&] {
                               APTTYPE type;
                               APTTYPEQUALIFIER qualifier;
@@ -1054,22 +1059,688 @@ TEST_CASE("an implicit process MTA cannot supply the transaction worker's COM li
     CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
 }
 
-TEST_CASE("replacement is explicitly unavailable until the verified-backup transaction is implemented",
-          "[storage][transaction][copy][replacement-unavailable]")
+TEST_CASE("replacement retains the exact nested source backup before committing validated bytes",
+          "[storage][transaction][replace][backup]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    auto request = fixture.requestFor(fixture.createSource("nested/camera.jpg"));
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
+        request, *fixture.output.valueIfPresent());
+    REQUIRE(result.valueIfPresent() != nullptr);
+    CHECK(readBytes(fixture.directory.directoryPath() / "nested/camera.jpg") ==
+          std::vector<std::byte>(fixture.output.valueIfPresent()->encodedBytes().begin(),
+                                 fixture.output.valueIfPresent()->encodedBytes().end()));
+    const auto committedRevision =
+        storage::SourceFileRevisionCalculator{}.calculate(result.valueIfPresent()->committedFile);
+    REQUIRE(committedRevision.valueIfPresent());
+    CHECK(committedRevision.valueIfPresent()->encodedSha256 == fixture.output.valueIfPresent()->encodedSha256());
+    const auto backupRoot = fixture.directory.directoryPath() / "JPG Spinner Backups";
+    REQUIRE(std::filesystem::is_directory(backupRoot));
+    unsigned backups{};
+    for (const auto &item : std::filesystem::recursive_directory_iterator(backupRoot))
+        if (item.is_regular_file())
+        {
+            ++backups;
+            CHECK(item.path().filename() == "camera.jpg");
+            CHECK(item.path().parent_path().filename() == "nested");
+            CHECK(item.path().parent_path().parent_path().parent_path() == backupRoot);
+            CHECK(readBytes(item.path()) == fixture.sourceBytes);
+            const auto backup = winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(item.path().wstring()).get();
+            const auto revision = storage::SourceFileRevisionCalculator{}.calculate(backup);
+            REQUIRE(revision.valueIfPresent() != nullptr);
+            CHECK(revision.valueIfPresent()->encodedSha256 == request.expectedSourceRevision.encodedSha256);
+            CHECK(revision.valueIfPresent()->encodedLengthBytes == request.expectedSourceRevision.encodedLengthBytes);
+        }
+    CHECK(backups == 1);
+    fixture.requireNoStages();
+    const auto transactions = fixture.journalStore.GetFoldersAsync().get();
+    REQUIRE(transactions.Size() == 1);
+    const winrt::guid identifier{std::wstring_view{transactions.GetAt(0).Name()}};
+    const auto terminal =
+        storage::internal::ImageFileTransactionJournal{transactions.GetAt(0), identifier}.readLatest();
+    REQUIRE(terminal.has_value());
+    CHECK(terminal->generation == 6);
+    CHECK(terminal->state == storage::internal::ImageFileTransactionState::OwnedStagingArtifactsCleaned);
+}
+
+TEST_CASE("a native backup failure never changes the original or reports commit",
+          "[storage][transaction][replace][backup-fault]")
 {
     TransactionTestApartment apartment;
     TransactionFixture fixture;
     auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
     request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
-    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root}.execute(
-        request, *fixture.output.valueIfPresent());
+    class DeniedBackup final : public storage::internal::FileTransactionOperations
+    {
+      public:
+        mutable unsigned calls{};
+        winrt::Windows::Storage::StorageFile copySourceToBackup(const winrt::Windows::Storage::StorageFile &,
+                                                                const winrt::Windows::Storage::StorageFolder &,
+                                                                const winrt::hstring &) const override
+        {
+            ++calls;
+            throw winrt::hresult_access_denied();
+        }
+    } operations;
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(operations.calls == 1);
     REQUIRE(result.errorIfPresent() != nullptr);
-    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::OriginalReplacementFailed);
-    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::OriginalReplacement);
-    const auto *native = std::get_if<domain::WindowsHResult>(&result.errorIfPresent()->nativeErrorProjection);
-    REQUIRE(native != nullptr);
-    CHECK(native->signedValue == E_NOTIMPL);
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::BackupCreationFailed);
+    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::BackupCreation);
     CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
-    CHECK(!std::filesystem::exists(fixture.directory.directoryPath() / "JPG Spinner Output"));
-    CHECK(!std::filesystem::exists(fixture.directory.directoryPath() / "JPG Spinner Backups"));
+    fixture.requireNoStages();
+    const auto recovery = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}
+                              .recoverIncompleteTransactions();
+    REQUIRE(recovery.valueIfPresent());
+    CHECK(recovery.valueIfPresent()->recoveredTransactions.empty());
+}
+
+TEST_CASE("backup flush close reopen and digest failures retain the backup and original",
+          "[storage][transaction][replace][backup-verification-fault]")
+{
+    TransactionTestApartment apartment;
+    enum class BackupFault
+    {
+        Flush,
+        Close,
+        Reopen,
+        Digest
+    };
+    const auto fault = GENERATE(BackupFault::Flush, BackupFault::Close, BackupFault::Reopen, BackupFault::Digest);
+    TransactionFixture fixture;
+    auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    struct FailedBackupVerification final : storage::internal::FileTransactionOperations
+    {
+        BackupFault fault;
+        mutable unsigned calls{};
+        mutable winrt::Windows::Storage::StorageFile backup{nullptr};
+        explicit FailedBackupVerification(BackupFault selectedFault) : fault(selectedFault)
+        {
+        }
+        winrt::Windows::Storage::StorageFile copySourceToBackup(const winrt::Windows::Storage::StorageFile &source,
+                                                                const winrt::Windows::Storage::StorageFolder &parent,
+                                                                const winrt::hstring &name) const override
+        {
+            backup = FileTransactionOperations::copySourceToBackup(source, parent, name);
+            return backup;
+        }
+        bool flushBackup(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const override
+        {
+            if (fault == BackupFault::Flush)
+            {
+                ++calls;
+                return false;
+            }
+            return FileTransactionOperations::flushBackup(stream);
+        }
+        void closeBackup(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const override
+        {
+            FileTransactionOperations::closeBackup(stream);
+            if (fault == BackupFault::Close)
+            {
+                ++calls;
+                throw winrt::hresult_error{E_FAIL};
+            }
+        }
+        domain::ImageProcessingResult<domain::SourceFileRevision> captureBackupRevision(
+            const winrt::Windows::Storage::StorageFile &file, std::stop_token token) const override
+        {
+            ++calls;
+            if (fault == BackupFault::Reopen)
+                return domain::ImageProcessingResult<domain::SourceFileRevision>::failure(
+                    {domain::ImageProcessingErrorCode::SourceAccessDenied,
+                     domain::ImageProcessingStage::SourceRevisionCapture, domain::WindowsHResult{E_ACCESSDENIED}});
+            // Change actual persisted bytes, not the expected digest or calculator.
+            if (fault == BackupFault::Digest)
+                writeBytes(std::filesystem::path{file.Path().c_str()}, std::array{std::byte{0x31}});
+            return FileTransactionOperations::captureBackupRevision(file, token);
+        }
+    } operations{fault};
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(operations.calls == 1);
+    REQUIRE(operations.backup != nullptr);
+    REQUIRE(result.errorIfPresent() != nullptr);
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::BackupVerificationFailed);
+    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::BackupVerification);
+    CHECK(std::filesystem::exists(std::filesystem::path{operations.backup.Path().c_str()}));
+    CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
+    fixture.requireNoStages();
+}
+
+TEST_CASE("source mutation during backup verification is detected without deleting the verified copy",
+          "[storage][transaction][replace][backup-source-mutation]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    struct SourceChangedDuringBackup final : storage::internal::FileTransactionOperations
+    {
+        std::filesystem::path sourcePath;
+        mutable winrt::Windows::Storage::StorageFile backup{nullptr};
+        explicit SourceChangedDuringBackup(std::filesystem::path path) : sourcePath(std::move(path))
+        {
+        }
+        domain::ImageProcessingResult<domain::SourceFileRevision> captureBackupRevision(
+            const winrt::Windows::Storage::StorageFile &file, std::stop_token token) const override
+        {
+            backup = file;
+            const auto revision = FileTransactionOperations::captureBackupRevision(file, token);
+            writeBytes(sourcePath, std::array{std::byte{0x37}});
+            return revision;
+        }
+    } operations{fixture.directory.directoryPath() / "camera.jpg"};
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(operations.backup != nullptr);
+    REQUIRE(result.errorIfPresent() != nullptr);
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceChangedAfterAnalysis);
+    CHECK(readBytes(operations.sourcePath) == std::vector<std::byte>{std::byte{0x37}});
+    CHECK(readBytes(std::filesystem::path{operations.backup.Path().c_str()}) == fixture.sourceBytes);
+    fixture.requireNoStages();
+    const auto recovery = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}
+                              .recoverIncompleteTransactions();
+    REQUIRE(recovery.valueIfPresent());
+    CHECK(recovery.valueIfPresent()->recoveredTransactions.empty());
+    CHECK(readBytes(operations.sourcePath) == std::vector<std::byte>{std::byte{0x37}});
+}
+
+TEST_CASE("cancellation while hashing a retained backup is cancellation before commit",
+          "[storage][transaction][replace][backup-cancellation]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    const auto source = fixture.createSource("camera.jpg");
+    auto request = fixture.requestFor(source);
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    std::stop_source cancellation;
+    struct CancelBackupRead final : storage::internal::FileTransactionOperations
+    {
+        std::stop_source &cancellation;
+        mutable unsigned replacementCalls{};
+        explicit CancelBackupRead(std::stop_source &source) : cancellation(source)
+        {
+        }
+        domain::ImageProcessingResult<domain::SourceFileRevision> captureBackupRevision(
+            const winrt::Windows::Storage::StorageFile &backup, std::stop_token token) const override
+        {
+            cancellation.request_stop();
+            return FileTransactionOperations::captureBackupRevision(backup, token);
+        }
+        void replaceOriginalWithStage(const winrt::Windows::Storage::StorageFile &stage,
+                                      const winrt::Windows::Storage::StorageFile &original) const override
+        {
+            ++replacementCalls;
+            FileTransactionOperations::replaceOriginalWithStage(stage, original);
+        }
+    } operations{cancellation};
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), cancellation.get_token(), operations);
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::Cancelled);
+    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::BackupVerification);
+    CHECK(operations.replacementCalls == 0);
+    CHECK(readBytes(std::filesystem::path{source.Path().c_str()}) == fixture.sourceBytes);
+    fixture.requireNoStages();
+}
+
+TEST_CASE("uncertain native replacement and postcommit allocation failure require persisted recovery",
+          "[storage][transaction][replace][commit-uncertainty]")
+{
+    TransactionTestApartment apartment;
+    const auto afterNativeReplacement = GENERATE(true, false);
+    TransactionFixture fixture;
+    const auto source = fixture.createSource("camera.jpg");
+    auto request = fixture.requestFor(source);
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    struct InterruptedCommit final : storage::internal::FileTransactionOperations
+    {
+        bool afterNativeReplacement;
+        mutable unsigned failureCalls{};
+        explicit InterruptedCommit(bool afterReplacement) : afterNativeReplacement(afterReplacement)
+        {
+        }
+        void replaceOriginalWithStage(const winrt::Windows::Storage::StorageFile &stage,
+                                      const winrt::Windows::Storage::StorageFile &original) const override
+        {
+            FileTransactionOperations::replaceOriginalWithStage(stage, original);
+            if (afterNativeReplacement)
+            {
+                ++failureCalls;
+                throw winrt::hresult_error{E_FAIL};
+            }
+        }
+        domain::ImageProcessingResult<domain::SourceFileRevision> captureCommittedRevision(
+            const winrt::Windows::Storage::StorageFile &) const override
+        {
+            ++failureCalls;
+            throw std::bad_alloc{};
+        }
+    } operations{afterNativeReplacement};
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::TransactionRecovery);
+    CHECK(operations.failureCalls == 1);
+    const std::vector<std::byte> expected{fixture.output.valueIfPresent()->encodedBytes().begin(),
+                                          fixture.output.valueIfPresent()->encodedBytes().end()};
+    CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == expected);
+    unsigned backups{};
+    for (const auto &item :
+         std::filesystem::recursive_directory_iterator(fixture.directory.directoryPath() / "JPG Spinner Backups"))
+        if (item.is_regular_file())
+        {
+            ++backups;
+            CHECK(readBytes(item.path()) == fixture.sourceBytes);
+        }
+    CHECK(backups == 1);
+    // A fresh public engine must recover from native files alone, not fault-seam
+    // counters, the old batch object, or an earlier return value.
+    storage::WindowsStorageImageFileTransactionEngine restarted{fixture.root, fixture.journalStore};
+    const auto recovered = restarted.recoverIncompleteTransactions();
+    REQUIRE(recovered.valueIfPresent());
+    REQUIRE(recovered.valueIfPresent()->recoveredTransactions.size() == 1);
+    CHECK(recovered.valueIfPresent()->recoveredTransactions.front().outcome ==
+          storage::ImageFileTransactionRecoveryOutcome::OutputCommitted);
+    fixture.requireNoStages();
+}
+
+TEST_CASE("failed replacement requires unchanged original proof before abandonment",
+          "[storage][transaction][replace][commit-uncertainty][abandonment-proof]")
+{
+    TransactionTestApartment apartment;
+    enum class OriginalAfterFailure
+    {
+        Unchanged,
+        ChangedBytes,
+        Renamed,
+        SameBytesDifferentIdentity
+    };
+    const auto observation = GENERATE(OriginalAfterFailure::Unchanged, OriginalAfterFailure::ChangedBytes,
+                                      OriginalAfterFailure::Renamed, OriginalAfterFailure::SameBytesDifferentIdentity);
+    TransactionFixture fixture;
+    auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    struct FailedReplacement final : storage::internal::FileTransactionOperations
+    {
+        const OriginalAfterFailure observation;
+        const std::vector<std::byte> sourceBytes;
+        mutable std::filesystem::path stagePath;
+        FailedReplacement(OriginalAfterFailure selected, const std::vector<std::byte> &bytes)
+            : observation(selected), sourceBytes(bytes)
+        {
+        }
+        void replaceOriginalWithStage(const winrt::Windows::Storage::StorageFile &stage,
+                                      const winrt::Windows::Storage::StorageFile &original) const override
+        {
+            stagePath = std::filesystem::path{stage.Path().c_str()};
+            const auto originalPath = std::filesystem::path{original.Path().c_str()};
+            // Model ambiguous observations, not an undocumented WinRT internal
+            // implementation. The owned stage remains at its original identity.
+            if (observation == OriginalAfterFailure::ChangedBytes)
+                winrt::Windows::Storage::FileIO::WriteTextAsync(original, L"changed during failed replacement").get();
+            if (observation == OriginalAfterFailure::Renamed ||
+                observation == OriginalAfterFailure::SameBytesDifferentIdentity)
+                original.RenameAsync(L"camera-before-failure.jpg").get();
+            if (observation == OriginalAfterFailure::SameBytesDifferentIdentity)
+                writeBytes(originalPath, sourceBytes);
+            throw winrt::hresult_error{E_FAIL};
+        }
+    } operations{observation, fixture.sourceBytes};
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(result.errorIfPresent());
+    const auto folders = fixture.journalStore.GetFoldersAsync().get();
+    REQUIRE(folders.Size() == 1);
+    storage::internal::ImageFileTransactionJournal journal{folders.GetAt(0),
+                                                           winrt::guid{std::wstring_view{folders.GetAt(0).Name()}}};
+    const auto persisted = journal.readLatest();
+    REQUIRE(persisted);
+    if (observation == OriginalAfterFailure::Unchanged)
+    {
+        CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::OriginalReplacementFailed);
+        CHECK(persisted->state == storage::internal::ImageFileTransactionState::TransactionAbandonedBeforeCommit);
+        fixture.requireNoStages();
+        CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
+    }
+    else
+    {
+        CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+        CHECK(persisted->state == storage::internal::ImageFileTransactionState::VerifiedBackupCreated);
+        REQUIRE(std::filesystem::is_regular_file(operations.stagePath));
+        const std::vector<std::byte> expectedStage{fixture.output.valueIfPresent()->encodedBytes().begin(),
+                                                   fixture.output.valueIfPresent()->encodedBytes().end()};
+        CHECK(readBytes(operations.stagePath) == expectedStage);
+    }
+    // Every refusal retains the independently verified backup, even when the
+    // source's current bytes or identity no longer explain a safe no-commit result.
+    for (const auto &item :
+         std::filesystem::recursive_directory_iterator(fixture.directory.directoryPath() / "JPG Spinner Backups"))
+        if (item.is_regular_file())
+            CHECK(readBytes(item.path()) == fixture.sourceBytes);
+}
+
+TEST_CASE("another engine cannot recover or replace a live transaction's closed stage",
+          "[storage][transaction][copy][journal-store-ownership]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    const auto source = fixture.createSource("camera.jpg");
+    const auto request = fixture.requestFor(source);
+    struct HeldStageVerification final : storage::internal::FileTransactionOperations
+    {
+        mutable std::promise<void> boundary;
+        std::shared_future<void> release;
+        explicit HeldStageVerification(std::shared_future<void> releaseBoundary) : release(std::move(releaseBoundary))
+        {
+        }
+        domain::ImageProcessingResult<domain::SourceFileRevision> captureStagedRevision(
+            const winrt::Windows::Storage::StorageFile &stage, std::stop_token token) const override
+        {
+            const auto revision = FileTransactionOperations::captureStagedRevision(stage, token);
+            boundary.set_value();
+            release.wait();
+            return revision;
+        }
+    };
+    std::promise<void> release;
+    HeldStageVerification operations{release.get_future().share()};
+    auto reached = operations.boundary.get_future();
+    auto running = std::async(std::launch::async, [&]() {
+        TransactionTestApartment workerApartment;
+        storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+        return storage::internal::RecoverableImageFileTransaction::execute(
+            batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    });
+    struct ReleaseOnFailure final
+    {
+        std::promise<void> &release;
+        bool released{};
+        ~ReleaseOnFailure()
+        {
+            if (!released)
+                release.set_value();
+        }
+    } unblock{release};
+    REQUIRE(reached.wait_for(std::chrono::seconds{10}) == std::future_status::ready);
+    storage::WindowsStorageImageFileTransactionEngine otherEngine{fixture.root, fixture.journalStore};
+    const auto recoveryWhileActive = otherEngine.recoverIncompleteTransactions();
+    const auto transactionWhileActive = otherEngine.execute(request, *fixture.output.valueIfPresent());
+    release.set_value();
+    unblock.released = true;
+    const auto finished = running.get();
+    REQUIRE(recoveryWhileActive.errorIfPresent());
+    CHECK(recoveryWhileActive.errorIfPresent()->code == domain::ImageProcessingErrorCode::JournalStoreBusy);
+    CHECK(recoveryWhileActive.errorIfPresent()->stage == domain::ImageProcessingStage::JournalStoreLeaseAcquisition);
+    REQUIRE(transactionWhileActive.errorIfPresent());
+    CHECK(transactionWhileActive.errorIfPresent()->code == domain::ImageProcessingErrorCode::JournalStoreBusy);
+    CHECK(transactionWhileActive.errorIfPresent()->stage == domain::ImageProcessingStage::JournalStoreLeaseAcquisition);
+    REQUIRE(finished.valueIfPresent());
+    CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
+    const auto recoveredAfterExit = otherEngine.recoverIncompleteTransactions();
+    REQUIRE(recoveredAfterExit.valueIfPresent());
+    CHECK(recoveredAfterExit.valueIfPresent()->recoveredTransactions.empty());
+}
+
+TEST_CASE("only the two authorized output dispositions admit a transaction",
+          "[storage][transaction][closed-dispositions]")
+{
+    static_assert(static_cast<int>(domain::OutputDisposition::CreateCorrectedCopy) == 0);
+    static_assert(static_cast<int>(domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup) == 1);
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    const auto source = fixture.createSource("camera.jpg");
+    auto request = fixture.requestFor(source);
+    request.outputDisposition = static_cast<domain::OutputDisposition>(GENERATE(-1, 2, 3, 2147483647));
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
+        request, *fixture.output.valueIfPresent());
+    REQUIRE(result.errorIfPresent());
+    CHECK_FALSE(result.valueIfPresent());
+    CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
+    CHECK_FALSE(fixture.root.TryGetItemAsync(L"JPG Spinner Output").get());
+    CHECK_FALSE(fixture.root.TryGetItemAsync(L"JPG Spinner Backups").get());
+    CHECK(fixture.journalStore.GetItemsAsync().get().Size() == 0);
+}
+
+TEST_CASE("native store exclusion survives exception cleanup and terminal abandonment publication",
+          "[storage][transaction][copy][journal-store-ownership][abandonment-lease]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    const auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
+    struct HeldAbandonment final : storage::internal::FileTransactionOperations
+    {
+        mutable std::promise<void> boundary;
+        std::shared_future<void> release;
+        mutable unsigned journalWrites{};
+        explicit HeldAbandonment(std::shared_future<void> signal) : release(std::move(signal))
+        {
+        }
+        bool flushStagedBytes(const winrt::Windows::Storage::Streams::IRandomAccessStream &) const override
+        {
+            // Real writing completed, but this controlled native failure enters
+            // exception cleanup rather than the ordinary successful-commit path.
+            return false;
+        }
+        std::uint32_t writeJournalBytes(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream,
+                                        const winrt::Windows::Storage::Streams::IBuffer &bytes) const override
+        {
+            if (++journalWrites == 2)
+            {
+                boundary.set_value();
+                release.wait();
+            }
+            return FileTransactionOperations::writeJournalBytes(stream, bytes);
+        }
+    };
+    std::promise<void> release;
+    HeldAbandonment operations{release.get_future().share()};
+    auto reached = operations.boundary.get_future();
+    auto running = std::async(std::launch::async, [&]() {
+        TransactionTestApartment workerApartment;
+        storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+        return storage::internal::RecoverableImageFileTransaction::execute(
+            batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    });
+    struct ReleaseOnFailure final
+    {
+        std::promise<void> &release;
+        bool released{};
+        ~ReleaseOnFailure()
+        {
+            if (!released)
+                release.set_value();
+        }
+    } unblock{release};
+    REQUIRE(reached.wait_for(std::chrono::seconds{10}) == std::future_status::ready);
+    fixture.requireNoStages();
+    const storage::WindowsStorageImageFileTransactionEngine other{fixture.root, fixture.journalStore};
+    const auto whileClosing = other.recoverIncompleteTransactions();
+    release.set_value();
+    unblock.released = true;
+    const auto finished = running.get();
+    REQUIRE(whileClosing.errorIfPresent());
+    CHECK(whileClosing.errorIfPresent()->code == domain::ImageProcessingErrorCode::JournalStoreBusy);
+    REQUIRE(finished.errorIfPresent());
+    CHECK(finished.errorIfPresent()->code == domain::ImageProcessingErrorCode::StagingFlushFailed);
+    REQUIRE(operations.journalWrites == 2);
+    CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == fixture.sourceBytes);
+    const auto closed = other.recoverIncompleteTransactions();
+    REQUIRE(closed.valueIfPresent());
+    CHECK(closed.valueIfPresent()->recoveredTransactions.empty());
+}
+
+TEST_CASE("identical bytes in a substituted committed file do not prove stage identity transfer",
+          "[storage][transaction][replace][committed-identity]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    struct SubstituteCommittedFile final : storage::internal::FileTransactionOperations
+    {
+        mutable unsigned calls{};
+        domain::ImageProcessingResult<domain::SourceFileRevision> captureCommittedRevision(
+            const winrt::Windows::Storage::StorageFile &committed) const override
+        {
+            ++calls;
+            const std::filesystem::path path{committed.Path().c_str()};
+            const auto bytes = readBytes(path);
+            // The original stage object is retained under another name. An
+            // external, same-byte file is not the journal's committed identity.
+            std::filesystem::rename(path, path.parent_path() / "retained-stage.bin");
+            writeBytes(path, bytes);
+            const auto substituted = winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(path.wstring()).get();
+            return FileTransactionOperations::captureCommittedRevision(substituted);
+        }
+    } operations;
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::TransactionRecovery);
+    CHECK(operations.calls == 1);
+    const std::vector<std::byte> expected{fixture.output.valueIfPresent()->encodedBytes().begin(),
+                                          fixture.output.valueIfPresent()->encodedBytes().end()};
+    CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == expected);
+    CHECK(readBytes(fixture.directory.directoryPath() / "retained-stage.bin") == expected);
+    fixture.requireNoStages();
+}
+
+TEST_CASE("every immutable publication failure preserves originals or reports committed-state uncertainty",
+          "[storage][transaction][journal-publication-matrix]")
+{
+    TransactionTestApartment apartment;
+    const auto replacement = GENERATE(false, true);
+    const auto targetGeneration = GENERATE_COPY(Catch::Generators::range(1u, replacement ? 7u : 6u));
+    enum class PublicationFault
+    {
+        Write,
+        Flush,
+        Close,
+        BeforePublish,
+        AfterPublish
+    };
+    const auto selectedFault = GENERATE(PublicationFault::Write, PublicationFault::Flush, PublicationFault::Close,
+                                        PublicationFault::BeforePublish, PublicationFault::AfterPublish);
+    TransactionFixture fixture;
+    auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
+    if (replacement)
+        request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    struct FailedPublication final : storage::internal::FileTransactionOperations
+    {
+        unsigned target;
+        PublicationFault fault;
+        mutable unsigned generation{};
+        mutable unsigned faultCalls{};
+        mutable unsigned replacementCalls{};
+        mutable unsigned publishedGeneration{};
+        FailedPublication(unsigned targetGeneration, PublicationFault selected)
+            : target(targetGeneration), fault(selected)
+        {
+        }
+        winrt::Windows::Storage::StorageFile createPendingJournalGeneration(
+            const winrt::Windows::Storage::StorageFolder &folder, const winrt::hstring &name) const override
+        {
+            ++generation;
+            return FileTransactionOperations::createPendingJournalGeneration(folder, name);
+        }
+        void failIf(PublicationFault observed) const
+        {
+            // This matrix selects exactly one interrupted publication boundary.
+            // Terminal-abandonment recovery also reads and closes generations;
+            // those calls must not accidentally inject additional failures.
+            if (faultCalls == 0 && generation == target && fault == observed)
+            {
+                ++faultCalls;
+                throw winrt::hresult_error{E_FAIL};
+            }
+        }
+        std::uint32_t writeJournalBytes(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream,
+                                        const winrt::Windows::Storage::Streams::IBuffer &bytes) const override
+        {
+            failIf(PublicationFault::Write);
+            return FileTransactionOperations::writeJournalBytes(stream, bytes);
+        }
+        bool flushJournalBytes(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const override
+        {
+            failIf(PublicationFault::Flush);
+            return FileTransactionOperations::flushJournalBytes(stream);
+        }
+        void closeJournalGeneration(const winrt::Windows::Storage::Streams::IRandomAccessStream &stream) const override
+        {
+            failIf(PublicationFault::Close);
+            FileTransactionOperations::closeJournalGeneration(stream);
+        }
+        void publishJournalGeneration(const winrt::Windows::Storage::StorageFile &pending,
+                                      const winrt::hstring &name) const override
+        {
+            failIf(PublicationFault::BeforePublish);
+            FileTransactionOperations::publishJournalGeneration(pending, name);
+            publishedGeneration = generation;
+            failIf(PublicationFault::AfterPublish);
+        }
+        void replaceOriginalWithStage(const winrt::Windows::Storage::StorageFile &stage,
+                                      const winrt::Windows::Storage::StorageFile &source) const override
+        {
+            // Count actual admission, not a claimed flag. Replacement cannot be
+            // reached through the failing backup-generation publication.
+            CHECK(publishedGeneration == 4);
+            ++replacementCalls;
+            FileTransactionOperations::replaceOriginalWithStage(stage, source);
+        }
+    } operations{targetGeneration, selectedFault};
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(operations.faultCalls == 1);
+    REQUIRE(result.errorIfPresent());
+    const bool committed = targetGeneration >= (replacement ? 5u : 4u);
+    CHECK(result.errorIfPresent()->code == (committed ? domain::ImageProcessingErrorCode::RecoveryConflict
+                                                      : domain::ImageProcessingErrorCode::JournalPersistenceFailed));
+    CHECK(operations.replacementCalls == (replacement && committed ? 1u : 0u));
+    const std::vector<std::byte> expected{fixture.output.valueIfPresent()->encodedBytes().begin(),
+                                          fixture.output.valueIfPresent()->encodedBytes().end()};
+    CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") ==
+          (replacement && committed ? expected : fixture.sourceBytes));
+    for (const auto &item : std::filesystem::recursive_directory_iterator(fixture.directory.directoryPath()))
+        if (item.is_regular_file() &&
+            item.path().lexically_relative(fixture.directory.directoryPath()).begin()->wstring() ==
+                L"JPG Spinner Backups")
+            CHECK(readBytes(item.path()) == fixture.sourceBytes);
+    // Restart against persisted files, not this seam's publication counters.
+    storage::WindowsStorageImageFileTransactionEngine restarted{fixture.root, fixture.journalStore};
+    const auto recovered = restarted.recoverIncompleteTransactions();
+    if (targetGeneration == 1 && selectedFault != PublicationFault::AfterPublish)
+    {
+        REQUIRE(recovered.errorIfPresent());
+        CHECK(recovered.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+    }
+    else
+    {
+        REQUIRE(recovered.valueIfPresent());
+        const bool alreadyClosed = !committed || (targetGeneration == (replacement ? 6u : 5u) &&
+                                                  selectedFault == PublicationFault::AfterPublish);
+        if (alreadyClosed)
+            CHECK(recovered.valueIfPresent()->recoveredTransactions.empty());
+        else
+        {
+            REQUIRE(recovered.valueIfPresent()->recoveredTransactions.size() == 1);
+            CHECK(recovered.valueIfPresent()->recoveredTransactions.front().outcome ==
+                  storage::ImageFileTransactionRecoveryOutcome::OutputCommitted);
+        }
+    }
 }

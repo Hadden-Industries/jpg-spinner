@@ -22,6 +22,10 @@ class DeterministicImageFileTransactionEngine final : public storage::ImageFileT
     [[nodiscard]] domain::ImageProcessingResult<storage::CommittedImageFile> execute(
         const storage::ImageFileTransactionRequest &request, const domain::ValidatedJpegOutput &validatedOutput,
         std::stop_token cancellationToken = {}) const override;
+    /// This scheduling-only adapter has no persisted store. Recovery is an
+    /// explicit unsupported operation, never a fabricated successful empty scan.
+    [[nodiscard]] domain::ImageProcessingResult<storage::ImageFileTransactionRecoverySummary>
+    recoverIncompleteTransactions(std::stop_token cancellationToken = {}) const override;
     [[nodiscard]] unsigned int invocationCount() const noexcept
     {
         return invocations_.load();

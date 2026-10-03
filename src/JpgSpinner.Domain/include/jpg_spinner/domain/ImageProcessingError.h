@@ -57,6 +57,8 @@ enum class ImageProcessingErrorCode
     BackupVerificationFailed,
     OriginalReplacementFailed,
     JournalPersistenceFailed,
+    StorageProviderRecoveryContractNotEstablished,
+    JournalStoreBusy,
     RecoveryConflict,
     Cancelled,
 };
@@ -87,6 +89,8 @@ enum class ImageProcessingStage
     OriginalReplacement,
     JournalPersistence,
     TransactionRecovery,
+    TransactionRecoverabilityPreflight,
+    JournalStoreLeaseAcquisition,
 };
 
 /// HRESULT is signed 32-bit state. A strong type prevents it from being

@@ -36,4 +36,12 @@ domain::ImageProcessingResult<storage::CommittedImageFile> DeterministicImageFil
     // Do not apply a post-call cancellation override to already completed I/O.
     return transactionFactory_(request, validatedOutput, cancellationToken);
 }
+domain::ImageProcessingResult<storage::ImageFileTransactionRecoverySummary> DeterministicImageFileTransactionEngine::
+    recoverIncompleteTransactions(std::stop_token cancellationToken) const
+{
+    return domain::ImageProcessingResult<storage::ImageFileTransactionRecoverySummary>::failure(
+        {cancellationToken.stop_requested() ? domain::ImageProcessingErrorCode::Cancelled
+                                            : domain::ImageProcessingErrorCode::RecoveryConflict,
+         domain::ImageProcessingStage::TransactionRecovery});
+}
 } // namespace jpg_spinner::test_support

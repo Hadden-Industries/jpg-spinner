@@ -36,6 +36,8 @@
     <ClCompile Include="src\SourceFileRevisionCalculator.cpp" />
     <ClCompile Include="src\WindowsStorageImageFileTransactionEngine.cpp" />
     <ClCompile Include="src\internal\RecoverableImageFileTransaction.cpp" />
+    <ClCompile Include="src\internal\ImageFileTransactionJournal.cpp" />
+    <ClCompile Include="src\internal\StorageItemProof.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\jpg_spinner\storage\SourceFileRevisionCalculator.h" />
@@ -43,7 +45,9 @@
     <ClInclude Include="include\jpg_spinner\storage\WindowsStorageImageFileTransactionEngine.h" />
     <ClInclude Include="src\internal\RecoverableImageFileTransaction.h" />
     <ClInclude Include="src\internal\FileTransactionOperations.h" />
-    <ClInclude Include="src\internal\CorrectedCopyBatch.h" />
+    <ClInclude Include="src\internal\ImageFileTransactionBatch.h" />
+    <ClInclude Include="src\internal\ImageFileTransactionJournal.h" />
+    <ClInclude Include="src\internal\StorageItemProof.h" />
     <ClInclude Include="src\internal\CorrectedCopyPathPolicy.h" />
   </ItemGroup>
   <ItemDefinitionGroup>
