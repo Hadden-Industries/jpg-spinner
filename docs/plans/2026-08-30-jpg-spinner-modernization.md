@@ -6,7 +6,7 @@
 
 **Architecture:** A single-project packaged MSIX presentation shell composes four native modules: domain policy, JPEG transformation, AppContainer storage transactions, and batch orchestration. Dependencies point inward toward immutable value types and capability contracts. The old application remains only as a temporary behavioral reference and is deleted at the verified cutover; no legacy code is wrapped.
 
-**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.5.1; Microsoft.Windows.CppWinRT 3.0.260818.1; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.9 with XMP; Catch2 3.16.0; Microsoft SBOM Tool CLI 4.1.5; vcpkg manifest mode at baseline `c748cb44f2a435fcf015c35225c9d5545fe0021c`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
+**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.5.1; Microsoft.Windows.CppWinRT 3.0.260818.1; Microsoft.Windows.ImplementationLibrary 1.0.260126.7; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.9 with XMP; Catch2 3.16.0; Microsoft SBOM Tool CLI 4.1.5; vcpkg manifest mode at baseline `c748cb44f2a435fcf015c35225c9d5545fe0021c`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
 
 **Design specification:** `docs/specs/2026-08-30-jpg-spinner-modernization-design.md`
 
@@ -931,6 +931,8 @@ git commit -m "feat: orchestrate safe deterministic image batches"
 - Create: `src/JpgSpinner.App/ViewModels/MainWindowViewModel.cpp`
 - Create: `src/JpgSpinner.App/ViewModels/ImageProcessingRowViewModel.h`
 - Create: `src/JpgSpinner.App/ViewModels/ImageProcessingRowViewModel.cpp`
+- Create: `src/JpgSpinner.App/ViewModels/ImageSourceDiscoveryIssueViewModel.h`
+- Create: `src/JpgSpinner.App/ViewModels/ImageSourceDiscoveryIssueViewModel.cpp`
 - Create: `src/JpgSpinner.App/Localization/ImageProcessingErrorText.h`
 - Create: `src/JpgSpinner.App/Localization/ImageProcessingErrorText.cpp`
 - Create: `tests/JpgSpinner.Presentation.Tests/MainWindowViewModelTests.cpp`
@@ -950,6 +952,9 @@ git commit -m "feat: orchestrate safe deterministic image batches"
 - [ ] Inspect generated WinMD and require every public property, method, and event to use PascalCase. Native-only helpers and local variables remain camelCase; do not mechanically rename their separate C++ convention.
 - [ ] Make the view model consume `BatchProcessingCoordinator` and `ImageFileTransactionEngine` recovery interface through constructor composition.
 - [ ] Marshal UI updates through `DispatcherQueue`; pass coroutine inputs by value across suspension and never call `.get()` on the UI thread.
+- [ ] Keep terminal publication in private native async actions that public `IAsyncAction.Cancel()` cannot short-circuit. Use the official cancellation-callback pattern to propagate cooperative native stop requests, not cancellation of mandatory UI finalization. Cover analysis and committed processing through both public cancellation paths. During recovery, require `CanCancelCurrentOperation=false` and rejection of the batch cancel command without requesting stop; separately cover returned-action cancellation and fail-closed retry. Observe native completion before asserting terminal state.
+- [ ] Preserve the accepted no-silent-loss invariant with immutable `ImageSourceDiscoveryIssueViewModel` snapshots exposed as `DiscoveryIssues`, separately from image-result rows. Project exact traversal issue kinds, relative display context, and any localized symbolic error; retain them through review/results and notify snapshot replacement. Never invent candidate outcomes or disturb image-result ordinals to represent traversal exclusions.
+- [ ] Use the official Windows App SDK threading integration, `wil::resume_foreground`, with Microsoft.Windows.ImplementationLibrary 1.0.260126.7 (latest stable refreshed 2026-10-07). The general `winrt::resume_foreground` examples do not supply the Microsoft.UI.Dispatching overload. Retain WIL's MIT notice and qualify the locked graph; do not implement an equivalent awaiter or apartment owner. Tests use one explicitly initialized STA/XAML/DispatcherQueue lifetime for their console host, native queue shutdown, and serialized assertions. Expose immutable owned `IVectorView` row snapshots and notify `Rows` when replacing them; do not expose a mutable review vector.
 - [ ] Keep JPEG bytes, Exiv2 values, and transaction operations out of the view model.
 - [ ] Explain every apartment/thread transition and cancellation ownership rule.
 

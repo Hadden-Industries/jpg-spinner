@@ -196,7 +196,7 @@ $mutatedPresentationTestProjectText = $presentationTestProjectText.Replace(
     '  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />',
     '  <ItemGroup>' +
         $lineEnding +
-        '    <PackageReference Include="Microsoft.Windows.CppWinRT" />' +
+        '    <PackageReference Include="System.Text.Json" />' +
         $lineEnding +
         '  </ItemGroup>' +
         $lineEnding +
@@ -234,7 +234,7 @@ try {
         -ExpectedDiagnostics @(
             "Directory.Packages.props must declare CentralPackageVersionOverrideEnabled 'false' exactly once.",
             "src/JpgSpinner.App/JpgSpinner.App.vcxproj PackageReference 'Microsoft.WindowsAppSDK' must not declare VersionOverride",
-            "tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj contains unapproved PackageReference 'Microsoft.Windows.CppWinRT'."
+            "tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj contains unapproved PackageReference 'System.Text.Json'."
         )
 }
 finally {

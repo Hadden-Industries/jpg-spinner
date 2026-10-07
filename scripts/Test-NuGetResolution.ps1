@@ -200,12 +200,14 @@ function Get-UniquePackageReferenceMetadataValue {
 $expectedCentralPackageVersions = [ordered]@{
     'Microsoft.WindowsAppSDK' = '2.5.1'
     'Microsoft.Windows.CppWinRT' = '3.0.260818.1'
+    'Microsoft.Windows.ImplementationLibrary' = '1.0.260126.7'
     'Microsoft.Windows.SDK.BuildTools' = '10.0.28000.2705'
 }
 $expectedProjectPackageReferences = [ordered]@{
     'src/JpgSpinner.App/JpgSpinner.App.vcxproj' = @(
         'Microsoft.WindowsAppSDK',
         'Microsoft.Windows.CppWinRT',
+        'Microsoft.Windows.ImplementationLibrary',
         'Microsoft.Windows.SDK.BuildTools'
     )
     'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj' = @()
@@ -217,7 +219,12 @@ $expectedProjectPackageReferences = [ordered]@{
     'tests/JpgSpinner.BatchProcessing.Tests/JpgSpinner.BatchProcessing.Tests.vcxproj' = @()
     'tests/JpgSpinner.Domain.Tests/JpgSpinner.Domain.Tests.vcxproj' = @()
     'tests/JpgSpinner.JpegTransformation.Tests/JpgSpinner.JpegTransformation.Tests.vcxproj' = @()
-    'tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj' = @()
+    'tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj' = @(
+        'Microsoft.WindowsAppSDK',
+        'Microsoft.Windows.CppWinRT',
+        'Microsoft.Windows.ImplementationLibrary',
+        'Microsoft.Windows.SDK.BuildTools'
+    )
     'tests/JpgSpinner.WindowsStorage.Tests/JpgSpinner.WindowsStorage.Tests.vcxproj' = @(
         'Microsoft.Windows.CppWinRT'
     )

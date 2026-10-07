@@ -58,11 +58,15 @@
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <!-- Actual coordinator use pulls Exiv2's existing config-path/version objects
+         from the static dependency; its upstream native imports need these SDK libraries. -->
+    <Link><AdditionalDependencies>shell32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory);$(MSBuildThisFileDirectory)..\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\JpgSpinner.BatchProcessing\include;$(MSBuildThisFileDirectory)..\JpgSpinner.JpegTransformation\include;$(MSBuildThisFileDirectory)..\JpgSpinner.WindowsStorage\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -71,6 +75,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ViewModels\MainWindowViewModel.h" />
+    <ClInclude Include="ViewModels\ImageProcessingRowViewModel.h" />
+    <ClInclude Include="ViewModels\ImageSourceDiscoveryIssueViewModel.h" />
+    <ClInclude Include="Localization\ImageProcessingErrorText.h" />
     <ClInclude Include="App.xaml.h"><DependentUpon>App.xaml</DependentUpon></ClInclude>
     <ClInclude Include="MainWindow.xaml.h"><DependentUpon>MainWindow.xaml</DependentUpon></ClInclude>
   </ItemGroup>
@@ -83,12 +91,23 @@
     <ClCompile Include="App.xaml.cpp"><DependentUpon>App.xaml</DependentUpon></ClCompile>
     <ClCompile Include="MainWindow.xaml.cpp"><DependentUpon>MainWindow.xaml</DependentUpon></ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="ViewModels\MainWindowViewModel.cpp" />
+    <ClCompile Include="ViewModels\ImageProcessingRowViewModel.cpp" />
+    <ClCompile Include="ViewModels\ImageSourceDiscoveryIssueViewModel.cpp" />
+    <ClCompile Include="Localization\ImageProcessingErrorText.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="Presentation.idl" />
     <Midl Include="MainWindow.idl">
       <SubType>Code</SubType>
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Native MRT Core/MakePri owns locale qualification and binary indexing. -->
+    <PRIResource Include="Strings\en-US\Resources.resw" />
+    <PRIResource Include="Strings\en-GB\Resources.resw" />
+    <PRIResource Include="Strings\ru\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png" />
@@ -104,6 +123,7 @@
     <!-- Versions are centrally owned and locked; these items mirror Microsoft's packaged C++/WinRT template graph. -->
     <PackageReference Include="Microsoft.WindowsAppSDK" />
     <PackageReference Include="Microsoft.Windows.CppWinRT" />
+    <PackageReference Include="Microsoft.Windows.ImplementationLibrary" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
   </ItemGroup>
   <ItemGroup>

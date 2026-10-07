@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
+  <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
+  <!-- A minimum coded unit is a JPEG coding block; trim removes exact source-edge pixels permanently. -->
+  <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve"><value>Нет доступа к исходному файлу</value></data>
+  <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve"><value>Предоставленного доступа недостаточно для чтения выбранного изображения.</value></data>
+  <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve"><value>Выберите папку, файлы которой доступны для чтения, и повторите попытку.</value></data>
+  <data name="ImageProcessingError_SourceSharingViolation_Title" xml:space="preserve"><value>Исходный файл занят</value></data>
+  <data name="ImageProcessingError_SourceSharingViolation_Explanation" xml:space="preserve"><value>Другая программа удерживает файл с несовместимыми правами доступа.</value></data>
+  <data name="ImageProcessingError_SourceSharingViolation_Remedy" xml:space="preserve"><value>Закройте программы, использующие изображение, и повторите попытку.</value></data>
+  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Title" xml:space="preserve"><value>Не удалось зафиксировать версию исходного файла</value></data>
+  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Explanation" xml:space="preserve"><value>Не удалось надёжно определить идентификатор и содержимое исходного файла.</value></data>
+  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Remedy" xml:space="preserve"><value>Проверьте доступ к исходному файлу и повторите анализ папки.</value></data>
+  <data name="ImageProcessingError_SourceDiscoveryFailed_Title" xml:space="preserve"><value>Не удалось просмотреть папку</value></data>
+  <data name="ImageProcessingError_SourceDiscoveryFailed_Explanation" xml:space="preserve"><value>Не удалось полностью перечислить содержимое выбранной папки.</value></data>
+  <data name="ImageProcessingError_SourceDiscoveryFailed_Remedy" xml:space="preserve"><value>Проверьте доступ к папке и повторите анализ; обработка по неполному списку запрещена.</value></data>
+  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Title" xml:space="preserve"><value>Недопустимые параметры обработки</value></data>
+  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Explanation" xml:space="preserve"><value>Запрошенные правила или ограничения ресурсов не поддерживаются.</value></data>
+  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Remedy" xml:space="preserve"><value>Вернитесь к выбору источника и задайте поддерживаемые параметры.</value></data>
+  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Title" xml:space="preserve"><value>Исходный файл изменился после анализа</value></data>
+  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Explanation" xml:space="preserve"><value>Текущая версия исходного файла не соответствует проверенной версии.</value></data>
+  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Remedy" xml:space="preserve"><value>Повторите анализ папки перед обработкой.</value></data>
+  <data name="ImageProcessingError_DestinationAccessDenied_Title" xml:space="preserve"><value>Нет доступа к папке назначения</value></data>
+  <data name="ImageProcessingError_DestinationAccessDenied_Explanation" xml:space="preserve"><value>Приложение не смогло записать данные в предоставленную папку назначения.</value></data>
+  <data name="ImageProcessingError_DestinationAccessDenied_Remedy" xml:space="preserve"><value>Проверьте права доступа и выберите папку, доступную для записи.</value></data>
+  <data name="ImageProcessingError_EncodedFileTooLarge_Title" xml:space="preserve"><value>Файл изображения превышает ограничение размера</value></data>
+  <data name="ImageProcessingError_EncodedFileTooLarge_Explanation" xml:space="preserve"><value>Размер файла JPEG превышает поддерживаемое ограничение.</value></data>
+  <data name="ImageProcessingError_EncodedFileTooLarge_Remedy" xml:space="preserve"><value>Используйте файл меньшего размера; приложение не обходит ограничения ресурсов.</value></data>
+  <data name="ImageProcessingError_PixelCountLimitExceeded_Title" xml:space="preserve"><value>Превышено ограничение числа пикселей</value></data>
+  <data name="ImageProcessingError_PixelCountLimitExceeded_Explanation" xml:space="preserve"><value>Заявленные размеры изображения превышают поддерживаемое число пикселей.</value></data>
+  <data name="ImageProcessingError_PixelCountLimitExceeded_Remedy" xml:space="preserve"><value>Используйте изображение с поддерживаемыми размерами.</value></data>
+  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Title" xml:space="preserve"><value>Метаданные превышают ограничение размера</value></data>
+  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Explanation" xml:space="preserve"><value>Объём метаданных превышает установленное ограничение анализа.</value></data>
+  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Remedy" xml:space="preserve"><value>Используйте файл с допустимым объёмом метаданных.</value></data>
+  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Title" xml:space="preserve"><value>Слишком много проходов прогрессивного JPEG</value></data>
+  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Explanation" xml:space="preserve"><value>Число проходов прогрессивного JPEG превышает ограничение анализа.</value></data>
+  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемым числом проходов.</value></data>
+  <data name="ImageProcessingError_MalformedJpegStructure_Title" xml:space="preserve"><value>Неверная структура JPEG</value></data>
+  <data name="ImageProcessingError_MalformedJpegStructure_Explanation" xml:space="preserve"><value>Файл не содержит корректной поддерживаемой структуры JPEG.</value></data>
+  <data name="ImageProcessingError_MalformedJpegStructure_Remedy" xml:space="preserve"><value>Используйте неповреждённый JPEG; изменение расширения не исправляет содержимое.</value></data>
+  <data name="ImageProcessingError_MalformedImageMetadata_Title" xml:space="preserve"><value>Повреждены метаданные изображения</value></data>
+  <data name="ImageProcessingError_MalformedImageMetadata_Explanation" xml:space="preserve"><value>Не удалось прочитать метаданные как корректный поддерживаемый блок.</value></data>
+  <data name="ImageProcessingError_MalformedImageMetadata_Remedy" xml:space="preserve"><value>Сохраните исходный файл и получите исправное изображение либо исправьте метаданные отдельно.</value></data>
+  <data name="ImageProcessingError_MetadataPreservationFailed_Title" xml:space="preserve"><value>Не удалось сохранить метаданные</value></data>
+  <data name="ImageProcessingError_MetadataPreservationFailed_Explanation" xml:space="preserve"><value>При согласовании не удалось сохранить необходимые значения метаданных.</value></data>
+  <data name="ImageProcessingError_MetadataPreservationFailed_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и используйте поддерживаемую структуру метаданных.</value></data>
+  <data name="ImageProcessingError_InvalidOrientationMetadata_Title" xml:space="preserve"><value>Неверные метаданные ориентации</value></data>
+  <data name="ImageProcessingError_InvalidOrientationMetadata_Explanation" xml:space="preserve"><value>Необходимое значение ориентации отсутствует или выходит за допустимый диапазон.</value></data>
+  <data name="ImageProcessingError_InvalidOrientationMetadata_Remedy" xml:space="preserve"><value>Задайте допустимую ориентацию редактором метаданных и повторите анализ.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Title" xml:space="preserve"><value>Не поддерживается способ кодирования JPEG</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Explanation" xml:space="preserve"><value>Способ кодирования этого JPEG не входит в поддерживаемый профиль ДКП.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемым способом кодирования ДКП.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Title" xml:space="preserve"><value>Не поддерживается точность отсчётов JPEG</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Explanation" xml:space="preserve"><value>Точность закодированных отсчётов не входит в поддерживаемый профиль.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемой точностью отсчётов.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Title" xml:space="preserve"><value>Не поддерживается структура компонентов JPEG</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Explanation" xml:space="preserve"><value>Компоненты изображения нельзя безопасно преобразовать в рамках этого профиля.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемой структурой компонентов.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Title" xml:space="preserve"><value>Не поддерживается отложенное объявление высоты JPEG</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Explanation" xml:space="preserve"><value>Высота изображения указана после заголовка кадра.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Remedy" xml:space="preserve"><value>Используйте JPEG, высота которого указана в заголовке кадра.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Title" xml:space="preserve"><value>Не поддерживается изменение интервалов перезапуска JPEG</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Explanation" xml:space="preserve"><value>Интервалы перезапуска меняются внутри закодированного изображения.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемой структурой интервалов перезапуска.</value></data>
+  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Title" xml:space="preserve"><value>Не поддерживается JPEG с несколькими изображениями</value></data>
+  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Explanation" xml:space="preserve"><value>Файл содержит несколько изображений, связи между которыми требуют согласования.</value></data>
+  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Remedy" xml:space="preserve"><value>Сохраните исходный файл с несколькими изображениями и используйте поддерживаемый JPEG с одним изображением.</value></data>
+  <data name="ImageProcessingError_MotionPhotoNotSupported_Title" xml:space="preserve"><value>Не поддерживается фотография с движением</value></data>
+  <data name="ImageProcessingError_MotionPhotoNotSupported_Explanation" xml:space="preserve"><value>Изображение содержит связанный видеоматериал, который приложение не согласовывает.</value></data>
+  <data name="ImageProcessingError_MotionPhotoNotSupported_Remedy" xml:space="preserve"><value>Сохраните фотографию с движением и используйте поддерживаемый обычный JPEG.</value></data>
+  <data name="ImageProcessingError_UnsupportedTrailingPayload_Title" xml:space="preserve"><value>Не поддерживаются дополнительные данные после JPEG</value></data>
+  <data name="ImageProcessingError_UnsupportedTrailingPayload_Explanation" xml:space="preserve"><value>После изображения JPEG имеются данные, которые нельзя безопасно сохранить в этом профиле.</value></data>
+  <data name="ImageProcessingError_UnsupportedTrailingPayload_Remedy" xml:space="preserve"><value>Сохраните оригинал и используйте JPEG без неподдерживаемых дополнительных данных.</value></data>
+  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Title" xml:space="preserve"><value>Будут нарушены сведения о подлинности</value></data>
+  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Explanation" xml:space="preserve"><value>Изменение изображения сделает недействительными сведения о его подлинности.</value></data>
+  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Remedy" xml:space="preserve"><value>Не изменяйте подписанный исходный файл; используйте процесс обработки с поддержкой сведений о подлинности.</value></data>
+  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Title" xml:space="preserve"><value>Не поддерживаются метаданные JUMBF</value></data>
+  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve"><value>Блок JUMBF не входит в поддерживаемый профиль сохранения метаданных.</value></data>
+  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и используйте поддерживаемый профиль метаданных.</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve"><value>Не удалось согласовать встроенный предпросмотр</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>Структуру встроенного предпросмотра нельзя безопасно обновить или удалить в этом профиле.</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve"><value>Сохраните исходный файл и используйте изображение с поддерживаемой структурой предпросмотра.</value></data>
+  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve"><value>Не поддерживается изменение расширенного XMP</value></data>
+  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve"><value>Необходимое изменение метаданных затрагивает неподдерживаемый блок расширенного XMP.</value></data>
+  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и используйте поддерживаемую структуру XMP.</value></data>
+  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Title" xml:space="preserve"><value>Недоступно преобразование коэффициентов без обрезки</value></data>
+  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Explanation" xml:space="preserve"><value>Запрошенное преобразование не сохраняет все краевые пиксели неполных минимальных кодируемых блоков.</value></data>
+  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Remedy" xml:space="preserve"><value>Сохраните режим без обрезки либо явно проверьте и подтвердите точные размеры удаляемых краёв в режиме обрезки.</value></data>
+  <data name="ImageProcessingError_CoefficientTransformationFailed_Title" xml:space="preserve"><value>Не удалось преобразовать коэффициенты</value></data>
+  <data name="ImageProcessingError_CoefficientTransformationFailed_Explanation" xml:space="preserve"><value>Преобразование JPEG не создало проверенный результат.</value></data>
+  <data name="ImageProcessingError_CoefficientTransformationFailed_Remedy" xml:space="preserve"><value>Сохраните исходный файл и повторите анализ; запись непроверенного результата запрещена.</value></data>
+  <data name="ImageProcessingError_OutputBufferTooSmall_Title" xml:space="preserve"><value>Результат превышает размер буфера</value></data>
+  <data name="ImageProcessingError_OutputBufferTooSmall_Explanation" xml:space="preserve"><value>Закодированный результат не поместился в выделенный ограниченный буфер.</value></data>
+  <data name="ImageProcessingError_OutputBufferTooSmall_Remedy" xml:space="preserve"><value>Используйте файл в пределах поддерживаемых ограничений; не обходите ограничение.</value></data>
+  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Title" xml:space="preserve"><value>Не удалось выделить рабочую память</value></data>
+  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Explanation" xml:space="preserve"><value>Для операции не удалось выделить необходимую рабочую память в установленных пределах.</value></data>
+  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Remedy" xml:space="preserve"><value>Закройте программы, потребляющие много памяти, и повторите попытку.</value></data>
+  <data name="ImageProcessingError_InsufficientStorageSpace_Title" xml:space="preserve"><value>Недостаточно места на накопителе</value></data>
+  <data name="ImageProcessingError_InsufficientStorageSpace_Explanation" xml:space="preserve"><value>В папке назначения недостаточно места для операции.</value></data>
+  <data name="ImageProcessingError_InsufficientStorageSpace_Remedy" xml:space="preserve"><value>Освободите место или выберите другую поддерживаемую папку, сохранив оригиналы и резервные копии.</value></data>
+  <data name="ImageProcessingError_OutputRelativePathCollision_Title" xml:space="preserve"><value>Совпадают имена результатов</value></data>
+  <data name="ImageProcessingError_OutputRelativePathCollision_Explanation" xml:space="preserve"><value>Два проверенных имени источников соответствуют одному относительному имени результата.</value></data>
+  <data name="ImageProcessingError_OutputRelativePathCollision_Remedy" xml:space="preserve"><value>Устраните конфликт имён исходных файлов и повторите анализ.</value></data>
+  <data name="ImageProcessingError_StagingFileCreationFailed_Title" xml:space="preserve"><value>Не удалось создать промежуточный файл</value></data>
+  <data name="ImageProcessingError_StagingFileCreationFailed_Explanation" xml:space="preserve"><value>Приложение не смогло создать промежуточный результат, принадлежащий транзакции.</value></data>
+  <data name="ImageProcessingError_StagingFileCreationFailed_Remedy" xml:space="preserve"><value>Проверьте доступ и свободное место; при необходимости выполните восстановление перед повторной попыткой.</value></data>
+  <data name="ImageProcessingError_StagingWriteFailed_Title" xml:space="preserve"><value>Не удалось записать промежуточный файл</value></data>
+  <data name="ImageProcessingError_StagingWriteFailed_Explanation" xml:space="preserve"><value>Не удалось записать проверенный результат в промежуточный файл транзакции.</value></data>
+  <data name="ImageProcessingError_StagingWriteFailed_Remedy" xml:space="preserve"><value>Проверьте доступ и свободное место; сохраните оригиналы и резервные копии.</value></data>
+  <data name="ImageProcessingError_StagingFlushFailed_Title" xml:space="preserve"><value>Не удалось сбросить данные промежуточного файла</value></data>
+  <data name="ImageProcessingError_StagingFlushFailed_Explanation" xml:space="preserve"><value>Самый надёжный поддерживаемый запрос сброса данных завершился неудачно.</value></data>
+  <data name="ImageProcessingError_StagingFlushFailed_Remedy" xml:space="preserve"><value>Проверьте накопитель; перед повторной попыткой выполните необходимое восстановление.</value></data>
+  <data name="ImageProcessingError_StagingCloseFailed_Title" xml:space="preserve"><value>Не удалось закрыть промежуточный файл</value></data>
+  <data name="ImageProcessingError_StagingCloseFailed_Explanation" xml:space="preserve"><value>Промежуточный файл транзакции не удалось закрыть.</value></data>
+  <data name="ImageProcessingError_StagingCloseFailed_Remedy" xml:space="preserve"><value>Проверьте накопитель и выполните необходимое восстановление перед повторной попыткой.</value></data>
+  <data name="ImageProcessingError_StagedOutputVerificationFailed_Title" xml:space="preserve"><value>Не удалось проверить промежуточный результат</value></data>
+  <data name="ImageProcessingError_StagedOutputVerificationFailed_Explanation" xml:space="preserve"><value>Закрытый промежуточный файл не удалось повторно открыть и независимо проверить.</value></data>
+  <data name="ImageProcessingError_StagedOutputVerificationFailed_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии; проверьте папку назначения перед повторной попыткой.</value></data>
+  <data name="ImageProcessingError_StagedOutputHashMismatch_Title" xml:space="preserve"><value>Не совпадает содержимое промежуточного результата</value></data>
+  <data name="ImageProcessingError_StagedOutputHashMismatch_Explanation" xml:space="preserve"><value>Наблюдаемое содержимое промежуточного файла не соответствует хешу проверенного результата.</value></data>
+  <data name="ImageProcessingError_StagedOutputHashMismatch_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии; выясните причину изменения данных перед повторной попыткой.</value></data>
+  <data name="ImageProcessingError_OutputValidationFailed_Title" xml:space="preserve"><value>Результат не прошёл проверку</value></data>
+  <data name="ImageProcessingError_OutputValidationFailed_Explanation" xml:space="preserve"><value>Преобразованное изображение не соответствует правилам независимой проверки.</value></data>
+  <data name="ImageProcessingError_OutputValidationFailed_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и не используйте отклонённый результат.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Title" xml:space="preserve"><value>Не удалось создать папку исправленной копии</value></data>
+  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Explanation" xml:space="preserve"><value>Приложение не смогло создать принадлежащую ему папку для исправленной копии.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Remedy" xml:space="preserve"><value>Проверьте доступ к папке результатов и свободное место, затем повторите анализ.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Title" xml:space="preserve"><value>Не удалось завершить запись исправленной копии</value></data>
+  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Explanation" xml:space="preserve"><value>Промежуточную исправленную копию не удалось переместить в конечную папку.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Remedy" xml:space="preserve"><value>Сохраните исходный файл и проверьте необходимость восстановления перед повторной попыткой.</value></data>
+  <data name="ImageProcessingError_BackupCreationFailed_Title" xml:space="preserve"><value>Не удалось создать резервную копию</value></data>
+  <data name="ImageProcessingError_BackupCreationFailed_Explanation" xml:space="preserve"><value>Перед заменой оригинала не удалось создать обязательную резервную копию.</value></data>
+  <data name="ImageProcessingError_BackupCreationFailed_Remedy" xml:space="preserve"><value>Сохраните оригинал; проверьте доступ к папке резервных копий и свободное место.</value></data>
+  <data name="ImageProcessingError_BackupVerificationFailed_Title" xml:space="preserve"><value>Не удалось проверить резервную копию</value></data>
+  <data name="ImageProcessingError_BackupVerificationFailed_Explanation" xml:space="preserve"><value>Резервная копия не подтвердила необходимое соответствие исходной версии.</value></data>
+  <data name="ImageProcessingError_BackupVerificationFailed_Remedy" xml:space="preserve"><value>Сохраните оригинал и все данные резервной копии; устраните несоответствие до замены.</value></data>
+  <data name="ImageProcessingError_OriginalReplacementFailed_Title" xml:space="preserve"><value>Замена оригинала завершилась неудачно</value></data>
+  <data name="ImageProcessingError_OriginalReplacementFailed_Explanation" xml:space="preserve"><value>Ошибка операции замены может потребовать восстановления по наблюдаемому состоянию файлов.</value></data>
+  <data name="ImageProcessingError_OriginalReplacementFailed_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии и выполните необходимое восстановление перед повторной попыткой.</value></data>
+  <data name="ImageProcessingError_JournalPersistenceFailed_Title" xml:space="preserve"><value>Не удалось сохранить журнал транзакции</value></data>
+  <data name="ImageProcessingError_JournalPersistenceFailed_Explanation" xml:space="preserve"><value>Не удалось опубликовать и проверить обязательную неизменяемую запись транзакции.</value></data>
+  <data name="ImageProcessingError_JournalPersistenceFailed_Remedy" xml:space="preserve"><value>Сохраните оригиналы, резервные копии и журнал; выполните восстановление перед новой обработкой.</value></data>
+  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Title" xml:space="preserve"><value>Не подтверждены условия восстановления для накопителя</value></data>
+  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Explanation" xml:space="preserve"><value>Выбранный поставщик хранения или том не обеспечивает необходимые условия восстановления транзакций.</value></data>
+  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Remedy" xml:space="preserve"><value>Выберите проверенную локальную папку NTFS; не обходите проверку поставщика хранения.</value></data>
+  <data name="ImageProcessingError_JournalStoreBusy_Title" xml:space="preserve"><value>Журнал транзакций занят</value></data>
+  <data name="ImageProcessingError_JournalStoreBusy_Explanation" xml:space="preserve"><value>Другая действующая операция удерживает журнал; восстановление не началось.</value></data>
+  <data name="ImageProcessingError_JournalStoreBusy_Remedy" xml:space="preserve"><value>Дождитесь завершения другой операции и повторите восстановление.</value></data>
+  <data name="ImageProcessingError_RecoveryConflict_Title" xml:space="preserve"><value>Не удалось однозначно восстановить транзакцию</value></data>
+  <data name="ImageProcessingError_RecoveryConflict_Explanation" xml:space="preserve"><value>Сохранённые записи и наблюдаемые файлы не подтверждают единственный безопасный исход.</value></data>
+  <data name="ImageProcessingError_RecoveryConflict_Remedy" xml:space="preserve"><value>Сохраните оригиналы, резервные копии и журнал; разрешите конфликт перед новой обработкой.</value></data>
+  <data name="ImageProcessingError_Cancelled_Title" xml:space="preserve"><value>Операция отменена</value></data>
+  <data name="ImageProcessingError_Cancelled_Explanation" xml:space="preserve"><value>Отмена остановила дальнейшую работу; завершённые записи остаются завершёнными.</value></data>
+  <data name="ImageProcessingError_Cancelled_Remedy" xml:space="preserve"><value>Проверьте результаты перед началом новой операции.</value></data>
+  <data name="ImageProcessingError_Unknown_Title" xml:space="preserve"><value>Не удалось завершить обработку</value></data>
+  <data name="ImageProcessingError_Unknown_Explanation" xml:space="preserve"><value>Операция завершилась ошибкой, которую эта версия не может описать.</value></data>
+  <data name="ImageProcessingError_Unknown_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии, проверьте необходимость восстановления и повторяйте обработку только после устранения риска.</value></data>
+</root>

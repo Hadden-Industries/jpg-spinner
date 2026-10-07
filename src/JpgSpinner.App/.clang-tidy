@@ -4,8 +4,12 @@
 # this language boundary; private implementation details stay lower camel case.
 InheritParentConfig: true
 CheckOptions:
-  readability-identifier-naming.NamespaceIgnoredRegexp: '^JpgSpinner$'
+  readability-identifier-naming.NamespaceIgnoredRegexp: '^(JpgSpinner|Presentation)$'
   readability-identifier-naming.PublicMethodCase: CamelCase
+  # These three public C++ helpers carry native capabilities/facts and do not
+  # exist in Presentation.idl. Preserve the native camelCase convention rather
+  # than renaming them as though they were projected WinRT properties/commands.
+  readability-identifier-naming.PublicMethodIgnoredRegexp: '^(selectSource|acknowledgeEdgeTrimming|applyResult)$'
   readability-identifier-naming.ProtectedMethodCase: CamelCase
   readability-identifier-naming.PrivateMethodCase: camelBack
 ...

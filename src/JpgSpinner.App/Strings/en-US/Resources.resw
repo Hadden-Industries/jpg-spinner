@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
+  <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
+  <!-- A minimum coded unit is a JPEG coding block; trim removes exact source-edge pixels permanently. -->
+  <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve"><value>Source access denied</value></data>
+  <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve"><value>The selected image could not be read with the granted access.</value></data>
+  <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve"><value>Select a folder you can read and try again.</value></data>
+  <data name="ImageProcessingError_SourceSharingViolation_Title" xml:space="preserve"><value>Source file is in use</value></data>
+  <data name="ImageProcessingError_SourceSharingViolation_Explanation" xml:space="preserve"><value>Another application is holding a conflicting file access.</value></data>
+  <data name="ImageProcessingError_SourceSharingViolation_Remedy" xml:space="preserve"><value>Close applications using this image and try again.</value></data>
+  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Title" xml:space="preserve"><value>Source revision could not be captured</value></data>
+  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Explanation" xml:space="preserve"><value>A trustworthy observation of the source identity and bytes could not be obtained.</value></data>
+  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Remedy" xml:space="preserve"><value>Check access to the source and analyze the folder again.</value></data>
+  <data name="ImageProcessingError_SourceDiscoveryFailed_Title" xml:space="preserve"><value>Folder discovery failed</value></data>
+  <data name="ImageProcessingError_SourceDiscoveryFailed_Explanation" xml:space="preserve"><value>The granted folder could not be completely enumerated.</value></data>
+  <data name="ImageProcessingError_SourceDiscoveryFailed_Remedy" xml:space="preserve"><value>Check folder access and analyze again; no incomplete review can start processing.</value></data>
+  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Title" xml:space="preserve"><value>Processing choices are invalid</value></data>
+  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Explanation" xml:space="preserve"><value>The requested policies or resource limits are not supported.</value></data>
+  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Remedy" xml:space="preserve"><value>Return to source selection and choose supported settings.</value></data>
+  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Title" xml:space="preserve"><value>Source changed after analysis</value></data>
+  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Explanation" xml:space="preserve"><value>The current source does not match the reviewed revision.</value></data>
+  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Remedy" xml:space="preserve"><value>Analyze the folder again before processing.</value></data>
+  <data name="ImageProcessingError_DestinationAccessDenied_Title" xml:space="preserve"><value>Destination access denied</value></data>
+  <data name="ImageProcessingError_DestinationAccessDenied_Explanation" xml:space="preserve"><value>The app could not write to the granted output destination.</value></data>
+  <data name="ImageProcessingError_DestinationAccessDenied_Remedy" xml:space="preserve"><value>Check destination access and choose a writable folder.</value></data>
+  <data name="ImageProcessingError_EncodedFileTooLarge_Title" xml:space="preserve"><value>Encoded image exceeds the size limit</value></data>
+  <data name="ImageProcessingError_EncodedFileTooLarge_Explanation" xml:space="preserve"><value>The JPEG file is larger than the supported encoded-file limit.</value></data>
+  <data name="ImageProcessingError_EncodedFileTooLarge_Remedy" xml:space="preserve"><value>Use a smaller source file; the app will not bypass its resource limits.</value></data>
+  <data name="ImageProcessingError_PixelCountLimitExceeded_Title" xml:space="preserve"><value>Image exceeds the pixel limit</value></data>
+  <data name="ImageProcessingError_PixelCountLimitExceeded_Explanation" xml:space="preserve"><value>The declared image dimensions exceed the supported pixel count.</value></data>
+  <data name="ImageProcessingError_PixelCountLimitExceeded_Remedy" xml:space="preserve"><value>Use an image within the supported dimensions.</value></data>
+  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Title" xml:space="preserve"><value>Metadata exceeds the size limit</value></data>
+  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Explanation" xml:space="preserve"><value>The image metadata exceeds the bounded analysis limit.</value></data>
+  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Remedy" xml:space="preserve"><value>Use a source with metadata within the supported limit.</value></data>
+  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Title" xml:space="preserve"><value>Progressive JPEG has too many scans</value></data>
+  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Explanation" xml:space="preserve"><value>The progressive scan count exceeds the supported analysis limit.</value></data>
+  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Remedy" xml:space="preserve"><value>Use a JPEG with a supported scan count.</value></data>
+  <data name="ImageProcessingError_MalformedJpegStructure_Title" xml:space="preserve"><value>JPEG structure is invalid</value></data>
+  <data name="ImageProcessingError_MalformedJpegStructure_Explanation" xml:space="preserve"><value>The encoded file does not contain a supported, well-formed JPEG structure.</value></data>
+  <data name="ImageProcessingError_MalformedJpegStructure_Remedy" xml:space="preserve"><value>Use an intact JPEG source; changing its extension cannot repair its bytes.</value></data>
+  <data name="ImageProcessingError_MalformedImageMetadata_Title" xml:space="preserve"><value>Image metadata is invalid</value></data>
+  <data name="ImageProcessingError_MalformedImageMetadata_Explanation" xml:space="preserve"><value>The metadata cannot be decoded as a supported, well-formed payload.</value></data>
+  <data name="ImageProcessingError_MalformedImageMetadata_Remedy" xml:space="preserve"><value>Keep the source and obtain an intact image or repair metadata separately.</value></data>
+  <data name="ImageProcessingError_MetadataPreservationFailed_Title" xml:space="preserve"><value>Metadata could not be preserved</value></data>
+  <data name="ImageProcessingError_MetadataPreservationFailed_Explanation" xml:space="preserve"><value>Reconciliation could not retain the required metadata values.</value></data>
+  <data name="ImageProcessingError_MetadataPreservationFailed_Remedy" xml:space="preserve"><value>Keep the source unchanged and use a supported metadata layout.</value></data>
+  <data name="ImageProcessingError_InvalidOrientationMetadata_Title" xml:space="preserve"><value>Orientation metadata is invalid</value></data>
+  <data name="ImageProcessingError_InvalidOrientationMetadata_Explanation" xml:space="preserve"><value>The required orientation value is absent or outside the supported range.</value></data>
+  <data name="ImageProcessingError_InvalidOrientationMetadata_Remedy" xml:space="preserve"><value>Set a valid orientation with a metadata editor, then analyze again.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Title" xml:space="preserve"><value>JPEG coding process is not supported</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Explanation" xml:space="preserve"><value>This JPEG uses a coding process outside the supported DCT profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Remedy" xml:space="preserve"><value>Use a JPEG with a supported DCT coding process.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Title" xml:space="preserve"><value>JPEG sample precision is not supported</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Explanation" xml:space="preserve"><value>The encoded sample precision is outside the supported profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Remedy" xml:space="preserve"><value>Use a JPEG with supported sample precision.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Title" xml:space="preserve"><value>JPEG component layout is not supported</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Explanation" xml:space="preserve"><value>The component organization cannot be safely transformed by this profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Remedy" xml:space="preserve"><value>Use a JPEG with a supported component layout.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Title" xml:space="preserve"><value>Deferred JPEG height is not supported</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Explanation" xml:space="preserve"><value>This JPEG declares its image height after the frame header.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Remedy" xml:space="preserve"><value>Use a JPEG with its height declared in the frame header.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Title" xml:space="preserve"><value>Changing JPEG restart intervals is not supported</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Explanation" xml:space="preserve"><value>The file changes restart intervals within the encoded image.</value></data>
+  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Remedy" xml:space="preserve"><value>Use a JPEG with a supported restart-interval layout.</value></data>
+  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Title" xml:space="preserve"><value>Multi-picture JPEG is not supported</value></data>
+  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Explanation" xml:space="preserve"><value>The file contains multiple images whose relationships would need reconciliation.</value></data>
+  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Remedy" xml:space="preserve"><value>Keep the multi-picture source and use a supported single-image JPEG.</value></data>
+  <data name="ImageProcessingError_MotionPhotoNotSupported_Title" xml:space="preserve"><value>Motion photo is not supported</value></data>
+  <data name="ImageProcessingError_MotionPhotoNotSupported_Explanation" xml:space="preserve"><value>The image contains associated motion content that this app does not reconcile.</value></data>
+  <data name="ImageProcessingError_MotionPhotoNotSupported_Remedy" xml:space="preserve"><value>Keep the motion photo and use a supported still-image JPEG.</value></data>
+  <data name="ImageProcessingError_UnsupportedTrailingPayload_Title" xml:space="preserve"><value>Trailing image payload is not supported</value></data>
+  <data name="ImageProcessingError_UnsupportedTrailingPayload_Explanation" xml:space="preserve"><value>Additional content follows the JPEG image and cannot be safely preserved by this profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedTrailingPayload_Remedy" xml:space="preserve"><value>Keep the original and use a JPEG without unsupported trailing content.</value></data>
+  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Title" xml:space="preserve"><value>Content credentials would be invalidated</value></data>
+  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Explanation" xml:space="preserve"><value>Changing this image would invalidate its content-authenticity information.</value></data>
+  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Remedy" xml:space="preserve"><value>Keep the signed source unchanged; use an appropriate credentials-aware workflow.</value></data>
+  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Title" xml:space="preserve"><value>JUMBF metadata is not supported</value></data>
+  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve"><value>The JUMBF payload is outside the app's supported preservation profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve"><value>Keep the source unchanged and use a supported metadata profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve"><value>Embedded preview cannot be reconciled</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>An embedded preview layout cannot be safely updated or removed by this profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve"><value>Keep the source and use an image with a supported embedded preview layout.</value></data>
+  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve"><value>Extended XMP change is not supported</value></data>
+  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve"><value>The required metadata change would modify an unsupported extended-XMP payload.</value></data>
+  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Remedy" xml:space="preserve"><value>Keep the source unchanged and use a supported XMP layout.</value></data>
+  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Title" xml:space="preserve"><value>A perfect coefficient transform is unavailable</value></data>
+  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Explanation" xml:space="preserve"><value>The requested transform cannot retain all partial minimum-coded-unit edge pixels.</value></data>
+  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Remedy" xml:space="preserve"><value>Keep perfect-transform mode, or explicitly review and acknowledge the exact discarded edges in trim mode.</value></data>
+  <data name="ImageProcessingError_CoefficientTransformationFailed_Title" xml:space="preserve"><value>Coefficient transformation failed</value></data>
+  <data name="ImageProcessingError_CoefficientTransformationFailed_Explanation" xml:space="preserve"><value>The native JPEG transformation did not produce a validated output.</value></data>
+  <data name="ImageProcessingError_CoefficientTransformationFailed_Remedy" xml:space="preserve"><value>Keep the source and analyze again; no unvalidated output may be committed.</value></data>
+  <data name="ImageProcessingError_OutputBufferTooSmall_Title" xml:space="preserve"><value>Output exceeded the bounded buffer</value></data>
+  <data name="ImageProcessingError_OutputBufferTooSmall_Explanation" xml:space="preserve"><value>The encoded output did not fit within the allocated resource bound.</value></data>
+  <data name="ImageProcessingError_OutputBufferTooSmall_Remedy" xml:space="preserve"><value>Use a source within supported resource limits; do not bypass the bound.</value></data>
+  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Title" xml:space="preserve"><value>Working memory could not be allocated</value></data>
+  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Explanation" xml:space="preserve"><value>The operation could not obtain its required bounded working memory.</value></data>
+  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Remedy" xml:space="preserve"><value>Close memory-intensive applications and try again.</value></data>
+  <data name="ImageProcessingError_InsufficientStorageSpace_Title" xml:space="preserve"><value>Storage space is insufficient</value></data>
+  <data name="ImageProcessingError_InsufficientStorageSpace_Explanation" xml:space="preserve"><value>The destination does not have the space required for this operation.</value></data>
+  <data name="ImageProcessingError_InsufficientStorageSpace_Remedy" xml:space="preserve"><value>Free space or select another supported destination while retaining originals and backups.</value></data>
+  <data name="ImageProcessingError_OutputRelativePathCollision_Title" xml:space="preserve"><value>Output names collide</value></data>
+  <data name="ImageProcessingError_OutputRelativePathCollision_Explanation" xml:space="preserve"><value>Two reviewed source names resolve to the same output-relative name.</value></data>
+  <data name="ImageProcessingError_OutputRelativePathCollision_Remedy" xml:space="preserve"><value>Resolve the conflicting source names and analyze again.</value></data>
+  <data name="ImageProcessingError_StagingFileCreationFailed_Title" xml:space="preserve"><value>Staging file could not be created</value></data>
+  <data name="ImageProcessingError_StagingFileCreationFailed_Explanation" xml:space="preserve"><value>The app could not create its transaction-owned temporary output.</value></data>
+  <data name="ImageProcessingError_StagingFileCreationFailed_Remedy" xml:space="preserve"><value>Check destination access and available space, then retry after recovery if required.</value></data>
+  <data name="ImageProcessingError_StagingWriteFailed_Title" xml:space="preserve"><value>Staging write failed</value></data>
+  <data name="ImageProcessingError_StagingWriteFailed_Explanation" xml:space="preserve"><value>Writing the validated output to the transaction-owned staging file failed.</value></data>
+  <data name="ImageProcessingError_StagingWriteFailed_Remedy" xml:space="preserve"><value>Check destination access and available space; retain originals and backups.</value></data>
+  <data name="ImageProcessingError_StagingFlushFailed_Title" xml:space="preserve"><value>Staging flush failed</value></data>
+  <data name="ImageProcessingError_StagingFlushFailed_Explanation" xml:space="preserve"><value>The strongest supported flush request did not complete successfully.</value></data>
+  <data name="ImageProcessingError_StagingFlushFailed_Remedy" xml:space="preserve"><value>Check the storage device and retry only after any required recovery.</value></data>
+  <data name="ImageProcessingError_StagingCloseFailed_Title" xml:space="preserve"><value>Staging file could not be closed</value></data>
+  <data name="ImageProcessingError_StagingCloseFailed_Explanation" xml:space="preserve"><value>The transaction-owned staging file did not close successfully.</value></data>
+  <data name="ImageProcessingError_StagingCloseFailed_Remedy" xml:space="preserve"><value>Check the storage device and resolve any recovery requirement before retrying.</value></data>
+  <data name="ImageProcessingError_StagedOutputVerificationFailed_Title" xml:space="preserve"><value>Staged output could not be verified</value></data>
+  <data name="ImageProcessingError_StagedOutputVerificationFailed_Explanation" xml:space="preserve"><value>The closed staging file could not be reopened and independently verified.</value></data>
+  <data name="ImageProcessingError_StagedOutputVerificationFailed_Remedy" xml:space="preserve"><value>Keep originals and backups; check the destination before retrying.</value></data>
+  <data name="ImageProcessingError_StagedOutputHashMismatch_Title" xml:space="preserve"><value>Staged output bytes do not match</value></data>
+  <data name="ImageProcessingError_StagedOutputHashMismatch_Explanation" xml:space="preserve"><value>The observed staging bytes differ from the validated output hash.</value></data>
+  <data name="ImageProcessingError_StagedOutputHashMismatch_Remedy" xml:space="preserve"><value>Keep originals and backups; investigate storage changes before retrying.</value></data>
+  <data name="ImageProcessingError_OutputValidationFailed_Title" xml:space="preserve"><value>Output validation failed</value></data>
+  <data name="ImageProcessingError_OutputValidationFailed_Explanation" xml:space="preserve"><value>The transformed image did not satisfy the independent validation rules.</value></data>
+  <data name="ImageProcessingError_OutputValidationFailed_Remedy" xml:space="preserve"><value>Keep the source unchanged; do not use the rejected output.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Title" xml:space="preserve"><value>Corrected-copy destination could not be created</value></data>
+  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Explanation" xml:space="preserve"><value>The app could not create its owned destination for the corrected copy.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Remedy" xml:space="preserve"><value>Check output-folder access and available space, then analyze again.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Title" xml:space="preserve"><value>Corrected copy could not be committed</value></data>
+  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Explanation" xml:space="preserve"><value>The staged corrected copy could not be moved to its final destination.</value></data>
+  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Remedy" xml:space="preserve"><value>Retain the source and inspect any recovery requirement before retrying.</value></data>
+  <data name="ImageProcessingError_BackupCreationFailed_Title" xml:space="preserve"><value>Backup could not be created</value></data>
+  <data name="ImageProcessingError_BackupCreationFailed_Explanation" xml:space="preserve"><value>The required backup could not be created before original replacement.</value></data>
+  <data name="ImageProcessingError_BackupCreationFailed_Remedy" xml:space="preserve"><value>Retain the original; check backup-destination access and available space.</value></data>
+  <data name="ImageProcessingError_BackupVerificationFailed_Title" xml:space="preserve"><value>Backup could not be verified</value></data>
+  <data name="ImageProcessingError_BackupVerificationFailed_Explanation" xml:space="preserve"><value>The backup did not establish the required match with the source revision.</value></data>
+  <data name="ImageProcessingError_BackupVerificationFailed_Remedy" xml:space="preserve"><value>Retain the original and all backup evidence; resolve the mismatch before replacement.</value></data>
+  <data name="ImageProcessingError_OriginalReplacementFailed_Title" xml:space="preserve"><value>Original replacement did not complete successfully</value></data>
+  <data name="ImageProcessingError_OriginalReplacementFailed_Explanation" xml:space="preserve"><value>The native replacement failed; its observed outcome may require recovery.</value></data>
+  <data name="ImageProcessingError_OriginalReplacementFailed_Remedy" xml:space="preserve"><value>Retain originals and backups and complete any required recovery before retrying.</value></data>
+  <data name="ImageProcessingError_JournalPersistenceFailed_Title" xml:space="preserve"><value>Transaction journal could not be persisted</value></data>
+  <data name="ImageProcessingError_JournalPersistenceFailed_Explanation" xml:space="preserve"><value>The required immutable transaction record could not be published and verified.</value></data>
+  <data name="ImageProcessingError_JournalPersistenceFailed_Remedy" xml:space="preserve"><value>Retain originals, backups and journal files; resolve recovery before new processing.</value></data>
+  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Title" xml:space="preserve"><value>Storage provider is not qualified for recovery</value></data>
+  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Explanation" xml:space="preserve"><value>The selected provider or volume does not establish the required transaction-recovery contract.</value></data>
+  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Remedy" xml:space="preserve"><value>Select a qualified local NTFS destination; do not bypass the provider check.</value></data>
+  <data name="ImageProcessingError_JournalStoreBusy_Title" xml:space="preserve"><value>Transaction journal is busy</value></data>
+  <data name="ImageProcessingError_JournalStoreBusy_Explanation" xml:space="preserve"><value>Another live owner holds the journal lease; recovery has not begun.</value></data>
+  <data name="ImageProcessingError_JournalStoreBusy_Remedy" xml:space="preserve"><value>Wait for the other operation to finish, then retry recovery.</value></data>
+  <data name="ImageProcessingError_RecoveryConflict_Title" xml:space="preserve"><value>Transaction recovery is unresolved</value></data>
+  <data name="ImageProcessingError_RecoveryConflict_Explanation" xml:space="preserve"><value>The retained records and observed files do not establish one safe outcome.</value></data>
+  <data name="ImageProcessingError_RecoveryConflict_Remedy" xml:space="preserve"><value>Preserve originals, backups and journals; resolve the conflict before new processing.</value></data>
+  <data name="ImageProcessingError_Cancelled_Title" xml:space="preserve"><value>Operation was cancelled</value></data>
+  <data name="ImageProcessingError_Cancelled_Explanation" xml:space="preserve"><value>Cooperative cancellation stopped further work; completed commits remain completed.</value></data>
+  <data name="ImageProcessingError_Cancelled_Remedy" xml:space="preserve"><value>Review the reported outcomes before starting a new operation.</value></data>
+  <data name="ImageProcessingError_Unknown_Title" xml:space="preserve"><value>Processing could not be completed</value></data>
+  <data name="ImageProcessingError_Unknown_Explanation" xml:space="preserve"><value>The operation failed for a reason that this version cannot describe.</value></data>
+  <data name="ImageProcessingError_Unknown_Remedy" xml:space="preserve"><value>Keep originals and backups, review any recovery requirement, and try again only when safe.</value></data>
+</root>

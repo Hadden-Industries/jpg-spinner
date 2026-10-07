@@ -1370,6 +1370,10 @@ function Test-ModernSolutionArchitecture {
             configurationType = 'Application'
             references = @(
                 'src/JpgSpinner.App/JpgSpinner.App.vcxproj',
+                # The host compiles the production presentation sources and
+                # resolves their native coordinator/recovery composition seams.
+                'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj',
+                'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj',
                 'tests/TestSupport/TestSupport.vcxproj'
             )
         }
@@ -1929,8 +1933,9 @@ function Test-ClangTidyNamingConfiguration {
         -Expected 'true' `
         -Description 'src/JpgSpinner.App/.clang-tidy InheritParentConfig'
     foreach ($appNamingRule in ([ordered]@{
-        'CheckOptions.readability-identifier-naming.NamespaceIgnoredRegexp' = '^JpgSpinner$'
+        'CheckOptions.readability-identifier-naming.NamespaceIgnoredRegexp' = '^(JpgSpinner|Presentation)$'
         'CheckOptions.readability-identifier-naming.PublicMethodCase' = 'CamelCase'
+        'CheckOptions.readability-identifier-naming.PublicMethodIgnoredRegexp' = '^(selectSource|acknowledgeEdgeTrimming|applyResult)$'
         'CheckOptions.readability-identifier-naming.ProtectedMethodCase' = 'CamelCase'
         'CheckOptions.readability-identifier-naming.PrivateMethodCase' = 'camelBack'
     }).GetEnumerator()) {

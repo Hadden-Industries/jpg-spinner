@@ -11,7 +11,16 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E463CC96-D87F-4427-B9C8-025C0AA28E40}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>JpgSpinner.Presentation.Tests</RootNamespace>
+    <!-- Match the owning IDL namespace/prefix, not the executable's test name. -->
+    <RootNamespace>JpgSpinner</RootNamespace>
+    <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
+    <!-- Runtime classes are consumed in this unpackaged test host only. The
+         production app continues to obtain runtime identity from its package. -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <UseWinUI>true</UseWinUI>
+    <CppWinRTOptimized>true</CppWinRTOptimized>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <RuntimeIdentifiers>win;win-x86;win-x64;win-arm64</RuntimeIdentifiers>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration"><ConfigurationType>Application</ConfigurationType><CharacterSet>Unicode</CharacterSet></PropertyGroup>
@@ -25,9 +34,36 @@
     <OutDir>$(MSBuildThisFileDirectory)..\..\artifacts\bin\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</OutDir>
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
-  <ItemDefinitionGroup><Link><SubSystem>Console</SubSystem></Link></ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.BatchProcessing\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>
+    <!-- The native Exiv2 dependency uses PSAPI for its version inventory. -->
+    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>psapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
+    <ClCompile Include="MainWindowViewModelTests.cpp" />
+    <ClCompile Include="LocalizationCompletenessTests.cpp" />
+    <!-- Compile the owning production source, not a duplicate test model. Native
+         MIDL/cppwinrt generate this host's projection from the same contract. -->
+    <ClCompile Include="..\..\src\JpgSpinner.App\ViewModels\MainWindowViewModel.cpp" />
+    <ClCompile Include="..\..\src\JpgSpinner.App\ViewModels\ImageProcessingRowViewModel.cpp" />
+    <ClCompile Include="..\..\src\JpgSpinner.App\ViewModels\ImageSourceDiscoveryIssueViewModel.cpp" />
+    <ClCompile Include="..\..\src\JpgSpinner.App\Localization\ImageProcessingErrorText.cpp" />
+    <Midl Include="..\..\src\JpgSpinner.App\Presentation.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The test host compiles the owning resources, not a copied translation set. -->
+    <PRIResource Include="..\..\src\JpgSpinner.App\Strings\en-US\Resources.resw"><Link>Strings\en-US\Resources.resw</Link></PRIResource>
+    <PRIResource Include="..\..\src\JpgSpinner.App\Strings\en-GB\Resources.resw"><Link>Strings\en-GB\Resources.resw</Link></PRIResource>
+    <PRIResource Include="..\..\src\JpgSpinner.App\Strings\ru\Resources.resw"><Link>Strings\ru\Resources.resw</Link></PRIResource>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Microsoft.Windows.CppWinRT" />
+    <PackageReference Include="Microsoft.Windows.ImplementationLibrary" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <ProjectReference Include="..\..\src\JpgSpinner.BatchProcessing\JpgSpinner.BatchProcessing.vcxproj"><Project>{47B98640-4C3D-4EB7-B888-9F2C4D84B4BF}</Project></ProjectReference>
+    <ProjectReference Include="..\..\src\JpgSpinner.WindowsStorage\JpgSpinner.WindowsStorage.vcxproj"><Project>{84F8BC68-06E4-416A-A14B-F3E1FF4464AF}</Project></ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <!-- The presentation test executable depends on the packaged app build but never links the app executable. -->

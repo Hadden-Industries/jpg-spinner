@@ -8,6 +8,12 @@
         "resolved": "3.0.260818.1",
         "contentHash": "jBwP7ycb35/qnvwh+iysvelATSoIjjFtQBg29Ns1f5OVPKa1rur3VhJVQD5p3n/ADE2IAeVo/bN+EiFfztTROw=="
       },
+      "Microsoft.Windows.ImplementationLibrary": {
+        "type": "Direct",
+        "requested": "[1.0.260126.7, )",
+        "resolved": "1.0.260126.7",
+        "contentHash": "pXT/6g9/W9uOh7NTpGpArYGSm9W0v5EWM0Njhm3YWgKf+71hii5H5aDcD539jG9IZmjT1eT1pn67n4A6zwEQ+A=="
+      },
       "Microsoft.Windows.SDK.BuildTools": {
         "type": "Direct",
         "requested": "[10.0.28000.2705, )",

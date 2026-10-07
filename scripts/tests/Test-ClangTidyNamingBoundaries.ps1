@@ -113,10 +113,14 @@ public:
     Write-Utf8Fixture -Path $appFixturePath -Content @'
 #include "Generated Files/Projected.g.h"
 
-namespace winrt::JpgSpinner::implementation {
+namespace winrt::JpgSpinner::Presentation::implementation {
 class RotationViewModel final {
 public:
     void RotateClockwise() {}
+    // Native-only composition/mutation helpers are not projected ABI methods.
+    void selectSource() {}
+    void acknowledgeEdgeTrimming() {}
+    void applyResult() {}
 
 protected:
     void OnNavigation() {}
@@ -125,7 +129,7 @@ private:
     void updatePreview() {}
     int rotationDegrees_{0};
 };
-} // namespace winrt::JpgSpinner::implementation
+} // namespace winrt::JpgSpinner::Presentation::implementation
 
 int main() { return 0; }
 '@

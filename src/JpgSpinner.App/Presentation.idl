@@ -1,0 +1,93 @@
+namespace JpgSpinner.Presentation
+{
+    // These states describe the experience, not native transaction journal phases.
+    enum ImageProcessingExperienceState
+    {
+        SourceSelection = 0,
+        Analysis = 1,
+        Review = 2,
+        Processing = 3,
+        Results = 4,
+        RecoveryRequired = 5
+    };
+
+    // Pending is absence of a terminal result, not successful processing.
+    enum ImageProcessingRowOutcome
+    {
+        Pending = 0,
+        CorrectedCopyCreated = 1,
+        OriginalReplacedWithVerifiedBackup = 2,
+        NoOrientationNormalizationRequired = 3,
+        UnsupportedSourceSkipped = 4,
+        ProcessingFailed = 5,
+        CancelledBeforeTransformation = 6,
+        CancelledBeforeCommit = 7
+    };
+    enum OutputDisposition { CreateCorrectedCopy = 0, ReplaceOriginalWithVerifiedBackup = 1 };
+    enum TraversalScope { SelectedFolderOnly = 0, SelectedFolderAndDescendants = 1 };
+    enum EdgeHandlingPolicy { RequirePerfectCoefficientTransform = 0, TrimPartialMinimumCodedUnits = 1 };
+    enum OutputScanOrganization { PreserveSource = 0, SequentialDct = 1, ProgressiveDct = 2 };
+
+    // Traversal observations are not terminal image-processing outcomes.
+    enum ImageSourceDiscoveryIssueKind
+    {
+        ReparsePointSkipped = 0,
+        SourceAccessFailed = 1,
+        ApplicationOwnedFolderExcluded = 2
+    };
+    [default_interface]
+    runtimeclass ImageSourceDiscoveryIssueViewModel
+    {
+        String RelativePath{ get; };
+        ImageSourceDiscoveryIssueKind Kind{ get; };
+        String ErrorTitle{ get; };
+        String ErrorExplanation{ get; };
+        String ErrorRemedy{ get; };
+    }
+
+    [default_interface]
+    runtimeclass ImageProcessingRowViewModel : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String DisplayName{ get; };
+        Boolean IsEligibleForProcessing{ get; };
+        UInt64 DiscardedSourceRightEdgeWidthInPixels{ get; };
+        UInt64 DiscardedSourceBottomEdgeHeightInPixels{ get; };
+        Boolean IsEdgeTrimmingAcknowledged{ get; };
+        ImageProcessingRowOutcome Outcome{ get; };
+        String ErrorTitle{ get; };
+        String ErrorExplanation{ get; };
+        String ErrorRemedy{ get; };
+    }
+
+    // Only the native composition root constructs this model with its granted
+    // capabilities. An activation constructor would permit an unwired model.
+    [default_interface]
+    runtimeclass MainWindowViewModel : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ImageProcessingExperienceState State{ get; };
+        Boolean CanSelectSourceFolder{ get; };
+        Boolean CanBeginProcessing{ get; };
+        Boolean CanCancelCurrentOperation{ get; };
+        Boolean CanReturnToSourceSelection{ get; };
+        Windows.Foundation.IReference<Double> ProgressPercentage{ get; };
+        Windows.Foundation.Collections.IVectorView<ImageProcessingRowViewModel> Rows{ get; };
+        Windows.Foundation.Collections.IVectorView<ImageSourceDiscoveryIssueViewModel> DiscoveryIssues{ get; };
+        String BackupRootDisplayPath{ get; };
+        UInt64 CompletedFileCount{ get; };
+        UInt64 FailedFileCount{ get; };
+        UInt64 CancelledFileCount{ get; };
+        OutputDisposition OutputDisposition{ get; };
+        TraversalScope TraversalScope{ get; };
+        EdgeHandlingPolicy EdgeHandlingPolicy{ get; };
+        OutputScanOrganization OutputScanOrganization{ get; };
+        String ErrorTitle{ get; };
+        String ErrorExplanation{ get; };
+        String ErrorRemedy{ get; };
+        void AcknowledgeEdgeTrimming(UInt32 rowIndex);
+        Windows.Foundation.IAsyncAction AnalyzeAsync();
+        Windows.Foundation.IAsyncAction BeginProcessingAsync();
+        Windows.Foundation.IAsyncAction RecoverAsync();
+        void CancelCurrentOperation();
+        void ReturnToSourceSelection();
+    }
+}
