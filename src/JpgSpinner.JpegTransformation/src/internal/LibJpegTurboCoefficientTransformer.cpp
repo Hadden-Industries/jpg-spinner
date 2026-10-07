@@ -15,8 +15,12 @@ namespace
 {
 using TransformResult = ImageProcessingResult<std::size_t>;
 
-[[nodiscard]] TransformResult fail(ImageProcessingErrorCode code)
+[[nodiscard]] TransformResult fail(
+    ImageProcessingErrorCode code,
+    CoefficientTransformationExecutionState executionState = CoefficientTransformationExecutionState::NotStarted)
 {
+    if (code == ImageProcessingErrorCode::Cancelled)
+        return TransformResult::failure({code, ImageProcessingStage::CoefficientTransformation, {}, executionState});
     return TransformResult::failure({code, ImageProcessingStage::CoefficientTransformation});
 }
 } // namespace
@@ -155,7 +159,7 @@ ImageProcessingResult<std::size_t> LibJpegTurboCoefficientTransformer::transform
     const auto status =
         tj3Transform(context.get(), encodedSource, source.size(), 1, &outputPointer, &outputLength, &transform);
     if (cancellation.stop_requested())
-        return fail(ImageProcessingErrorCode::Cancelled);
+        return fail(ImageProcessingErrorCode::Cancelled, CoefficientTransformationExecutionState::Started);
     if (status != 0)
         return fail(ImageProcessingErrorCode::CoefficientTransformationFailed);
     if (outputLength > destination.size())

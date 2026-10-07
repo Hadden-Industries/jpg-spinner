@@ -43,6 +43,7 @@
     <ClInclude Include="include\jpg_spinner\domain\ImageDimensions.h" />
     <ClInclude Include="include\jpg_spinner\domain\ImageProcessingError.h" />
     <ClInclude Include="include\jpg_spinner\domain\ImageProcessingResult.h" />
+    <ClInclude Include="include\jpg_spinner\domain\ImageSourceCollection.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegAnalysisFinding.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegImageAnalysis.h" />
     <ClInclude Include="include\jpg_spinner\domain\JpegFrameProperties.h" />

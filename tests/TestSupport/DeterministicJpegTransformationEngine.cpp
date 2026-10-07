@@ -15,11 +15,12 @@ ImageProcessingResult<ValidatedJpegOutput> DeterministicJpegTransformationEngine
 {
     using Result = ImageProcessingResult<ValidatedJpegOutput>;
     ++invocations_;
-    const auto cancelled = [] {
-        return Result::failure({ImageProcessingErrorCode::Cancelled, ImageProcessingStage::CoefficientTransformation});
+    const auto cancelled = [](const CoefficientTransformationExecutionState executionState) {
+        return Result::failure(
+            {ImageProcessingErrorCode::Cancelled, ImageProcessingStage::CoefficientTransformation, {}, executionState});
     };
     if (cancellation.stop_requested())
-        return cancelled();
+        return cancelled(CoefficientTransformationExecutionState::NotStarted);
     const auto active = ++activeCalls_;
     auto maximum = maximumConcurrentCalls_.load();
     while (maximum < active && !maximumConcurrentCalls_.compare_exchange_weak(maximum, active))
@@ -36,8 +37,10 @@ ImageProcessingResult<ValidatedJpegOutput> DeterministicJpegTransformationEngine
         }
     } activeCall{activeCalls_};
     auto result = outputFactory_(std::move(source), std::move(approvedAnalysis), cancellation);
-    if (cancellation.stop_requested())
-        return cancelled();
+    // Keep the real factory's error/admission evidence. Only a successful
+    // complete transformation can establish this adapter's late-cancel boundary.
+    if (result.valueIfPresent() && cancellation.stop_requested())
+        return cancelled(CoefficientTransformationExecutionState::Started);
     return result;
 }
 } // namespace jpg_spinner::test_support

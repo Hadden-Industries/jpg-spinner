@@ -3,6 +3,7 @@
 #include "ImageFileTransactionEngine.h"
 #include <mutex>
 #include <memory>
+#include <chrono>
 
 namespace jpg_spinner::storage
 {
@@ -26,6 +27,13 @@ class WindowsStorageImageFileTransactionEngine final : public ImageFileTransacti
   public:
     WindowsStorageImageFileTransactionEngine(winrt::Windows::Storage::StorageFolder selectedSourceRoot,
                                              winrt::Windows::Storage::StorageFolder applicationJournalStore);
+    /// Use the composition-owned full UUID and UTC time for a reviewed batch.
+    /// This keeps journal identity and display labels aligned with its summary
+    /// without introducing a Storage -> Batch dependency. A null UUID is invalid.
+    WindowsStorageImageFileTransactionEngine(winrt::Windows::Storage::StorageFolder selectedSourceRoot,
+                                             winrt::Windows::Storage::StorageFolder applicationJournalStore,
+                                             winrt::guid batchIdentifier,
+                                             std::chrono::sys_seconds batchCreationTimeUtc);
     ~WindowsStorageImageFileTransactionEngine() override;
     [[nodiscard]] domain::ImageProcessingResult<CommittedImageFile> execute(
         const ImageFileTransactionRequest &request, const domain::ValidatedJpegOutput &validatedOutput,

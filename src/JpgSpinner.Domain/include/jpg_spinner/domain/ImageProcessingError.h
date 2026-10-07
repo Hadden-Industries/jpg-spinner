@@ -16,6 +16,8 @@ enum class ImageProcessingErrorCode
     SourceAccessDenied,
     SourceSharingViolation,
     SourceRevisionCaptureFailed,
+    SourceDiscoveryFailed,
+    InvalidBatchProcessingRequest,
     SourceChangedAfterAnalysis,
     DestinationAccessDenied,
     EncodedFileTooLarge,
@@ -101,8 +103,19 @@ struct WindowsHResult final
 };
 
 using NativeErrorProjection = std::variant<std::monostate, std::error_code, WindowsHResult>;
+
+/// Observed entry into the native coefficient-transform call, not whether it
+/// succeeded or produced validated output. Broad processing stages cannot
+/// distinguish cancellation immediately before and after that same C call.
+enum class CoefficientTransformationExecutionState
+{
+    NotStarted,
+    Started,
+};
+
 using ImageProcessingDiagnosticContext =
-    std::variant<std::monostate, JpegResourceLimitViolation, JpegOutputValidationRule>;
+    std::variant<std::monostate, JpegResourceLimitViolation, JpegOutputValidationRule,
+                 CoefficientTransformationExecutionState>;
 
 struct ImageProcessingError final
 {

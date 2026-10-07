@@ -1,11 +1,13 @@
 #pragma once
 
+#include <windows.h>
 #include <jpg_spinner/domain/ImageProcessingResult.h>
 #include <jpg_spinner/domain/OutputDisposition.h>
 #include <jpg_spinner/domain/SourceFileRevision.h>
 #include <jpg_spinner/domain/ValidatedJpegOutput.h>
 #include <winrt/Windows.Storage.h>
 #include <stop_token>
+#include <optional>
 #include <vector>
 
 namespace jpg_spinner::storage
@@ -16,6 +18,10 @@ struct ImageFileTransactionRequest final
     winrt::Windows::Storage::StorageFile sourceFile;
     domain::SourceFileRevision expectedSourceRevision;
     domain::OutputDisposition outputDisposition{domain::OutputDisposition::CreateCorrectedCopy};
+    /// When acquired by discovery, preserve that file's native volume/file ID.
+    /// The engine compares it under its own retained proof before any output I/O;
+    /// an equal content revision alone cannot identify a substituted file.
+    std::optional<FILE_ID_INFO> expectedSourceIdentity{};
 };
 
 /// A completed native move, not a claim of power-fail atomicity or durable-media persistence.

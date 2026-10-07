@@ -32,8 +32,17 @@
     <OutDir>$(MSBuildThisFileDirectory)..\..\artifacts\bin\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</OutDir>
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
+  <ItemDefinitionGroup><ClCompile><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;$(MSBuildThisFileDirectory)..\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\JpgSpinner.JpegTransformation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile></ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\BatchProcessingModule.cpp" />
+    <ClCompile Include="src\BatchIdentifier.cpp" />
+    <ClCompile Include="src\BatchProcessingCoordinator.cpp" />
+    <ClInclude Include="include\jpg_spinner\batch\BatchProcessingCoordinator.h" />
+    <ClInclude Include="include\jpg_spinner\batch\BatchProcessingRequest.h" />
+    <ClInclude Include="include\jpg_spinner\batch\BatchProcessingProgress.h" />
+    <ClInclude Include="include\jpg_spinner\batch\AnalyzedImageBatch.h" />
+    <ClInclude Include="include\jpg_spinner\batch\BatchFileOutcome.h" />
+    <ClInclude Include="include\jpg_spinner\batch\BatchProcessingSummary.h" />
+    <ClInclude Include="include\jpg_spinner\batch\BatchIdentifier.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\JpgSpinner.Domain\JpgSpinner.Domain.vcxproj">

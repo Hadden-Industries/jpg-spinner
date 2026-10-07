@@ -229,6 +229,8 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
         if (batch.selectedRootIdentity && !isSameIdentity(rootProof.identity, *batch.selectedRootIdentity))
             return failure(ImageProcessingErrorCode::RecoveryConflict, ImageProcessingStage::TransactionRecovery);
         auto sourceProof = inspectItem(request.sourceFile.Path(), false);
+        if (request.expectedSourceIdentity && !isSameIdentity(sourceProof.identity, *request.expectedSourceIdentity))
+            return failure(ImageProcessingErrorCode::SourceChangedAfterAnalysis, phase);
         const auto relativePath = sourceProof.canonicalPath.lexically_relative(rootProof.canonicalPath);
         if (relativePath.empty() || relativePath.is_absolute() || relativePath == ".")
             throw winrt::hresult_invalid_argument();

@@ -11,6 +11,8 @@ namespace jpg_spinner::jpeg
 /// owned values, suitable for transfer into later coroutine/batch work. Success
 /// owns fully validated bytes; failure/cancellation publishes no intermediate
 /// output. Implementations have no filesystem or transaction authority.
+/// Cancelled failures carry CoefficientTransformationExecutionState in their
+/// diagnosticContext so callers do not infer native admission from a broad stage.
 class JpegTransformationEngine
 {
   public:

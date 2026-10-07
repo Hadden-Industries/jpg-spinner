@@ -107,6 +107,15 @@ StorageItemProof inspectItem(const winrt::hstring &path, const bool directory, c
     return {std::move(handle), std::filesystem::path{finalPath}, identity};
 }
 
+DWORD storageItemAttributes(const winrt::hstring &path, const bool directory)
+{
+    const auto handle = openStorageItemMetadataHandle(path, directory, FILE_READ_ATTRIBUTES);
+    FILE_ATTRIBUTE_TAG_INFO attributes{};
+    winrt::check_bool(
+        GetFileInformationByHandleEx(handle.get(), FileAttributeTagInfo, &attributes, sizeof(attributes)));
+    return attributes.FileAttributes;
+}
+
 bool isSameIdentity(const FILE_ID_INFO &left, const FILE_ID_INFO &right) noexcept
 {
     return left.VolumeSerialNumber == right.VolumeSerialNumber &&

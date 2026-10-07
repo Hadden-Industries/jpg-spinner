@@ -25,9 +25,13 @@
     <OutDir>$(MSBuildThisFileDirectory)..\..\artifacts\bin\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</OutDir>
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
-  <ItemDefinitionGroup><Link><SubSystem>Console</SubSystem></Link></ItemDefinitionGroup>
+  <!-- Real JPEG analysis consumes Exiv2's Windows library inventory. -->
+  <ItemDefinitionGroup><Link><SubSystem>Console</SubSystem><AdditionalDependencies>psapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link></ItemDefinitionGroup>
+  <ItemDefinitionGroup><ClCompile><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.BatchProcessing\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile></ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
+    <ClCompile Include="BatchIdentifierTests.cpp" />
+    <ClCompile Include="BatchProcessingCoordinatorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\JpgSpinner.BatchProcessing\JpgSpinner.BatchProcessing.vcxproj"><Project>{47B98640-4C3D-4EB7-B888-9F2C4D84B4BF}</Project></ProjectReference>

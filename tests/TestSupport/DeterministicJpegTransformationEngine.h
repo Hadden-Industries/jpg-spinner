@@ -11,6 +11,8 @@ namespace jpg_spinner::test_support
 /// it cannot forge ValidatedJpegOutput. The factory may use test-owned barriers
 /// to control completion and must support concurrent calls. Observations record
 /// public invocation concurrency, never internal production phase calls.
+/// A successful factory represents completed coefficient work; errors retain
+/// the factory's original native-admission diagnostic even after a stop request.
 class DeterministicJpegTransformationEngine final : public jpg_spinner::jpeg::JpegTransformationEngine
 {
   public:

@@ -8,6 +8,13 @@
         "resolved": "3.0.260818.1",
         "contentHash": "jBwP7ycb35/qnvwh+iysvelATSoIjjFtQBg29Ns1f5OVPKa1rur3VhJVQD5p3n/ADE2IAeVo/bN+EiFfztTROw=="
       },
+      "jpgspinner.batchprocessing": {
+        "type": "Project",
+        "dependencies": {
+          "JpgSpinner.Domain": "[1.0.0, )",
+          "JpgSpinner.JpegTransformation": "[1.0.0, )"
+        }
+      },
       "jpgspinner.domain": {
         "type": "Project"
       },

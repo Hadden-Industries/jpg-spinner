@@ -24,12 +24,20 @@ winrt::guid createIdentifier()
 
 internal::ImageFileTransactionBatch::ImageFileTransactionBatch(
     winrt::Windows::Storage::StorageFolder selectedRoot, winrt::Windows::Storage::StorageFolder applicationJournalStore)
-    : selectedSourceRoot(std::move(selectedRoot)), journalStore(std::move(applicationJournalStore)),
-      identifier(createIdentifier()),
-      directoryName(std::format(L"{:%Y%m%dT%H%M%SZ}-{:08x}",
-                                std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()),
-                                identifier.Data1))
+    : ImageFileTransactionBatch(std::move(selectedRoot), std::move(applicationJournalStore), createIdentifier(),
+                                std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()))
 {
+}
+
+internal::ImageFileTransactionBatch::ImageFileTransactionBatch(
+    winrt::Windows::Storage::StorageFolder selectedRoot, winrt::Windows::Storage::StorageFolder applicationJournalStore,
+    const winrt::guid batchIdentifier, const std::chrono::sys_seconds batchCreationTimeUtc)
+    : selectedSourceRoot(std::move(selectedRoot)), journalStore(std::move(applicationJournalStore)),
+      identifier(batchIdentifier),
+      directoryName(std::format(L"{:%Y%m%dT%H%M%SZ}-{:08x}", batchCreationTimeUtc, identifier.Data1))
+{
+    if (identifier == winrt::guid{})
+        throw winrt::hresult_invalid_argument();
 }
 
 WindowsStorageImageFileTransactionEngine::WindowsStorageImageFileTransactionEngine(
@@ -41,6 +49,15 @@ WindowsStorageImageFileTransactionEngine::WindowsStorageImageFileTransactionEngi
 }
 
 WindowsStorageImageFileTransactionEngine::~WindowsStorageImageFileTransactionEngine() = default;
+
+WindowsStorageImageFileTransactionEngine::WindowsStorageImageFileTransactionEngine(
+    winrt::Windows::Storage::StorageFolder selectedSourceRoot,
+    winrt::Windows::Storage::StorageFolder applicationJournalStore, const winrt::guid batchIdentifier,
+    const std::chrono::sys_seconds batchCreationTimeUtc)
+    : batch_(std::make_unique<internal::ImageFileTransactionBatch>(
+          std::move(selectedSourceRoot), std::move(applicationJournalStore), batchIdentifier, batchCreationTimeUtc))
+{
+}
 
 domain::ImageProcessingResult<CommittedImageFile> WindowsStorageImageFileTransactionEngine::execute(
     const ImageFileTransactionRequest &request, const domain::ValidatedJpegOutput &validatedOutput,

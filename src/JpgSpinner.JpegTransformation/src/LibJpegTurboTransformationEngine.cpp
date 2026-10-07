@@ -17,7 +17,10 @@ ImageProcessingResult<ValidatedJpegOutput> LibJpegTurboTransformationEngine::cre
 {
     using Result = ImageProcessingResult<ValidatedJpegOutput>;
     auto stage = ImageProcessingStage::TransformPlanning;
-    const auto cancelled = [&] { return Result::failure({ImageProcessingErrorCode::Cancelled, stage}); };
+    auto executionState = CoefficientTransformationExecutionState::NotStarted;
+    const auto cancelled = [&] {
+        return Result::failure({ImageProcessingErrorCode::Cancelled, stage, {}, executionState});
+    };
     try
     {
         if (cancellation.stop_requested())
@@ -63,6 +66,9 @@ ImageProcessingResult<ValidatedJpegOutput> LibJpegTurboTransformationEngine::cre
                 source, plan, codecOutput, cancellation, resourceLimits_);
             if (const auto *error = transformed.errorIfPresent())
                 return Result::failure(*error);
+            // Success proves tj3Transform returned. Its own cancellation errors
+            // already distinguish the checks on either side of that native call.
+            executionState = CoefficientTransformationExecutionState::Started;
             if (cancellation.stop_requested())
                 return cancelled();
             codecOutput.resize(*transformed.valueIfPresent());
@@ -101,8 +107,11 @@ ImageProcessingResult<ValidatedJpegOutput> LibJpegTurboTransformationEngine::cre
                              codecOutput.end());
         }
         stage = ImageProcessingStage::OutputValidation;
-        return internal::JpegOutputValidator::validate(source, *scan.valueIfPresent(), plan, std::move(completed),
-                                                       cancellation, resourceLimits_);
+        auto validated = internal::JpegOutputValidator::validate(source, *scan.valueIfPresent(), plan,
+                                                                 std::move(completed), cancellation, resourceLimits_);
+        if (const auto *error = validated.errorIfPresent(); error && error->code == ImageProcessingErrorCode::Cancelled)
+            return Result::failure({error->code, error->stage, error->nativeErrorProjection, executionState});
+        return validated;
     }
     catch (const std::bad_alloc &)
     {

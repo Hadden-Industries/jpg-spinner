@@ -362,5 +362,7 @@ TEST_CASE("Cancelled coefficient work leaves the output sink unchanged", "[jpeg]
         LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output, cancellation.get_token());
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == ImageProcessingErrorCode::Cancelled);
+    CHECK(std::get<CoefficientTransformationExecutionState>(result.errorIfPresent()->diagnosticContext) ==
+          CoefficientTransformationExecutionState::NotStarted);
     CHECK(std::ranges::all_of(output, [](auto value) { return value == std::byte{0x5a}; }));
 }

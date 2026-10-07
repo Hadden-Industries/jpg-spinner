@@ -21,6 +21,9 @@ struct StorageItemProof final
 /// The caller owns the returned handle and must close it before authorized moves.
 [[nodiscard]] StorageItemProof inspectItem(const winrt::hstring &path, bool directory,
                                            DWORD access = FILE_READ_ATTRIBUTES);
+/// Observe the item itself through the same extended-length FromApp open. Unlike
+/// inspectItem, this reports reparse attributes rather than granting physical identity.
+[[nodiscard]] DWORD storageItemAttributes(const winrt::hstring &path, bool directory);
 /// The journal depends on identity surviving native rename/replacement. Only
 /// physical NTFS has passed this contract's qualification; a file-ID-shaped value
 /// from another provider is insufficient. This is not a durability guarantee.

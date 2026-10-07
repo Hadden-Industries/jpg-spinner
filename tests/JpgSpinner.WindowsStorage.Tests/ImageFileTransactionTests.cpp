@@ -11,6 +11,7 @@
 #include "internal/RecoverableImageFileTransaction.h"
 #include "internal/CorrectedCopyPathPolicy.h"
 #include "internal/ImageFileTransactionJournal.h"
+#include "internal/StorageItemProof.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
@@ -127,6 +128,29 @@ struct TransactionFixture final
     }
 };
 } // namespace
+
+TEST_CASE("a discovered identity cannot be replaced by identical encoded content",
+          "[storage][transaction][source-identity]")
+{
+    const TransactionTestApartment apartment;
+    const TransactionFixture fixture;
+    const auto source = fixture.createSource(L"camera.jpg");
+    const auto other = fixture.createSource(L"different-file.jpg");
+    auto request = fixture.requestFor(source);
+    {
+        const auto sourceProof = storage::internal::inspectItem(source.Path(), false);
+        const auto otherProof = storage::internal::inspectItem(other.Path(), false);
+        REQUIRE_FALSE(storage::internal::isSameIdentity(sourceProof.identity, otherProof.identity));
+        request.expectedSourceIdentity = otherProof.identity;
+    }
+    storage::WindowsStorageImageFileTransactionEngine engine{fixture.root, fixture.journalStore};
+    const auto refused = engine.execute(request, *fixture.output.valueIfPresent());
+    REQUIRE(refused.errorIfPresent() != nullptr);
+    REQUIRE(refused.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceChangedAfterAnalysis);
+    REQUIRE_FALSE(std::filesystem::exists(fixture.directory.directoryPath() / L"JPG Spinner Output"));
+    REQUIRE(readBytes(std::filesystem::path{source.Path().c_str()}) == fixture.sourceBytes);
+    REQUIRE(readBytes(std::filesystem::path{other.Path().c_str()}) == fixture.sourceBytes);
+}
 
 TEST_CASE("a corrected copy commits the exact real validator capability without modifying its source",
           "[storage][transaction][copy]")

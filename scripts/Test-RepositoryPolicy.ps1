@@ -1350,6 +1350,8 @@ function Test-ModernSolutionArchitecture {
         'tests/JpgSpinner.WindowsStorage.Tests/JpgSpinner.WindowsStorage.Tests.vcxproj' = [pscustomobject]@{
             configurationType = 'Application'
             references = @(
+                # Real batch/capability/commit composition is a test-only edge.
+                'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj',
                 'src/JpgSpinner.WindowsStorage/JpgSpinner.WindowsStorage.vcxproj',
                 # Transaction tests obtain immutable capabilities through the
                 # real native JPEG validator; production Storage stays Domain-only.

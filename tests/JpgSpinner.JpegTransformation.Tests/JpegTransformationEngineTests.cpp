@@ -76,6 +76,8 @@ TEST_CASE("Deterministic engine records concurrency and rejects cancellation aft
         cancelledEngine.createValidatedOutput(source, *analysis.valueIfPresent(), cancellation.get_token());
     REQUIRE(cancelled.errorIfPresent() != nullptr);
     CHECK(cancelled.errorIfPresent()->code == ImageProcessingErrorCode::Cancelled);
+    CHECK(std::get<CoefficientTransformationExecutionState>(cancelled.errorIfPresent()->diagnosticContext) ==
+          CoefficientTransformationExecutionState::Started);
 }
 
 TEST_CASE("Public engine contract retains a real validator rejection from controlled completion", "[jpeg][engine]")
@@ -124,6 +126,8 @@ TEST_CASE("Engine rechecks approval and applies trim and cancellation policies",
     const auto cancelled = engine.createValidatedOutput(source, *analysis.valueIfPresent(), cancellation.get_token());
     REQUIRE(cancelled.errorIfPresent() != nullptr);
     CHECK(cancelled.errorIfPresent()->code == ImageProcessingErrorCode::Cancelled);
+    CHECK(std::get<CoefficientTransformationExecutionState>(cancelled.errorIfPresent()->diagnosticContext) ==
+          CoefficientTransformationExecutionState::NotStarted);
     const auto changed = createMetadataSource(3);
     const auto original = createMetadataSource(6);
     const auto originalAnalysis = JpegImageAnalyzer::analyze(original);

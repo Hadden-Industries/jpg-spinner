@@ -100,6 +100,8 @@ TEST_CASE("every image-processing error code has a semantic diagnostic name", "[
                        "StorageProviderRecoveryContractNotEstablished"},
         NamedErrorCode{ImageProcessingErrorCode::SourceSharingViolation, "SourceSharingViolation"},
         NamedErrorCode{ImageProcessingErrorCode::SourceRevisionCaptureFailed, "SourceRevisionCaptureFailed"},
+        NamedErrorCode{ImageProcessingErrorCode::SourceDiscoveryFailed, "SourceDiscoveryFailed"},
+        NamedErrorCode{ImageProcessingErrorCode::InvalidBatchProcessingRequest, "InvalidBatchProcessingRequest"},
         NamedErrorCode{ImageProcessingErrorCode::SourceChangedAfterAnalysis, "SourceChangedAfterAnalysis"},
         NamedErrorCode{ImageProcessingErrorCode::DestinationAccessDenied, "DestinationAccessDenied"},
         NamedErrorCode{ImageProcessingErrorCode::EncodedFileTooLarge, "EncodedFileTooLarge"},

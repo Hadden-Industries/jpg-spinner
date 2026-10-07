@@ -4,6 +4,7 @@
 #include <winrt/Windows.Storage.h>
 #include <optional>
 #include <string>
+#include <chrono>
 
 namespace jpg_spinner::storage::internal
 {
@@ -14,6 +15,9 @@ struct ImageFileTransactionBatch final
 {
     ImageFileTransactionBatch(winrt::Windows::Storage::StorageFolder selectedRoot,
                               winrt::Windows::Storage::StorageFolder applicationJournalStore);
+    ImageFileTransactionBatch(winrt::Windows::Storage::StorageFolder selectedRoot,
+                              winrt::Windows::Storage::StorageFolder applicationJournalStore,
+                              winrt::guid batchIdentifier, std::chrono::sys_seconds batchCreationTimeUtc);
 
     const winrt::Windows::Storage::StorageFolder selectedSourceRoot;
     const winrt::Windows::Storage::StorageFolder journalStore;
