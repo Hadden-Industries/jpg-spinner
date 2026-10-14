@@ -1466,6 +1466,29 @@ recycled recoverably; only generated shipping PNGs enter the asset inventory.
 Native x64 Debug build and existing manifest-preservation policy pass with the
 new inventory; this is not signed bundle, trusted upgrade or WACK qualification.
 
+Unsigned package production reuses `Invoke-Build.ps1` with a closed native build
+entry point (`PackagedApplication`), an absent explicit output directory and the
+selected SDK's public `GenerateAppxPackageOnBuild`/`AppxPackageDir` properties.
+Default builds still use the whole modern solution. Project-owned compiler,
+SDK and framework settings are not masked by new toolchain globals. Native
+single-project MSIX targets own package construction; no private target call,
+hand-written ZIP or legacy packaging shim is introduced.
+`Test-PackageBuildContract.ps1` observed successful native app build without MSIX
+(RED), then actual x64 Debug MSIX production (GREEN). Separate native MakeAppx
+extraction/manifest/payload/artwork checks establish unsigned app identity,
+architecture and framework dependency, rather than accepting dependency sidecars
+as the product. Output-entry/fresh-directory refusals preserve the source sentinel.
+
+The locked MSIX targets' CI behavior is configuration-dependent: Release omits
+the separate sideload drop; Debug still includes it. Do not infer otherwise from
+general CI examples or bypass that consumer with a private property shim.
+Duplicate Debug framework/symbol working copies were hash-matched to retained
+originals and recycled; raw outcomes and both main packages remain. Release
+multi-architecture packages/bundle, trusted upgrade, physical ARM64 and WACK
+qualification remain subsequent obligations. See
+[official CI packaging guidance](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/ci-for-winui3)
+and [native MakeAppx](https://learn.microsoft.com/en-us/windows/msix/package/create-app-package-with-makeappx-tool).
+
 **Files:**
 
 - Create: `src/JpgSpinner.App/Package.appxmanifest`

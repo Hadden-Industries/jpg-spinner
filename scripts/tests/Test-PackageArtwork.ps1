@@ -1,11 +1,16 @@
 <# Decode required PNGs independently of the generator. This checks authored
    resource dimensions and brand preservation, not shell rendering acceptance. #>
 [CmdletBinding()]
-param([string]$RepositoryRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)))
+param(
+    [string]$RepositoryRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
+    # Same image contract also qualifies the real unpacked native MSIX payload.
+    [string]$AssetsDirectory = ''
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
-$assets = Join-Path $RepositoryRoot 'src/JpgSpinner.App/Assets'
+$assets = if ([string]::IsNullOrEmpty($AssetsDirectory)) { Join-Path $RepositoryRoot 'src/JpgSpinner.App/Assets' }
+          else { [IO.Path]::GetFullPath($AssetsDirectory) }
 # Independent dimensions from Microsoft's Windows app-icon construction guide.
 $required = [ordered]@{
     'Square44x44Logo.scale-100.png' = @(44,44)

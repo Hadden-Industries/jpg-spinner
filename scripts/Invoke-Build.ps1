@@ -15,6 +15,15 @@ param(
     [ValidateRange(1, [int]::MaxValue)]
     [int]$MaximumBuildProcessCount = 2,
 
+    # Select the native application project for packaging without building test
+    # hosts into that graph; normal builds retain the whole modern solution.
+    [ValidateSet('ModernSolution', 'PackagedApplication')]
+    [string]$BuildEntryPoint = 'ModernSolution',
+
+    # Requests an unsigned package from the native single-project MSIX targets.
+    # Signing/installing/publishing are deliberately separate operations.
+    [string]$UnsignedPackageOutputDirectory = '',
+
     [Parameter()]
     [string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot)
 )
@@ -27,9 +36,25 @@ if (-not (Test-Path -LiteralPath $repositoryRoot -PathType Container)) {
     throw "RepositoryRoot does not identify an existing directory: $repositoryRoot"
 }
 
-$solutionPath = Join-Path $repositoryRoot 'JpgSpinner.sln'
-if (-not (Test-Path -LiteralPath $solutionPath -PathType Leaf)) {
-    throw "Modern solution is absent: $solutionPath"
+$packageOutputPath = $null
+if (-not [string]::IsNullOrEmpty($UnsignedPackageOutputDirectory)) {
+    if ($BuildEntryPoint -ne 'PackagedApplication') {
+        throw 'Unsigned packaging requires the PackagedApplication build entry point.'
+    }
+    $packageOutputPath = [IO.Path]::GetFullPath($UnsignedPackageOutputDirectory)
+    # Do not overwrite a previously qualified drop or mix old package files into
+    # a new run. Native targets create this explicit new directory themselves.
+    if (Test-Path -LiteralPath $packageOutputPath) {
+        throw 'Unsigned package output directory must be fresh and absent.'
+    }
+}
+
+$buildEntryPointRelativePath =
+    if ($BuildEntryPoint -eq 'PackagedApplication') { 'src/JpgSpinner.App/JpgSpinner.App.vcxproj' }
+    else { 'JpgSpinner.sln' }
+$buildEntryPointPath = Join-Path $repositoryRoot $buildEntryPointRelativePath
+if (-not (Test-Path -LiteralPath $buildEntryPointPath -PathType Leaf)) {
+    throw "Native build entry point is absent: $buildEntryPointPath"
 }
 $repositoryNuGetConfigurationPath = Join-Path $repositoryRoot 'NuGet.config'
 if (-not (Test-Path -LiteralPath $repositoryNuGetConfigurationPath -PathType Leaf)) {
@@ -70,7 +95,7 @@ $startInfo.RedirectStandardOutput = $true
 $startInfo.RedirectStandardError = $true
 
 foreach ($argument in @(
-    $solutionPath,
+    $buildEntryPointPath,
     '-nologo',
     '-noAutoResponse',
     '-restore',
@@ -91,6 +116,22 @@ foreach ($argument in @(
     "/bl:$binaryLogPath"
 )) {
     [void]$startInfo.ArgumentList.Add($argument)
+}
+
+if ($null -ne $packageOutputPath) {
+    # Public single-project MSIX properties, not private targets or a hand-built
+    # ZIP. Preserve project-owned toolchain/framework settings. This invocation
+    # emits one architecture; bundling/signing/deployment are separate contracts.
+    # https://learn.microsoft.com/windows/apps/windows-app-sdk/single-project-msix
+    foreach ($argument in @('-p:GenerateAppxPackageOnBuild=true',
+        "-p:AppxPackageDir=$packageOutputPath\", '-p:AppxBundle=Never',
+        # Release CI omits the SDK's separate sideload installer/dependency
+        # drop. Debug remains an SDK sideload qualification package, even with
+        # CI selected; do not misreport that consumer-owned distinction.
+        # Deployment prerequisites remain in the native package manifest.
+        '-p:UapAppxPackageBuildMode=CI', '-p:AppxPackageSigningEnabled=false')) {
+        [void]$startInfo.ArgumentList.Add($argument)
+    }
 }
 
 $process = [System.Diagnostics.Process]::new()
