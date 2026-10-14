@@ -1509,6 +1509,25 @@ remain distinct from this repaired prerequisite. See
 [Microsoft's Installer parameters](https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio)
 for component modification and the no-update/no-restart controls.
 
+The repaired prerequisite now permits an actual unsigned ARM64 Release package;
+native MakeAppx extraction, the existing manifest/framework/artwork policy and
+architecture checks pass for all three independently produced Release packages.
+`New-MsixBundle.ps1` composes only those selected packages with the owning SDK's
+MakeAppx, semantic validation enabled, `/no`, and explicit `/bv 2.0.0.0`.
+The positive contract reached the unimplemented producer (RED), then built and
+unbundled a real x86/x64/ARM64 container (GREEN). The native reader verifies
+the exact Store identity, publisher and version, and architecture membership.
+An additional real negative control proves MakeAppx rejects three distinct paths
+containing one repeated architecture (0x80080204); input count/path checks do
+not substitute for native semantic validation. Qualified inputs remain unchanged.
+The first successful composition exposed a PowerShell `SetEquals` type-binding
+error in the test; that setup defect was corrected with a typed string array,
+and a fresh composition passed. Six repeated ARM64 drop dependency files were
+hash-matched to retained x64-drop counterparts and recycled; the unique ARM64
+VCLibs package, actual app packages/bundles, symbols and raw failures remain.
+No signed package, trusted upgrade, physical ARM64 runtime, WACK, Store
+submission or complete Task 16 acceptance is claimed by this source checkpoint.
+
 **Files:**
 
 - Create: `src/JpgSpinner.App/Package.appxmanifest`
