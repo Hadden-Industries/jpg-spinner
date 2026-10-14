@@ -58,6 +58,7 @@
     <ClCompile Include="InteractiveUiEnvironmentTests.cpp" />
     <ClCompile Include="SelectedFolderBatchCompositionTests.cpp" />
     <ClCompile Include="SourceFolderAccessRetentionTests.cpp" />
+    <ClCompile Include="StartupRecoveryTests.cpp" />
     <ClCompile Include="ShellProjectionContractTests.cpp" />
     <ClCompile Include="WindowStateAutomationTests.cpp" />
     <!-- Compile the owning production source, not a duplicate test model. Native

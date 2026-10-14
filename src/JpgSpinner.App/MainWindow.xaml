@@ -90,6 +90,19 @@
                            TextWrapping="Wrap" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}"
                            AutomationProperties.AutomationId="RecoveryRequiredRegion" AutomationProperties.LiveSetting="Assertive" />
                 <TextBlock x:Uid="Shell_InitialInstruction" TextWrapping="Wrap" />
+                <ProgressRing IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Width="32" Height="32"
+                              x:Uid="Shell_StartupRecoveryProgress" AutomationProperties.AutomationId="StartupRecoveryProgress" />
+                <InfoBar x:Uid="Shell_StartupRecoveryError" Severity="Error" IsClosable="False"
+                         IsOpen="{x:Bind HasStartupRecoveryError, Mode=OneWay}"
+                         AutomationProperties.AutomationId="StartupRecoveryError" AutomationProperties.LiveSetting="Assertive" />
+                <Button x:Uid="Shell_RestoreRecoverySource" ContentTemplate="{StaticResource WrappingTextContentTemplate}"
+                        IsEnabled="{x:Bind CanRestoreStartupSourceAccess, Mode=OneWay}"
+                        Click="RestoreRecoverySource_Click" AutomationProperties.AutomationId="RestoreRecoverySource" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock x:Uid="Shell_StartupRecoveredCount" TextWrapping="Wrap" />
+                    <TextBlock Text="{x:Bind StartupRecoveredTransactionCount, Mode=OneWay}" TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="StartupRecoveredTransactionCount" />
+                </StackPanel>
                 <StackPanel x:Name="SelectedSourcePanel" Orientation="Horizontal" Spacing="12">
                     <Button x:Uid="Shell_SourcePicker" ContentTemplate="{StaticResource WrappingTextContentTemplate}" AutomationProperties.AutomationId="SourceFolderPicker"
                             IsEnabled="{x:Bind CanPickSourceFolder, Mode=OneWay}" Click="SourcePicker_Click" />

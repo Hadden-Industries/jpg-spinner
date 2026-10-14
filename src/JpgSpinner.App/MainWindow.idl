@@ -12,6 +12,12 @@ namespace JpgSpinner
         Boolean CanPickSourceFolder{ get; };
         Boolean IsWorkflowInteractionEnabled{ get; };
         Boolean CanRetryRecovery{ get; };
+        // Startup is a pre-selection gate, not a fabricated selected-source
+        // view model. A missing grant keeps normal interaction disabled.
+        Boolean IsStartupRecoveryPending{ get; };
+        Boolean HasStartupRecoveryError{ get; };
+        Boolean CanRestoreStartupSourceAccess{ get; };
+        String StartupRecoveredTransactionCount{ get; };
         // Window-only projection of the model's semantic state, not additional
         // processing states or a second workflow decision engine.
         Microsoft.UI.Xaml.Visibility SourceSelectionRegionVisibility{ get; };

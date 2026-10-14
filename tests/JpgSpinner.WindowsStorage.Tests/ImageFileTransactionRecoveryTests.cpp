@@ -4,6 +4,7 @@
 #include "internal/ImageFileTransactionJournal.h"
 #include "internal/RecoverableImageFileTransaction.h"
 #include <jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h>
+#include <jpg_spinner/storage/WindowsStorageStartupRecovery.h>
 #include <fstream>
 #include <catch2/catch_test_macros.hpp>
 #include <winrt/Windows.Foundation.h>
@@ -155,6 +156,82 @@ struct RecoveryFixture final
     }
 };
 } // namespace
+
+TEST_CASE("Startup restores a granted source and reconciles a prepared transaction before admitting work",
+          "[storage][startup-recovery][orchestration]")
+{
+    const RecoveryTestApartment apartment;
+    const RecoveryFixture fixture;
+    fixture.publishPrepared(false);
+    const std::array grants{fixture.root};
+    const storage::WindowsStorageStartupRecovery startup{fixture.store};
+    const auto result = startup.recover(grants);
+    REQUIRE(result.valueIfPresent());
+    REQUIRE(result.valueIfPresent()->recoveredTransactions.size() == 1);
+    CHECK(result.valueIfPresent()->recoveredTransactions.front().transactionIdentifier == fixture.identifier);
+    CHECK(result.valueIfPresent()->recoveredTransactions.front().outcome ==
+          storage::ImageFileTransactionRecoveryOutcome::OriginalPreserved);
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(fixture.source).get() == L"original encoded bytes");
+    CHECK(fixture.outputFolder.TryGetItemAsync(fixture.stageName).get() == nullptr);
+    CHECK(fixture.outputFolder.TryGetItemAsync(L"camera.jpg").get() == nullptr);
+    const storage::internal::ImageFileTransactionJournal journal{fixture.transactionFolder, fixture.identifier};
+    REQUIRE(journal.readLatest());
+    CHECK(journal.readLatest()->state ==
+          storage::internal::ImageFileTransactionState::TransactionAbandonedBeforeCommit);
+    const auto repeated = startup.recover(grants);
+    REQUIRE(repeated.valueIfPresent());
+    CHECK(repeated.valueIfPresent()->recoveredTransactions.empty());
+}
+
+TEST_CASE("Startup never admits work or mutates artifacts without the required restored source grant",
+          "[storage][startup-recovery][orchestration]")
+{
+    const RecoveryTestApartment apartment;
+    const RecoveryFixture fixture;
+    fixture.publishPrepared(false);
+    const auto before = fixture.transactionFolder.GetFilesAsync().get().Size();
+    const storage::WindowsStorageStartupRecovery startup{fixture.store};
+    const auto result = startup.recover({});
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+    CHECK(fixture.transactionFolder.GetFilesAsync().get().Size() == before);
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(fixture.source).get() == L"original encoded bytes");
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(fixture.stage).get() == L"corrected encoded bytes");
+    CHECK(fixture.store.TryGetItemAsync(L".jpg-spinner-journal-store-lease").get() == nullptr);
+}
+
+TEST_CASE("Startup does not confuse another granted folder with the journal's source identity",
+          "[storage][startup-recovery][orchestration]")
+{
+    const RecoveryTestApartment apartment;
+    const RecoveryFixture fixture;
+    fixture.publishPrepared(false);
+    const std::array wrongGrants{fixture.outputFolder};
+    const storage::WindowsStorageStartupRecovery startup{fixture.store};
+    const auto result = startup.recover(wrongGrants);
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(fixture.source).get() == L"original encoded bytes");
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(fixture.stage).get() == L"corrected encoded bytes");
+    CHECK(fixture.store.TryGetItemAsync(L".jpg-spinner-journal-store-lease").get() == nullptr);
+}
+
+TEST_CASE("Startup cancellation preserves an incomplete transaction even with its restored grant",
+          "[storage][startup-recovery][orchestration]")
+{
+    const RecoveryTestApartment apartment;
+    const RecoveryFixture fixture;
+    fixture.publishPrepared(false);
+    const std::array grants{fixture.root, fixture.root};
+    std::stop_source cancellation;
+    cancellation.request_stop();
+    const storage::WindowsStorageStartupRecovery startup{fixture.store};
+    const auto result = startup.recover(grants, cancellation.get_token());
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::Cancelled);
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(fixture.stage).get() == L"corrected encoded bytes");
+    CHECK(fixture.store.TryGetItemAsync(L".jpg-spinner-journal-store-lease").get() == nullptr);
+}
 
 TEST_CASE("Unavailable Windows long-path policy preserves every recovery artifact without taking a lease",
           "[storage][recovery][long-path-policy]")

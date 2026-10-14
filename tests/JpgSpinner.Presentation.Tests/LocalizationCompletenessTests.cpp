@@ -164,43 +164,49 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
     // MRT indexes property identifiers as URI path segments. Independently list
     // the shell's contract rather than reusing a production mapper or treating
     // successful English fallback as a translated Russian/British candidate.
-    constexpr const wchar_t *keys[]{L"Shell_SourceSelectionHeading/Text",
-                                    L"Shell_AnalysisHeading/Text",
-                                    L"Shell_ReviewHeading/Text",
-                                    L"Shell_ProcessingHeading/Text",
-                                    L"Shell_ResultsHeading/Text",
-                                    L"Shell_RecoveryRequiredHeading/Text",
-                                    L"Shell_SourcePicker/Content",
-                                    L"Shell_Analyze/Content",
-                                    L"Shell_TraversalScope/Header",
-                                    L"Shell_OutputDisposition/Header",
-                                    L"Shell_EdgeHandling/Header",
-                                    L"Shell_ScanOrganization/Header",
-                                    L"Shell_SelectedFolderOnly/Content",
-                                    L"Shell_SelectedFolderAndDescendants/Content",
-                                    L"Shell_CreateCorrectedCopy/Content",
-                                    L"Shell_ReplaceWithVerifiedBackup/Content",
-                                    L"Shell_RequirePerfectTransform/Content",
-                                    L"Shell_TrimPartialMinimumCodedUnits/Content",
-                                    L"Shell_PreserveSourceScans/Content",
-                                    L"Shell_SequentialDct/Content",
-                                    L"Shell_ProgressiveDct/Content",
-                                    L"Shell_ReviewInstruction/Text",
-                                    L"Shell_RecursiveExclusionNotice/Text",
-                                    L"Shell_BackupDestinationLabel/Text",
-                                    L"Shell_TrimConsent/Content",
-                                    L"Shell_DiscardedRightEdgeLabel/Text",
-                                    L"Shell_DiscardedBottomEdgeLabel/Text",
-                                    L"Shell_StartProcessing/Content",
-                                    L"Shell_CancelOperation/Content",
-                                    L"Shell_ReturnToSourceSelection/Content",
-                                    L"Shell_RetryRecovery/Content",
-                                    L"Shell_ProcessingRowsLabel/Text",
-                                    L"Shell_EligibleFilesLabel/Text",
-                                    L"Shell_CompletedRowsLabel/Text",
-                                    L"Shell_FailedFilesLabel/Text",
-                                    L"Shell_CancelledFilesLabel/Text",
-                                    L"Shell_InitialInstruction/Text"};
+    constexpr const wchar_t *keys[]{
+        L"Shell_SourceSelectionHeading/Text",
+        L"Shell_AnalysisHeading/Text",
+        L"Shell_ReviewHeading/Text",
+        L"Shell_ProcessingHeading/Text",
+        L"Shell_ResultsHeading/Text",
+        L"Shell_RecoveryRequiredHeading/Text",
+        L"Shell_SourcePicker/Content",
+        L"Shell_Analyze/Content",
+        L"Shell_TraversalScope/Header",
+        L"Shell_OutputDisposition/Header",
+        L"Shell_EdgeHandling/Header",
+        L"Shell_ScanOrganization/Header",
+        L"Shell_SelectedFolderOnly/Content",
+        L"Shell_SelectedFolderAndDescendants/Content",
+        L"Shell_CreateCorrectedCopy/Content",
+        L"Shell_ReplaceWithVerifiedBackup/Content",
+        L"Shell_RequirePerfectTransform/Content",
+        L"Shell_TrimPartialMinimumCodedUnits/Content",
+        L"Shell_PreserveSourceScans/Content",
+        L"Shell_SequentialDct/Content",
+        L"Shell_ProgressiveDct/Content",
+        L"Shell_ReviewInstruction/Text",
+        L"Shell_RecursiveExclusionNotice/Text",
+        L"Shell_BackupDestinationLabel/Text",
+        L"Shell_TrimConsent/Content",
+        L"Shell_DiscardedRightEdgeLabel/Text",
+        L"Shell_DiscardedBottomEdgeLabel/Text",
+        L"Shell_StartProcessing/Content",
+        L"Shell_CancelOperation/Content",
+        L"Shell_ReturnToSourceSelection/Content",
+        L"Shell_RetryRecovery/Content",
+        L"Shell_ProcessingRowsLabel/Text",
+        L"Shell_EligibleFilesLabel/Text",
+        L"Shell_CompletedRowsLabel/Text",
+        L"Shell_FailedFilesLabel/Text",
+        L"Shell_CancelledFilesLabel/Text",
+        L"Shell_InitialInstruction/Text",
+        L"Shell_StartupRecoveryProgress/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name",
+        L"Shell_StartupRecoveryError/Title",
+        L"Shell_StartupRecoveryError/Message",
+        L"Shell_StartupRecoveredCount/Text",
+        L"Shell_RestoreRecoverySource/Content"};
     for (const auto *key : keys)
     {
         INFO("Shell resource=" << winrt::to_string(key));
@@ -211,8 +217,9 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
     }
     // Attached-property namespace dots remain inside the qualified segment;
     // this is the native MakePRI resource shape, not a home-grown URI parser.
-    for (const auto *control : {L"SourcePicker", L"Analyze", L"TraversalScope", L"OutputDisposition", L"EdgeHandling",
-                                L"ScanOrganization", L"StartProcessing", L"CancelOperation", L"RetryRecovery"})
+    for (const auto *control :
+         {L"SourcePicker", L"Analyze", L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization",
+          L"StartProcessing", L"CancelOperation", L"RetryRecovery", L"RestoreRecoverySource"})
         for (const auto *property : {L"Name", L"HelpText"})
         {
             const auto key = std::wstring{L"Shell_"} + control +

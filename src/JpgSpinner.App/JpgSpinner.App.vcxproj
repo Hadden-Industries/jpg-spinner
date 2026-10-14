@@ -97,6 +97,7 @@
     <ClInclude Include="ViewModels\ImageSourceDiscoveryIssueViewModel.h" />
     <ClInclude Include="Localization\ImageProcessingErrorText.h" />
     <ClInclude Include="Composition\SelectedFolderBatchComposition.h" />
+    <ClInclude Include="Composition\StartupRecoveryComposition.h" />
     <ClInclude Include="Composition\SourceFolderAccessRetention.h" />
     <ClInclude Include="App.xaml.h"><DependentUpon>App.xaml</DependentUpon></ClInclude>
     <ClInclude Include="MainWindow.xaml.h"><DependentUpon>MainWindow.xaml</DependentUpon></ClInclude>

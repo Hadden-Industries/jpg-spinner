@@ -371,7 +371,10 @@ void runPackagedSourceAccessTests(const std::filesystem::path &applicationDirect
                       << winrt::to_string(report) << "\nPACKAGED_SOURCE_ACCESS_JUNIT_END" << std::endl;
             Data::Xml::Dom::XmlDocument results;
             results.LoadXml(report); // Windows owns XML parsing, not a home-grown report grammar.
-            const std::uint32_t expectedCases = requireRealFolderPicker ? 1 : 3;
+            // The noninteractive worker also qualifies startup restoration of
+            // an actual retained grant. Its passing report must include all
+            // four contracts; exit zero alone is not proof of discovery.
+            const std::uint32_t expectedCases = requireRealFolderPicker ? 1 : 4;
             if (results.GetElementsByTagName(L"testcase").Length() != expectedCases || exitCode != 0)
                 throw std::runtime_error{
                     "Packaged source-access tests failed or the expected contracts did not execute."};

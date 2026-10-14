@@ -1228,11 +1228,29 @@ Keep normal processing gated until that startup orchestration is complete.
 This read-only catalog is an intermediate source checkpoint, not implementation
 of startup orchestration, grant cleanup, closing behavior or local diagnostics.
 
+The next source slice composes startup recovery from native FutureAccessList
+restoration and `WindowsStorageStartupRecovery`. It matches actual granted-root
+identities before any recovery effects, pins required grants, delegates serial
+reconciliation to the existing transaction engine, and reinspects the catalog
+before permitting normal selection. Missing/wrong grants and cancellation retain
+artifacts and keep the startup gate closed. The WinUI shell awaits this work off
+the UI thread, shows a localized recovery refusal and recovered-transaction count,
+and offers a separate HWND-owned picker to restore access for recovery only.
+Tokens are not transaction IDs; native cache metadata never supplies access, and
+startup does not evict entries merely because an inventory appears empty.
+The windowless AppContainer test worker qualifies actual native cache restoration
+and original/stage/journal outcomes. Headless projection/resource tests do not
+claim an interactive picker acceptance pass. Closing, local diagnostics, export,
+and final Task 14 acceptance remain subsequent work.
+
 **Files:**
 
 - Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/WindowsStorageImageFileTransactionRecoveryCatalog.h`
 - Create: `src/JpgSpinner.WindowsStorage/src/WindowsStorageImageFileTransactionRecoveryCatalog.cpp`
 - Create: `tests/JpgSpinner.WindowsStorage.Tests/ImageFileTransactionRecoveryCatalogTests.cpp`
+- Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/WindowsStorageStartupRecovery.h`
+- Create: `src/JpgSpinner.WindowsStorage/src/WindowsStorageStartupRecovery.cpp`
+- Create: `src/JpgSpinner.App/Composition/StartupRecoveryComposition.h`
 
 - Create: `src/JpgSpinner.App/Diagnostics/LocalDiagnosticLog.h`
 - Create: `src/JpgSpinner.App/Diagnostics/LocalDiagnosticLog.cpp`

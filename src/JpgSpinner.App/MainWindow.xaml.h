@@ -21,6 +21,10 @@ struct MainWindow : MainWindowT<MainWindow>
     bool CanPickSourceFolder() const;
     bool IsWorkflowInteractionEnabled() const;
     bool CanRetryRecovery() const;
+    bool IsStartupRecoveryPending() const;
+    bool HasStartupRecoveryError() const;
+    bool CanRestoreStartupSourceAccess() const;
+    winrt::hstring StartupRecoveredTransactionCount() const;
     Microsoft::UI::Xaml::Visibility SourceSelectionRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility AnalysisRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility ReviewRegionVisibility() const;
@@ -38,6 +42,8 @@ struct MainWindow : MainWindowT<MainWindow>
                                           Microsoft::UI::Xaml::RoutedEventArgs const &);
     fire_and_forget RetryRecovery_Click(Windows::Foundation::IInspectable const &,
                                         Microsoft::UI::Xaml::RoutedEventArgs const &);
+    fire_and_forget RestoreRecoverySource_Click(Windows::Foundation::IInspectable const &,
+                                                Microsoft::UI::Xaml::RoutedEventArgs const &);
     fire_and_forget ReturnToSourceSelection_Click(Windows::Foundation::IInspectable const &,
                                                   Microsoft::UI::Xaml::RoutedEventArgs const &);
     void CancelOperation_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
@@ -62,6 +68,9 @@ struct MainWindow : MainWindowT<MainWindow>
     void retainSelectedSourceForTransaction();
     void releaseReconciledSourceAccess();
     void rememberCompletedBatchFolders();
+    /// Keeps normal selection gated until native retained-grant recovery has
+    /// completed. Blocking storage consumers run only on the owned MTA worker.
+    Windows::Foundation::IAsyncAction recoverStartupAsync();
     Presentation::MainWindowViewModel viewModel_{nullptr};
     Microsoft::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker viewModelSubscription_;
     Microsoft::UI::Xaml::XamlRoot::Changed_revoker xamlRootChangedSubscription_;
@@ -69,6 +78,10 @@ struct MainWindow : MainWindowT<MainWindow>
     bool pickerActive_{};
     bool operationEventActive_{};
     bool updatingProcessingOptionControls_{};
+    bool startupRecoveryPending_{true};
+    bool startupRecoveryStarted_{};
+    std::optional<jpg_spinner::domain::ImageProcessingError> startupRecoveryError_;
+    std::size_t startupRecoveredTransactionCount_{};
     Windows::Storage::StorageFolder selectedSourceFolder_{nullptr};
     guid batchIdentity_{};
     std::optional<jpg_spinner::presentation::SourceFolderAccessRetention> sourceAccessRetention_;
