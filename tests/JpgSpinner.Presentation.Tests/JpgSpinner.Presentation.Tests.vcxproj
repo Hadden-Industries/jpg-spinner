@@ -17,6 +17,9 @@
     <!-- Runtime classes are consumed in this unpackaged test host only. The
          production app continues to obtain runtime identity from its package. -->
     <WindowsPackageType>None</WindowsPackageType>
+    <!-- The same native test binary also runs in an exclusively owned test
+         package. Let the SDK use that package graph rather than bootstrap it. -->
+    <WindowsAppSDKBootstrapAutoInitializeOptions_OnPackageIdentity_NoOp>true</WindowsAppSDKBootstrapAutoInitializeOptions_OnPackageIdentity_NoOp>
     <UseWinUI>true</UseWinUI>
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <DefaultLanguage>en-US</DefaultLanguage>
@@ -35,21 +38,38 @@
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <!-- Let the native manifest tool merge process-creation DPI policy; do not
+         change global display settings or compensate coordinates at runtime. -->
+    <Manifest><AdditionalManifestFiles>$(MSBuildThisFileDirectory)PresentationTestHost.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles></Manifest>
+    <!-- MIDL imports search the caller's working/include directories, not the
+         imported file's directory. Resolve our Presentation.idl before the
+         unrelated Windows SDK COM Presentation.idl when consuming MainWindow. -->
+    <Midl><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></Midl>
     <ClCompile><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.BatchProcessing\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>
     <!-- The native Exiv2 dependency uses PSAPI for its version inventory. -->
-    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>psapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>psapi.lib;wtsapi32.lib;uiautomationcore.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
+    <ClCompile Include="PresentationTestMain.cpp" />
+    <Manifest Include="PresentationTestHost.manifest" />
     <ClCompile Include="MainWindowViewModelTests.cpp" />
     <ClCompile Include="LocalizationCompletenessTests.cpp" />
+    <ClCompile Include="InteractiveUiEnvironment.cpp" />
+    <ClCompile Include="InteractiveUiEnvironmentTests.cpp" />
+    <ClCompile Include="SelectedFolderBatchCompositionTests.cpp" />
+    <ClCompile Include="SourceFolderAccessRetentionTests.cpp" />
+    <ClCompile Include="ShellProjectionContractTests.cpp" />
+    <ClCompile Include="WindowStateAutomationTests.cpp" />
     <!-- Compile the owning production source, not a duplicate test model. Native
          MIDL/cppwinrt generate this host's projection from the same contract. -->
     <ClCompile Include="..\..\src\JpgSpinner.App\ViewModels\MainWindowViewModel.cpp" />
     <ClCompile Include="..\..\src\JpgSpinner.App\ViewModels\ImageProcessingRowViewModel.cpp" />
     <ClCompile Include="..\..\src\JpgSpinner.App\ViewModels\ImageSourceDiscoveryIssueViewModel.cpp" />
     <ClCompile Include="..\..\src\JpgSpinner.App\Localization\ImageProcessingErrorText.cpp" />
+    <ClCompile Include="..\..\src\JpgSpinner.App\Composition\SelectedFolderBatchComposition.cpp" />
     <Midl Include="..\..\src\JpgSpinner.App\Presentation.idl" />
+    <!-- Qualify the owning shell's metadata without activating a desktop Window. -->
+    <Midl Include="..\..\src\JpgSpinner.App\MainWindow.idl" />
   </ItemGroup>
   <ItemGroup>
     <!-- The test host compiles the owning resources, not a copied translation set. -->

@@ -8,6 +8,13 @@ param(
     [ValidateSet('x86', 'x64', 'ARM64')]
     [string]$Architecture,
 
+    # MSBuild process concurrency, not the number of compiler threads. Two is
+    # the conservative default for this native solution; callers with a known
+    # memory budget may choose a different positive count explicitly.
+    [Parameter()]
+    [ValidateRange(1, [int]::MaxValue)]
+    [int]$MaximumBuildProcessCount = 2,
+
     [Parameter()]
     [string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot)
 )
@@ -67,7 +74,10 @@ foreach ($argument in @(
     '-nologo',
     '-noAutoResponse',
     '-restore',
-    '-m',
+    # Bare -m uses every logical processor and exhausted commit memory on the
+    # development host. Bound worker creation independently of CPU topology.
+    # https://learn.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+    "-maxCpuCount:$MaximumBuildProcessCount",
     # A scripted build owns its worker lifetime. Do not retain MSBuild nodes
     # after exit: they keep directories open and prevent producer quiescence.
     # https://learn.microsoft.com/azure/devops/pipelines/troubleshooting/troubleshooting#msbuild-and-nodereusefalse

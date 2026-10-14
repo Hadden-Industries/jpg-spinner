@@ -1,44 +1,35 @@
 #define NOMINMAX
 #include <windows.h>
-#include <fileapifromapp.h>
-#include <pathcch.h>
 #include "StorageItemProof.h"
 #include <cstring>
 #include <array>
 #include <string>
 #include <winrt/Windows.Security.Cryptography.h>
 #include <winrt/Windows.Storage.Streams.h>
+#include <winrt/Windows.Storage.FileProperties.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #pragma comment(lib, "windowsapp.lib")
-#pragma comment(lib, "pathcch.lib")
 
 namespace jpg_spinner::storage::internal
 {
 namespace
 {
-winrt::handle openStorageItemMetadataHandle(const winrt::hstring &path, const bool directory, const DWORD access,
-                                            const DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                            const DWORD creation = OPEN_EXISTING)
+winrt::handle openStorageItemHandle(const winrt::Windows::Storage::IStorageItem &item,
+                                    const HANDLE_ACCESS_OPTIONS access,
+                                    const HANDLE_SHARING_OPTIONS sharing = HSO_SHARE_READ | HSO_SHARE_WRITE)
 {
-    if (path.empty())
+    if (!item)
         throw winrt::hresult_invalid_argument();
-    // Windows Storage can create a stage beyond MAX_PATH even when this process
-    // has no longPathAware manifest/registry opt-in. Let the supported App-family
-    // PathCch consumer produce extended-length drive/UNC syntax; never hand-parse
-    // prefixes or change machine policy. This is only an open-path representation,
-    // not identity or containment proof. ENSURE implies preserving trailing dots
-    // and spaces and must not be combined with ALLOW_LONG_PATHS (SDK contract).
-    std::wstring extendedLengthOpenPath(PATHCCH_MAX_CCH, L'\0');
-    winrt::check_hresult(PathCchCanonicalizeEx(extendedLengthOpenPath.data(), extendedLengthOpenPath.size(),
-                                               path.c_str(), PATHCCH_ENSURE_IS_EXTENDED_LENGTH_PATH));
-    // FromApp honors native security; never retry denied metadata access through
-    // an unrestricted desktop open. Open the reparse point itself to reject it.
-    const auto rawHandle =
-        CreateFileFromAppW(extendedLengthOpenPath.c_str(), access, sharing, nullptr, creation,
-                           FILE_FLAG_OPEN_REPARSE_POINT | (directory ? FILE_FLAG_BACKUP_SEMANTICS : 0), nullptr);
-    if (rawHandle == INVALID_HANDLE_VALUE)
-        winrt::throw_last_error();
-    return winrt::handle{rawHandle};
+    // Preserve broker authority across the Storage/native boundary. A picked
+    // object's path is metadata, not a transferable grant to a path-based open.
+    // This interface also avoids reconstructing extended-length open syntax.
+    // https://learn.microsoft.com/windows/win32/api/windowsstoragecom/nf-windowsstoragecom-istorageitemhandleaccess-create
+    winrt::handle handle;
+    winrt::check_hresult(item.as<IStorageItemHandleAccess>()->Create(access, sharing, HO_NONE, nullptr, handle.put()));
+    if (!handle || handle.get() == INVALID_HANDLE_VALUE)
+        throw winrt::hresult_invalid_argument();
+    return handle;
 }
 
 void requirePhysicalItemKind(const winrt::handle &handle, const bool directory)
@@ -52,9 +43,9 @@ void requirePhysicalItemKind(const winrt::handle &handle, const bool directory)
 }
 } // namespace
 
-bool hasQualifiedRecoveryFileSystem(const winrt::hstring &folderPath)
+bool hasQualifiedRecoveryFileSystem(const winrt::Windows::Storage::StorageFolder &folder)
 {
-    const auto handle = openStorageItemMetadataHandle(folderPath, true, FILE_READ_ATTRIBUTES);
+    const auto handle = openStorageItemHandle(folder, HAO_READ_ATTRIBUTES);
     std::array<wchar_t, MAX_PATH + 1> fileSystemName{};
     winrt::check_bool(GetVolumeInformationByHandleW(handle.get(), nullptr, 0, nullptr, nullptr, nullptr,
                                                     fileSystemName.data(), static_cast<DWORD>(fileSystemName.size())));
@@ -66,31 +57,43 @@ bool hasQualifiedRecoveryFileSystem(const winrt::hstring &folderPath)
     // Select the volume contract first, then validate the qualified physical
     // folder kind. Reparse rejection on NTFS remains mandatory, never bypassed.
     requirePhysicalItemKind(handle, true);
+    if ((storageItemAttributes(folder) & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
+        throw winrt::hresult_invalid_argument();
     return true;
 }
 
-winrt::handle acquireJournalStoreLease(const winrt::hstring &folderPath, const StorageItemProof &folderProof)
+winrt::handle acquireJournalStoreLease(const winrt::Windows::Storage::StorageFolder &folder,
+                                       const StorageItemProof &folderProof)
 {
-    const auto leasePath = (std::filesystem::path{folderPath.c_str()} / L".jpg-spinner-journal-store-lease").wstring();
     // Attribute-only access is explicitly exempt from share-mode exclusion.
     // Request read/write access with share mode zero to establish a real native
-    // lease; OPEN_ALWAYS never truncates an earlier file. No delete-on-close race.
-    auto lease =
-        openStorageItemMetadataHandle(winrt::hstring{leasePath}, false, GENERIC_READ | GENERIC_WRITE, 0, OPEN_ALWAYS);
+    // lease; OpenIfExists never truncates an earlier file. No delete-on-close race.
+    const auto file = folder
+                          .CreateFileAsync(L".jpg-spinner-journal-store-lease",
+                                           winrt::Windows::Storage::CreationCollisionOption::OpenIfExists)
+                          .get();
+    auto lease = openStorageItemHandle(file, HAO_READ | HAO_WRITE, HSO_SHARE_NONE);
     requirePhysicalItemKind(lease, false);
     LARGE_INTEGER size{};
     winrt::check_bool(GetFileSizeEx(lease.get(), &size));
     if (size.QuadPart != 0)
         throw winrt::hresult_invalid_argument();
-    const auto proof = inspectItem(winrt::hstring{leasePath}, false);
+    const auto proof = inspectItem(file, false);
     if (proof.canonicalPath != folderProof.canonicalPath / L".jpg-spinner-journal-store-lease")
         throw winrt::hresult_invalid_argument();
     return lease;
 }
 
-StorageItemProof inspectItem(const winrt::hstring &path, const bool directory, const DWORD access)
+StorageItemProof inspectItem(const winrt::Windows::Storage::IStorageItem &item, const bool directory,
+                             const HANDLE_ACCESS_OPTIONS access)
 {
-    auto handle = openStorageItemMetadataHandle(path, directory, access);
+    // The supported broker interface has no OPEN_REPARSE_POINT option. Query
+    // the original item's native attributes before taking its physical handle,
+    // then retain handle-derived kind/identity and canonical containment proof.
+    // Never manufacture an undocumented HANDLE_OPTIONS value or bypass denial.
+    if ((storageItemAttributes(item) & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
+        throw winrt::hresult_invalid_argument();
+    auto handle = openStorageItemHandle(item, access);
     requirePhysicalItemKind(handle, directory);
     FILE_ID_INFO identity{};
     winrt::check_bool(GetFileInformationByHandleEx(handle.get(), FileIdInfo, &identity, sizeof(identity)));
@@ -107,13 +110,16 @@ StorageItemProof inspectItem(const winrt::hstring &path, const bool directory, c
     return {std::move(handle), std::filesystem::path{finalPath}, identity};
 }
 
-DWORD storageItemAttributes(const winrt::hstring &path, const bool directory)
+DWORD storageItemAttributes(const winrt::Windows::Storage::IStorageItem &item)
 {
-    const auto handle = openStorageItemMetadataHandle(path, directory, FILE_READ_ATTRIBUTES);
-    FILE_ATTRIBUTE_TAG_INFO attributes{};
-    winrt::check_bool(
-        GetFileInformationByHandleEx(handle.get(), FileAttributeTagInfo, &attributes, sizeof(attributes)));
-    return attributes.FileAttributes;
+    if (!item)
+        throw winrt::hresult_invalid_argument();
+    // System.FileAttributes is specified as UInt32 with WIN32_FIND_DATA bit
+    // semantics. Native projection/type checking owns its representation.
+    // https://learn.microsoft.com/windows/win32/properties/props-system-fileattributes
+    const auto properties =
+        item.GetBasicPropertiesAsync().get().RetrievePropertiesAsync({L"System.FileAttributes"}).get();
+    return winrt::unbox_value<std::uint32_t>(properties.Lookup(L"System.FileAttributes"));
 }
 
 bool isSameIdentity(const FILE_ID_INFO &left, const FILE_ID_INFO &right) noexcept

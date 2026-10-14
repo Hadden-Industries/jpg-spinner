@@ -43,6 +43,21 @@ bool MainWindowViewModel::CanSelectSourceFolder() const
     return state_ == ImageProcessingExperienceState::SourceSelection ||
            state_ == ImageProcessingExperienceState::Review || state_ == ImageProcessingExperienceState::Results;
 }
+bool MainWindowViewModel::CanAnalyzeSelectedSource() const
+{
+    requireDispatcherThread();
+    return state_ == ImageProcessingExperienceState::SourceSelection && selectedRequest_.has_value();
+}
+hstring MainWindowViewModel::SourceFolderDisplayName() const
+{
+    requireDispatcherThread();
+    return sourceFolderDisplayName_;
+}
+std::uint64_t MainWindowViewModel::EligibleFileCount() const
+{
+    requireDispatcherThread();
+    return progress_.eligible;
+}
 bool MainWindowViewModel::CanBeginProcessing() const
 {
     requireDispatcherThread();
@@ -52,14 +67,17 @@ bool MainWindowViewModel::CanBeginProcessing() const
             jpg_spinner::domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup &&
         backupRootDisplayPath_.empty())
         return false;
-    if (std::any_of(rows_.begin(), rows_.end(), [](auto const &row) {
+    if (std::any_of(rows_.begin(), rows_.end(), [](Windows::Foundation::IInspectable const &item) {
+            const auto row = item.as<Presentation::ImageProcessingRowViewModel>();
             return row.IsEligibleForProcessing() &&
                    (row.DiscardedSourceRightEdgeWidthInPixels() != 0 ||
                     row.DiscardedSourceBottomEdgeHeightInPixels() != 0) &&
                    !row.IsEdgeTrimmingAcknowledged();
         }))
         return false;
-    return std::any_of(rows_.begin(), rows_.end(), [](auto const &row) { return row.IsEligibleForProcessing(); });
+    return std::any_of(rows_.begin(), rows_.end(), [](Windows::Foundation::IInspectable const &item) {
+        return item.as<Presentation::ImageProcessingRowViewModel>().IsEligibleForProcessing();
+    });
 }
 bool MainWindowViewModel::CanCancelCurrentOperation() const
 {
@@ -158,22 +176,38 @@ hstring MainWindowViewModel::ErrorRemedy() const
     requireDispatcherThread();
     return errorText_.remedy;
 }
+bool MainWindowViewModel::HasError() const
+{
+    requireDispatcherThread();
+    return !errorText_.title.empty();
+}
+bool MainWindowViewModel::IsProgressIndeterminate() const
+{
+    return !ProgressPercentage();
+}
+double MainWindowViewModel::ProgressPercentageOrZero() const
+{
+    const auto percentage = ProgressPercentage();
+    // WinUI ProgressBar requires a double. Its separate indeterminate flag
+    // preserves the distinction between unknown work and known zero progress.
+    return percentage ? percentage.Value() : 0.0;
+}
 void MainWindowViewModel::showError(jpg_spinner::domain::ImageProcessingErrorCode code)
 {
     errorText_ = jpg_spinner::presentation::loadImageProcessingErrorText(code, resources_, resourceContext_);
-    for (auto const *property : {L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy"})
+    for (auto const *property : {L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy", L"HasError"})
         notify(property);
 }
 void MainWindowViewModel::clearError()
 {
     errorText_ = {};
-    for (auto const *property : {L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy"})
+    for (auto const *property : {L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy", L"HasError"})
         notify(property);
 }
 void MainWindowViewModel::showUnexpectedError()
 {
     errorText_ = jpg_spinner::presentation::loadGenericImageProcessingErrorText(resources_, resourceContext_);
-    for (auto const *property : {L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy"})
+    for (auto const *property : {L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy", L"HasError"})
         notify(property);
 }
 bool MainWindowViewModel::CanReturnToSourceSelection() const
@@ -193,8 +227,7 @@ Windows::Foundation::IReference<double> MainWindowViewModel::ProgressPercentage(
     return box_value(100.0 * static_cast<double>(finished) / static_cast<double>(progress_.discovered))
         .as<Windows::Foundation::IReference<double>>();
 }
-Windows::Foundation::Collections::IVectorView<Presentation::ImageProcessingRowViewModel> MainWindowViewModel::Rows()
-    const
+Windows::Foundation::Collections::IVectorView<Windows::Foundation::IInspectable> MainWindowViewModel::Rows() const
 {
     requireDispatcherThread();
     return rows_;
@@ -204,8 +237,8 @@ hstring MainWindowViewModel::BackupRootDisplayPath() const
     requireDispatcherThread();
     return backupRootDisplayPath_;
 }
-Windows::Foundation::Collections::IVectorView<Presentation::ImageSourceDiscoveryIssueViewModel> MainWindowViewModel::
-    DiscoveryIssues() const
+Windows::Foundation::Collections::IVectorView<Windows::Foundation::IInspectable> MainWindowViewModel::DiscoveryIssues()
+    const
 {
     requireDispatcherThread();
     return discoveryIssues_;
@@ -213,12 +246,12 @@ Windows::Foundation::Collections::IVectorView<Presentation::ImageSourceDiscovery
 void MainWindowViewModel::projectDiscoveryIssues(std::span<const jpg_spinner::domain::ImageSourceDiscoveryIssue> issues)
 {
     requireDispatcherThread();
-    std::vector<Presentation::ImageSourceDiscoveryIssueViewModel> projectedIssues;
+    std::vector<Windows::Foundation::IInspectable> projectedIssues;
     projectedIssues.reserve(issues.size());
     for (auto const &issue : issues)
         projectedIssues.push_back(
             make<ImageSourceDiscoveryIssueViewModel>(dispatcherQueue_, issue, resources_, resourceContext_));
-    discoveryIssues_ = param::vector_view<Presentation::ImageSourceDiscoveryIssueViewModel>{std::move(projectedIssues)};
+    discoveryIssues_ = param::vector_view<Windows::Foundation::IInspectable>{std::move(projectedIssues)};
     notify(L"DiscoveryIssues");
 }
 void MainWindowViewModel::AcknowledgeEdgeTrimming(std::uint32_t rowIndex)
@@ -227,7 +260,8 @@ void MainWindowViewModel::AcknowledgeEdgeTrimming(std::uint32_t rowIndex)
     if (state_ != ImageProcessingExperienceState::Review)
         throw hresult_illegal_method_call();
     auto row = rows_.GetAt(rowIndex);
-    get_self<ImageProcessingRowViewModel>(row)->acknowledgeEdgeTrimming();
+    get_self<ImageProcessingRowViewModel>(row.as<Presentation::ImageProcessingRowViewModel>())
+        ->acknowledgeEdgeTrimming();
     notify(L"CanBeginProcessing");
 }
 void MainWindowViewModel::notify(hstring const &propertyName)
@@ -241,12 +275,13 @@ void MainWindowViewModel::changeState(Presentation::ImageProcessingExperienceSta
     if (stateChanged)
         notify(L"State");
     for (auto const *property :
-         {L"CanSelectSourceFolder", L"CanBeginProcessing", L"CanCancelCurrentOperation", L"CanReturnToSourceSelection",
-          L"ProgressPercentage", L"CompletedFileCount", L"FailedFileCount", L"CancelledFileCount"})
+         {L"CanSelectSourceFolder", L"CanAnalyzeSelectedSource", L"CanBeginProcessing", L"CanCancelCurrentOperation",
+          L"CanReturnToSourceSelection", L"ProgressPercentage", L"IsProgressIndeterminate", L"ProgressPercentageOrZero",
+          L"EligibleFileCount", L"CompletedFileCount", L"FailedFileCount", L"CancelledFileCount"})
         notify(property);
 }
 void MainWindowViewModel::selectSource(jpg_spinner::batch_processing::BatchProcessingRequest request,
-                                       hstring sourceDisplayName, hstring backupRootDisplayPath)
+                                       hstring sourceFolderDisplayName, hstring backupRootDisplayPath)
 {
     requireDispatcherThread();
     if (!CanSelectSourceFolder())
@@ -254,8 +289,7 @@ void MainWindowViewModel::selectSource(jpg_spinner::batch_processing::BatchProce
     if (!request.sourceCollection)
         throw hresult_invalid_argument();
     reviewedBatch_.reset();
-    rows_ = param::vector_view<Presentation::ImageProcessingRowViewModel>{
-        std::vector<Presentation::ImageProcessingRowViewModel>{}};
+    rows_ = param::vector_view<Windows::Foundation::IInspectable>{std::vector<Windows::Foundation::IInspectable>{}};
     notify(L"Rows");
     selectedRequest_.emplace(std::move(request));
     projectDiscoveryIssues({});
@@ -263,7 +297,8 @@ void MainWindowViewModel::selectSource(jpg_spinner::batch_processing::BatchProce
          {L"OutputDisposition", L"TraversalScope", L"EdgeHandlingPolicy", L"OutputScanOrganization"})
         notify(property);
     clearError();
-    sourceDisplayName_ = std::move(sourceDisplayName);
+    sourceFolderDisplayName_ = std::move(sourceFolderDisplayName);
+    notify(L"SourceFolderDisplayName");
     backupRootDisplayPath_ = std::move(backupRootDisplayPath);
     notify(L"BackupRootDisplayPath");
     progress_ = {};
@@ -274,6 +309,9 @@ void MainWindowViewModel::applyProgress(jpg_spinner::batch_processing::BatchProc
     requireDispatcherThread();
     progress_ = progress;
     notify(L"ProgressPercentage");
+    notify(L"IsProgressIndeterminate");
+    notify(L"ProgressPercentageOrZero");
+    notify(L"EligibleFileCount");
     notify(L"CompletedFileCount");
     notify(L"FailedFileCount");
     notify(L"CancelledFileCount");
@@ -281,13 +319,82 @@ void MainWindowViewModel::applyProgress(jpg_spinner::batch_processing::BatchProc
 Windows::Foundation::IAsyncAction MainWindowViewModel::AnalyzeAsync()
 {
     requireDispatcherThread();
-    if (state_ != ImageProcessingExperienceState::SourceSelection || !selectedRequest_)
+    if (!CanAnalyzeSelectedSource())
         throw hresult_illegal_method_call();
     cancellationSource_ = std::stop_source{};
     progress_ = {};
     clearError();
     changeState(ImageProcessingExperienceState::Analysis);
     return awaitOperationAsync(analyzeAsync(*selectedRequest_, cancellationSource_), cancellationSource_);
+}
+void MainWindowViewModel::SetProcessingOptions(Presentation::OutputDisposition disposition,
+                                               Presentation::TraversalScope traversal,
+                                               Presentation::EdgeHandlingPolicy edgeHandling,
+                                               Presentation::OutputScanOrganization scanOrganization)
+{
+    requireDispatcherThread();
+    if (!CanSelectSourceFolder() || !selectedRequest_)
+        throw hresult_illegal_method_call();
+    // Build a complete native request before publishing anything. Do not cast
+    // between unrelated enum contracts or partially mutate a live review when
+    // a later projected argument is unknown. The granted collection, limits and
+    // batch identity remain the original capabilities/facts, not display paths.
+    auto request = *selectedRequest_;
+    switch (disposition)
+    {
+    case Presentation::OutputDisposition::CreateCorrectedCopy:
+        request.outputDisposition = jpg_spinner::domain::OutputDisposition::CreateCorrectedCopy;
+        break;
+    case Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup:
+        request.outputDisposition = jpg_spinner::domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+        break;
+    default:
+        throw hresult_invalid_argument();
+    }
+    switch (traversal)
+    {
+    case Presentation::TraversalScope::SelectedFolderOnly:
+        request.traversalScope = jpg_spinner::domain::TraversalScope::SelectedFolderOnly;
+        break;
+    case Presentation::TraversalScope::SelectedFolderAndDescendants:
+        request.traversalScope = jpg_spinner::domain::TraversalScope::SelectedFolderAndDescendants;
+        break;
+    default:
+        throw hresult_invalid_argument();
+    }
+    switch (edgeHandling)
+    {
+    case Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform:
+        request.edgeHandlingPolicy = jpg_spinner::domain::EdgeHandlingPolicy::RequirePerfectCoefficientTransform;
+        break;
+    case Presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits:
+        request.edgeHandlingPolicy = jpg_spinner::domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+        break;
+    default:
+        throw hresult_invalid_argument();
+    }
+    switch (scanOrganization)
+    {
+    case Presentation::OutputScanOrganization::PreserveSource:
+        request.outputScanOrganization = jpg_spinner::domain::OutputScanOrganization::PreserveSource;
+        break;
+    case Presentation::OutputScanOrganization::SequentialDct:
+        request.outputScanOrganization = jpg_spinner::domain::OutputScanOrganization::SequentialDct;
+        break;
+    case Presentation::OutputScanOrganization::ProgressiveDct:
+        request.outputScanOrganization = jpg_spinner::domain::OutputScanOrganization::ProgressiveDct;
+        break;
+    default:
+        throw hresult_invalid_argument();
+    }
+    if (request.outputDisposition == selectedRequest_->outputDisposition &&
+        request.traversalScope == selectedRequest_->traversalScope &&
+        request.edgeHandlingPolicy == selectedRequest_->edgeHandlingPolicy &&
+        request.outputScanOrganization == selectedRequest_->outputScanOrganization)
+        return;
+    // Reuse the one source/review invalidation path. A reanalysis is mandatory;
+    // changing a control must never repurpose the already reviewed batch.
+    selectSource(std::move(request), sourceFolderDisplayName_, backupRootDisplayPath_);
 }
 Windows::Foundation::IAsyncAction MainWindowViewModel::awaitOperationAsync(Windows::Foundation::IAsyncAction operation,
                                                                            std::stop_source cancellation)
@@ -345,13 +452,13 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::analyzeAsync(
     // is separate from the coordinator's retained capability/revision artifact.
     reviewedBatch_.emplace(std::move(*result->valueIfPresent()));
     projectDiscoveryIssues(reviewedBatch_->discoveryIssues());
-    std::vector<Presentation::ImageProcessingRowViewModel> projectedRows;
+    std::vector<Windows::Foundation::IInspectable> projectedRows;
     projectedRows.reserve(reviewedBatch_->files().size());
     for (auto const &file : reviewedBatch_->files())
         projectedRows.push_back(make<ImageProcessingRowViewModel>(queue, file, resources_, resourceContext_));
     // C++/WinRT owns the rvalue container. A scoped borrowed view or a vector
     // supporting mutable QueryInterface would let callers alter the review rows.
-    rows_ = param::vector_view<Presentation::ImageProcessingRowViewModel>{std::move(projectedRows)};
+    rows_ = param::vector_view<Windows::Foundation::IInspectable>{std::move(projectedRows)};
     notify(L"Rows");
     changeState(ImageProcessingExperienceState::Review);
 }
@@ -362,8 +469,7 @@ void MainWindowViewModel::ReturnToSourceSelection()
         throw hresult_illegal_method_call();
     reviewedBatch_.reset();
     projectDiscoveryIssues({});
-    rows_ = param::vector_view<Presentation::ImageProcessingRowViewModel>{
-        std::vector<Presentation::ImageProcessingRowViewModel>{}};
+    rows_ = param::vector_view<Windows::Foundation::IInspectable>{std::vector<Windows::Foundation::IInspectable>{}};
     notify(L"Rows");
     progress_ = {};
     clearError();
@@ -414,7 +520,8 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::processAsync(
         progress_ = summary->finalProgress;
         projectDiscoveryIssues(summary->discoveryIssues);
         for (std::uint32_t index = 0; index < rows_.Size(); ++index)
-            get_self<ImageProcessingRowViewModel>(rows_.GetAt(index))->applyResult(summary->fileResults.at(index));
+            get_self<ImageProcessingRowViewModel>(rows_.GetAt(index).as<Presentation::ImageProcessingRowViewModel>())
+                ->applyResult(summary->fileResults.at(index));
         // A cancellation request after a successful commit cannot rewrite its
         // terminal outcome. Only uncertain transaction facts require recovery.
         changeState(summary->transactionIntegrityUncertain ? ImageProcessingExperienceState::RecoveryRequired
@@ -481,8 +588,7 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::recoverAsync(std::stop_so
     }
     else
     {
-        rows_ = param::vector_view<Presentation::ImageProcessingRowViewModel>{
-            std::vector<Presentation::ImageProcessingRowViewModel>{}};
+        rows_ = param::vector_view<Windows::Foundation::IInspectable>{std::vector<Windows::Foundation::IInspectable>{}};
         projectDiscoveryIssues({});
         notify(L"Rows");
         progress_ = {};

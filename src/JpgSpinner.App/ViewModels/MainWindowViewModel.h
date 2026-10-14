@@ -23,18 +23,29 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     /// a coordinator-produced reviewed batch, never just a Boolean UI flag.
     Presentation::ImageProcessingExperienceState State() const;
     bool CanSelectSourceFolder() const;
+    /// Analysis requires an actual selected collection in SourceSelection;
+    /// displayed text or a previous review never grants that command.
+    bool CanAnalyzeSelectedSource() const;
     bool CanBeginProcessing() const;
     bool CanCancelCurrentOperation() const;
     bool CanReturnToSourceSelection() const;
     /// Null means no known nonzero denominator; zero means known work not begun.
     Windows::Foundation::IReference<double> ProgressPercentage() const;
-    /// Ordered coordinator facts; UI consumers must not mutate this projection.
-    Windows::Foundation::Collections::IVectorView<Presentation::ImageProcessingRowViewModel> Rows() const;
+    bool IsProgressIndeterminate() const;
+    double ProgressPercentageOrZero() const;
+    /// Ordered coordinator facts in XAML's native inspectable collection
+    /// protocol. Each item is ImageProcessingRowViewModel; no mutable interface
+    /// is implemented, including through QueryInterface.
+    Windows::Foundation::Collections::IVectorView<Windows::Foundation::IInspectable> Rows() const;
     /// Immutable traversal observations remain visible through review/results,
     /// without claiming they are successfully discovered image candidates.
-    Windows::Foundation::Collections::IVectorView<Presentation::ImageSourceDiscoveryIssueViewModel> DiscoveryIssues()
-        const;
+    Windows::Foundation::Collections::IVectorView<Windows::Foundation::IInspectable> DiscoveryIssues() const;
     hstring BackupRootDisplayPath() const;
+    /// User-facing folder label only; callers must retain the granted capability.
+    hstring SourceFolderDisplayName() const;
+    /// Coordinator-confirmed transformations; unsupported and already-normalized
+    /// rows remain visible but do not contribute to this execution count.
+    std::uint64_t EligibleFileCount() const;
     /// Explicit acknowledgment applies only to this reviewed row, never a later batch.
     void AcknowledgeEdgeTrimming(std::uint32_t rowIndex);
     std::uint64_t CompletedFileCount() const;
@@ -48,9 +59,17 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     hstring ErrorTitle() const;
     hstring ErrorExplanation() const;
     hstring ErrorRemedy() const;
+    bool HasError() const;
+    /// Changes policy only for a selected source in an editable state. All
+    /// projected values are validated before mutation. Changed choices discard
+    /// review/acknowledgments and require fresh analysis; identical choices
+    /// retain review. Neither operation starts transformation or transaction I/O.
+    void SetProcessingOptions(Presentation::OutputDisposition disposition, Presentation::TraversalScope traversal,
+                              Presentation::EdgeHandlingPolicy edgeHandling,
+                              Presentation::OutputScanOrganization scanOrganization);
     /// Supply the granted collection and display context from the composition
     /// root. This is native-only: a displayed path grants no storage authority.
-    void selectSource(jpg_spinner::batch_processing::BatchProcessingRequest request, hstring sourceDisplayName,
+    void selectSource(jpg_spinner::batch_processing::BatchProcessingRequest request, hstring sourceFolderDisplayName,
                       hstring backupRootDisplayPath);
     /// Analyzes on an explicitly initialized MTA worker, then publishes review on
     /// the UI queue. Inputs are owned across suspension and no UI wait is used.
@@ -90,18 +109,16 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     std::shared_ptr<const jpg_spinner::storage::ImageFileTransactionEngine> recoveryEngine_;
     event<Microsoft::UI::Xaml::Data::PropertyChangedEventHandler> propertyChanged_;
     Presentation::ImageProcessingExperienceState state_{ImageProcessingExperienceState::SourceSelection};
-    Windows::Foundation::Collections::IVectorView<Presentation::ImageProcessingRowViewModel> rows_{
-        param::vector_view<Presentation::ImageProcessingRowViewModel>{
-            std::vector<Presentation::ImageProcessingRowViewModel>{}}};
+    Windows::Foundation::Collections::IVectorView<Windows::Foundation::IInspectable> rows_{
+        param::vector_view<Windows::Foundation::IInspectable>{std::vector<Windows::Foundation::IInspectable>{}}};
     std::optional<jpg_spinner::batch_processing::BatchProcessingRequest> selectedRequest_;
-    Windows::Foundation::Collections::IVectorView<Presentation::ImageSourceDiscoveryIssueViewModel> discoveryIssues_{
-        param::vector_view<Presentation::ImageSourceDiscoveryIssueViewModel>{
-            std::vector<Presentation::ImageSourceDiscoveryIssueViewModel>{}}};
+    Windows::Foundation::Collections::IVectorView<Windows::Foundation::IInspectable> discoveryIssues_{
+        param::vector_view<Windows::Foundation::IInspectable>{std::vector<Windows::Foundation::IInspectable>{}}};
     std::optional<jpg_spinner::batch_processing::AnalyzedImageBatch> reviewedBatch_;
     std::stop_source cancellationSource_;
     bool recoveryActive_{};
     jpg_spinner::batch_processing::BatchProcessingProgress progress_{};
-    hstring sourceDisplayName_;
+    hstring sourceFolderDisplayName_;
     hstring backupRootDisplayPath_;
     Microsoft::Windows::ApplicationModel::Resources::ResourceManager resourceManager_{nullptr};
     Microsoft::Windows::ApplicationModel::Resources::ResourceMap resources_{nullptr};

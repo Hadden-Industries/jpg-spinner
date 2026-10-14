@@ -16,20 +16,27 @@ ImageSourceDiscoveryIssueViewModel::ImageSourceDiscoveryIssueViewModel(
     requireDispatcherThread();
     // Explicit semantic mapping must not assume the two enums share ordinals.
     using NativeKind = jpg_spinner::domain::ImageSourceDiscoveryIssueKind;
+    const wchar_t *descriptionKey{};
     switch (issue.kind)
     {
     case NativeKind::ReparsePointSkipped:
         kind_ = ImageSourceDiscoveryIssueKind::ReparsePointSkipped;
+        descriptionKey = L"ImageSourceDiscoveryObservation_ReparsePointSkipped";
         break;
     case NativeKind::SourceAccessFailed:
         kind_ = ImageSourceDiscoveryIssueKind::SourceAccessFailed;
+        descriptionKey = L"ImageSourceDiscoveryObservation_SourceAccessFailed";
         break;
     case NativeKind::ApplicationOwnedFolderExcluded:
         kind_ = ImageSourceDiscoveryIssueKind::ApplicationOwnedFolderExcluded;
+        descriptionKey = L"ImageSourceDiscoveryObservation_ApplicationOwnedFolderExcluded";
         break;
     default:
         throw hresult_invalid_argument();
     }
+    // MRT owns language selection and fallback; no synthesized error is needed
+    // to explain a deliberately excluded directory or skipped reparse point.
+    kindDescription_ = resources.GetValue(descriptionKey, context).ValueAsString();
     if (issue.error)
         errorText_ = jpg_spinner::presentation::loadImageProcessingErrorText(issue.error->code, resources, context);
 }
@@ -52,6 +59,11 @@ hstring ImageSourceDiscoveryIssueViewModel::ErrorTitle() const
 {
     requireDispatcherThread();
     return errorText_.title;
+}
+hstring ImageSourceDiscoveryIssueViewModel::KindDescription() const
+{
+    requireDispatcherThread();
+    return kindDescription_;
 }
 hstring ImageSourceDiscoveryIssueViewModel::ErrorExplanation() const
 {

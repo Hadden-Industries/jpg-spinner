@@ -2,6 +2,7 @@
 
 #include <jpg_spinner/domain/ImageSourceCollection.h>
 #include "ImageFileTransactionEngine.h"
+#include "IdentityBoundStorageFolder.h"
 #include <winrt/Windows.Storage.h>
 
 namespace jpg_spinner::storage
@@ -13,10 +14,9 @@ namespace jpg_spinner::storage
 class WindowsStorageImageSourceCollection final : public domain::ImageSourceCollection
 {
   public:
-    WindowsStorageImageSourceCollection(
-        winrt::Windows::Storage::StorageFolder selectedRoot,
-        std::shared_ptr<const ImageFileTransactionEngine> transactionEngine,
-        std::vector<winrt::Windows::Storage::StorageFolder> applicationOwnedFolders = {});
+    WindowsStorageImageSourceCollection(winrt::Windows::Storage::StorageFolder selectedRoot,
+                                        std::shared_ptr<const ImageFileTransactionEngine> transactionEngine,
+                                        std::vector<IdentityBoundStorageFolder> applicationOwnedFolders = {});
     [[nodiscard]] domain::ImageProcessingResult<domain::ImageSourceDiscovery> discover(
         domain::TraversalScope scope, std::stop_token cancellation = {},
         const domain::ImageSourceDiscoveryObserver &observer = {}) const override;
@@ -24,6 +24,6 @@ class WindowsStorageImageSourceCollection final : public domain::ImageSourceColl
   private:
     winrt::Windows::Storage::StorageFolder selectedRoot_;
     std::shared_ptr<const ImageFileTransactionEngine> transactionEngine_;
-    std::vector<winrt::Windows::Storage::StorageFolder> applicationOwnedFolders_;
+    std::vector<IdentityBoundStorageFolder> applicationOwnedFolders_;
 };
 } // namespace jpg_spinner::storage

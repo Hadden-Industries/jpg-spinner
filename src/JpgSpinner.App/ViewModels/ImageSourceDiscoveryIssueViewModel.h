@@ -18,6 +18,9 @@ struct ImageSourceDiscoveryIssueViewModel
     /// Original relative display context only; never used as file authority.
     hstring RelativePath() const;
     Presentation::ImageSourceDiscoveryIssueKind Kind() const;
+    /// Localized observation reason, including deliberate non-error exclusions.
+    /// This describes discovery, never a terminal image-processing outcome.
+    hstring KindDescription() const;
     /// Empty for deliberate exclusions without a domain error. The kind remains
     /// explicit so the shell can distinguish exclusion from failed access.
     hstring ErrorTitle() const;
@@ -29,6 +32,7 @@ struct ImageSourceDiscoveryIssueViewModel
     Microsoft::UI::Dispatching::DispatcherQueue dispatcherQueue_;
     hstring relativePath_;
     Presentation::ImageSourceDiscoveryIssueKind kind_;
+    hstring kindDescription_;
     jpg_spinner::presentation::ImageProcessingErrorText errorText_{};
 };
 } // namespace winrt::JpgSpinner::Presentation::implementation

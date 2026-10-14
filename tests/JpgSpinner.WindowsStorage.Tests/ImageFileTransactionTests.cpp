@@ -138,8 +138,8 @@ TEST_CASE("a discovered identity cannot be replaced by identical encoded content
     const auto other = fixture.createSource(L"different-file.jpg");
     auto request = fixture.requestFor(source);
     {
-        const auto sourceProof = storage::internal::inspectItem(source.Path(), false);
-        const auto otherProof = storage::internal::inspectItem(other.Path(), false);
+        const auto sourceProof = storage::internal::inspectItem(source, false);
+        const auto otherProof = storage::internal::inspectItem(other, false);
         REQUIRE_FALSE(storage::internal::isSameIdentity(sourceProof.identity, otherProof.identity));
         request.expectedSourceIdentity = otherProof.identity;
     }
@@ -231,7 +231,7 @@ TEST_CASE("one batch preserves nested relative paths and refuses an existing fin
                         std::filesystem::directory_iterator{}) == 1);
 }
 
-TEST_CASE("a Unicode stage beyond MAX_PATH commits exact bytes without requiring machine opt-in",
+TEST_CASE("a Unicode stage beyond MAX_PATH commits exact bytes on the qualified long-path host",
           "[storage][transaction][copy][long-path]")
 {
     CHECK(ownedTestFixtureDeletionOption == winrt::Windows::Storage::StorageDeleteOption::PermanentDelete);
@@ -286,6 +286,32 @@ TEST_CASE("a Unicode stage beyond MAX_PATH commits exact bytes without requiring
     CHECK(readBytes(committedPath) == std::vector<std::byte>(fixture.output.valueIfPresent()->encodedBytes().begin(),
                                                              fixture.output.valueIfPresent()->encodedBytes().end()));
     fixture.requireNoStages();
+}
+
+TEST_CASE("An unavailable Windows long-path policy refuses a transaction before any output effects",
+          "[storage][transaction][long-path-policy]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    const auto source = fixture.createSource(L"camera.jpg");
+    const auto request = fixture.requestFor(source);
+    struct DisabledLongPathPolicy final : storage::internal::FileTransactionOperations
+    {
+        bool hasEnabledWindowsLongPathPolicy() const override
+        {
+            return false;
+        }
+    } operations;
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.journalStore};
+    const auto result = storage::internal::RecoverableImageFileTransaction::execute(
+        batch, request, *fixture.output.valueIfPresent(), {}, operations);
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::WindowsLongPathSupportUnavailable);
+    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::TransactionRecoverabilityPreflight);
+    CHECK(readBytes(fixture.directory.directoryPath() / L"camera.jpg") == fixture.sourceBytes);
+    CHECK_FALSE(std::filesystem::exists(fixture.directory.directoryPath() / L"JPG Spinner Output"));
+    CHECK_FALSE(std::filesystem::exists(fixture.directory.directoryPath() / L"JPG Spinner Backups"));
+    CHECK(fixture.journalStore.GetItemsAsync().get().Size() == 0);
 }
 
 TEST_CASE("different batch instances create distinct roots without suffixing source filenames",

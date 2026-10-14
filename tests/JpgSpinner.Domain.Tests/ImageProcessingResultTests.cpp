@@ -146,6 +146,8 @@ TEST_CASE("every image-processing error code has a semantic diagnostic name", "[
         NamedErrorCode{ImageProcessingErrorCode::JournalPersistenceFailed, "JournalPersistenceFailed"},
         NamedErrorCode{ImageProcessingErrorCode::RecoveryConflict, "RecoveryConflict"},
         NamedErrorCode{ImageProcessingErrorCode::JournalStoreBusy, "JournalStoreBusy"},
+        NamedErrorCode{ImageProcessingErrorCode::WindowsLongPathSupportUnavailable,
+                       "WindowsLongPathSupportUnavailable"},
         NamedErrorCode{ImageProcessingErrorCode::Cancelled, "Cancelled"},
     };
 

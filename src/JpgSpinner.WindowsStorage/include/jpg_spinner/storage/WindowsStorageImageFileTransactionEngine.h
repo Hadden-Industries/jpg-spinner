@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ImageFileTransactionEngine.h"
+#include "IdentityBoundStorageFolder.h"
 #include <mutex>
 #include <memory>
 #include <chrono>
@@ -40,6 +41,11 @@ class WindowsStorageImageFileTransactionEngine final : public ImageFileTransacti
         std::stop_token cancellationToken = {}) const override;
     [[nodiscard]] domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> recoverIncompleteTransactions(
         std::stop_token cancellationToken = {}) const override;
+    /// Snapshot only batch folders actually created by this engine and their
+    /// original identities. Does not enumerate names, create directories, or
+    /// classify an existing user folder as application-owned. Discovery must
+    /// revalidate/pin each identity before using it as an exclusion.
+    [[nodiscard]] std::vector<IdentityBoundStorageFolder> applicationOwnedFolders() const;
 
   private:
     const std::unique_ptr<internal::ImageFileTransactionBatch> batch_;

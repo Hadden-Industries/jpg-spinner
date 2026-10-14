@@ -25,6 +25,22 @@
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- Framework-dependent MSIX supplies the WinUI framework in its package
+         graph. No Main/Singleton API (push notifications, etc.) is consumed.
+         DeploymentManager would demand restricted packageManagement inside
+         AppContainer; do not add that capability or a private runtime instead.
+         https://learn.microsoft.com/windows/apps/package-and-deploy/project-properties -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <WindowsAppSdkBootstrapInitialize>false</WindowsAppSdkBootstrapInitialize>
+    <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+    <WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+    <WindowsAppSdkAutoInitialize>false</WindowsAppSdkAutoInitialize>
+    <!-- The umbrella SDK brings ML transitively, but this app has no ML calls.
+         Use the selected ML package's supported opt-out, not a private loader. -->
+    <DisableWindowsAppSDKMLAutoInitialize>true</DisableWindowsAppSDKMLAutoInitialize>
+    <!-- Native C++ WinUI reuses UAP targets, which otherwise add Universal to
+         the generated manifest. The authored Desktop family is authoritative. -->
+    <AppxAddDefaultTargetDeviceFamilyItem>false</AppxAddDefaultTargetDeviceFamilyItem>
     <!--
       NuGet consumes RuntimeIdentifiers during restore, before the generated
       package imports exist on a clean checkout. Declare the same complete set
@@ -72,6 +88,7 @@
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest"><SubType>Designer</SubType></AppxManifest>
     <Manifest Include="app.manifest" />
+    <None Include="Package.StoreAssociation.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -79,6 +96,8 @@
     <ClInclude Include="ViewModels\ImageProcessingRowViewModel.h" />
     <ClInclude Include="ViewModels\ImageSourceDiscoveryIssueViewModel.h" />
     <ClInclude Include="Localization\ImageProcessingErrorText.h" />
+    <ClInclude Include="Composition\SelectedFolderBatchComposition.h" />
+    <ClInclude Include="Composition\SourceFolderAccessRetention.h" />
     <ClInclude Include="App.xaml.h"><DependentUpon>App.xaml</DependentUpon></ClInclude>
     <ClInclude Include="MainWindow.xaml.h"><DependentUpon>MainWindow.xaml</DependentUpon></ClInclude>
   </ItemGroup>
@@ -95,6 +114,7 @@
     <ClCompile Include="ViewModels\ImageProcessingRowViewModel.cpp" />
     <ClCompile Include="ViewModels\ImageSourceDiscoveryIssueViewModel.cpp" />
     <ClCompile Include="Localization\ImageProcessingErrorText.cpp" />
+    <ClCompile Include="Composition\SelectedFolderBatchComposition.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Presentation.idl" />

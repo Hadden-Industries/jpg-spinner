@@ -23,9 +23,15 @@ struct ImageProcessingRowViewModel : ImageProcessingRowViewModelT<ImageProcessin
     std::uint64_t DiscardedSourceRightEdgeWidthInPixels() const;
     std::uint64_t DiscardedSourceBottomEdgeHeightInPixels() const;
     bool IsEdgeTrimmingAcknowledged() const;
+    /// A one-time consent affordance only for an eligible row that discards
+    /// pixels. The owning model still enforces Review state before accepting it.
+    bool RequiresEdgeTrimmingAcknowledgment() const;
     /// Native-only mutation; the owning model checks Review state first.
     void acknowledgeEdgeTrimming();
     Presentation::ImageProcessingRowOutcome Outcome() const;
+    /// Localized terminal fact; Pending explicitly reports no terminal outcome.
+    hstring OutcomeDescription() const;
+    bool HasError() const;
     hstring ErrorTitle() const;
     hstring ErrorExplanation() const;
     hstring ErrorRemedy() const;

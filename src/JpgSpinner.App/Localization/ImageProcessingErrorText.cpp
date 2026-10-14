@@ -108,6 +108,8 @@ const wchar_t *resourceStem(domain::ImageProcessingErrorCode code) noexcept
         return L"ImageProcessingError_JournalStoreBusy";
     case RecoveryConflict:
         return L"ImageProcessingError_RecoveryConflict";
+    case WindowsLongPathSupportUnavailable:
+        return L"ImageProcessingError_WindowsLongPathSupportUnavailable";
     case Cancelled:
         return L"ImageProcessingError_Cancelled";
     default:

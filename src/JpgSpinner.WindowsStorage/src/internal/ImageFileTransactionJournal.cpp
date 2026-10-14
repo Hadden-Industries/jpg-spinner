@@ -283,7 +283,7 @@ struct PublishedGeneration final
 PublishedGeneration readGeneration(const StorageFile &file, const FileTransactionOperations &operations,
                                    const std::filesystem::path &canonicalParent)
 {
-    const auto proof = inspectItem(file.Path(), false);
+    const auto proof = inspectItem(file, false);
     if (proof.canonicalPath.parent_path() != canonicalParent)
         rejectRecord();
     const auto stream = operations.openJournalGeneration(file, FileAccessMode::Read);
@@ -308,7 +308,7 @@ std::optional<PublishedGeneration> readChain(const StorageFolder &folder, const 
                                              const FileTransactionOperations &operations,
                                              const StorageItemProof &folderProof)
 {
-    const auto observedFolder = inspectItem(folder.Path(), true);
+    const auto observedFolder = inspectItem(folder, true);
     if (!isSameIdentity(observedFolder.identity, folderProof.identity))
         rejectRecord();
     // Bound enumeration too. A transaction has at most six published generations;
@@ -372,7 +372,7 @@ std::optional<PublishedGeneration> readChain(const StorageFolder &folder, const 
 ImageFileTransactionJournal::ImageFileTransactionJournal(StorageFolder transactionFolder,
                                                          winrt::guid transactionIdentifier)
     : folder_(std::move(transactionFolder)), transactionIdentifier_(transactionIdentifier),
-      folderProof_(inspectItem(folder_.Path(), true))
+      folderProof_(inspectItem(folder_, true))
 {
     if (!folder_ || transactionIdentifier_ == winrt::guid{})
         rejectRecord();
@@ -401,7 +401,7 @@ void ImageFileTransactionJournal::publish(const Record &record, const FileTransa
     const auto pending =
         operations.createPendingJournalGeneration(folder_, L".pending-" + winrt::to_hstring(pendingIdentifier));
     {
-        const auto proof = inspectItem(pending.Path(), false);
+        const auto proof = inspectItem(pending, false);
         if (proof.canonicalPath.parent_path() != folderProof_.canonicalPath)
             rejectRecord();
         const auto stream = operations.openJournalGeneration(pending, FileAccessMode::ReadWrite);

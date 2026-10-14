@@ -111,7 +111,7 @@ class OwnedStage final
             return;
         try
         {
-            const auto proof = inspectItem(file.Path(), false, FILE_READ_ATTRIBUTES | DELETE);
+            const auto proof = inspectItem(file, false, HAO_READ_ATTRIBUTES | HAO_DELETE);
             if (!identity || !isSameIdentity(proof.identity, *identity) || proof.canonicalPath != canonicalStagePath ||
                 proof.canonicalPath.parent_path() != canonicalParent)
                 throw winrt::hresult_invalid_argument();
@@ -162,7 +162,7 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             if (!journalRecord)
                 throw winrt::hresult_invalid_argument();
             const auto original = StorageFile::GetFileFromPathAsync(journalRecord->sourcePath).get();
-            originalIdentityProof.emplace(inspectItem(original.Path(), false));
+            originalIdentityProof.emplace(inspectItem(original, false));
             const auto revision = operations.captureSourceRevision(original, {});
             if (!revision.valueIfPresent() || *revision.valueIfPresent() != request.expectedSourceRevision ||
                 storageItemIdentityText(originalIdentityProof->identity) != journalRecord->sourceIdentity)
@@ -216,19 +216,26 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
         // do not infer support from path syntax or a successful generic hash.
         // Reparse/containment diagnostics retain their established source phase.
         phase = ImageProcessingStage::SourceRevisionRevalidation;
-        const auto qualifiedSourceFileSystem = hasQualifiedRecoveryFileSystem(selectedSourceRoot.Path());
+        const auto qualifiedSourceFileSystem = hasQualifiedRecoveryFileSystem(selectedSourceRoot);
         phase = ImageProcessingStage::TransactionRecoverabilityPreflight;
-        if (!qualifiedSourceFileSystem || !hasQualifiedRecoveryFileSystem(batch.journalStore.Path()))
+        // The approved host contract requires Windows long-path policy. A
+        // short source can still generate a longer stage, backup or journal;
+        // refuse the unqualified host before creating any such artifact.
+        // The manifest is deployment-owned; this native read never changes
+        // machine policy or falls back to a weaker path-based authority.
+        if (!operations.hasEnabledWindowsLongPathPolicy())
+            return failure(ImageProcessingErrorCode::WindowsLongPathSupportUnavailable, phase);
+        if (!qualifiedSourceFileSystem || !hasQualifiedRecoveryFileSystem(batch.journalStore))
             return failure(ImageProcessingErrorCode::StorageProviderRecoveryContractNotEstablished, phase);
 
         // Failure to inspect the reviewed source/root is a source-side failure,
         // not a stage-creation failure. The authoritative content recheck still
         // occurs after stage hashing, immediately before commit.
         phase = ImageProcessingStage::SourceRevisionRevalidation;
-        const auto rootProof = inspectItem(selectedSourceRoot.Path(), true);
+        const auto rootProof = inspectItem(selectedSourceRoot, true);
         if (batch.selectedRootIdentity && !isSameIdentity(rootProof.identity, *batch.selectedRootIdentity))
             return failure(ImageProcessingErrorCode::RecoveryConflict, ImageProcessingStage::TransactionRecovery);
-        auto sourceProof = inspectItem(request.sourceFile.Path(), false);
+        auto sourceProof = inspectItem(request.sourceFile, false);
         if (request.expectedSourceIdentity && !isSameIdentity(sourceProof.identity, *request.expectedSourceIdentity))
             return failure(ImageProcessingErrorCode::SourceChangedAfterAnalysis, phase);
         const auto relativePath = sourceProof.canonicalPath.lexically_relative(rootProof.canonicalPath);
@@ -242,33 +249,33 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
         auto sourceParent = request.sourceFile.GetParentAsync().get();
         for (auto parentPath = relativePath.parent_path(); !parentPath.empty(); parentPath = parentPath.parent_path())
         {
-            const auto parentProof = inspectItem(sourceParent.Path(), true);
+            const auto parentProof = inspectItem(sourceParent, true);
             if (parentProof.canonicalPath != rootProof.canonicalPath / parentPath)
                 throw winrt::hresult_invalid_argument();
             sourceParent = sourceParent.GetParentAsync().get();
         }
-        if (!sourceParent || inspectItem(sourceParent.Path(), true).canonicalPath != rootProof.canonicalPath)
+        if (!sourceParent || inspectItem(sourceParent, true).canonicalPath != rootProof.canonicalPath)
             throw winrt::hresult_invalid_argument();
         batch.selectedRootIdentity = rootProof.identity;
 
         phase = ImageProcessingStage::JournalPersistence;
-        const auto journalStoreProof = inspectItem(batch.journalStore.Path(), true);
+        const auto journalStoreProof = inspectItem(batch.journalStore, true);
         phase = ImageProcessingStage::JournalStoreLeaseAcquisition;
-        journalStoreLease = acquireJournalStoreLease(batch.journalStore.Path(), journalStoreProof);
+        journalStoreLease = acquireJournalStoreLease(batch.journalStore, journalStoreProof);
 
         phase = ImageProcessingStage::CorrectedCopyDestinationCreation;
         if (!batchFolder)
         {
             const auto outputRoot = operations.createCorrectedCopyOutputRoot(selectedSourceRoot);
-            const auto outputProof = inspectItem(outputRoot.Path(), true);
+            const auto outputProof = inspectItem(outputRoot, true);
             if (!isCorrectedCopyOutputRootPath(outputProof.canonicalPath, rootProof.canonicalPath))
                 throw winrt::hresult_invalid_argument();
             batchFolder = operations.createBatchDestination(outputRoot, winrt::hstring{batchDirectoryName});
             // Capture identity when the exclusive creation succeeds. Later
             // same-path folders cannot inherit this batch's ownership.
-            batch.correctedCopyFolderIdentity = inspectItem(batchFolder.Path(), true).identity;
+            batch.correctedCopyFolderIdentity = inspectItem(batchFolder, true).identity;
         }
-        const auto batchProof = inspectItem(batchFolder.Path(), true);
+        const auto batchProof = inspectItem(batchFolder, true);
         if (!batch.correctedCopyFolderIdentity ||
             !isSameIdentity(batchProof.identity, *batch.correctedCopyFolderIdentity))
             return failure(ImageProcessingErrorCode::RecoveryConflict, ImageProcessingStage::TransactionRecovery);
@@ -282,10 +289,10 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             destinationFolder =
                 operations.createRelativeDestination(destinationFolder, winrt::hstring{component.wstring()});
             canonicalDestination /= component;
-            if (inspectItem(destinationFolder.Path(), true).canonicalPath != canonicalDestination)
+            if (inspectItem(destinationFolder, true).canonicalPath != canonicalDestination)
                 throw winrt::hresult_invalid_argument();
         }
-        const auto destinationProof = inspectItem(destinationFolder.Path(), true);
+        const auto destinationProof = inspectItem(destinationFolder, true);
         phase = ImageProcessingStage::StagingFileCreation;
         winrt::guid transactionIdentifier;
         winrt::check_hresult(CoCreateGuid(reinterpret_cast<GUID *>(&transactionIdentifier)));
@@ -294,7 +301,7 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
         stage.file = operations.createStage(destinationFolder, winrt::hstring{stageName});
         stage.canonicalParent = destinationProof.canonicalPath;
         {
-            const auto createdProof = inspectItem(stage.file.Path(), false);
+            const auto createdProof = inspectItem(stage.file, false);
             if (createdProof.canonicalPath.parent_path() != stage.canonicalParent)
                 throw winrt::hresult_invalid_argument();
             stage.identity = createdProof.identity;
@@ -303,7 +310,7 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
         phase = ImageProcessingStage::JournalPersistence;
         const auto journalFolder =
             operations.createTransactionJournalFolder(batch.journalStore, winrt::to_hstring(transactionIdentifier));
-        if (inspectItem(journalFolder.Path(), true).canonicalPath.parent_path() != journalStoreProof.canonicalPath)
+        if (inspectItem(journalFolder, true).canonicalPath.parent_path() != journalStoreProof.canonicalPath)
             throw winrt::hresult_invalid_argument();
         journal = std::make_unique<ImageFileTransactionJournal>(journalFolder, transactionIdentifier);
         journalRecord.emplace(ImageFileTransactionJournalRecord{
@@ -330,7 +337,7 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             if (!committed.valueIfPresent() ||
                 committed.valueIfPresent()->encodedLengthBytes != validatedOutput.encodedBytes().size() ||
                 committed.valueIfPresent()->encodedSha256 != validatedOutput.encodedSha256() || !stage.identity ||
-                !isSameIdentity(inspectItem(stage.file.Path(), false).identity, *stage.identity))
+                !isSameIdentity(inspectItem(stage.file, false).identity, *stage.identity))
                 return failure(ImageProcessingErrorCode::RecoveryConflict, ImageProcessingStage::TransactionRecovery,
                                committed.errorIfPresent() ? committed.errorIfPresent()->nativeErrorProjection
                                                           : domain::NativeErrorProjection{});
@@ -400,7 +407,7 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             return failure(ImageProcessingErrorCode::StagedOutputHashMismatch, phase);
         }
         {
-            const auto verifiedProof = inspectItem(stage.file.Path(), false);
+            const auto verifiedProof = inspectItem(stage.file, false);
             if (!isSameIdentity(verifiedProof.identity, *stage.identity) ||
                 verifiedProof.canonicalPath.parent_path() != stage.canonicalParent)
                 throw winrt::hresult_invalid_argument();
@@ -425,13 +432,12 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             if (!batch.backupFolder)
             {
                 const auto backupRoot = operations.createBackupRoot(selectedSourceRoot);
-                if (inspectItem(backupRoot.Path(), true).canonicalPath !=
-                    rootProof.canonicalPath / L"JPG Spinner Backups")
+                if (inspectItem(backupRoot, true).canonicalPath != rootProof.canonicalPath / L"JPG Spinner Backups")
                     throw winrt::hresult_invalid_argument();
                 batch.backupFolder = operations.createBatchDestination(backupRoot, winrt::hstring{batchDirectoryName});
-                batch.backupFolderIdentity = inspectItem(batch.backupFolder.Path(), true).identity;
+                batch.backupFolderIdentity = inspectItem(batch.backupFolder, true).identity;
             }
-            const auto backupBatchProof = inspectItem(batch.backupFolder.Path(), true);
+            const auto backupBatchProof = inspectItem(batch.backupFolder, true);
             if (!batch.backupFolderIdentity ||
                 !isSameIdentity(backupBatchProof.identity, *batch.backupFolderIdentity) ||
                 backupBatchProof.canonicalPath != rootProof.canonicalPath / L"JPG Spinner Backups" / batchDirectoryName)
@@ -443,15 +449,15 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
                 backupDestination =
                     operations.createRelativeDestination(backupDestination, winrt::hstring{component.wstring()});
                 canonicalBackupParent /= component;
-                if (inspectItem(backupDestination.Path(), true).canonicalPath != canonicalBackupParent)
+                if (inspectItem(backupDestination, true).canonicalPath != canonicalBackupParent)
                     throw winrt::hresult_invalid_argument();
             }
-            const auto backupParentProof = inspectItem(backupDestination.Path(), true);
+            const auto backupParentProof = inspectItem(backupDestination, true);
             const auto backup = operations.copySourceToBackup(request.sourceFile, backupDestination,
                                                               winrt::hstring{relativePath.filename().wstring()});
             // Even an incomplete/unverified copy is retained on failure. Backup
             // deletion is never rollback, and the original is still untouched.
-            const auto backupProof = inspectItem(backup.Path(), false);
+            const auto backupProof = inspectItem(backup, false);
             if (backupProof.canonicalPath.parent_path() != backupParentProof.canonicalPath ||
                 isSameIdentity(backupProof.identity, sourceProof.identity))
                 throw winrt::hresult_invalid_argument();
@@ -493,7 +499,7 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             if (backupRevision.valueIfPresent()->encodedLengthBytes !=
                     request.expectedSourceRevision.encodedLengthBytes ||
                 backupRevision.valueIfPresent()->encodedSha256 != request.expectedSourceRevision.encodedSha256 ||
-                !isSameIdentity(inspectItem(backup.Path(), false).identity, backupProof.identity))
+                !isSameIdentity(inspectItem(backup, false).identity, backupProof.identity))
                 throw winrt::hresult_error{E_FAIL};
             phase = ImageProcessingStage::SourceRevisionRevalidation;
             const auto afterBackup = operations.captureSourceRevision(request.sourceFile, cancellationToken);
@@ -620,12 +626,17 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
         const auto apartment = CoGetApartmentType(&apartmentType, &qualifier);
         if (FAILED(apartment) || apartmentType != APTTYPE_MTA || qualifier == APTTYPEQUALIFIER_IMPLICIT_MTA)
             return conflict(domain::WindowsHResult{FAILED(apartment) ? apartment : CO_E_NOTINITIALIZED});
-        const auto rootProof = inspectItem(batch.selectedSourceRoot.Path(), true);
-        const auto storeProof = inspectItem(batch.journalStore.Path(), true);
+        // A changed host policy must not turn an inaccessible retained stage
+        // into invented corruption or permit a journal lease/write first.
+        if (!operations.hasEnabledWindowsLongPathPolicy())
+            return RecoveryResult::failure({ImageProcessingErrorCode::WindowsLongPathSupportUnavailable,
+                                            ImageProcessingStage::TransactionRecoverabilityPreflight});
+        const auto rootProof = inspectItem(batch.selectedSourceRoot, true);
+        const auto storeProof = inspectItem(batch.journalStore, true);
         winrt::handle journalStoreLease;
         try
         {
-            journalStoreLease = acquireJournalStoreLease(batch.journalStore.Path(), storeProof);
+            journalStoreLease = acquireJournalStoreLease(batch.journalStore, storeProof);
         }
         catch (const winrt::hresult_error &error)
         {
@@ -656,7 +667,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                         if (cancellationToken.stop_requested())
                             return RecoveryResult::failure(
                                 {ImageProcessingErrorCode::Cancelled, ImageProcessingStage::TransactionRecovery});
-                        const auto folderProof = inspectItem(folder.Path(), true);
+                        const auto folderProof = inspectItem(folder, true);
                         if (folderProof.canonicalPath.parent_path() != storeProof.canonicalPath)
                             return conflict();
                         const winrt::guid identifier{std::wstring_view{folder.Name()}};
@@ -678,11 +689,13 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                             record.selectedRootPath != std::wstring{batch.selectedSourceRoot.Path()})
                             return RecoveryResult::success({});
                         if (record.selectedRootIdentity != storageItemIdentityText(rootProof.identity) ||
-                            inspectItem(winrt::hstring{record.selectedRootPath}, true).canonicalPath !=
-                                rootProof.canonicalPath)
+                            inspectItem(
+                                StorageFolder::GetFolderFromPathAsync(winrt::hstring{record.selectedRootPath}).get(),
+                                true)
+                                    .canonicalPath != rootProof.canonicalPath)
                             return conflict();
                         const auto source = StorageFile::GetFileFromPathAsync(winrt::hstring{record.sourcePath}).get();
-                        const auto sourceProof = inspectItem(source.Path(), false);
+                        const auto sourceProof = inspectItem(source, false);
                         const auto relativeSource =
                             sourceProof.canonicalPath.lexically_relative(rootProof.canonicalPath);
                         if (relativeSource.empty() || relativeSource.is_absolute())
@@ -693,7 +706,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                         const std::filesystem::path storedStagePath{record.stagePath};
                         const auto stageParent =
                             StorageFolder::GetFolderFromPathAsync(storedStagePath.parent_path().wstring()).get();
-                        const auto stageParentProof = inspectItem(stageParent.Path(), true);
+                        const auto stageParentProof = inspectItem(stageParent, true);
                         const auto relativeStageParent = stageParentProof.canonicalPath.lexically_relative(
                             rootProof.canonicalPath / L"JPG Spinner Output");
                         if (relativeStageParent.empty() || relativeStageParent.is_absolute())
@@ -718,7 +731,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                             StorageFolder::GetFolderFromPathAsync(
                                 std::filesystem::path{record.destinationPath}.parent_path().wstring())
                                 .get();
-                        const auto destinationParentProof = inspectItem(destinationParent.Path(), true);
+                        const auto destinationParentProof = inspectItem(destinationParent, true);
                         if (std::filesystem::path{record.destinationPath}.filename() != relativeSource.filename() ||
                             destinationParentProof.canonicalPath != (replacement
                                                                          ? sourceProof.canonicalPath.parent_path()
@@ -732,7 +745,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                         {
                             const auto backup =
                                 StorageFile::GetFileFromPathAsync(winrt::hstring{record.backupPath}).get();
-                            const auto backupProof = inspectItem(backup.Path(), false);
+                            const auto backupProof = inspectItem(backup, false);
                             if (backupProof.canonicalPath !=
                                     rootProof.canonicalPath / L"JPG Spinner Backups" / batchName / relativeSource ||
                                 storageItemIdentityText(backupProof.identity) != record.backupIdentity ||
@@ -773,7 +786,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                             if (destinationItem)
                             {
                                 const auto destinationFile = destinationItem.as<StorageFile>();
-                                const auto destinationProof = inspectItem(destinationFile.Path(), false);
+                                const auto destinationProof = inspectItem(destinationFile, false);
                                 const auto destinationRevision =
                                     operations.captureStagedRevision(destinationFile, cancellationToken);
                                 if (!destinationRevision.valueIfPresent())
@@ -831,7 +844,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                         if (stageItem)
                         {
                             const auto stageFile = stageItem.as<StorageFile>();
-                            auto stageProof = inspectItem(stageFile.Path(), false);
+                            auto stageProof = inspectItem(stageFile, false);
                             if (storageItemIdentityText(stageProof.identity) != record.stageIdentity ||
                                 stageProof.canonicalPath.parent_path() != stageParentProof.canonicalPath ||
                                 record.stageIdentity == record.sourceIdentity ||

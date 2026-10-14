@@ -53,7 +53,7 @@ class WindowsStorageImageSource final : public domain::ImageSource
         {
             requireDiscoveryWorker();
             const auto file = ancestry_->folder.GetFileAsync(leafName_).get();
-            const auto proof = internal::inspectItem(file.Path(), false);
+            const auto proof = internal::inspectItem(file, false);
             if (!internal::isSameIdentity(proof.identity, identity_) ||
                 proof.canonicalPath != ancestry_->proof.canonicalPath / leafName_)
                 return Result::failure({domain::ImageProcessingErrorCode::SourceChangedAfterAnalysis,
@@ -94,7 +94,7 @@ class WindowsStorageImageSource final : public domain::ImageSource
             // The proof denies rename, so release it before the owning engine's
             // authorized move. Ancestor capabilities remain pinned throughout.
             {
-                const auto proof = internal::inspectItem(file.Path(), false);
+                const auto proof = internal::inspectItem(file, false);
                 if (!internal::isSameIdentity(proof.identity, identity_) ||
                     proof.canonicalPath != ancestry_->proof.canonicalPath / leafName_)
                     return Result::failure({domain::ImageProcessingErrorCode::SourceChangedAfterAnalysis,
@@ -162,7 +162,7 @@ void requireDiscoveryWorker()
 WindowsStorageImageSourceCollection::WindowsStorageImageSourceCollection(
     winrt::Windows::Storage::StorageFolder selectedRoot,
     std::shared_ptr<const ImageFileTransactionEngine> transactionEngine,
-    std::vector<winrt::Windows::Storage::StorageFolder> applicationOwnedFolders)
+    std::vector<IdentityBoundStorageFolder> applicationOwnedFolders)
     : selectedRoot_(std::move(selectedRoot)), transactionEngine_(std::move(transactionEngine)),
       applicationOwnedFolders_(std::move(applicationOwnedFolders))
 {
@@ -185,11 +185,20 @@ domain::ImageProcessingResult<domain::ImageSourceDiscovery> WindowsStorageImageS
             discovery.cancellationRequested = true;
             return DiscoveryResult::success(std::move(discovery));
         }
-        const auto rootAncestry = std::make_shared<SourceFolderAncestry>(
-            internal::inspectItem(selectedRoot_.Path(), true), selectedRoot_, nullptr);
+        const auto rootAncestry =
+            std::make_shared<SourceFolderAncestry>(internal::inspectItem(selectedRoot_, true), selectedRoot_, nullptr);
         std::vector<internal::StorageItemProof> excludedFolders;
         for (const auto &folder : applicationOwnedFolders_)
-            excludedFolders.push_back(internal::inspectItem(folder.Path(), true));
+        {
+            if (!folder.folder)
+                throw winrt::hresult_invalid_argument();
+            auto proof = internal::inspectItem(folder.folder, true);
+            if (!internal::isSameIdentity(proof.identity, folder.identity))
+                throw winrt::hresult_error{HRESULT_FROM_WIN32(ERROR_FILE_INVALID)};
+            // Keep the native handle for this traversal. Comparing IDs once
+            // without retaining the handle would permit a later substitution.
+            excludedFolders.push_back(std::move(proof));
+        }
 
         struct PendingFolder final
         {
@@ -228,9 +237,9 @@ domain::ImageProcessingResult<domain::ImageSourceDiscovery> WindowsStorageImageS
                         try
                         {
                             const bool directory = item.IsOfType(StorageItemTypes::Folder);
-                            // FromApp observes the item itself. Reparse points are
-                            // reported before obtaining a folder/traversal capability.
-                            const auto attributes = internal::storageItemAttributes(item.Path(), directory);
+                            // The granted item's native property provider reports
+                            // reparse attributes before any descendant is traversed.
+                            const auto attributes = internal::storageItemAttributes(item);
                             if ((attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
                             {
                                 discovery.issues.push_back(
@@ -238,7 +247,7 @@ domain::ImageProcessingResult<domain::ImageSourceDiscovery> WindowsStorageImageS
                             }
                             else
                             {
-                                auto proof = internal::inspectItem(item.Path(), directory);
+                                auto proof = internal::inspectItem(item, directory);
                                 // A long-path Storage item can expose its 8.3 alias
                                 // in Name. Use the normalized name returned by the
                                 // existing native handle proof, never a guessed

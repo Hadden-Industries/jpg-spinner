@@ -60,6 +60,12 @@ bool ImageProcessingRowViewModel::IsEdgeTrimmingAcknowledged() const
     requireDispatcherThread();
     return isEdgeTrimmingAcknowledged_;
 }
+bool ImageProcessingRowViewModel::RequiresEdgeTrimmingAcknowledgment() const
+{
+    requireDispatcherThread();
+    return isEligibleForProcessing_ && !isEdgeTrimmingAcknowledged_ &&
+           (discardedSourceRightEdgeWidthInPixels_ != 0 || discardedSourceBottomEdgeHeightInPixels_ != 0);
+}
 void ImageProcessingRowViewModel::acknowledgeEdgeTrimming()
 {
     requireDispatcherThread();
@@ -70,6 +76,8 @@ void ImageProcessingRowViewModel::acknowledgeEdgeTrimming()
     {
         isEdgeTrimmingAcknowledged_ = true;
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{L"IsEdgeTrimmingAcknowledged"});
+        propertyChanged_(*this,
+                         Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{L"RequiresEdgeTrimmingAcknowledgment"});
     }
 }
 Presentation::ImageProcessingRowOutcome ImageProcessingRowViewModel::Outcome() const
@@ -81,6 +89,46 @@ hstring ImageProcessingRowViewModel::ErrorTitle() const
 {
     requireDispatcherThread();
     return errorText_.title;
+}
+bool ImageProcessingRowViewModel::HasError() const
+{
+    requireDispatcherThread();
+    return !errorText_.title.empty();
+}
+hstring ImageProcessingRowViewModel::OutcomeDescription() const
+{
+    requireDispatcherThread();
+    const wchar_t *key{};
+    switch (outcome_)
+    {
+    case ImageProcessingRowOutcome::Pending:
+        key = L"ImageProcessingOutcome_Pending";
+        break;
+    case ImageProcessingRowOutcome::CorrectedCopyCreated:
+        key = L"ImageProcessingOutcome_CorrectedCopyCreated";
+        break;
+    case ImageProcessingRowOutcome::OriginalReplacedWithVerifiedBackup:
+        key = L"ImageProcessingOutcome_OriginalReplacedWithVerifiedBackup";
+        break;
+    case ImageProcessingRowOutcome::NoOrientationNormalizationRequired:
+        key = L"ImageProcessingOutcome_NoOrientationNormalizationRequired";
+        break;
+    case ImageProcessingRowOutcome::UnsupportedSourceSkipped:
+        key = L"ImageProcessingOutcome_UnsupportedSourceSkipped";
+        break;
+    case ImageProcessingRowOutcome::ProcessingFailed:
+        key = L"ImageProcessingOutcome_ProcessingFailed";
+        break;
+    case ImageProcessingRowOutcome::CancelledBeforeTransformation:
+        key = L"ImageProcessingOutcome_CancelledBeforeTransformation";
+        break;
+    case ImageProcessingRowOutcome::CancelledBeforeCommit:
+        key = L"ImageProcessingOutcome_CancelledBeforeCommit";
+        break;
+    default:
+        throw hresult_invalid_argument();
+    }
+    return resources_.GetValue(key, resourceContext_).ValueAsString();
 }
 hstring ImageProcessingRowViewModel::ErrorExplanation() const
 {
@@ -125,7 +173,8 @@ void ImageProcessingRowViewModel::applyResult(const jpg_spinner::batch_processin
                               : jpg_spinner::presentation::ImageProcessingErrorText{};
     // Publish a coherent terminal observation before notifying any binding.
     propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{L"Outcome"});
-    for (auto const *property : {L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy"})
+    for (auto const *property :
+         {L"OutcomeDescription", L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy", L"HasError"})
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{property});
 }
 event_token ImageProcessingRowViewModel::PropertyChanged(

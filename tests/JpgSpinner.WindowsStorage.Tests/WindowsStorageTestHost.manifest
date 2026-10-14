@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <!-- Exercise the same process-creation path policy as the shipping app.
+       Windows long paths also require LongPathsEnabled=1; this declaration
+       neither changes that machine policy nor grants filesystem access.
+       https://learn.microsoft.com/windows/win32/fileio/maximum-file-path-limitation -->
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+</assembly>

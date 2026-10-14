@@ -1,8 +1,27 @@
+import "Presentation.idl";
+
 namespace JpgSpinner
 {
     [default_interface]
-    runtimeclass MainWindow : Microsoft.UI.Xaml.Window
+    runtimeclass MainWindow : Microsoft.UI.Xaml.Window, Microsoft.UI.Xaml.Data.INotifyPropertyChanged
     {
         MainWindow();
+        // Null until a real selected-folder batch has been composed. Absence of
+        // a grant is not represented by a fake transaction engine or source.
+        JpgSpinner.Presentation.MainWindowViewModel ViewModel{ get; };
+        Boolean CanPickSourceFolder{ get; };
+        Boolean IsWorkflowInteractionEnabled{ get; };
+        Boolean CanRetryRecovery{ get; };
+        // Window-only projection of the model's semantic state, not additional
+        // processing states or a second workflow decision engine.
+        Microsoft.UI.Xaml.Visibility SourceSelectionRegionVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility AnalysisRegionVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility ReviewRegionVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility ProcessingRegionVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility ResultsRegionVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility RecoveryRequiredRegionVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility ProcessingRowsRegionVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility BackupDestinationVisibility{ get; };
+        Microsoft.UI.Xaml.Visibility OperationProgressVisibility{ get; };
     }
 }

@@ -985,10 +985,162 @@ git commit -m "feat: model the image-processing experience precisely"
 
 ## Task 13: Implement the WinUI 3 shell and folder-review workflow
 
+Development checkpoint (2026-10-14): Task 13 remains active, uncommitted and
+incomplete under execution `21e2eb0a-48a5-4f37-a7df-e1f113a30d98`. The authorized
+dev23 engine transition transferred this same chat's installation actor, paused
+the execution, then restored it at generation 4. Runtime selection is generation
+6; earlier assurance is invalidated, not erased. Any later pending-interaction
+generation is authoritative in the retained native execution record.
+The operator now requires automated-first implementation and desktop use only
+for bounded final acceptance. Use native compilation/static analysis, headless
+model and real-storage composition tests, then automated native package/UIA
+checks. Computer Use is reserved for the remaining real-picker/visual checks,
+not repeated for each assertion. UIA still requires an interactive session; it
+must not be described as headless. Builds use the conservative two-process
+default, one architecture at a time. Consolidate before final independent
+assurance. No environment refusal, interrupted run or unexecuted manual case
+counts as product acceptance.
+
+The first-party shell uses compiled bindings, the real selected-folder composition
+and an HWND-owned asynchronous picker. Native identity-bound discovery excludes
+actually owned transaction folders without excluding unrelated similarly named
+containers. Fresh batch UUIDs are composed after completed processing/recovery.
+FutureAccessList ownership now belongs to `SourceFolderAccessRetention`, consumed
+by the real window. A native AppContainer test worker qualifies token metadata,
+idempotent retention, explicit release, retention across object teardown, and
+denial of existing ungranted parent/sibling fixtures with an app-local positive
+control. It does not claim that those fixtures were picker-granted. The real
+picker remains a separate acceptance boundary.
+
+Dependency-order reconciliation: Task 13's required authority checks cannot be
+qualified against Task 16's former full-trust placeholder. Bring forward only
+the already-approved identity/trust/initialization prerequisite: the exact Store
+identity/association, Desktop family, `packagedClassicApp`/`appContainer`, no
+capabilities, and framework-dependent native initialization. Task 16's asset,
+bundle, signed upgrade, certification and release obligations remain pending.
+This changes execution order, not the trust requirement or release authority.
+
+Microsoft's [activation-attribute specification](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-application)
+requires non-conflicting activation declarations. The native manifest reader
+rejected the generated full-trust `EntryPoint` token alongside AppContainer
+trust; removing the redundant entry point made the same consumer check pass.
+The SDK's `AppxAddDefaultTargetDeviceFamilyItem=false` prevents its C++ UAP targets
+from adding Universal to the generated Desktop-only manifest. Explicit native
+auto-initializer opt-outs avoid an unnecessary restricted `packageManagement`
+capability or private runtime, following [Microsoft's project guidance](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/project-properties).
+
+Live testing exposed a XAML collection-boundary defect missed by model tests.
+The corrected boundary uses native owning `param::vector_view<IInspectable>`
+snapshots, `IVectorView<Object>` properties and typed DataTemplates. Native
+consumer tests require correct item counts and reject mutable QueryInterface
+protocols. This follows Microsoft's
+[XAML collection interoperability guidance](https://learn.microsoft.com/en-us/windows/apps/develop/cpp-winrt/move-to-winrt-from-csharp#making-a-data-source-available-to-xaml-markup)
+and [ItemsSource contract](https://learn.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.itemscontrol.itemssource).
+MRT-backed descriptions distinguish owned-folder exclusions, skipped reparse
+points and access failures in all three supported locales.
+
+Retained development evidence is deliberately separate from final verification:
+
+Task 13 support-contract amendment, approved by the owner on 2026-10-14:
+retain native brokered Storage-item handles and require the application's
+`longPathAware=true` manifest together with Windows `LongPathsEnabled=1` for
+identity-bound transactions and recovery. This supersedes the former
+unconditional/no-machine-opt-in staging expectation; it is not a claim that
+ordinary Win32 long paths work on policy-disabled hosts. Both native test hosts
+must declare the same process policy as the app. The adapter only reads the
+typed Windows prerequisite; it never enables it, adds capabilities or falls back
+to path-based opens. Transaction/recovery preflight refuses unqualified policy
+before creating a stage, output, backup, journal generation or journal lease,
+with the distinct `WindowsLongPathSupportUnavailable` error. This gate applies
+even to short source paths because generated artifacts can be longer. Keep
+negative refusal controls with unchanged originals and preserved recovery
+artifacts; native policy-disabled VM qualification remains an explicit release
+test, not inferred from this host's already-enabled setting. The previous failing
+tests and native alternative probes remain retained counterevidence.
+This follows [Microsoft's long-path prerequisites](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation)
+and uses [RegGetValueW's native type restriction](https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-reggetvaluew).
+
+| Check | Observed result and boundary |
+| --- | --- |
+| Real-storage headless review | Two new integration cases passed 60 assertions through actual selected-folder composition, coordinator, native dispatcher and view model: owned exclusion explanations, unsupported/normalized row accounting, exact 7/0 trim disclosure, backup destination and explicit consent, with no fresh transaction or source mutation. No picker or rendered UI claim. |
+| Updated headless presentation | Both x64/x86 pass 2,695 assertions after the formatted hybrid picker harness builds under dev23. Package-only workers, UIA and assistive-technology cases are excluded. These focused development reports are not canonical full verification. |
+| Native source-access worker | The consolidated AppContainer worker passes 48 assertions in three cases: real app-local adapter analysis, exact unchanged source bytes, native FutureAccessList lifetime and denial of existing ungranted paths. The final real external picker control passes 22 worker assertions plus three controller assertions, including exact abc capture, actual escaping-link rejection and ungranted parent/sibling denial after the child grant. No shipping test hook, custom parser or broader capability. |
+| AppContainer UIA component evidence | The latest five-case non-operator selection passed four cases/116 of 117 assertions. Its new OS-provider case revealed a numeric AutomationId collision with a list item. The locator now uses native CreateAndCondition for SDK ID plus required button type; the focused repair passes 19 assertions. Original failed reports are retained. Product trust, safe initial state, layout and minimum-height reachability remain qualified; this is not Narrator acceptance. |
+| Real-picker acceptance | Real AppContainer folder-review/cancel passes 55 assertions; trim/backup policy and consent passes 66, including exact 7/0 loss, wrapped backup display and complete minimum-height reachability. A genuine SourceAccessDenied failure first exposed the path-based metadata-open defect; the shared native handle repair fixes it without capability expansion or fallback. Start was never invoked and source bytes stayed unchanged. Earlier incomplete attempts remain historical evidence. Screen-saver active=1, secure=0, timeout=600 was restored after every applied suppression, and the desktop was released to the user. |
+| Manifest policy and native consumer | Authored/generated manifest identity, Desktop family, trust, empty capabilities and effective initialization checks pass. Wrong identity/trust, conflicting entry point, additional family/capabilities and file association negative controls pass. The copied Store association is byte-identical to the historical association. Native Appx manifest-reader RED/GREEN is retained separately from XML policy. |
+| Native test selection | A comma-alternative negative control failed first: trailing exclusions did not constrain an earlier Catch2 filter. The ordinary native host now checks Catch2's own parsed selection and tag identities, refusing an unsafe headless/worker selection before any case executes. Positive/negative non-executing `--list-tests` controls pass on both architectures; no replacement test-spec grammar. |
+| MSVC static analysis | Prepared-candidate scoped `/analyze` reports six C28182 diagnostics at WIL `resource.h:4462`. A locked-compiler reproducer independently diagnoses the aggregate-initialization false positive: a minimal braced initializer warns, equivalent parentheses do not, and both skip construction on deterministic allocation failure. The real WIL event-watcher returns `E_OUTOFMEMORY` without a null dereference; an eager-construction negative control fails as expected. This follows [C++ new-expression semantics](https://eel.is/c++draft/expr.new#22) and matches [WIL issue 610](https://github.com/microsoft/wil/issues/610). Original diagnostics remain visible: no clean-analysis claim, warning suppression or vendor patch. |
+| Native picker provider and mixed-input harness | Owned broker HWND and focus are verified; real keyboard folder entry supplies the grant, then UIA drives analysis/cancellation/consent. The two mixed-input cases now pass as recorded above. The final provider locator qualifies 19 assertions using native ID/type conditions: Microsoft does not guarantee AutomationId uniqueness across a subtree. ValuePattern typed-input attempts remain failed diagnostic evidence, not a supported driver. No private picker notification, synthetic capability grant or production test hook. |
+| x64/x86 headless presentation | Refreshed after test-host DPI manifest integration: 2,634 assertions per architecture passed. UI Automation and assistive-technology tests were explicitly excluded. This is development verification, not final full acceptance. |
+| Affected storage/batch regression | All 13,136 x64 storage assertions and 324 x64 batch assertions passed; focused x86 discovery regression also passed. Unchanged Domain/JPEG suites were not redundantly rerun. |
+| Live initial state and safe defaults | 56 assertions passed on the approved local desktop. |
+| Real-picker keyboard review and cancellation | 30 assertions passed: one eligible synthetic image, retained review/source after picker cancellation, clean shutdown and unchanged source bytes. |
+| Minimum size and adaptive policy layout | Current DPI-qualified x64 run passes 24 assertions, including physical width preconditions, minimum dimensions and narrow/wider reflow. Minimum-height scrolling/reachability is not implied. Earlier failures remain preserved but did not establish the intended effective viewport in a DPI-virtualized test host. |
+| Minimum-height reachability | A separate contract failed first on the absent native viewport. Native scrolling now brings all five source/policy controls fully into view at 360×480 effective pixels; actions remain outside that scroller and ListView height is bounded by its native viewport. Post-change layout/defaults and real-picker keyboard/cancellation regressions also pass. |
+| Visual-state host and test environment | Native UserControl content root remains the selected composition. A new native DPI precondition failed first; merging a PMv2 test-host manifest made it pass. Both architecture builds pass. A bounded layout wait alone failed before the DPI repair; do not claim it fixed the underlying coordinate mismatch. |
+| Native foreground qualification | Immediate positive activation and the unactivated 30-second refusal passed previously. Current waiting-branch qualification also passes after ordinary Computer Use activation of the owned probe. |
+| Headless visual-state source contract | Positive declarations, equivalent XML numeric spelling, and wrong-host/wrong-width negative controls pass without compilation or desktop access; this is not XAML compiler or rendered-layout acceptance. |
+
+The location-specific `E_INVALIDARG` from a synthetic source under
+`%LOCALAPPDATA%/Temp` remains counterevidence. Moving only the owned fixture to
+`artifacts/tests` allowed the original enumeration to pass. Do not infer that all
+temporary folders are unsupported or add a production enumeration fallback.
+Microsoft's [file-access guidance](https://learn.microsoft.com/en-us/windows/apps/develop/files/file-access-permissions)
+distinguishes app-data access from picker access.
+
+Native foreground qualification permits ordinary activation for a bounded
+30 seconds and still requires the owned foreground HWND and matching UIA PID.
+It does not force input queues or bypass
+[SetForegroundWindow restrictions](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setforegroundwindow).
+The native presenter minimum uses display-scale-aware 360-by-480 effective pixels.
+Visual states belong on the control content root, per
+[Microsoft's XAML layout guidance](https://learn.microsoft.com/en-us/windows/apps/develop/ui/layouts-with-xaml).
+The new XML source guard protects that selected structure and the approved
+0/640/1008 thresholds; native XAML compilation, bindings, reflow, scrolling and
+control reachability still need their own acceptance checks.
+
+Host-crash investigation found an 08:55–08:56 local-time cluster of MSBuild
+page-file/worker-launch failures and a DWM fatal-memory-exhaustion termination,
+strongly correlated with this chat's formerly unbounded build. This is a
+contributor, not proof of the sole cause of the host hangs. Both subsequent boot
+reports also contain fatal WHEA/Intel PMC crash-log signatures; their root cause
+remains unresolved. The later bounded build finished before the next interruption.
+The operator subsequently enabled per-drive system-managed paging on C: and E:.
+At 11:03 local, observed commit headroom was approximately 17.8 GiB; this improves
+memory capacity but does not resolve the WHEA reports. Builds subsequently resumed
+under explicit operator approval, with desktop testing still withheld.
+
+`Invoke-Build.ps1` now defaults to two concurrent MSBuild processes and accepts a
+positive `MaximumBuildProcessCount` override. The entry-point contract and
+zero-count negative control passed. Bare `-m` selects the processor count, per
+the [MSBuild specification](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference).
+Two is a conservative recovery default, not an established performance optimum.
+No concurrency benchmark was run. Current sequential x64/x86 builds pass at two
+workers; those incremental runs do not establish a safe maximum or optimal speed.
+
+For any later desktop-test session in this thread, the operator permits temporary
+screen-saver suppression with captured-state restoration and readback afterward.
+Do not alter lock/security policy. The bounded external helper and raw failure
+logs remain retained evidence; hard interruption can prevent its finally block.
+Both current desktop-test sessions restored and verified the original active,
+secure and timeout values. Suppression is limited to an active bounded desktop
+test session; it is unnecessary during headless-only work.
+
+Next, finish the two final real-picker checks under the actual AppContainer trust
+model, including minimum-size review reachability after consent. Headless/native
+package evidence supplies the recursive exclusion, row/count, trim/backup and
+token/denial contracts; do not repeat these through manual input unnecessarily.
+The screen saver was restored after the first pass. A subsequent suppression
+attempt was refused while it was already running; native observation reports an
+unlocked session but a non-default input desktop. Return to the ordinary desktop
+before another bounded acceptance pass. Preserve all refusals and unexecuted
+operator cases as counterevidence, not product regressions. Finish consolidated
+assurance and canonical verification before committing; no completion or release
+is claimed here.
+
 **Files:**
 
 - Create: `src/JpgSpinner.App/App.xaml`
-- Create: `src/JpgSpinner.App/App.idl`
 - Create: `src/JpgSpinner.App/App.xaml.h`
 - Create: `src/JpgSpinner.App/App.xaml.cpp`
 - Create: `src/JpgSpinner.App/MainWindow.xaml`
@@ -996,7 +1148,16 @@ git commit -m "feat: model the image-processing experience precisely"
 - Create: `src/JpgSpinner.App/MainWindow.xaml.h`
 - Create: `src/JpgSpinner.App/MainWindow.xaml.cpp`
 - Create: `tests/JpgSpinner.Presentation.Tests/WindowStateAutomationTests.cpp`
+- Create: `tests/JpgSpinner.Presentation.Tests/PresentationTestHost.manifest`
+- Create: `src/JpgSpinner.App/Composition/SourceFolderAccessRetention.h`
+- Create: `tests/JpgSpinner.Presentation.Tests/SourceFolderAccessRetentionTests.cpp`
+- Create: `scripts/tests/Test-PresentationTestSelection.ps1`
+- Create (Task 16 prerequisite): `scripts/PackageManifestPolicy.psm1`
+- Create (Task 16 prerequisite): `scripts/Test-PackageManifest.ps1`
+- Create (Task 16 prerequisite): `scripts/tests/Test-PackageManifestPolicy.ps1`
 - Create: `scripts/Test-InteractiveUiEnvironment.ps1`
+- Create: `scripts/tests/Test-ShellVisualStateDeclarations.ps1`
+- Modify: `scripts/Invoke-Build.ps1`
 - Modify: `src/JpgSpinner.App/JpgSpinner.App.vcxproj`
 
 ### Step 13.1: RED with black-box UI Automation contracts
@@ -1005,32 +1166,32 @@ git commit -m "feat: model the image-processing experience precisely"
 - [ ] Register and launch an isolated local test package from the integration test, then attach through Windows UI Automation by process ID.
 - [ ] Require stable automation IDs for the source picker, traversal scope, analysis status, result table, output disposition, edge handling, scan organization, backup destination, start, cancel, and results summary.
 - [ ] Require only controls relevant to the current semantic state to be enabled and focusable.
-- [ ] Require a keyboard-only path from source selection through review without invoking processing in the test.
+- [x] Require a keyboard-only path from source selection through review without invoking processing in the test. The owned local-desktop scenario passed with unchanged fixture bytes; native UIA supplied only initial focus and independent assertions.
 - [ ] Run `[presentation][automation][state]`; expected RED is the absent window/control tree, not an automation timeout.
 
 ### Step 13.2: GREEN with one window and semantic states
 
-- [ ] Compose one `MainWindow` with state-specific regions; do not port old scenario pages, settings flyouts, or explanation pages.
-- [ ] Declare the projected `App` and `MainWindow` runtime classes in `App.idl` and `MainWindow.idl`, keep each IDL contract focused, and verify generated metadata before relying on `x:Bind`.
+- [x] Compose one `MainWindow` with state-specific regions; do not port old scenario pages, settings flyouts, or explanation pages.
+- [x] Use Microsoft's native `ApplicationDefinition`-generated `AppT`/`IXamlMetadataProvider` contract for `App`, and declare the bindable `MainWindow` and presentation runtime classes in their focused IDL files. Verify generated metadata before relying on `x:Bind`. The native template's `App.idl` can contain an empty namespace; no consumer here requires a separately projected `App` runtime class. Do not add redundant activation metadata or handwritten ABI declarations merely to satisfy an implementation-detail checklist.
 - [ ] Apply `MicaBackdrop`, the stable WinUI integrated title-bar pattern, transparent root surfaces, layer/card theme brushes, and `InfoBar` for non-modal status. Rely on WinUI’s solid fallback rather than implementing a material shim.
 - [ ] Use only first-party WinUI controls. Use `ListView` for processing rows, standard buttons/pickers/progress, and labeled Segoe Fluent Icons where helpful; do not add a third-party control package or icon-only action.
-- [ ] Use `x:Bind` where compile-time binding catches naming errors; use observable properties only where state changes.
+- [x] Use `x:Bind` where compile-time binding catches naming errors; use observable properties only where state changes.
 - [ ] Show source selection, analysis, review, processing, results, and recovery-required regions from `MainWindowViewModel` state.
-- [ ] Keep code-behind limited to window/picker interop and presentation-only events. All processing decisions remain in tested view models and native modules.
+- [x] Keep code-behind limited to window/picker interop and presentation-only events. All processing decisions remain in tested view models and native modules.
 - [ ] Assign stable `AutomationProperties.AutomationId`, name, help text, and live-setting values in XAML.
 - [ ] Add visual states at 640 and 1008 effective pixels: stack review facts below 640, use compact list/detail at 640–1007, and expose non-essential review columns at 1008 and above. Never constrain localized prose to a fixed height.
 
 ### Step 13.3: RED/GREEN folder picking and AppContainer access
 
-- [ ] Test cancellation from `FolderPicker` leaves the previous stable state and selected source unchanged.
+- [x] Test cancellation from `FolderPicker` leaves the previous stable state and selected source unchanged. The same native scenario reopens the system picker, observes owner disable/re-enable, and verifies retained review, source and eligibility after cancellation.
 - [ ] Test a picked folder produces the exact storage capability consumed by the batch coordinator and does not grant access to parents or siblings.
-- [ ] Initialize the WinRT picker with the WinUI HWND through the documented window-initialization interface, then await it; never block the UI thread.
+- [x] Initialize the WinRT picker with the WinUI HWND through the documented window-initialization interface, then await it; never block the UI thread.
 - [ ] Add only the FutureAccessList token needed to resume a user-selected folder during the current/recoverable transaction. Bound and remove stale tokens deliberately.
 - [ ] Explain HWND initialization, token lifetime, and AppContainer authority in comments.
 
 ### Step 13.4: RED/GREEN honest review controls
 
-- [ ] In automation tests require default values: create copy, selected folder only, perfect coefficients, preserve source scans.
+- [x] In automation tests require default values: create copy, selected folder only, perfect coefficients, preserve source scans. Native UIA SelectionPattern independently compares the selected items with the localized resource candidates; x64 local-desktop qualification passed (56 assertions including initial state).
 - [ ] Select recursive traversal and prove app-owned output/backup roots appear as excluded explanation, not silently omitted.
 - [ ] Select replacement and require the backup destination to become visible before the Start button enables.
 - [ ] Select trim for an imperfect file and require exact discarded-edge dimensions plus an explicit acknowledgment.
@@ -1038,7 +1199,8 @@ git commit -m "feat: model the image-processing experience precisely"
 
 ### Step 13.5: Verify and commit
 
-- [ ] Run view-model, localization-contract, WinMD, and x:Bind build tests on the normal headless lane. Run black-box automation only after `Test-InteractiveUiEnvironment.ps1` passes in the isolated interactive Windows VM/self-hosted lane; this lane remains required and cannot be converted to an optional hosted-runner skip.
+- [x] Run `./scripts/tests/Test-ShellVisualStateDeclarations.ps1` without compilation or app activation. Require the authored control-root/threshold contract and retained wrong-host/wrong-width negative controls; equivalent XML numeric values must pass. This supplementary source guard does not replace native XAML compilation or interactive acceptance and is not yet wired into the canonical verification profile.
+- [ ] Run view-model, localization-contract, WinMD, and x:Bind build tests on the normal headless lane. Run black-box automation only after `Test-InteractiveUiEnvironment.ps1` passes in an isolated interactive Windows VM/self-hosted lane or the explicitly operator-approved local desktop lane. This interactive qualification remains required and cannot become an optional hosted-runner skip; record which lane actually ran, without claiming isolation for the local desktop.
 - [ ] Run the app manually once to verify picker ownership, resize behavior, minimum window size, and clean shutdown.
 - [ ] Commit:
 

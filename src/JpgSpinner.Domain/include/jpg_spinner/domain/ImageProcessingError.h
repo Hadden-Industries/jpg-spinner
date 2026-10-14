@@ -62,6 +62,7 @@ enum class ImageProcessingErrorCode
     StorageProviderRecoveryContractNotEstablished,
     JournalStoreBusy,
     RecoveryConflict,
+    WindowsLongPathSupportUnavailable,
     Cancelled,
 };
 

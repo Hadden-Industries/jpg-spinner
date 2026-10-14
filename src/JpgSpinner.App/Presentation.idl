@@ -40,6 +40,7 @@ namespace JpgSpinner.Presentation
     {
         String RelativePath{ get; };
         ImageSourceDiscoveryIssueKind Kind{ get; };
+        String KindDescription{ get; };
         String ErrorTitle{ get; };
         String ErrorExplanation{ get; };
         String ErrorRemedy{ get; };
@@ -53,7 +54,10 @@ namespace JpgSpinner.Presentation
         UInt64 DiscardedSourceRightEdgeWidthInPixels{ get; };
         UInt64 DiscardedSourceBottomEdgeHeightInPixels{ get; };
         Boolean IsEdgeTrimmingAcknowledged{ get; };
+        Boolean RequiresEdgeTrimmingAcknowledgment{ get; };
         ImageProcessingRowOutcome Outcome{ get; };
+        String OutcomeDescription{ get; };
+        Boolean HasError{ get; };
         String ErrorTitle{ get; };
         String ErrorExplanation{ get; };
         String ErrorRemedy{ get; };
@@ -66,13 +70,23 @@ namespace JpgSpinner.Presentation
     {
         ImageProcessingExperienceState State{ get; };
         Boolean CanSelectSourceFolder{ get; };
+        Boolean CanAnalyzeSelectedSource{ get; };
         Boolean CanBeginProcessing{ get; };
         Boolean CanCancelCurrentOperation{ get; };
         Boolean CanReturnToSourceSelection{ get; };
         Windows.Foundation.IReference<Double> ProgressPercentage{ get; };
-        Windows.Foundation.Collections.IVectorView<ImageProcessingRowViewModel> Rows{ get; };
-        Windows.Foundation.Collections.IVectorView<ImageSourceDiscoveryIssueViewModel> DiscoveryIssues{ get; };
+        // Bind these together: zero alone must not imply a known denominator.
+        Boolean IsProgressIndeterminate{ get; };
+        Double ProgressPercentageOrZero{ get; };
+        // XAML consumes inspectable collections; typed DataTemplates retain each
+        // item's runtime contract. The collection itself grants no mutation API.
+        Windows.Foundation.Collections.IVectorView<Object> Rows{ get; };
+        Windows.Foundation.Collections.IVectorView<Object> DiscoveryIssues{ get; };
         String BackupRootDisplayPath{ get; };
+        // Display context only: never a filesystem access capability.
+        String SourceFolderDisplayName{ get; };
+        // Planned transformations only, not every discovered/reconciled row.
+        UInt64 EligibleFileCount{ get; };
         UInt64 CompletedFileCount{ get; };
         UInt64 FailedFileCount{ get; };
         UInt64 CancelledFileCount{ get; };
@@ -83,6 +97,11 @@ namespace JpgSpinner.Presentation
         String ErrorTitle{ get; };
         String ErrorExplanation{ get; };
         String ErrorRemedy{ get; };
+        Boolean HasError{ get; };
+        // Changes invalidate the previous reviewed artifact; unchanged choices
+        // are a no-op. Calls require a selected source in an editable state.
+        void SetProcessingOptions(OutputDisposition disposition, TraversalScope traversal,
+                                  EdgeHandlingPolicy edgeHandling, OutputScanOrganization scanOrganization);
         void AcknowledgeEdgeTrimming(UInt32 rowIndex);
         Windows.Foundation.IAsyncAction AnalyzeAsync();
         Windows.Foundation.IAsyncAction BeginProcessingAsync();

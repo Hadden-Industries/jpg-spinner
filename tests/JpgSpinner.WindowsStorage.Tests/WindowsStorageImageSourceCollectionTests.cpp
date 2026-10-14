@@ -42,6 +42,18 @@ void writeCandidate(const std::filesystem::path &path)
     REQUIRE(std::filesystem::file_size(path) != 0);
 }
 
+jpg_spinner::storage::IdentityBoundStorageFolder identityBoundTestFolder(
+    const winrt::Windows::Storage::StorageFolder &folder)
+{
+    const winrt::handle handle{CreateFileW(folder.Path().c_str(), FILE_READ_ATTRIBUTES,
+                                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+                                           OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr)};
+    REQUIRE(handle.get() != INVALID_HANDLE_VALUE);
+    FILE_ID_INFO identity{};
+    REQUIRE(GetFileInformationByHandleEx(handle.get(), FileIdInfo, &identity, sizeof(identity)));
+    return {folder, identity};
+}
+
 std::set<std::wstring> relativeNames(const jpg_spinner::domain::ImageSourceDiscovery &discovery);
 
 /// A real, restored ACL on a UUID-owned fixture; never a fabricated access error.
@@ -435,7 +447,8 @@ TEST_CASE("Native discovery honors extent and exact owned-folder identity", "[st
     const auto journal = selected.CreateFolderAsync(L"journal").get();
     const auto transactions =
         std::make_shared<jpg_spinner::storage::WindowsStorageImageFileTransactionEngine>(selected, journal);
-    const WindowsStorageImageSourceCollection collection{selected, transactions, {output, backup}};
+    const WindowsStorageImageSourceCollection collection{
+        selected, transactions, {identityBoundTestFolder(output), identityBoundTestFolder(backup)}};
     const auto shallow = collection.discover(TraversalScope::SelectedFolderOnly);
     REQUIRE(shallow.valueIfPresent() != nullptr);
     REQUIRE(relativeNames(*shallow.valueIfPresent()) == std::set<std::wstring>{L"a.JPEG", L"z.JpG"});
@@ -449,4 +462,28 @@ TEST_CASE("Native discovery honors extent and exact owned-folder identity", "[st
     // Discovery preserves the source tree; excluded names are neither deleted nor processed.
     REQUIRE(std::filesystem::exists(root / L"backup" / L"owned.jpg"));
     REQUIRE(std::filesystem::exists(root / L"JPG Spinner Output" / L"owned.jpg"));
+}
+
+TEST_CASE("Discovery refuses an exclusion whose folder was replaced after ownership observation",
+          "[storage][batch][discovery][owned-folder-identity]")
+{
+    using namespace jpg_spinner;
+    using namespace winrt::Windows::Storage;
+    const DiscoveryTestApartment apartment;
+    const test_support::TemporaryDirectory fixture{std::filesystem::current_path() / "artifacts/tests"};
+    const auto selected = StorageFolder::GetFolderFromPathAsync(fixture.directoryPath().wstring()).get();
+    const auto journal = selected.CreateFolderAsync(L"journal").get();
+    const auto owned = selected.CreateFolderAsync(L"owned").get();
+    const auto exclusion = identityBoundTestFolder(owned);
+    // Keep the original alive at another name, preventing file-ID reuse. The
+    // old StorageFolder's path cannot authorize exclusion of its replacement.
+    std::filesystem::rename(fixture.directoryPath() / L"owned", fixture.directoryPath() / L"original-owned");
+    selected.CreateFolderAsync(L"owned").get();
+    writeCandidate(fixture.directoryPath() / L"owned" / L"user.jpg");
+    const auto transactions = std::make_shared<storage::WindowsStorageImageFileTransactionEngine>(selected, journal);
+    const storage::WindowsStorageImageSourceCollection collection{selected, transactions, {exclusion}};
+    const auto result = collection.discover(domain::TraversalScope::SelectedFolderAndDescendants);
+    REQUIRE(result.errorIfPresent() != nullptr);
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceDiscoveryFailed);
+    CHECK(std::filesystem::exists(fixture.directoryPath() / L"owned" / L"user.jpg"));
 }

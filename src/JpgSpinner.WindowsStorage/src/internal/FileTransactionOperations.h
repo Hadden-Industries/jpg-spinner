@@ -15,6 +15,17 @@ class FileTransactionOperations
 {
   public:
     virtual ~FileTransactionOperations() = default;
+    /// Read the documented typed machine prerequisite, never change it. This
+    /// native-effect seam permits refusal controls without altering host policy.
+    /// Missing, disabled, wrongly typed or inaccessible settings are unqualified.
+    virtual bool hasEnabledWindowsLongPathPolicy() const
+    {
+        DWORD enabled{};
+        DWORD length = sizeof(enabled);
+        return RegGetValueW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\FileSystem", L"LongPathsEnabled",
+                            RRF_RT_REG_DWORD | RRF_SUBKEY_WOW6464KEY, nullptr, &enabled, &length) == ERROR_SUCCESS &&
+               length == sizeof(enabled) && enabled == 1;
+    }
     virtual winrt::Windows::Storage::StorageFolder createTransactionJournalFolder(
         const winrt::Windows::Storage::StorageFolder &journalStore, const winrt::hstring &identifier) const
     {

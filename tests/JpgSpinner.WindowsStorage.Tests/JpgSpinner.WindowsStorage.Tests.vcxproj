@@ -26,6 +26,7 @@
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <Manifest><AdditionalManifestFiles>$(MSBuildThisFileDirectory)WindowsStorageTestHost.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles></Manifest>
     <ClCompile>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.BatchProcessing\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\src;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -34,6 +35,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\TestSupport\Catch2TestMain.cpp" />
+    <Manifest Include="WindowsStorageTestHost.manifest" />
     <ClCompile Include="WindowsStorageImageSourceCollectionTests.cpp" />
     <ClCompile Include="ImageSourceDiscoveryBenchmarkTests.cpp" />
     <ClCompile Include="BatchStorageIntegrationTests.cpp" />

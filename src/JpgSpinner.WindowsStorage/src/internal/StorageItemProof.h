@@ -2,6 +2,8 @@
 
 #include <windows.h>
 #include <winrt/base.h>
+#include <winrt/Windows.Storage.h>
+#include <windowsstoragecom.h>
 #include <filesystem>
 
 namespace jpg_spinner::storage::internal
@@ -16,22 +18,22 @@ struct StorageItemProof final
     FILE_ID_INFO identity;
 };
 
-/// Inspect a granted physical storage item through FromApp access and native
+/// Inspect the actual granted item through its native brokered handle and
 /// path/file-ID consumers. Reparse points and unavailable proofs fail closed.
 /// The caller owns the returned handle and must close it before authorized moves.
-[[nodiscard]] StorageItemProof inspectItem(const winrt::hstring &path, bool directory,
-                                           DWORD access = FILE_READ_ATTRIBUTES);
-/// Observe the item itself through the same extended-length FromApp open. Unlike
-/// inspectItem, this reports reparse attributes rather than granting physical identity.
-[[nodiscard]] DWORD storageItemAttributes(const winrt::hstring &path, bool directory);
+[[nodiscard]] StorageItemProof inspectItem(const winrt::Windows::Storage::IStorageItem &item, bool directory,
+                                           HANDLE_ACCESS_OPTIONS access = HAO_READ_ATTRIBUTES);
+/// Observe the granted item's System.FileAttributes through the native property
+/// provider. Missing or wrongly typed metadata fails closed; no path is reopened.
+[[nodiscard]] DWORD storageItemAttributes(const winrt::Windows::Storage::IStorageItem &item);
 /// The journal depends on identity surviving native rename/replacement. Only
 /// physical NTFS has passed this contract's qualification; a file-ID-shaped value
 /// from another provider is insufficient. This is not a durability guarantee.
-[[nodiscard]] bool hasQualifiedRecoveryFileSystem(const winrt::hstring &folderPath);
+[[nodiscard]] bool hasQualifiedRecoveryFileSystem(const winrt::Windows::Storage::StorageFolder &folder);
 /// Serialize execution/recovery across adapter instances and processes sharing
 /// this application-owned store. The native exclusive handle releases on process
 /// death; the empty reserved file is retained, not a stale ownership marker.
-[[nodiscard]] winrt::handle acquireJournalStoreLease(const winrt::hstring &folderPath,
+[[nodiscard]] winrt::handle acquireJournalStoreLease(const winrt::Windows::Storage::StorageFolder &folder,
                                                      const StorageItemProof &folderProof);
 [[nodiscard]] bool isSameIdentity(const FILE_ID_INFO &left, const FILE_ID_INFO &right) noexcept;
 /// Version-1 journal representation of the native volume/file identity. Encoding

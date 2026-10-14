@@ -22,6 +22,9 @@ function Invoke-EntryPoint {
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
+    # These negative controls must not inherit an operator's live UI-lane
+    # selection and accidentally deploy a package or acquire the foreground.
+    [void]$startInfo.Environment.Remove('JPG_SPINNER_INTERACTIVE_TEST_LANE')
     foreach ($argument in @(
         '-NoProfile',
         '-File',
@@ -110,8 +113,8 @@ Assert-RejectedInvocation `
     -ExpectedDiagnostic "parameter 'ExecutionEnvironment'"
 
 # Interactive execution is a materially different environment contract. The
-# entry point must fail before locating or launching a test executable until
-# the dedicated preflight script is implemented later in the plan.
+# entry point must fail before locating or launching a test executable when
+# the caller has not selected an isolated interactive test lane.
 Assert-RejectedInvocation `
     -RelativeScriptPath 'scripts/Invoke-TestSuite.ps1' `
     -ArgumentList @(
@@ -122,7 +125,7 @@ Assert-RejectedInvocation `
         '-ExecutionEnvironment',
         'Interactive'
     ) `
-    -ExpectedDiagnostic 'Interactive test execution requires scripts/Test-InteractiveUiEnvironment.ps1'
+    -ExpectedDiagnostic 'INTERACTIVE_ENVIRONMENT_NOT_QUALIFIED'
 
 # ValidateSet accepts casing variants unless IgnoreCase is disabled. The entry
 # point deliberately accepts those PowerShell-native variants, so it must
@@ -139,7 +142,7 @@ Assert-RejectedInvocation `
         '-ExecutionEnvironment',
         'interactive'
     ) `
-    -ExpectedDiagnostic 'Interactive test execution requires scripts/Test-InteractiveUiEnvironment.ps1'
+    -ExpectedDiagnostic 'INTERACTIVE_ENVIRONMENT_NOT_QUALIFIED'
 
 Assert-RejectedInvocation `
     -RelativeScriptPath 'scripts/Invoke-TestSuite.ps1' `
@@ -208,6 +211,72 @@ $nodeReuseArguments = @($argumentLoops[0].Condition.FindAll({
 }, $true))
 if ($nodeReuseArguments.Count -ne 1 -or $nodeReuseArguments[0].Value -cne '-nodeReuse:false') {
     throw 'Build entry point must explicitly disable MSBuild node reuse.'
+}
+
+# A bare -m expands to the host's processor count, not a memory-safe worker
+# budget. Require an explicit bounded default and forward that selected count
+# to MSBuild; native parameter validation owns rejecting nonpositive counts.
+$parallelProcessArguments = @($argumentLoops[0].Condition.FindAll({
+    param($node)
+    ($node -is [System.Management.Automation.Language.StringConstantExpressionAst] -or
+        $node -is [System.Management.Automation.Language.ExpandableStringExpressionAst]) -and
+        $node.Value -match '^[-/](maxCpuCount|m)(:|$)'
+}, $true))
+if ($parallelProcessArguments.Count -ne 1 -or
+    $parallelProcessArguments[0].Value -cne '-maxCpuCount:$MaximumBuildProcessCount') {
+    throw 'Build entry point must pass an explicit MaximumBuildProcessCount to MSBuild.'
+}
+$parallelProcessParameters = @($buildSyntax.ParamBlock.Parameters | Where-Object {
+    $_.Name.VariablePath.UserPath -ceq 'MaximumBuildProcessCount'
+})
+if ($parallelProcessParameters.Count -ne 1 -or
+    $parallelProcessParameters[0].DefaultValue.SafeGetValue() -ne 2) {
+    throw 'Build entry point must default to two concurrent MSBuild processes.'
+}
+Assert-RejectedInvocation `
+    -RelativeScriptPath 'scripts/Invoke-Build.ps1' `
+    -ArgumentList @('-Configuration', 'Debug', '-Architecture', 'x64', '-MaximumBuildProcessCount', '0') `
+    -ExpectedDiagnostic 'minimum allowed range of 1'
+
+# A UIA transaction timeout does not bound OS deployment or an entire test host.
+# Require the runner's native Process deadline in its explicit Interactive branch.
+# This syntax-level policy check complements, not replaces, isolated-lane runtime
+# timeout/teardown qualification. PowerShell itself owns parsing; no source regex.
+$testTokens = $null
+$testParseErrors = $null
+$testSyntax = [System.Management.Automation.Language.Parser]::ParseFile(
+    (Join-Path $repositoryRoot 'scripts/Invoke-TestSuite.ps1'),
+    [ref]$testTokens,
+    [ref]$testParseErrors
+)
+if ($testParseErrors.Count -ne 0) { throw 'Test entry point has PowerShell syntax errors.' }
+$interactiveBoundedWaits = @($testSyntax.FindAll({
+    param($node)
+    if ($node -isnot [System.Management.Automation.Language.InvokeMemberExpressionAst] -or
+        $node.Member.Value -cne 'WaitForExit' -or $null -eq $node.Arguments -or $node.Arguments.Count -ne 1 -or
+        $node.Arguments[0] -isnot [System.Management.Automation.Language.ConstantExpressionAst] -or
+        $node.Arguments[0].Value -ne 300000) { return $false }
+
+    for ($ancestor = $node.Parent; $null -ne $ancestor; $ancestor = $ancestor.Parent) {
+        if ($ancestor -isnot [System.Management.Automation.Language.IfStatementAst]) { continue }
+        foreach ($clause in $ancestor.Clauses) {
+            if ($clause.Item1.PipelineElements[0] -isnot
+                [System.Management.Automation.Language.CommandExpressionAst]) { continue }
+            $condition = $clause.Item1.PipelineElements[0].Expression
+            if ($condition -is [System.Management.Automation.Language.BinaryExpressionAst] -and
+                $condition.Operator -eq [System.Management.Automation.Language.TokenKind]::Ceq -and
+                $condition.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                $condition.Left.VariablePath.UserPath -ceq 'ExecutionEnvironment' -and
+                $condition.Right -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+                $condition.Right.Value -ceq 'Interactive' -and
+                $node.Extent.StartOffset -ge $clause.Item2.Extent.StartOffset -and
+                $node.Extent.EndOffset -le $clause.Item2.Extent.EndOffset) { return $true }
+        }
+    }
+    return $false
+}, $true))
+if ($interactiveBoundedWaits.Count -ne 1) {
+    throw 'Interactive test hosts must have one native 300-second Process.WaitForExit deadline.'
 }
 
 Write-Output (

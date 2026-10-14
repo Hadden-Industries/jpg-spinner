@@ -10,6 +10,7 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.FileProperties.h>
 #include <filesystem>
 #include <array>
 #include <limits>
@@ -104,12 +105,12 @@ struct RecoveryFixture final
                 storage::internal::ImageFileTransactionState::TransactionInitialized,
                 domain::OutputDisposition::CreateCorrectedCopy,
                 std::wstring{root.Path()},
-                storageItemIdentityText(inspectItem(root.Path(), true).identity),
+                storageItemIdentityText(inspectItem(root, true).identity),
                 std::wstring{source.Path()},
-                storageItemIdentityText(inspectItem(source.Path(), false).identity),
+                storageItemIdentityText(inspectItem(source, false).identity),
                 *sourceRevision.valueIfPresent(),
                 std::wstring{stage.Path()},
-                storageItemIdentityText(inspectItem(stage.Path(), false).identity),
+                storageItemIdentityText(inspectItem(stage, false).identity),
                 outputRevision.valueIfPresent()->encodedLengthBytes,
                 outputRevision.valueIfPresent()->encodedSha256,
                 L"",
@@ -146,14 +147,41 @@ struct RecoveryFixture final
             record.generation = 4;
             record.state = storage::internal::ImageFileTransactionState::VerifiedBackupCreated;
             record.backupPath = std::wstring{backup.Path()};
-            record.backupIdentity = storage::internal::storageItemIdentityText(
-                storage::internal::inspectItem(backup.Path(), false).identity);
+            record.backupIdentity =
+                storage::internal::storageItemIdentityText(storage::internal::inspectItem(backup, false).identity);
             journal.publish(record);
         }
         return record;
     }
 };
 } // namespace
+
+TEST_CASE("Unavailable Windows long-path policy preserves every recovery artifact without taking a lease",
+          "[storage][recovery][long-path-policy]")
+{
+    RecoveryTestApartment apartment;
+    RecoveryFixture fixture;
+    struct DisabledLongPathPolicy final : storage::internal::FileTransactionOperations
+    {
+        bool hasEnabledWindowsLongPathPolicy() const override
+        {
+            return false;
+        }
+    } operations;
+    storage::internal::ImageFileTransactionBatch batch{fixture.root, fixture.store};
+    const auto originalBytes = fixture.source.GetBasicPropertiesAsync().get().Size();
+    const auto stagedBytes = fixture.stage.GetBasicPropertiesAsync().get().Size();
+    const auto storeItems = fixture.store.GetItemsAsync().get().Size();
+    const auto result =
+        storage::internal::RecoverableImageFileTransaction::recoverIncompleteTransactions(batch, {}, operations);
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::WindowsLongPathSupportUnavailable);
+    CHECK(result.errorIfPresent()->stage == domain::ImageProcessingStage::TransactionRecoverabilityPreflight);
+    CHECK(fixture.source.GetBasicPropertiesAsync().get().Size() == originalBytes);
+    CHECK(fixture.stage.GetBasicPropertiesAsync().get().Size() == stagedBytes);
+    CHECK(fixture.store.GetItemsAsync().get().Size() == storeItems);
+    CHECK(fixture.store.TryGetItemAsync(L".jpg-spinner-journal-store-lease").get() == nullptr);
+}
 
 TEST_CASE("a journal generation is independently reopened after publication without mutating its predecessor",
           "[storage][transaction][journal]")
@@ -714,12 +742,12 @@ TEST_CASE("recovery refuses changed source bytes or a substituted stage without 
     }
     SECTION("same stage name and bytes do not transfer ownership")
     {
-        const auto originalIdentity = storage::internal::inspectItem(fixture.stage.Path(), false).identity;
+        const auto originalIdentity = storage::internal::inspectItem(fixture.stage, false).identity;
         fixture.stage.RenameAsync(L"retained-real-stage.jpg").get();
         const auto substituted =
             RecoveryFixture::writeFile(fixture.outputFolder, fixture.stageName, "corrected encoded bytes");
-        REQUIRE_FALSE(storage::internal::isSameIdentity(
-            originalIdentity, storage::internal::inspectItem(substituted.Path(), false).identity));
+        REQUIRE_FALSE(storage::internal::isSameIdentity(originalIdentity,
+                                                        storage::internal::inspectItem(substituted, false).identity));
     }
     SECTION("unknown staged bytes after the written milestone")
     {

@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "ViewModels/MainWindowViewModel.h"
+#include "ViewModels/ImageProcessingRowViewModel.h"
+#include "ViewModels/ImageSourceDiscoveryIssueViewModel.h"
+#include "Composition/SelectedFolderBatchComposition.h"
 #include "DeterministicJpegFixtureFactory.h"
 #include "PresentationTestApartment.h"
+#include "TemporaryDirectory.h"
 #include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -14,8 +18,12 @@
 #include <atomic>
 #include <thread>
 #include <condition_variable>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <wil/resource.h>
 #include <winrt/Microsoft.UI.Xaml.Hosting.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
 
 // Preserve the native diagnostic for failed fixture/API qualification; do not
 // hide an HRESULT behind Catch2's unknown-exception text or call it test GREEN.
@@ -132,12 +140,16 @@ class ImageCollection final : public domain::ImageSourceCollection
   public:
     std::vector<domain::DiscoveredImageSource> candidates;
     std::vector<domain::ImageSourceDiscoveryIssue> issues;
+    mutable std::atomic<unsigned> discoveryCalls{};
+    mutable std::atomic<domain::TraversalScope> observedTraversalScope{domain::TraversalScope::SelectedFolderOnly};
     bool waitForCancellation{};
     mutable std::promise<void> discoveryEntered;
     domain::ImageProcessingResult<domain::ImageSourceDiscovery> discover(
-        domain::TraversalScope, std::stop_token cancellation,
+        domain::TraversalScope traversalScope, std::stop_token cancellation,
         const domain::ImageSourceDiscoveryObserver &observer) const override
     {
+        ++discoveryCalls;
+        observedTraversalScope = traversalScope;
         if (waitForCancellation)
         {
             discoveryEntered.set_value();
@@ -260,6 +272,33 @@ PresentationDispatcher &presentationDispatcher()
     return dispatcher;
 }
 
+/// Writes independently specified encoded input to an exclusively owned fixture.
+/// The returned bytes support an exact no-write assertion after native analysis.
+std::vector<std::byte> writeReviewFixture(const std::filesystem::path &path, std::uint16_t orientation)
+{
+    auto bytes = jpg_spinner::test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+        jpg_spinner::test_support::JpegChromaSubsampling::ycbcr444, orientation);
+    std::ofstream file{path, std::ios::binary};
+    file.write(reinterpret_cast<const char *>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+    file.close();
+    REQUIRE(file.good());
+    return bytes;
+}
+
+/// Reads the actual fixture after review, independently of the storage adapter.
+std::vector<std::byte> readReviewFixture(const std::filesystem::path &path)
+{
+    std::ifstream file{path, std::ios::binary};
+    REQUIRE(file.is_open());
+    const std::vector<char> characters{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+    REQUIRE_FALSE(file.bad());
+    std::vector<std::byte> bytes;
+    bytes.reserve(characters.size());
+    for (const auto character : characters)
+        bytes.push_back(static_cast<std::byte>(static_cast<unsigned char>(character)));
+    return bytes;
+}
+
 /// Register while the action is Started, before Cancel. Native Status becomes
 /// Canceled immediately, so get()/GetResults alone are not a worker-completion
 /// barrier. Only the MTA test driver waits on this bounded completion signal.
@@ -297,7 +336,10 @@ TEST_CASE("Review refuses replacement without a displayed backup and unacknowled
         auto model = implementation.as<winrt::JpgSpinner::Presentation::MainWindowViewModel>();
         REQUIRE(model.State() == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::Review);
         REQUIRE(model.Rows().Size() == 1);
-        REQUIRE(model.Rows().GetAt(0).IsEligibleForProcessing()); // Not a blanket refusal of the valid JPEG.
+        REQUIRE(model.Rows()
+                    .GetAt(0)
+                    .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                    .IsEligibleForProcessing()); // Not a blanket refusal of the valid JPEG.
         REQUIRE_FALSE(model.CanBeginProcessing());
         REQUIRE(source->commits == 0);
     });
@@ -332,15 +374,30 @@ TEST_CASE("Review exposes exact trim extents and requires explicit per-row ackno
     analysis.get();
     dispatcher.invoke([&] {
         auto model = implementation.as<winrt::JpgSpinner::Presentation::MainWindowViewModel>();
-        auto row = model.Rows().GetAt(0);
+        auto row = model.Rows().GetAt(0).as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>();
         // Independent fixture geometry: 31x19, 8x8 iMCU, horizontal mirror.
         REQUIRE(row.DiscardedSourceRightEdgeWidthInPixels() == 7);
         REQUIRE(row.DiscardedSourceBottomEdgeHeightInPixels() == 0);
         REQUIRE_FALSE(row.IsEdgeTrimmingAcknowledged());
+        CHECK(row.RequiresEdgeTrimmingAcknowledgment());
         REQUIRE_FALSE(model.CanBeginProcessing());
         model.AcknowledgeEdgeTrimming(0);
         REQUIRE(row.IsEdgeTrimmingAcknowledged());
+        CHECK_FALSE(row.RequiresEdgeTrimmingAcknowledgment());
         REQUIRE(model.CanBeginProcessing());
+        // XAML ItemsControl consumes the inspectable collection protocol, not
+        // merely the strongly typed native view used by coordinator tests.
+        CHECK(static_cast<bool>(
+            model.Rows()
+                .try_as<
+                    winrt::Windows::Foundation::Collections::IIterable<winrt::Windows::Foundation::IInspectable>>()));
+        winrt::Microsoft::UI::Xaml::Controls::ListView rowControl;
+        rowControl.ItemsSource(model.Rows());
+        CHECK(rowControl.Items().Size() == 1);
+        CHECK(rowControl.Items().GetAt(0) == row);
+        CHECK_FALSE(
+            model.Rows()
+                .try_as<winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Foundation::IInspectable>>());
         REQUIRE_FALSE(model.Rows()
                           .try_as<winrt::Windows::Foundation::Collections::IVector<
                               winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>>());
@@ -391,20 +448,92 @@ TEST_CASE("Processing consumes review once and reports a transformation refusal 
         REQUIRE(implementation->State() == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::Processing);
         REQUIRE(implementation->CanCancelCurrentOperation());
         REQUIRE_FALSE(implementation->CanSelectSourceFolder());
+        REQUIRE_THROWS_AS(implementation->SetProcessingOptions(
+                              winrt::JpgSpinner::Presentation::OutputDisposition::CreateCorrectedCopy,
+                              winrt::JpgSpinner::Presentation::TraversalScope::SelectedFolderAndDescendants,
+                              winrt::JpgSpinner::Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                              winrt::JpgSpinner::Presentation::OutputScanOrganization::PreserveSource),
+                          winrt::hresult_illegal_method_call);
     });
     action.get();
     dispatcher.invoke([&] {
         REQUIRE(implementation->State() == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::Results);
         REQUIRE(implementation->CompletedFileCount() == 1);
         REQUIRE(implementation->FailedFileCount() == 1);
-        REQUIRE_FALSE(implementation->Rows().GetAt(0).ErrorTitle().empty());
-        REQUIRE_FALSE(implementation->Rows().GetAt(0).ErrorExplanation().empty());
-        REQUIRE_FALSE(implementation->Rows().GetAt(0).ErrorRemedy().empty());
-        REQUIRE(implementation->Rows().GetAt(0).Outcome() ==
-                winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::ProcessingFailed);
+        REQUIRE_FALSE(implementation->Rows()
+                          .GetAt(0)
+                          .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                          .ErrorTitle()
+                          .empty());
+        REQUIRE_FALSE(implementation->Rows()
+                          .GetAt(0)
+                          .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                          .ErrorExplanation()
+                          .empty());
+        REQUIRE_FALSE(implementation->Rows()
+                          .GetAt(0)
+                          .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                          .ErrorRemedy()
+                          .empty());
+        REQUIRE(implementation->Rows()
+                    .GetAt(0)
+                    .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                    .Outcome() == winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::ProcessingFailed);
         REQUIRE(implementation->ProgressPercentage().Value() == 100.0);
+        CHECK_FALSE(implementation->IsProgressIndeterminate());
+        CHECK(implementation->ProgressPercentageOrZero() == 100.0);
+        CHECK(implementation->Rows()
+                  .GetAt(0)
+                  .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                  .HasError());
         REQUIRE(source->commits == 0);
         REQUIRE_THROWS_AS(implementation->BeginProcessingAsync(), winrt::hresult_illegal_method_call);
+    });
+}
+
+TEST_CASE("Shell bindings preserve unknown progress and symbolic row outcomes", "[presentation][view-model][shell]")
+{
+    auto &dispatcher = presentationDispatcher();
+    dispatcher.invoke([&] {
+        auto model = dispatcher.createModel();
+        CHECK(model->IsProgressIndeterminate());
+        CHECK(model->ProgressPercentageOrZero() == 0.0);
+        CHECK_FALSE(model->HasError());
+        using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+        ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+        auto context = manager.CreateResourceContext();
+        context.QualifierValues().Insert(L"Language", L"en-US");
+        auto row = winrt::make_self<winrt::JpgSpinner::Presentation::implementation::ImageProcessingRowViewModel>(
+            winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread(),
+            jpg_spinner::batch_processing::BatchFileAnalysis{L"photo.jpg"},
+            manager.MainResourceMap().GetSubtree(L"Resources"), context);
+        CHECK(row->OutcomeDescription() == L"No terminal outcome yet");
+        CHECK_FALSE(row->HasError());
+        std::vector<winrt::hstring> changed;
+        auto subscription = row->PropertyChanged(
+            [&](auto const &, auto const &arguments) { changed.push_back(arguments.PropertyName()); });
+        using Outcome = jpg_spinner::batch_processing::BatchFileOutcome;
+        const std::pair<Outcome, const wchar_t *> outcomes[] = {
+            {Outcome::CorrectedCopyCreated, L"Corrected copy created"},
+            {Outcome::OriginalReplacedWithVerifiedBackup, L"Original replaced; verified backup retained"},
+            {Outcome::NoOrientationNormalizationRequired, L"No orientation correction required"},
+            {Outcome::UnsupportedSourceSkipped, L"Unsupported image skipped"},
+            {Outcome::ProcessingFailed, L"Processing failed"},
+            {Outcome::CancelledBeforeTransformation, L"Cancelled before transformation"},
+            {Outcome::CancelledBeforeCommit, L"Cancelled before commit"}};
+        for (const auto &[outcome, expected] : outcomes)
+        {
+            changed.clear();
+            row->applyResult({L"photo.jpg", outcome, {}});
+            CHECK(row->OutcomeDescription() == expected);
+            CHECK(std::find(changed.begin(), changed.end(), L"OutcomeDescription") != changed.end());
+            CHECK(std::find(changed.begin(), changed.end(), L"HasError") != changed.end());
+        }
+        row->applyResult({L"photo.jpg", Outcome::ProcessingFailed,
+                          domain::ImageProcessingError{domain::ImageProcessingErrorCode::SourceAccessDenied,
+                                                       domain::ImageProcessingStage::SourceRevisionCapture}});
+        CHECK(row->HasError());
+        row->PropertyChanged(subscription);
     });
 }
 
@@ -437,17 +566,40 @@ TEST_CASE("Discovery issues remain visible without corrupting image-result ordin
         auto issues = implementation->DiscoveryIssues();
         REQUIRE(implementation->Rows().Size() == 1);
         REQUIRE(issues.Size() == 3);
-        REQUIRE(issues.GetAt(0).RelativePath() == L"unreadable/photo.jpg");
-        REQUIRE(issues.GetAt(0).Kind() ==
+        REQUIRE(
+            issues.GetAt(0).as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>().RelativePath() ==
+            L"unreadable/photo.jpg");
+        REQUIRE(issues.GetAt(0).as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>().Kind() ==
                 winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueKind::SourceAccessFailed);
-        REQUIRE_FALSE(issues.GetAt(0).ErrorTitle().empty());
-        REQUIRE_FALSE(issues.GetAt(0).ErrorExplanation().empty());
-        REQUIRE_FALSE(issues.GetAt(0).ErrorRemedy().empty());
-        REQUIRE(issues.GetAt(1).Kind() ==
+        REQUIRE_FALSE(issues.GetAt(0)
+                          .as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>()
+                          .ErrorTitle()
+                          .empty());
+        REQUIRE_FALSE(issues.GetAt(0)
+                          .as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>()
+                          .ErrorExplanation()
+                          .empty());
+        REQUIRE_FALSE(issues.GetAt(0)
+                          .as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>()
+                          .ErrorRemedy()
+                          .empty());
+        REQUIRE(issues.GetAt(1).as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>().Kind() ==
                 winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueKind::ReparsePointSkipped);
-        REQUIRE(issues.GetAt(1).ErrorTitle().empty()); // A deliberate exclusion is not a fabricated domain error.
-        REQUIRE(issues.GetAt(2).Kind() ==
+        REQUIRE(issues.GetAt(1)
+                    .as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>()
+                    .ErrorTitle()
+                    .empty()); // A deliberate exclusion is not a fabricated domain error.
+        REQUIRE(issues.GetAt(2).as<winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>().Kind() ==
                 winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueKind::ApplicationOwnedFolderExcluded);
+        CHECK(static_cast<bool>(
+            issues.try_as<
+                winrt::Windows::Foundation::Collections::IIterable<winrt::Windows::Foundation::IInspectable>>()));
+        winrt::Microsoft::UI::Xaml::Controls::ItemsControl issueControl;
+        issueControl.ItemsSource(issues);
+        CHECK(issueControl.Items().Size() == 3);
+        CHECK_FALSE(
+            issues
+                .try_as<winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Foundation::IInspectable>>());
         REQUIRE_FALSE(issues.try_as<winrt::Windows::Foundation::Collections::IVector<
                           winrt::JpgSpinner::Presentation::ImageSourceDiscoveryIssueViewModel>>());
         REQUIRE(implementation->CanBeginProcessing()); // Warnings do not deny the valid image's plan.
@@ -457,13 +609,42 @@ TEST_CASE("Discovery issues remain visible without corrupting image-result ordin
     dispatcher.invoke([&] {
         REQUIRE(implementation->DiscoveryIssues().Size() == 3);
         REQUIRE(implementation->Rows().Size() == 1);
-        REQUIRE(implementation->Rows().GetAt(0).Outcome() ==
-                winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::ProcessingFailed);
+        REQUIRE(implementation->Rows()
+                    .GetAt(0)
+                    .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                    .Outcome() == winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::ProcessingFailed);
         REQUIRE(*notifications >= 2);
         implementation->ReturnToSourceSelection();
         REQUIRE(implementation->DiscoveryIssues().Size() == 0);
         implementation->selectSource({collection}, L"new selection", L"");
         REQUIRE(implementation->DiscoveryIssues().Size() == 0);
+    });
+}
+
+TEST_CASE("Discovery descriptions distinguish exclusions from failed access",
+          "[presentation][view-model][discovery-issues]")
+{
+    auto &dispatcher = presentationDispatcher();
+    dispatcher.invoke([&] {
+        using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+        ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+        const auto resources = manager.MainResourceMap().GetSubtree(L"Resources");
+        const auto context = manager.CreateResourceContext();
+        context.QualifierValues().Insert(L"Language", L"en-US");
+        using Kind = domain::ImageSourceDiscoveryIssueKind;
+        const std::pair<Kind, const wchar_t *> expected[]{
+            {Kind::ReparsePointSkipped, L"Reparse point skipped"},
+            {Kind::SourceAccessFailed, L"Source access failed"},
+            {Kind::ApplicationOwnedFolderExcluded, L"Application-owned folder excluded"}};
+        for (const auto &[kind, description] : expected)
+        {
+            const auto issue =
+                winrt::make<winrt::JpgSpinner::Presentation::implementation::ImageSourceDiscoveryIssueViewModel>(
+                    winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread(),
+                    domain::ImageSourceDiscoveryIssue{L"relative-item", kind, {}}, resources, context);
+            CHECK(issue.KindDescription() == description);
+            CHECK(issue.ErrorTitle().empty()); // A kind description must not fabricate a domain error.
+        }
     });
 }
 
@@ -530,6 +711,12 @@ TEST_CASE("Unresolved recovery disables selection and successful retry releases 
         REQUIRE_FALSE(implementation->CanReturnToSourceSelection());
         REQUIRE_FALSE(implementation->ErrorTitle().empty());
         REQUIRE_THROWS_AS(implementation->ReturnToSourceSelection(), winrt::hresult_illegal_method_call);
+        REQUIRE_THROWS_AS(implementation->SetProcessingOptions(
+                              winrt::JpgSpinner::Presentation::OutputDisposition::CreateCorrectedCopy,
+                              winrt::JpgSpinner::Presentation::TraversalScope::SelectedFolderOnly,
+                              winrt::JpgSpinner::Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                              winrt::JpgSpinner::Presentation::OutputScanOrganization::PreserveSource),
+                          winrt::hresult_illegal_method_call);
         recovery->refuseRecovery = false; // Previous operation has completed; no concurrent fake mutation.
         action = implementation->RecoverAsync();
     });
@@ -595,15 +782,19 @@ TEST_CASE("Committed output is not relabelled as cancelled and uncertain commit 
             REQUIRE(implementation->State() ==
                     winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::RecoveryRequired);
             REQUIRE_FALSE(implementation->CanSelectSourceFolder());
-            REQUIRE(implementation->Rows().GetAt(0).Outcome() ==
-                    winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::ProcessingFailed);
+            REQUIRE(implementation->Rows()
+                        .GetAt(0)
+                        .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                        .Outcome() == winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::ProcessingFailed);
         }
         else
         {
             REQUIRE(implementation->State() ==
                     winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::Results);
-            REQUIRE(implementation->Rows().GetAt(0).Outcome() ==
-                    winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::CorrectedCopyCreated);
+            REQUIRE(implementation->Rows()
+                        .GetAt(0)
+                        .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                        .Outcome() == winrt::JpgSpinner::Presentation::ImageProcessingRowOutcome::CorrectedCopyCreated);
             REQUIRE(implementation->FailedFileCount() == 0);
         }
     });
@@ -745,6 +936,408 @@ TEST_CASE("Source selection cannot bypass reviewed analysis", "[presentation][vi
     });
 }
 
+TEST_CASE("Source selection exposes its display context and analysis command without granting processing",
+          "[presentation][view-model][source-selection]")
+{
+    auto &dispatcher = presentationDispatcher();
+    auto collection = std::make_shared<ImageCollection>();
+    winrt::com_ptr<winrt::JpgSpinner::Presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    auto propertyNames = std::make_shared<std::vector<winrt::hstring>>();
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        auto model = implementation.as<winrt::JpgSpinner::Presentation::MainWindowViewModel>();
+        CHECK_FALSE(model.CanAnalyzeSelectedSource());
+        CHECK(model.SourceFolderDisplayName().empty());
+        model.PropertyChanged([propertyNames](auto const &, auto const &arguments) {
+            propertyNames->push_back(arguments.PropertyName());
+        });
+        implementation->selectSource({collection}, L"Holiday photographs", L"");
+        CHECK(model.CanAnalyzeSelectedSource());
+        CHECK(model.SourceFolderDisplayName() == L"Holiday photographs");
+        CHECK_FALSE(model.CanBeginProcessing());
+        // A failed selection must not discard the current granted collection or
+        // its context. Picker cancellation will not call selectSource at all.
+        CHECK_THROWS_AS(implementation->selectSource({}, L"invalid", L""), winrt::hresult_invalid_argument);
+        CHECK(model.SourceFolderDisplayName() == L"Holiday photographs");
+        CHECK(model.CanAnalyzeSelectedSource());
+        analysis = model.AnalyzeAsync();
+        CHECK_FALSE(model.CanAnalyzeSelectedSource());
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<winrt::JpgSpinner::Presentation::MainWindowViewModel>();
+        CHECK(model.State() == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::Review);
+        CHECK_FALSE(model.CanAnalyzeSelectedSource());
+        model.ReturnToSourceSelection();
+        CHECK(model.CanAnalyzeSelectedSource());
+        CHECK(model.SourceFolderDisplayName() == L"Holiday photographs");
+        CHECK(std::find(propertyNames->begin(), propertyNames->end(), L"SourceFolderDisplayName") !=
+              propertyNames->end());
+        CHECK(std::find(propertyNames->begin(), propertyNames->end(), L"CanAnalyzeSelectedSource") !=
+              propertyNames->end());
+        CHECK(collection->discoveryCalls == 1);
+    });
+}
+
+TEST_CASE("Changing processing options invalidates review and preserves the granted collection",
+          "[presentation][view-model][processing-options]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    auto &dispatcher = presentationDispatcher();
+    auto collection = std::make_shared<ImageCollection>();
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        // Display context is deliberately not a resolvable path. Policy edits
+        // must reuse the collection, not create authority from this label.
+        implementation->selectSource({collection}, L"Granted folder label", L"Computed backup label");
+        analysis = implementation->AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        REQUIRE(model.State() == presentation::ImageProcessingExperienceState::Review);
+        model.SetProcessingOptions(presentation::OutputDisposition::CreateCorrectedCopy,
+                                   presentation::TraversalScope::SelectedFolderOnly,
+                                   presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                                   presentation::OutputScanOrganization::PreserveSource);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::Review); // Same choices retain review.
+        model.SetProcessingOptions(presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
+                                   presentation::TraversalScope::SelectedFolderAndDescendants,
+                                   presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits,
+                                   presentation::OutputScanOrganization::ProgressiveDct);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::SourceSelection);
+        CHECK(model.Rows().Size() == 0);
+        CHECK(model.CanAnalyzeSelectedSource());
+        CHECK_FALSE(model.CanBeginProcessing());
+        CHECK(model.OutputDisposition() == presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup);
+        CHECK(model.TraversalScope() == presentation::TraversalScope::SelectedFolderAndDescendants);
+        CHECK(model.EdgeHandlingPolicy() == presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits);
+        CHECK(model.OutputScanOrganization() == presentation::OutputScanOrganization::ProgressiveDct);
+        CHECK(model.SourceFolderDisplayName() == L"Granted folder label");
+        CHECK(model.BackupRootDisplayPath() == L"Computed backup label");
+        analysis = model.AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        CHECK(collection->discoveryCalls == 2);
+        CHECK(collection->observedTraversalScope == domain::TraversalScope::SelectedFolderAndDescendants);
+    });
+}
+
+TEST_CASE("Processing options reject unknown projected values without discarding review",
+          "[presentation][view-model][processing-options]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    auto &dispatcher = presentationDispatcher();
+    auto collection = std::make_shared<ImageCollection>();
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        CHECK_THROWS_AS(model.SetProcessingOptions(presentation::OutputDisposition::CreateCorrectedCopy,
+                                                   presentation::TraversalScope::SelectedFolderOnly,
+                                                   presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                                                   presentation::OutputScanOrganization::PreserveSource),
+                        winrt::hresult_illegal_method_call);
+        implementation->selectSource({collection}, L"selected", L"");
+        analysis = model.AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        for (unsigned invalidParameter = 0; invalidParameter != 4; ++invalidParameter)
+        {
+            CHECK_THROWS_AS(model.SetProcessingOptions(
+                                invalidParameter == 0 ? static_cast<presentation::OutputDisposition>(99)
+                                                      : presentation::OutputDisposition::CreateCorrectedCopy,
+                                invalidParameter == 1 ? static_cast<presentation::TraversalScope>(99)
+                                                      : presentation::TraversalScope::SelectedFolderOnly,
+                                invalidParameter == 2
+                                    ? static_cast<presentation::EdgeHandlingPolicy>(99)
+                                    : presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                                invalidParameter == 3 ? static_cast<presentation::OutputScanOrganization>(99)
+                                                      : presentation::OutputScanOrganization::PreserveSource),
+                            winrt::hresult_invalid_argument);
+            CHECK(model.State() == presentation::ImageProcessingExperienceState::Review);
+            CHECK(model.OutputDisposition() == presentation::OutputDisposition::CreateCorrectedCopy);
+            CHECK(model.TraversalScope() == presentation::TraversalScope::SelectedFolderOnly);
+            CHECK(model.EdgeHandlingPolicy() == presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform);
+            CHECK(model.OutputScanOrganization() == presentation::OutputScanOrganization::PreserveSource);
+        }
+    });
+}
+
+TEST_CASE("Changing scan policy discards trimming consent and requires a newly acknowledged review",
+          "[presentation][view-model][processing-options][review-safety]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    const auto scanOrganization = GENERATE(presentation::OutputScanOrganization::SequentialDct,
+                                           presentation::OutputScanOrganization::ProgressiveDct);
+    auto &dispatcher = presentationDispatcher();
+    auto source = std::make_shared<EncodedImageSource>(std::uint16_t{2});
+    auto collection = std::make_shared<ImageCollection>();
+    collection->candidates = {{L"photo.jpg", source}};
+    collection->issues = std::vector<domain::ImageSourceDiscoveryIssue>{
+        {L"owned-output", domain::ImageSourceDiscoveryIssueKind::ApplicationOwnedFolderExcluded, {}}};
+    jpg_spinner::batch_processing::BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        implementation->selectSource(request, L"selected", L"");
+        analysis = implementation->AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        REQUIRE(model.Rows().Size() == 1);
+        REQUIRE(model.DiscoveryIssues().Size() == 1);
+        model.AcknowledgeEdgeTrimming(0);
+        REQUIRE(model.CanBeginProcessing());
+        model.SetProcessingOptions(presentation::OutputDisposition::CreateCorrectedCopy,
+                                   presentation::TraversalScope::SelectedFolderOnly,
+                                   presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits, scanOrganization);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::SourceSelection);
+        CHECK(model.Rows().Size() == 0);
+        CHECK(model.DiscoveryIssues().Size() == 0);
+        CHECK_FALSE(model.CanBeginProcessing());
+        analysis = model.AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        auto row = model.Rows().GetAt(0).as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>();
+        // Independent fixture: 31x19 with 8x8 iMCUs, horizontally mirrored.
+        // Scan organization changes do not alter the geometric trim requirement.
+        CHECK(row.DiscardedSourceRightEdgeWidthInPixels() == 7);
+        CHECK(row.DiscardedSourceBottomEdgeHeightInPixels() == 0);
+        CHECK_FALSE(row.IsEdgeTrimmingAcknowledged());
+        CHECK_FALSE(model.CanBeginProcessing());
+        CHECK(model.OutputScanOrganization() == scanOrganization);
+        model.AcknowledgeEdgeTrimming(0);
+        CHECK(model.CanBeginProcessing());
+        CHECK(source->captures == 2);
+        CHECK(source->commits == 0);
+        CHECK(collection->discoveryCalls == 2);
+    });
+}
+
+TEST_CASE("Review transformation totals exclude unsupported and already-normalized rows",
+          "[presentation][view-model][review-counts]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    auto &dispatcher = presentationDispatcher();
+    auto collection = std::make_shared<ImageCollection>();
+    collection->candidates = {
+        {L"eligible.jpg", std::make_shared<EncodedImageSource>(std::uint16_t{5})},
+        {L"already-normalized.jpg", std::make_shared<EncodedImageSource>(std::uint16_t{1})},
+        // Horizontal mirroring of this partial-iMCU fixture cannot satisfy the
+        // selected perfect-transform policy. Keep its refusal visible in review.
+        {L"unsupported-perfect-transform.jpg", std::make_shared<EncodedImageSource>(std::uint16_t{2})}};
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    auto eligibilityNotifications = std::make_shared<unsigned>(0);
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        CHECK(implementation->EligibleFileCount() == 0);
+        implementation->PropertyChanged([eligibilityNotifications](auto const &, auto const &arguments) {
+            if (arguments.PropertyName() == L"EligibleFileCount")
+                ++*eligibilityNotifications;
+        });
+        implementation->selectSource({collection}, L"selected", L"");
+        analysis = implementation->AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        REQUIRE(model.Rows().Size() == 3);
+        CHECK(model.EligibleFileCount() == 1);
+        for (const auto &item : model.Rows())
+        {
+            const auto row = item.as<presentation::ImageProcessingRowViewModel>();
+            // The coordinator owns ordering; identify the independently named
+            // fixtures rather than assuming discovery order is presentation order.
+            CHECK(row.IsEligibleForProcessing() == (row.DisplayName() == L"eligible.jpg"));
+            if (row.DisplayName() == L"unsupported-perfect-transform.jpg")
+                CHECK_FALSE(row.ErrorExplanation().empty());
+        }
+        CHECK(model.CompletedFileCount() == 0); // Analysis is not a completed transformation.
+        CHECK(*eligibilityNotifications != 0);
+        model.SetProcessingOptions(presentation::OutputDisposition::CreateCorrectedCopy,
+                                   presentation::TraversalScope::SelectedFolderAndDescendants,
+                                   presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                                   presentation::OutputScanOrganization::PreserveSource);
+        CHECK(model.EligibleFileCount() == 0); // Invalidated review cannot retain an execution count.
+    });
+}
+
+TEST_CASE("Native recursive review explains owned exclusions and counts only eligible sources",
+          "[presentation][composition][headless-review]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    using namespace jpg_spinner;
+    using namespace winrt::Windows::Storage;
+    auto &dispatcher = presentationDispatcher();
+    const test_support::TemporaryDirectory fixture{std::filesystem::temp_directory_path() /
+                                                   L"jpg-spinner-native-review"};
+    const auto root = StorageFolder::GetFolderFromPathAsync(fixture.directoryPath().wstring()).get();
+    const auto selected = root.CreateFolderAsync(L"selected").get();
+    const auto journals = root.CreateFolderAsync(L"journals").get();
+    const auto sourcePath = std::filesystem::path{selected.Path().c_str()} / L"source.jpg";
+    const auto sourceBytes = writeReviewFixture(sourcePath, 5); // Transpose is perfect at partial iMCU edges.
+    auto completed = jpg_spinner::presentation::composeSelectedFolderBatch(selected, journals);
+    const auto coordinator = std::make_shared<batch_processing::BatchProcessingCoordinator>(
+        std::make_shared<jpeg::LibJpegTurboTransformationEngine>());
+    auto firstAnalysis = coordinator->analyze(completed.request);
+    REQUIRE(firstAnalysis.valueIfPresent());
+    const auto firstResult = coordinator->execute(std::move(*firstAnalysis.valueIfPresent()));
+    REQUIRE(firstResult.valueIfPresent());
+    REQUIRE(firstResult.valueIfPresent()->fileResults.size() == 1);
+    REQUIRE(firstResult.valueIfPresent()->fileResults[0].outcome ==
+            batch_processing::BatchFileOutcome::CorrectedCopyCreated);
+    const auto ownedFolders = completed.transactionEngine->applicationOwnedFolders();
+    REQUIRE(ownedFolders.size() == 1); // Prove an actual transaction-owned folder exists, not a guessed name.
+
+    // A user file alongside the UUID batch must remain discoverable: the shared
+    // display-name root is not itself an exclusion capability.
+    const auto userPath = std::filesystem::path{selected.Path().c_str()} / L"JPG Spinner Output" / L"user.jpg";
+    const auto userBytes = writeReviewFixture(userPath, 1);
+    const auto refusedPath = std::filesystem::path{selected.Path().c_str()} / L"partial-mirror.jpg";
+    const auto refusedBytes = writeReviewFixture(refusedPath, 2);
+    auto next = jpg_spinner::presentation::composeSelectedFolderBatch(selected, journals, ownedFolders);
+    const auto nextOutput = std::filesystem::path{selected.Path().c_str()} / L"JPG Spinner Output" /
+                            next.request.identifier.displayDirectoryName();
+    const auto journalCount = journals.GetItemsAsync().get().Size();
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    dispatcher.invoke([&] {
+        implementation = winrt::make_self<presentation::implementation::MainWindowViewModel>(
+            winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread(), coordinator,
+            next.transactionEngine);
+        implementation->selectSource(std::move(next.request), next.sourceFolderDisplayName, next.backupRootDisplayPath);
+        implementation->SetProcessingOptions(presentation::OutputDisposition::CreateCorrectedCopy,
+                                             presentation::TraversalScope::SelectedFolderAndDescendants,
+                                             presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                                             presentation::OutputScanOrganization::PreserveSource);
+        analysis = implementation->AnalyzeAsync();
+    });
+    analysis.get(); // Only the MTA driver waits; the real native UI dispatcher stays responsive.
+    dispatcher.invoke([&] {
+        const auto model = implementation.as<presentation::MainWindowViewModel>();
+        REQUIRE(model.State() == presentation::ImageProcessingExperienceState::Review);
+        REQUIRE(model.Rows().Size() == 3);
+        CHECK(model.EligibleFileCount() == 1);
+        CHECK(model.CompletedFileCount() == 0);
+        REQUIRE(model.DiscoveryIssues().Size() == 1);
+        const auto issue = model.DiscoveryIssues().GetAt(0).as<presentation::ImageSourceDiscoveryIssueViewModel>();
+        CHECK(issue.Kind() == presentation::ImageSourceDiscoveryIssueKind::ApplicationOwnedFolderExcluded);
+        CHECK_FALSE(issue.KindDescription().empty());
+        CHECK(issue.ErrorExplanation().empty()); // Deliberate exclusion is not a failed file transaction.
+        CHECK(std::filesystem::path{issue.RelativePath().c_str()} ==
+              std::filesystem::path{L"JPG Spinner Output"} / completed.request.identifier.displayDirectoryName());
+        unsigned eligibleRows{};
+        unsigned refusedRows{};
+        unsigned normalizedRows{};
+        for (const auto &item : model.Rows())
+        {
+            const auto row = item.as<presentation::ImageProcessingRowViewModel>();
+            if (row.IsEligibleForProcessing())
+            {
+                ++eligibleRows;
+                CHECK(row.DisplayName() == L"source.jpg");
+            }
+            else if (row.DisplayName() == L"partial-mirror.jpg")
+            {
+                ++refusedRows;
+                CHECK(row.HasError());
+                CHECK_FALSE(row.ErrorTitle().empty());
+                CHECK_FALSE(row.ErrorExplanation().empty());
+                CHECK_FALSE(row.ErrorRemedy().empty());
+            }
+            else
+            {
+                ++normalizedRows;
+                CHECK(row.DisplayName() == L"user.jpg");
+                CHECK_FALSE(row.HasError());
+            }
+        }
+        CHECK(eligibleRows == 1);
+        CHECK(refusedRows == 1);
+        CHECK(normalizedRows == 1);
+    });
+    CHECK(readReviewFixture(sourcePath) == sourceBytes);
+    CHECK(readReviewFixture(userPath) == userBytes);
+    CHECK(readReviewFixture(refusedPath) == refusedBytes);
+    CHECK_FALSE(std::filesystem::exists(nextOutput));
+    CHECK_FALSE(std::filesystem::exists(std::filesystem::path{next.backupRootDisplayPath.c_str()}));
+    CHECK(journals.GetItemsAsync().get().Size() == journalCount);
+}
+
+TEST_CASE("Native replacement review discloses exact trimming before permitting execution",
+          "[presentation][composition][headless-review]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    using namespace jpg_spinner;
+    using namespace winrt::Windows::Storage;
+    auto &dispatcher = presentationDispatcher();
+    const test_support::TemporaryDirectory fixture{std::filesystem::temp_directory_path() /
+                                                   L"jpg-spinner-native-review"};
+    const auto root = StorageFolder::GetFolderFromPathAsync(fixture.directoryPath().wstring()).get();
+    const auto selected = root.CreateFolderAsync(L"selected").get();
+    const auto journals = root.CreateFolderAsync(L"journals").get();
+    const auto sourcePath = std::filesystem::path{selected.Path().c_str()} / L"partial-mirror.jpg";
+    const auto sourceBytes = writeReviewFixture(sourcePath, 2);
+    auto composition = jpg_spinner::presentation::composeSelectedFolderBatch(selected, journals);
+    const auto expectedBackup = std::filesystem::path{selected.Path().c_str()} / L"JPG Spinner Backups" /
+                                composition.request.identifier.displayDirectoryName();
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    dispatcher.invoke([&] {
+        implementation = winrt::make_self<presentation::implementation::MainWindowViewModel>(
+            winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread(),
+            std::make_shared<batch_processing::BatchProcessingCoordinator>(
+                std::make_shared<jpeg::LibJpegTurboTransformationEngine>()),
+            composition.transactionEngine);
+        implementation->selectSource(std::move(composition.request), composition.sourceFolderDisplayName,
+                                     composition.backupRootDisplayPath);
+        implementation->SetProcessingOptions(presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
+                                             presentation::TraversalScope::SelectedFolderOnly,
+                                             presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits,
+                                             presentation::OutputScanOrganization::PreserveSource);
+        analysis = implementation->AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        const auto model = implementation.as<presentation::MainWindowViewModel>();
+        REQUIRE(model.State() == presentation::ImageProcessingExperienceState::Review);
+        REQUIRE(model.Rows().Size() == 1);
+        CHECK(model.EligibleFileCount() == 1);
+        CHECK(std::filesystem::path{model.BackupRootDisplayPath().c_str()} == expectedBackup);
+        const auto row = model.Rows().GetAt(0).as<presentation::ImageProcessingRowViewModel>();
+        // Independent geometry: 31x19 image, 8x8 iMCUs, horizontal mirror.
+        CHECK(row.DiscardedSourceRightEdgeWidthInPixels() == 7);
+        CHECK(row.DiscardedSourceBottomEdgeHeightInPixels() == 0);
+        CHECK(row.RequiresEdgeTrimmingAcknowledgment());
+        CHECK_FALSE(row.IsEdgeTrimmingAcknowledged());
+        CHECK_FALSE(model.CanBeginProcessing());
+        model.AcknowledgeEdgeTrimming(0);
+        CHECK(row.IsEdgeTrimmingAcknowledged());
+        CHECK_FALSE(row.RequiresEdgeTrimmingAcknowledgment());
+        CHECK(model.CanBeginProcessing());
+        CHECK(model.CompletedFileCount() == 0); // Consent is permission, never execution.
+    });
+    CHECK(readReviewFixture(sourcePath) == sourceBytes);
+    CHECK_FALSE(std::filesystem::exists(expectedBackup));
+    CHECK_FALSE(std::filesystem::exists(std::filesystem::path{selected.Path().c_str()} / L"JPG Spinner Output"));
+    CHECK(journals.GetItemsAsync().get().Size() == 0);
+    CHECK(selected.GetItemsAsync().get().Size() == 1);
+}
+
 TEST_CASE("Real analysis produces observable review without transforming or committing", "[presentation][view-model]")
 {
     auto &dispatcher = presentationDispatcher();
@@ -754,12 +1347,19 @@ TEST_CASE("Real analysis produces observable review without transforming or comm
     winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
     winrt::com_ptr<winrt::JpgSpinner::Presentation::implementation::MainWindowViewModel> implementation;
     auto states = std::make_shared<std::vector<winrt::JpgSpinner::Presentation::ImageProcessingExperienceState>>();
+    auto progressNotifications = std::make_shared<std::array<unsigned, 3>>();
     winrt::event_token stateSubscription;
     dispatcher.invoke([&] {
         implementation = dispatcher.createModel();
         auto model = implementation.as<winrt::JpgSpinner::Presentation::MainWindowViewModel>();
-        stateSubscription =
-            model.PropertyChanged([states, weak = implementation->get_weak()](auto const &, auto const &change) {
+        stateSubscription = model.PropertyChanged(
+            [states, progressNotifications, weak = implementation->get_weak()](auto const &, auto const &change) {
+                if (change.PropertyName() == L"ProgressPercentage")
+                    ++(*progressNotifications)[0];
+                if (change.PropertyName() == L"IsProgressIndeterminate")
+                    ++(*progressNotifications)[1];
+                if (change.PropertyName() == L"ProgressPercentageOrZero")
+                    ++(*progressNotifications)[2];
                 if (change.PropertyName() == L"State")
                     if (auto observed = weak.get())
                         states->push_back(observed->State());
@@ -771,6 +1371,12 @@ TEST_CASE("Real analysis produces observable review without transforming or comm
         REQUIRE_FALSE(model.CanSelectSourceFolder());
         REQUIRE_FALSE(model.CanBeginProcessing());
         REQUIRE_FALSE(model.ProgressPercentage());
+        REQUIRE_THROWS_AS(model.SetProcessingOptions(
+                              winrt::JpgSpinner::Presentation::OutputDisposition::CreateCorrectedCopy,
+                              winrt::JpgSpinner::Presentation::TraversalScope::SelectedFolderAndDescendants,
+                              winrt::JpgSpinner::Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
+                              winrt::JpgSpinner::Presentation::OutputScanOrganization::PreserveSource),
+                          winrt::hresult_illegal_method_call);
     });
     analysis.get(); // MTA driver only: the UI queue must remain free to publish completion.
     dispatcher.invoke([&] {
@@ -780,13 +1386,21 @@ TEST_CASE("Real analysis produces observable review without transforming or comm
         REQUIRE(model.CanReturnToSourceSelection());
         REQUIRE_FALSE(model.CanCancelCurrentOperation());
         REQUIRE(model.Rows().Size() == 1);
-        REQUIRE(model.Rows().GetAt(0).DisplayName() == L"photo.jpg");
-        REQUIRE(model.Rows().GetAt(0).IsEligibleForProcessing());
+        REQUIRE(
+            model.Rows().GetAt(0).as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>().DisplayName() ==
+            L"photo.jpg");
+        REQUIRE(model.Rows()
+                    .GetAt(0)
+                    .as<winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>()
+                    .IsEligibleForProcessing());
         REQUIRE(source->captures == 1);
         REQUIRE(source->commits == 0);
         REQUIRE(states->size() == 2);
         REQUIRE((*states)[0] == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::Analysis);
         REQUIRE((*states)[1] == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::Review);
+        CHECK((*progressNotifications)[0] > 2); // Worker facts, not only state-transition notifications.
+        CHECK((*progressNotifications)[0] == (*progressNotifications)[1]);
+        CHECK((*progressNotifications)[0] == (*progressNotifications)[2]);
         model.ReturnToSourceSelection();
         REQUIRE(model.State() == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::SourceSelection);
         REQUIRE(model.Rows().Size() == 0);

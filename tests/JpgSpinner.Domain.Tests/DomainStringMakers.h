@@ -210,6 +210,8 @@ template <> struct StringMaker<jpg_spinner::domain::ImageProcessingErrorCode> fi
             return "StorageProviderRecoveryContractNotEstablished";
         case ImageProcessingErrorCode::JournalStoreBusy:
             return "JournalStoreBusy";
+        case ImageProcessingErrorCode::WindowsLongPathSupportUnavailable:
+            return "WindowsLongPathSupportUnavailable";
         case ImageProcessingErrorCode::Cancelled:
             return "Cancelled";
         }

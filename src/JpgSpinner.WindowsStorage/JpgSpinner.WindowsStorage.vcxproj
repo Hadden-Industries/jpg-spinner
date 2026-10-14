@@ -44,6 +44,7 @@
   <ItemGroup>
     <ClInclude Include="include\jpg_spinner\storage\SourceFileRevisionCalculator.h" />
     <ClInclude Include="include\jpg_spinner\storage\ImageFileTransactionEngine.h" />
+    <ClInclude Include="include\jpg_spinner\storage\IdentityBoundStorageFolder.h" />
     <ClInclude Include="include\jpg_spinner\storage\WindowsStorageImageFileTransactionEngine.h" />
     <ClInclude Include="src\internal\RecoverableImageFileTransaction.h" />
     <ClInclude Include="src\internal\FileTransactionOperations.h" />

@@ -63,8 +63,9 @@ constexpr std::array errorCodes{ErrorCode::SourceAccessDenied,
                                 ErrorCode::StorageProviderRecoveryContractNotEstablished,
                                 ErrorCode::JournalStoreBusy,
                                 ErrorCode::RecoveryConflict,
+                                ErrorCode::WindowsLongPathSupportUnavailable,
                                 ErrorCode::Cancelled};
-static_assert(errorCodes.size() == 50);
+static_assert(errorCodes.size() == 51);
 static_assert(static_cast<unsigned>(ErrorCode::Cancelled) + 1 == errorCodes.size());
 } // namespace
 
@@ -104,6 +105,30 @@ TEST_CASE("Every domain error has native resources in each supported language", 
     }
 }
 
+TEST_CASE("Unavailable Windows long paths have specific localized guidance rather than unknown-error fallback",
+          "[presentation][localization][long-path-policy]")
+{
+    jpg_spinner::test_support::ensurePresentationTestApartment();
+    const auto language = GENERATE(L"en-US", L"en-GB", L"ru");
+    using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    const auto context = manager.CreateResourceContext();
+    context.QualifierValues().Insert(L"Language", language);
+    const auto resources = manager.MainResourceMap().GetSubtree(L"Resources");
+    const auto text = jpg_spinner::presentation::loadImageProcessingErrorText(
+        ErrorCode::WindowsLongPathSupportUnavailable, resources, context);
+    // Independent resource identities prevent a nonempty generic fallback from
+    // masquerading as guidance for the specific host prerequisite.
+    CHECK(text.title ==
+          resources.GetValue(L"ImageProcessingError_WindowsLongPathSupportUnavailable_Title", context).ValueAsString());
+    CHECK(text.explanation ==
+          resources.GetValue(L"ImageProcessingError_WindowsLongPathSupportUnavailable_Explanation", context)
+              .ValueAsString());
+    CHECK(
+        text.remedy ==
+        resources.GetValue(L"ImageProcessingError_WindowsLongPathSupportUnavailable_Remedy", context).ValueAsString());
+}
+
 TEST_CASE("Unknown errors use safe generic resources without diagnostic interpolation", "[presentation][localization]")
 {
     jpg_spinner::test_support::ensurePresentationTestApartment();
@@ -123,5 +148,109 @@ TEST_CASE("Unknown errors use safe generic resources without diagnostic interpol
         const std::wstring_view displayedText{component.c_str(), component.size()};
         REQUIRE(displayedText.find(L"C:\\") == std::wstring_view::npos);
         REQUIRE(displayedText.find(L"HRESULT") == std::wstring_view::npos);
+    }
+}
+
+TEST_CASE("Every shell label has its own native resource candidate in every supported language",
+          "[presentation][localization][shell]")
+{
+    jpg_spinner::test_support::ensurePresentationTestApartment();
+    using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    auto resources = manager.MainResourceMap().GetSubtree(L"Resources");
+    auto context = manager.CreateResourceContext();
+    const auto language = GENERATE(L"en-US", L"en-GB", L"ru");
+    context.QualifierValues().Insert(L"Language", language);
+    // MRT indexes property identifiers as URI path segments. Independently list
+    // the shell's contract rather than reusing a production mapper or treating
+    // successful English fallback as a translated Russian/British candidate.
+    constexpr const wchar_t *keys[]{L"Shell_SourceSelectionHeading/Text",
+                                    L"Shell_AnalysisHeading/Text",
+                                    L"Shell_ReviewHeading/Text",
+                                    L"Shell_ProcessingHeading/Text",
+                                    L"Shell_ResultsHeading/Text",
+                                    L"Shell_RecoveryRequiredHeading/Text",
+                                    L"Shell_SourcePicker/Content",
+                                    L"Shell_Analyze/Content",
+                                    L"Shell_TraversalScope/Header",
+                                    L"Shell_OutputDisposition/Header",
+                                    L"Shell_EdgeHandling/Header",
+                                    L"Shell_ScanOrganization/Header",
+                                    L"Shell_SelectedFolderOnly/Content",
+                                    L"Shell_SelectedFolderAndDescendants/Content",
+                                    L"Shell_CreateCorrectedCopy/Content",
+                                    L"Shell_ReplaceWithVerifiedBackup/Content",
+                                    L"Shell_RequirePerfectTransform/Content",
+                                    L"Shell_TrimPartialMinimumCodedUnits/Content",
+                                    L"Shell_PreserveSourceScans/Content",
+                                    L"Shell_SequentialDct/Content",
+                                    L"Shell_ProgressiveDct/Content",
+                                    L"Shell_ReviewInstruction/Text",
+                                    L"Shell_RecursiveExclusionNotice/Text",
+                                    L"Shell_BackupDestinationLabel/Text",
+                                    L"Shell_TrimConsent/Content",
+                                    L"Shell_DiscardedRightEdgeLabel/Text",
+                                    L"Shell_DiscardedBottomEdgeLabel/Text",
+                                    L"Shell_StartProcessing/Content",
+                                    L"Shell_CancelOperation/Content",
+                                    L"Shell_ReturnToSourceSelection/Content",
+                                    L"Shell_RetryRecovery/Content",
+                                    L"Shell_ProcessingRowsLabel/Text",
+                                    L"Shell_EligibleFilesLabel/Text",
+                                    L"Shell_CompletedRowsLabel/Text",
+                                    L"Shell_FailedFilesLabel/Text",
+                                    L"Shell_CancelledFilesLabel/Text",
+                                    L"Shell_InitialInstruction/Text"};
+    for (const auto *key : keys)
+    {
+        INFO("Shell resource=" << winrt::to_string(key));
+        const auto candidate = resources.GetValue(key, context);
+        REQUIRE_FALSE(candidate.ValueAsString().empty());
+        const auto selectedLanguage = candidate.QualifierValues().Lookup(L"Language");
+        REQUIRE(CompareStringOrdinal(selectedLanguage.c_str(), -1, language, -1, TRUE) == CSTR_EQUAL);
+    }
+    // Attached-property namespace dots remain inside the qualified segment;
+    // this is the native MakePRI resource shape, not a home-grown URI parser.
+    for (const auto *control : {L"SourcePicker", L"Analyze", L"TraversalScope", L"OutputDisposition", L"EdgeHandling",
+                                L"ScanOrganization", L"StartProcessing", L"CancelOperation", L"RetryRecovery"})
+        for (const auto *property : {L"Name", L"HelpText"})
+        {
+            const auto key = std::wstring{L"Shell_"} + control +
+                             L"/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/" + property;
+            INFO("Accessible resource=" << winrt::to_string(key));
+            const auto candidate = resources.GetValue(key, context);
+            REQUIRE_FALSE(candidate.ValueAsString().empty());
+            REQUIRE(CompareStringOrdinal(candidate.QualifierValues().Lookup(L"Language").c_str(), -1, language, -1,
+                                         TRUE) == CSTR_EQUAL);
+        }
+    for (const auto *outcome : {L"Pending", L"CorrectedCopyCreated", L"OriginalReplacedWithVerifiedBackup",
+                                L"NoOrientationNormalizationRequired", L"UnsupportedSourceSkipped", L"ProcessingFailed",
+                                L"CancelledBeforeTransformation", L"CancelledBeforeCommit"})
+    {
+        const auto candidate = resources.GetValue(std::wstring{L"ImageProcessingOutcome_"} + outcome, context);
+        REQUIRE_FALSE(candidate.ValueAsString().empty());
+        REQUIRE(CompareStringOrdinal(candidate.QualifierValues().Lookup(L"Language").c_str(), -1, language, -1, TRUE) ==
+                CSTR_EQUAL);
+    }
+}
+
+TEST_CASE("Every discovery observation kind has a localized explanation", "[presentation][localization][discovery]")
+{
+    jpg_spinner::test_support::ensurePresentationTestApartment();
+    using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    const auto resources = manager.MainResourceMap().GetSubtree(L"Resources");
+    const auto context = manager.CreateResourceContext();
+    const auto language = GENERATE(L"en-US", L"en-GB", L"ru");
+    context.QualifierValues().Insert(L"Language", language);
+    // Explicitly cover deliberate exclusions as well as failed access. A blank
+    // error title must not turn a skipped folder into an unexplained pathname.
+    for (const auto *kind : {L"ReparsePointSkipped", L"SourceAccessFailed", L"ApplicationOwnedFolderExcluded"})
+    {
+        INFO("Discovery kind=" << winrt::to_string(kind));
+        const auto candidate = resources.GetValue(std::wstring{L"ImageSourceDiscoveryObservation_"} + kind, context);
+        REQUIRE_FALSE(candidate.ValueAsString().empty());
+        REQUIRE(CompareStringOrdinal(candidate.QualifierValues().Lookup(L"Language").c_str(), -1, language, -1, TRUE) ==
+                CSTR_EQUAL);
     }
 }

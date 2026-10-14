@@ -75,4 +75,14 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> WindowsStorag
     const std::lock_guard lock{executionMutex_};
     return internal::RecoverableImageFileTransaction::recoverIncompleteTransactions(*batch_, cancellationToken);
 }
+std::vector<IdentityBoundStorageFolder> WindowsStorageImageFileTransactionEngine::applicationOwnedFolders() const
+{
+    const std::lock_guard lock{executionMutex_};
+    std::vector<IdentityBoundStorageFolder> folders;
+    if (batch_->correctedCopyFolder && batch_->correctedCopyFolderIdentity)
+        folders.push_back({batch_->correctedCopyFolder, *batch_->correctedCopyFolderIdentity});
+    if (batch_->backupFolder && batch_->backupFolderIdentity)
+        folders.push_back({batch_->backupFolder, *batch_->backupFolderIdentity});
+    return folders;
+}
 } // namespace jpg_spinner::storage

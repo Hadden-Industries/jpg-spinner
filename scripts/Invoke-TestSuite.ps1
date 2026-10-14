@@ -114,7 +114,8 @@ if ($ExecutionEnvironment -ceq 'Interactive') {
 
     # Run the environment contract once before launching any test process; a
     # partial interactive run would otherwise produce misleading test results.
-    & $interactiveEnvironmentTestPath -RepositoryRoot $repositoryRoot
+    & $interactiveEnvironmentTestPath -RepositoryRoot $repositoryRoot `
+        -Architecture $Architecture -Configuration $Configuration
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
@@ -168,6 +169,10 @@ foreach ($selectedTestProject in $selectedTestProjects) {
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
+    # The native presentation host checks Catch2's parsed selection before any
+    # test executes. Comma alternatives can escape trailing exclusion patterns;
+    # this explicit process-scoped restriction makes such selections fail closed.
+    $startInfo.Environment['JPG_SPINNER_TEST_EXECUTION_ENVIRONMENT'] = $ExecutionEnvironment
     foreach ($argument in @(
         '--reporter',
         "JUnit::out=$jUnitReportPath",
@@ -180,11 +185,14 @@ foreach ($selectedTestProject in $selectedTestProjects) {
         [void]$startInfo.ArgumentList.Add($TestSpecification)
     }
     if ($ExecutionEnvironment -ceq 'Headless') {
-        # Catch2 evaluates specifications left-to-right. Place the exclusions
-        # last so a caller's broad or explicit inclusion cannot re-enable tests
-        # that require a desktop session or assistive technology.
+        # These native exclusions cover ordinary selections. The presentation
+        # host additionally refuses unsafe selections after Catch2 parses them;
+        # trailing exclusions alone do not constrain every comma alternative.
         [void]$startInfo.ArgumentList.Add('~[ui-automation]')
         [void]$startInfo.ArgumentList.Add('~[assistive-technology]')
+        # AppContainer-only cases require an explicitly deployed native test
+        # host. An unpackaged headless invocation cannot establish that boundary.
+        [void]$startInfo.ArgumentList.Add('~[packaged-runtime]')
     }
 
     $process = [System.Diagnostics.Process]::new()
@@ -193,7 +201,31 @@ foreach ($selectedTestProject in $selectedTestProjects) {
         [void]$process.Start()
         $standardOutputReadTask = $process.StandardOutput.ReadToEndAsync()
         $standardErrorReadTask = $process.StandardError.ReadToEndAsync()
-        $process.WaitForExit()
+        $testTimedOut = $false
+        if ($ExecutionEnvironment -ceq 'Interactive') {
+            # Native UIA has per-provider timeouts, but deployment/activation and
+            # the whole test case do not. Bound this owned host separately from
+            # ordinary headless suites. Five minutes is the interactive host's
+            # execution budget, not a retry/threshold extension after a failure.
+            $testTimedOut = -not $process.WaitForExit(300000)
+            if ($testTimedOut) {
+                [Console]::Error.WriteLine(
+                    'INTERACTIVE_TEST_PROCESS_TIMED_OUT: the test host exceeded 300 seconds. ' +
+                    'Retain any printed UUID-owned package/process locator and reconcile it ' +
+                    'before recycling its working copy; client termination does not prove ' +
+                    'broker-activated app exit or package removal.'
+                )
+                # Only this child/process tree is targeted, not the deployment
+                # service or a guessed app PID. Broker activation may outlive it.
+                $process.Kill($true)
+                if (-not $process.WaitForExit(5000)) {
+                    throw 'The timed-out interactive test host did not exit after bounded termination.'
+                }
+            }
+        }
+        else {
+            $process.WaitForExit()
+        }
 
         $standardOutput = $standardOutputReadTask.GetAwaiter().GetResult()
         $standardError = $standardErrorReadTask.GetAwaiter().GetResult()
@@ -206,6 +238,12 @@ foreach ($selectedTestProject in $selectedTestProjects) {
 
         # Run every selected executable to preserve a complete JUnit evidence
         # set, but return the first failure in the declared deterministic order.
+        if ($testTimedOut) {
+            # A partial/stale JUnit file is not a successful product result.
+            # Do not continue interactive actions after uncertain teardown.
+            $firstFailingExitCode = 124
+            break
+        }
         if ($process.ExitCode -ne 0 -and $firstFailingExitCode -eq 0) {
             $firstFailingExitCode = $process.ExitCode
         }
