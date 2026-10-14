@@ -37,6 +37,7 @@
     <ClCompile Include="src\internal\SourceFileCapture.cpp" />
     <ClInclude Include="src\internal\SourceFileCapture.h" />
     <ClCompile Include="src\WindowsStorageImageFileTransactionEngine.cpp" />
+    <ClCompile Include="src\WindowsStorageImageFileTransactionRecoveryCatalog.cpp" />
     <ClCompile Include="src\internal\RecoverableImageFileTransaction.cpp" />
     <ClCompile Include="src\internal\ImageFileTransactionJournal.cpp" />
     <ClCompile Include="src\internal\StorageItemProof.cpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="include\jpg_spinner\storage\ImageFileTransactionEngine.h" />
     <ClInclude Include="include\jpg_spinner\storage\IdentityBoundStorageFolder.h" />
     <ClInclude Include="include\jpg_spinner\storage\WindowsStorageImageFileTransactionEngine.h" />
+    <ClInclude Include="include\jpg_spinner\storage\WindowsStorageImageFileTransactionRecoveryCatalog.h" />
     <ClInclude Include="src\internal\RecoverableImageFileTransaction.h" />
     <ClInclude Include="src\internal\FileTransactionOperations.h" />
     <ClInclude Include="src\internal\ImageFileTransactionBatch.h" />

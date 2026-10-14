@@ -1214,7 +1214,25 @@ git commit -m "feat: add the accessible WinUI image workflow"
 
 ## Task 14: Integrate startup recovery, suspension-safe cancellation, and local diagnostics
 
+First native slice: `WindowsStorageImageFileTransactionRecoveryCatalog` inspects
+the app-owned store through the existing immutable-chain validator. It reports
+only transaction IDs and native selected-root identities; source path strings
+are not startup permissions or diagnostic fields. Windows' native hexadecimal
+decoder owns identity conversion. The catalog creates no journal lease/artifact
+and is not an atomic global snapshot or permission to release a cache entry.
+Only the two existing terminal journal states close a requirement; a recorded
+commit still needs stage reconciliation. Startup composition will restore actual
+folders through [FutureAccessList](https://learn.microsoft.com/en-us/uwp/api/windows.storage.accesscache.storageitemaccesslist?view=winrt-28000),
+match native identities and delegate effects to the current recovery engine.
+Keep normal processing gated until that startup orchestration is complete.
+This read-only catalog is an intermediate source checkpoint, not implementation
+of startup orchestration, grant cleanup, closing behavior or local diagnostics.
+
 **Files:**
+
+- Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/WindowsStorageImageFileTransactionRecoveryCatalog.h`
+- Create: `src/JpgSpinner.WindowsStorage/src/WindowsStorageImageFileTransactionRecoveryCatalog.cpp`
+- Create: `tests/JpgSpinner.WindowsStorage.Tests/ImageFileTransactionRecoveryCatalogTests.cpp`
 
 - Create: `src/JpgSpinner.App/Diagnostics/LocalDiagnosticLog.h`
 - Create: `src/JpgSpinner.App/Diagnostics/LocalDiagnosticLog.cpp`

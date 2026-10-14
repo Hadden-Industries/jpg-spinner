@@ -136,4 +136,18 @@ std::wstring storageItemIdentityText(const FILE_ID_INFO &identity)
     return std::wstring{CryptographicBuffer::EncodeToHexString(CryptographicBuffer::CreateFromByteArray(
         winrt::array_view<const std::uint8_t>{begin, begin + sizeof(identity)}))};
 }
+
+FILE_ID_INFO decodeStorageItemIdentity(const std::wstring_view text)
+{
+    if (text.size() != sizeof(FILE_ID_INFO) * 2)
+        throw winrt::hresult_invalid_argument();
+    using winrt::Windows::Security::Cryptography::CryptographicBuffer;
+    winrt::com_array<std::uint8_t> bytes;
+    CryptographicBuffer::CopyToByteArray(CryptographicBuffer::DecodeFromHexString(winrt::hstring{text}), bytes);
+    if (bytes.size() != sizeof(FILE_ID_INFO))
+        throw winrt::hresult_invalid_argument();
+    FILE_ID_INFO identity{};
+    std::memcpy(&identity, bytes.data(), sizeof(identity));
+    return identity;
+}
 } // namespace jpg_spinner::storage::internal

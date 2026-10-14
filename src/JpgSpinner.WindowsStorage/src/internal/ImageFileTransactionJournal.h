@@ -24,6 +24,14 @@ enum class ImageFileTransactionState
     TransactionAbandonedBeforeCommit
 };
 
+/// Only immutable terminal records close recovery. A recorded commit still
+/// requires owned-stage reconciliation; it must not disappear from startup.
+[[nodiscard]] constexpr bool isTerminalImageFileTransactionState(const ImageFileTransactionState state) noexcept
+{
+    return state == ImageFileTransactionState::OwnedStagingArtifactsCleaned ||
+           state == ImageFileTransactionState::TransactionAbandonedBeforeCommit;
+}
+
 /// Immutable generation facts. File identities are native hexadecimal encodings
 /// of FILE_ID_INFO; paths are StorageItem paths, not authority to open/delete them.
 /// Recovery must independently establish identity, containment and byte hashes.

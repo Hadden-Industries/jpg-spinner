@@ -42,6 +42,7 @@
     <ClCompile Include="SourceFileRevisionCalculatorTests.cpp" />
     <ClCompile Include="ImageFileTransactionTests.cpp" />
     <ClCompile Include="ImageFileTransactionRecoveryTests.cpp" />
+    <ClCompile Include="ImageFileTransactionRecoveryCatalogTests.cpp" />
     <ClCompile Include="StorageProviderQualificationTests.cpp" />
     <ClCompile Include="TransactionProcessTerminationTests.cpp" />
     <!-- Shared storage-only test adapter; keep neutral TestSupport free of WinRT. -->

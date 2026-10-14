@@ -685,8 +685,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                         // A verified terminal record closes this transaction. User
                         // images may subsequently be edited, renamed or replaced by a
                         // later transaction; those changes must not reopen old recovery.
-                        if (record.state == ImageFileTransactionState::OwnedStagingArtifactsCleaned ||
-                            record.state == ImageFileTransactionState::TransactionAbandonedBeforeCommit)
+                        if (isTerminalImageFileTransactionState(record.state))
                             return RecoveryResult::success({});
                         // The shared store is not authority to open another selected
                         // root. Leave its incomplete transaction to that root's engine.

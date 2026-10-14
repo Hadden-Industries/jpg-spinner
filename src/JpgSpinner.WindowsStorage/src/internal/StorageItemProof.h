@@ -5,6 +5,7 @@
 #include <winrt/Windows.Storage.h>
 #include <windowsstoragecom.h>
 #include <filesystem>
+#include <string_view>
 
 namespace jpg_spinner::storage::internal
 {
@@ -39,4 +40,7 @@ struct StorageItemProof final
 /// Version-1 journal representation of the native volume/file identity. Encoding
 /// is delegated to CryptographicBuffer; this text is never a pathname or grant.
 [[nodiscard]] std::wstring storageItemIdentityText(const FILE_ID_INFO &identity);
+/// Decode the version-1 native identity representation through Windows' hex
+/// decoder. Exact ABI length is required; this value remains metadata, not a grant.
+[[nodiscard]] FILE_ID_INFO decodeStorageItemIdentity(std::wstring_view text);
 } // namespace jpg_spinner::storage::internal
