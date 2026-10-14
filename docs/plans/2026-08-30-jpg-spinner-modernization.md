@@ -1589,6 +1589,25 @@ git commit -m "build: preserve Store identity in the WinUI package"
 
 ## Task 17: Add continuous integration, security analysis, and supply-chain evidence
 
+**Incremental payload-reproducibility source checkpoint (2026-10-15):**
+`New-PayloadManifest.ps1` uses the already-adopted PowerShell/.NET runtime,
+native filesystem/stream APIs, SHA-256, and `Utf8JsonWriter`; no additional
+JSON grammar, hashing implementation or dependency resolver is introduced.
+The residual project contract is a schema-version-1, BOM-free UTF-8/LF JSON
+record with ordinal normalized relative paths, byte lengths and lowercase
+SHA-256. Absolute roots and timestamps are deliberately absent. Output must
+be new and outside the quiescent input tree; traversal checks native reparse
+attributes before recursion. `Test-PayloadManifestEquality.ps1` compares the
+canonical producer outputs, not signed-container identity or build correctness.
+The test reached the unimplemented producer (RED), then verified independent
+fixed hashes/order/lengths (GREEN), distinct-root equality, an actual one-byte
+same-length mismatch, and existing-output/self-inventory/native-junction refusals.
+Two independent clean application builds, CI/SBOM/provenance and release
+qualification remain separate obligations. Native API references:
+[File.OpenRead](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.openread),
+[SHA256.HashData](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.sha256.hashdata),
+and [Utf8JsonWriter](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.utf8jsonwriter).
+
 **Files:**
 
 - Create: `scripts/Invoke-StaticAnalysis.ps1`
