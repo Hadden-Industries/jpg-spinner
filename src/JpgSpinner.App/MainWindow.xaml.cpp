@@ -10,6 +10,7 @@
 #include <winrt/Microsoft.UI.Windowing.h>
 #include <winrt/Windows.Storage.Pickers.h>
 #include <winrt/Windows.Storage.AccessCache.h>
+#include <winrt/Windows.Storage.Provider.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <microsoft.ui.xaml.window.h>
 #include <shobjidl_core.h>
@@ -35,6 +36,11 @@ MainWindow::MainWindow()
     // The native TitleBar owns caption/drag regions, RTL and material fallback.
     ExtendsContentIntoTitleBar(true);
     SetTitleBar(AppTitleBar());
+    closingEventSource_ = AppWindow();
+    closingEventToken_ = closingEventSource_.Closing([weak = get_weak()](auto const &, auto const &arguments) {
+        if (auto window = weak.get())
+            window->handleClosing(arguments);
+    });
     WorkflowContent().Loaded([weak = get_weak()](auto const &, auto const &) {
         if (auto window = weak.get())
         {
@@ -42,7 +48,7 @@ MainWindow::MainWindow()
             if (!window->startupRecoveryStarted_)
             {
                 window->startupRecoveryStarted_ = true;
-                window->recoverStartupAsync();
+                window->activeOperation_ = window->recoverStartupAsync().as<Windows::Foundation::IAsyncInfo>();
             }
             // XamlRoot reports the current display scale, including monitor
             // changes. Keep the effective-pixel minimum without a WndProc
@@ -69,6 +75,14 @@ void MainWindow::updatePreferredMinimumWindowSize()
     presenter.PreferredMinimumWidth(static_cast<int>(std::ceil(360 * scale)));
     presenter.PreferredMinimumHeight(static_cast<int>(std::ceil(480 * scale)));
 }
+MainWindow::~MainWindow()
+{
+    // AppWindow is a native event source without weak-reference support; use
+    // Microsoft's event-token removal rather than automatic weak revocation.
+    // https://learn.microsoft.com/windows/uwp/cpp-and-winrt-apis/handle-events
+    if (closingEventSource_ && closingEventToken_.value != 0)
+        closingEventSource_.Closing(closingEventToken_);
+}
 void MainWindow::requireUiThread() const
 {
     if (!DispatcherQueue().HasThreadAccess())
@@ -82,18 +96,18 @@ Presentation::MainWindowViewModel MainWindow::ViewModel() const
 bool MainWindow::CanPickSourceFolder() const
 {
     requireUiThread();
-    return !startupRecoveryPending_ && !startupRecoveryError_ && !pickerActive_ && !operationEventActive_ &&
-           (!viewModel_ || viewModel_.CanSelectSourceFolder());
+    return !closeAdmission_.closeRequested() && !startupRecoveryPending_ && !startupRecoveryError_ && !pickerActive_ &&
+           !operationEventActive_ && (!viewModel_ || viewModel_.CanSelectSourceFolder());
 }
 bool MainWindow::IsWorkflowInteractionEnabled() const
 {
     requireUiThread();
-    return !startupRecoveryPending_ && !pickerActive_;
+    return !closeAdmission_.closeRequested() && !startupRecoveryPending_ && !pickerActive_;
 }
 bool MainWindow::CanRetryRecovery() const
 {
     requireUiThread();
-    return !startupRecoveryPending_ && !pickerActive_ && !operationEventActive_ &&
+    return !closeAdmission_.closeRequested() && !startupRecoveryPending_ && !pickerActive_ && !operationEventActive_ &&
            (startupRecoveryError_.has_value() ||
             (viewModel_ && viewModel_.State() == Presentation::ImageProcessingExperienceState::RecoveryRequired));
 }
@@ -107,6 +121,17 @@ bool MainWindow::HasStartupRecoveryError() const
     requireUiThread();
     return startupRecoveryError_.has_value();
 }
+hstring MainWindow::StartupRecoveryErrorMessage() const
+{
+    requireUiThread();
+    if (!startupRecoveryError_)
+        return {};
+    using namespace Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    return jpg_spinner::presentation::loadStartupRecoveryErrorMessage(
+        startupRecoveryError_->code, manager.MainResourceMap().GetSubtree(L"Resources"),
+        manager.CreateResourceContext());
+}
 bool MainWindow::CanRestoreStartupSourceAccess() const
 {
     requireUiThread();
@@ -116,6 +141,17 @@ hstring MainWindow::StartupRecoveredTransactionCount() const
 {
     requireUiThread();
     return to_hstring(startupRecoveredTransactionCount_);
+}
+bool MainWindow::CanExportDiagnostics() const
+{
+    requireUiThread();
+    return !closeAdmission_.closeRequested() && !startupRecoveryPending_ && !pickerActive_ && !operationEventActive_ &&
+           diagnosticLog_;
+}
+bool MainWindow::HasDiagnosticLogError() const
+{
+    requireUiThread();
+    return diagnosticLogError_;
 }
 Microsoft::UI::Xaml::Visibility MainWindow::regionVisibility(Presentation::ImageProcessingExperienceState state) const
 {
@@ -200,32 +236,100 @@ void MainWindow::notifyShellState()
     requireUiThread();
     for (const auto *property :
          {L"CanPickSourceFolder", L"IsWorkflowInteractionEnabled", L"CanRetryRecovery", L"IsStartupRecoveryPending",
-          L"HasStartupRecoveryError", L"CanRestoreStartupSourceAccess", L"StartupRecoveredTransactionCount",
+          L"HasStartupRecoveryError", L"StartupRecoveryErrorMessage", L"CanRestoreStartupSourceAccess",
+          L"StartupRecoveredTransactionCount", L"CanExportDiagnostics", L"HasDiagnosticLogError",
           L"SourceSelectionRegionVisibility", L"AnalysisRegionVisibility", L"ReviewRegionVisibility",
           L"ProcessingRegionVisibility", L"ResultsRegionVisibility", L"RecoveryRequiredRegionVisibility",
           L"ProcessingRowsRegionVisibility", L"BackupDestinationVisibility", L"OperationProgressVisibility"})
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{property});
+    closeAfterWorkSettles();
+}
+bool MainWindow::hasActiveShellWork() const
+{
+    requireUiThread();
+    return pickerActive_ || operationEventActive_ || (startupRecoveryStarted_ && startupRecoveryPending_);
+}
+void MainWindow::handleClosing(const Microsoft::UI::Windowing::AppWindowClosingEventArgs &arguments)
+{
+    requireUiThread();
+    if (closeAdmission_.requestClose(hasActiveShellWork()))
+        return; // Let Windows perform its ordinary idle-window close.
+    arguments.Cancel(true);
+    startupRecoveryCancellation_.request_stop();
+    if (activeOperation_)
+    {
+        try
+        {
+            activeOperation_.Cancel();
+        }
+        catch (const hresult_error &)
+        {
+            // A native operation can finish during the close request. Do not
+            // force termination or treat a refused cancel as settled work.
+        }
+    }
+    // Cancel requests stop; it is NOT proof that the current coefficient call
+    // or journaled commit has returned. The actual completion path closes later.
+    notifyShellState();
+}
+void MainWindow::closeAfterWorkSettles()
+{
+    requireUiThread();
+    const auto active = hasActiveShellWork();
+    if (!active)
+        activeOperation_ = nullptr;
+    if (!deferredCloseDispatched_ && closeAdmission_.shouldCloseAfterWorkSettles(active))
+    {
+        deferredCloseDispatched_ = true;
+        Close();
+    }
 }
 Windows::Foundation::IAsyncAction MainWindow::recoverStartupAsync()
 {
     auto lifetime = get_strong();
     const auto queue = DispatcherQueue();
+    startupRecoveryCancellation_ = std::stop_source{};
+    const auto cancellation = startupRecoveryCancellation_.get_token();
+    const auto beganAt = std::chrono::steady_clock::now();
     startupRecoveryPending_ = true;
     notifyShellState();
     using Result =
         jpg_spinner::domain::ImageProcessingResult<jpg_spinner::storage::ImageFileTransactionRecoverySummary>;
     std::optional<Result> result;
+    std::shared_ptr<jpg_spinner::diagnostics::LocalDiagnosticLog> log;
+    bool logError{};
     try
     {
         // App-local storage is the only directory created at startup. Never
         // reconstruct a user's source grant from a journal's display path.
-        const auto store = co_await Windows::Storage::ApplicationData::Current().LocalFolder().CreateFolderAsync(
-            L"ImageTransactionJournals", Windows::Storage::CreationCollisionOption::OpenIfExists);
+        const auto local = Windows::Storage::ApplicationData::Current().LocalFolder();
+        const auto store = co_await local.CreateFolderAsync(L"ImageTransactionJournals",
+                                                            Windows::Storage::CreationCollisionOption::OpenIfExists);
         const auto cache = Windows::Storage::AccessCache::StorageApplicationPermissions::FutureAccessList();
         co_await resume_background();
         {
             auto apartment = wil::RoInitialize(RO_INIT_MULTITHREADED);
-            result.emplace(jpg_spinner::presentation::recoverStartupTransactions(store, cache));
+            result.emplace(jpg_spinner::presentation::recoverStartupTransactions(store, cache, cancellation));
+            try
+            {
+                const auto folder =
+                    local
+                        .CreateFolderAsync(L"LocalDiagnostics", Windows::Storage::CreationCollisionOption::OpenIfExists)
+                        .get();
+                log = std::make_shared<jpg_spinner::diagnostics::LocalDiagnosticLog>(folder);
+                GUID identifier{};
+                check_hresult(CoCreateGuid(&identifier));
+                logError = !log->append(jpg_spinner::diagnostics::captureImageProcessingDiagnosticRecord(
+                    std::bit_cast<guid>(identifier), jpg_spinner::domain::ImageProcessingStage::TransactionRecovery,
+                    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - beganAt),
+                    result->errorIfPresent()));
+            }
+            catch (...)
+            {
+                // Diagnostic storage must never convert a successful recovery
+                // into a refusal. No native exception text enters the logger.
+                logError = true;
+            }
         }
     }
     catch (...)
@@ -235,6 +339,8 @@ Windows::Foundation::IAsyncAction MainWindow::recoverStartupAsync()
                                         jpg_spinner::domain::ImageProcessingStage::TransactionRecovery}));
     }
     co_await wil::resume_foreground(queue);
+    diagnosticLog_ = std::move(log);
+    diagnosticLogError_ = logError;
     startupRecoveryError_.reset();
     if (const auto error = result->errorIfPresent())
         startupRecoveryError_.emplace(*error);
@@ -246,6 +352,8 @@ Windows::Foundation::IAsyncAction MainWindow::recoverStartupAsync()
 void MainWindow::showIntegrationError()
 {
     requireUiThread();
+    if (closeAdmission_.closeRequested())
+        return; // Expected cancellation during close is not an integration error.
     using namespace Microsoft::Windows::ApplicationModel::Resources;
     ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
     const auto text = jpg_spinner::presentation::loadGenericImageProcessingErrorText(
@@ -274,9 +382,17 @@ Windows::Foundation::IAsyncAction MainWindow::selectPickedSourceAsync(Windows::S
                                                                                   applicationOwnedFolders));
     }
     co_await wil::resume_foreground(queue);
-    auto model = make_self<Presentation::implementation::MainWindowViewModel>(queue, coordinator_,
-                                                                              composition->transactionEngine);
     const auto newIdentity = std::bit_cast<guid>(composition->request.identifier.fullIdentity());
+    Presentation::implementation::MainWindowViewModel::OperationFailureDiagnosticObserver failureDiagnostics;
+    if (const auto log = diagnosticLog_)
+        failureDiagnostics = [log, newIdentity](const auto &failure, std::chrono::milliseconds elapsed) {
+            // This callback executes on the model's owned MTA. No source,
+            // display path, metadata value or native message enters the sink.
+            static_cast<void>(log->append(jpg_spinner::diagnostics::captureImageProcessingDiagnosticRecord(
+                newIdentity, failure.stage, elapsed, &failure)));
+        };
+    auto model = make_self<Presentation::implementation::MainWindowViewModel>(
+        queue, coordinator_, composition->transactionEngine, std::move(failureDiagnostics));
     model->selectSource(std::move(composition->request), composition->sourceFolderDisplayName,
                         composition->backupRootDisplayPath);
     selectedSourceFolder_ = std::move(selectedFolder);
@@ -302,7 +418,9 @@ fire_and_forget MainWindow::SourcePicker_Click(Windows::Foundation::IInspectable
         // StorageFolder is the granted capability required by our Storage
         // adapter. The newer path-returning picker is not a substitute grant.
         check_hresult(picker.as<::IInitializeWithWindow>()->Initialize(windowHandle));
-        if (auto selectedFolder = co_await picker.PickSingleFolderAsync())
+        const auto picking = picker.PickSingleFolderAsync();
+        activeOperation_ = picking.as<Windows::Foundation::IAsyncInfo>();
+        if (auto selectedFolder = co_await picking)
         {
             releaseReconciledSourceAccess();
             co_await selectPickedSourceAsync(std::move(selectedFolder));
@@ -351,8 +469,8 @@ fire_and_forget MainWindow::ProcessingOptions_SelectionChanged(
 {
     auto lifetime = get_strong();
     // XAML initialization can raise this before every named control exists.
-    if (updatingProcessingOptionControls_ || pickerActive_ || operationEventActive_ || !viewModel_ ||
-        !viewModel_.CanSelectSourceFolder())
+    if (closeAdmission_.closeRequested() || updatingProcessingOptionControls_ || pickerActive_ ||
+        operationEventActive_ || !viewModel_ || !viewModel_.CanSelectSourceFolder())
         co_return;
     try
     {
@@ -396,13 +514,16 @@ fire_and_forget MainWindow::Analyze_Click(Windows::Foundation::IInspectable cons
                                           Microsoft::UI::Xaml::RoutedEventArgs const &)
 {
     auto lifetime = get_strong();
-    if (pickerActive_ || operationEventActive_ || !viewModel_ || !viewModel_.CanAnalyzeSelectedSource())
+    if (closeAdmission_.closeRequested() || pickerActive_ || operationEventActive_ || !viewModel_ ||
+        !viewModel_.CanAnalyzeSelectedSource())
         co_return;
     operationEventActive_ = true;
     notifyShellState();
     try
     {
-        co_await viewModel_.AnalyzeAsync();
+        const auto analyzing = viewModel_.AnalyzeAsync();
+        activeOperation_ = analyzing.as<Windows::Foundation::IAsyncInfo>();
+        co_await analyzing;
     }
     catch (...)
     {
@@ -443,7 +564,8 @@ fire_and_forget MainWindow::StartProcessing_Click(Windows::Foundation::IInspecta
                                                   Microsoft::UI::Xaml::RoutedEventArgs const &)
 {
     auto lifetime = get_strong();
-    if (pickerActive_ || operationEventActive_ || !viewModel_ || !viewModel_.CanBeginProcessing())
+    if (closeAdmission_.closeRequested() || pickerActive_ || operationEventActive_ || !viewModel_ ||
+        !viewModel_.CanBeginProcessing())
         co_return;
     operationEventActive_ = true;
     notifyShellState();
@@ -452,7 +574,9 @@ fire_and_forget MainWindow::StartProcessing_Click(Windows::Foundation::IInspecta
         // Retain access before the first transaction can publish a journal.
         retainSelectedSourceForTransaction();
         transactionStartRequested_ = true;
-        co_await viewModel_.BeginProcessingAsync();
+        const auto processing = viewModel_.BeginProcessingAsync();
+        activeOperation_ = processing.as<Windows::Foundation::IAsyncInfo>();
+        co_await processing;
         if (viewModel_.State() == Presentation::ImageProcessingExperienceState::Results)
         {
             rememberCompletedBatchFolders();
@@ -472,17 +596,21 @@ fire_and_forget MainWindow::RetryRecovery_Click(Windows::Foundation::IInspectabl
     auto lifetime = get_strong();
     if (CanRetryRecovery() && startupRecoveryError_)
     {
-        co_await recoverStartupAsync();
+        const auto recovery = recoverStartupAsync();
+        activeOperation_ = recovery.as<Windows::Foundation::IAsyncInfo>();
+        co_await recovery;
         co_return;
     }
-    if (pickerActive_ || operationEventActive_ || !viewModel_ ||
+    if (closeAdmission_.closeRequested() || pickerActive_ || operationEventActive_ || !viewModel_ ||
         viewModel_.State() != Presentation::ImageProcessingExperienceState::RecoveryRequired)
         co_return;
     operationEventActive_ = true;
     notifyShellState();
     try
     {
-        co_await viewModel_.RecoverAsync();
+        const auto recovery = viewModel_.RecoverAsync();
+        activeOperation_ = recovery.as<Windows::Foundation::IAsyncInfo>();
+        co_await recovery;
         if (viewModel_.State() == Presentation::ImageProcessingExperienceState::SourceSelection)
         {
             rememberCompletedBatchFolders();
@@ -517,7 +645,9 @@ fire_and_forget MainWindow::RestoreRecoverySource_Click(Windows::Foundation::IIn
         HWND handle{};
         check_hresult(m_inner.as<::IWindowNative>()->get_WindowHandle(&handle));
         check_hresult(picker.as<::IInitializeWithWindow>()->Initialize(handle));
-        if (const auto folder = co_await picker.PickSingleFolderAsync())
+        const auto picking = picker.PickSingleFolderAsync();
+        activeOperation_ = picking.as<Windows::Foundation::IAsyncInfo>();
+        if (const auto folder = co_await picking)
         {
             const auto cache = Windows::Storage::AccessCache::StorageApplicationPermissions::FutureAccessList();
             if (cache.Entries().Size() >= cache.MaximumItemsAllowed())
@@ -527,7 +657,9 @@ fire_and_forget MainWindow::RestoreRecoverySource_Click(Windows::Foundation::IIn
             // Preserve its token for future startup if reconciliation refuses;
             // never evict another entry or invent batch/transaction correlation.
             cache.Add(folder, L"Startup recovery source grant");
-            co_await recoverStartupAsync();
+            const auto recovery = recoverStartupAsync();
+            activeOperation_ = recovery.as<Windows::Foundation::IAsyncInfo>();
+            co_await recovery;
         }
     }
     catch (...)
@@ -537,11 +669,85 @@ fire_and_forget MainWindow::RestoreRecoverySource_Click(Windows::Foundation::IIn
     pickerActive_ = false;
     notifyShellState();
 }
+fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspectable const &,
+                                                    Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    auto lifetime = get_strong();
+    if (!CanExportDiagnostics())
+        co_return;
+    const auto queue = DispatcherQueue();
+    const auto log = diagnosticLog_; // Capture the owned logger on the UI thread.
+    bool exportFailed{};
+    pickerActive_ = true;
+    notifyShellState();
+    try
+    {
+        Windows::Storage::Pickers::FileSavePicker picker;
+        using namespace Microsoft::Windows::ApplicationModel::Resources;
+        ResourceManager resources{ResourceLoader::GetDefaultResourceFilePath()};
+        const auto label = resources.MainResourceMap()
+                               .GetSubtree(L"Resources")
+                               .GetValue(L"Shell_DiagnosticFileType", resources.CreateResourceContext())
+                               .ValueAsString();
+        picker.FileTypeChoices().Insert(label, single_threaded_vector<hstring>({L".jsonl"}));
+        picker.DefaultFileExtension(L".jsonl");
+        picker.SuggestedFileName(L"JPG Spinner diagnostics");
+        HWND handle{};
+        check_hresult(m_inner.as<::IWindowNative>()->get_WindowHandle(&handle));
+        check_hresult(picker.as<::IInitializeWithWindow>()->Initialize(handle));
+        const auto picking = picker.PickSaveFileAsync();
+        activeOperation_ = picking.as<Windows::Foundation::IAsyncInfo>();
+        if (const auto destination = co_await picking)
+        {
+            const auto extension = destination.FileType();
+            if (CompareStringOrdinal(extension.c_str(), -1, L".jsonl", -1, TRUE) != CSTR_EQUAL)
+                throw hresult_invalid_argument();
+            std::string snapshot;
+            co_await resume_background();
+            {
+                auto apartment = wil::RoInitialize(RO_INIT_MULTITHREADED);
+                snapshot = log->snapshot();
+            }
+            co_await wil::resume_foreground(queue);
+            // No logger snapshot or retention effect occurs if the picker was
+            // cancelled. Export writes only sanitized bytes to this explicit
+            // grant; no path is used to acquire another destination or source.
+            if (!closeAdmission_.closeRequested())
+            {
+                Windows::Storage::CachedFileManager::DeferUpdates(destination);
+                const auto *bytes = reinterpret_cast<const std::uint8_t *>(snapshot.data());
+                const auto writing = Windows::Storage::FileIO::WriteBytesAsync(
+                    destination, array_view<const std::uint8_t>{bytes, bytes + snapshot.size()});
+                activeOperation_ = writing.as<Windows::Foundation::IAsyncInfo>();
+                co_await writing;
+                const auto updating = Windows::Storage::CachedFileManager::CompleteUpdatesAsync(destination);
+                activeOperation_ = updating.as<Windows::Foundation::IAsyncInfo>();
+                const auto status = co_await updating;
+                if (status != Windows::Storage::Provider::FileUpdateStatus::Complete &&
+                    status != Windows::Storage::Provider::FileUpdateStatus::CompleteAndRenamed)
+                    throw hresult_error{E_FAIL};
+                diagnosticLogError_ = false;
+            }
+        }
+    }
+    catch (...)
+    {
+        exportFailed = true;
+    }
+    // Snapshot failures originate on the worker. Restore UI affinity before
+    // status publication; no await is placed inside an exception handler.
+    co_await wil::resume_foreground(queue);
+    if (exportFailed)
+        diagnosticLogError_ = true;
+    pickerActive_ = false;
+    notifyShellState();
+}
 fire_and_forget MainWindow::ReturnToSourceSelection_Click(Windows::Foundation::IInspectable const &,
                                                           Microsoft::UI::Xaml::RoutedEventArgs const &)
 {
     auto lifetime = get_strong();
-    if (pickerActive_ || operationEventActive_ || !viewModel_ || !viewModel_.CanReturnToSourceSelection())
+    if (closeAdmission_.closeRequested() || pickerActive_ || operationEventActive_ || !viewModel_ ||
+        !viewModel_.CanReturnToSourceSelection())
         co_return;
     const bool completedBatch = viewModel_.State() == Presentation::ImageProcessingExperienceState::Results;
     pickerActive_ = true;
@@ -572,7 +778,7 @@ void MainWindow::CancelOperation_Click(Windows::Foundation::IInspectable const &
 void MainWindow::TrimConsent_Click(Windows::Foundation::IInspectable const &sender,
                                    Microsoft::UI::Xaml::RoutedEventArgs const &)
 {
-    if (pickerActive_ || operationEventActive_ || !viewModel_ ||
+    if (closeAdmission_.closeRequested() || pickerActive_ || operationEventActive_ || !viewModel_ ||
         viewModel_.State() != Presentation::ImageProcessingExperienceState::Review)
         return;
     try

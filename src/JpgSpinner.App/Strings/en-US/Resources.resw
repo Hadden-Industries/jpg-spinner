@@ -229,9 +229,15 @@
   <data name="ImageSourceDiscoveryObservation_ApplicationOwnedFolderExcluded" xml:space="preserve"><value>Application-owned folder excluded</value></data>
   <data name="Shell_StartupRecoveryProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Checking incomplete transactions</value></data>
   <data name="Shell_StartupRecoveryError.Title" xml:space="preserve"><value>Recovery requires attention</value></data>
-  <data name="Shell_StartupRecoveryError.Message" xml:space="preserve"><value>Normal processing is disabled. Keep your originals, verified backups, staged outputs and application transaction records intact. Restore access to the original source folder or reconnect its drive, then retry recovery. Ambiguous artifacts are never automatically replaced or deleted.</value></data>
+  <data name="StartupRecovery_PreservationNotice" xml:space="preserve"><value>Normal processing is disabled. Keep your originals, verified backups, staged outputs and application transaction records intact. Ambiguous artifacts are never automatically replaced or deleted.</value></data>
   <data name="Shell_StartupRecoveredCount.Text" xml:space="preserve"><value>Transactions reconciled at startup:</value></data>
   <data name="Shell_RestoreRecoverySource.Content" xml:space="preserve"><value>Restore source folder access for recovery</value></data>
   <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore source folder access for recovery</value></data>
   <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Choose the original source folder. This grants recovery access only; normal processing remains disabled until all transactions are reconciled.</value></data>
+  <data name="Shell_ExportDiagnostics.Content" xml:space="preserve"><value>Export local diagnostics</value></data>
+  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Export local diagnostics</value></data>
+  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Choose a destination for sanitized local diagnostic records. Nothing is uploaded; source paths, image metadata and native exception messages are excluded.</value></data>
+  <data name="Shell_DiagnosticFileType" xml:space="preserve"><value>JSON Lines diagnostic records</value></data>
+  <data name="Shell_DiagnosticLogError.Title" xml:space="preserve"><value>Local diagnostics unavailable or export incomplete</value></data>
+  <data name="Shell_DiagnosticLogError.Message" xml:space="preserve"><value>Image processing can continue. Export does not change retained local records, but a chosen export file may be incomplete. No image data or private source paths are collected.</value></data>
 </root>

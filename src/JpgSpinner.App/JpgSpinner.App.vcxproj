@@ -30,7 +30,6 @@
          DeploymentManager would demand restricted packageManagement inside
          AppContainer; do not add that capability or a private runtime instead.
          https://learn.microsoft.com/windows/apps/package-and-deploy/project-properties -->
-    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsAppSdkBootstrapInitialize>false</WindowsAppSdkBootstrapInitialize>
     <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
     <WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
@@ -98,6 +97,8 @@
     <ClInclude Include="Localization\ImageProcessingErrorText.h" />
     <ClInclude Include="Composition\SelectedFolderBatchComposition.h" />
     <ClInclude Include="Composition\StartupRecoveryComposition.h" />
+    <ClInclude Include="Composition\CooperativeWindowClose.h" />
+    <ClInclude Include="Diagnostics\LocalDiagnosticLog.h" />
     <ClInclude Include="Composition\SourceFolderAccessRetention.h" />
     <ClInclude Include="App.xaml.h"><DependentUpon>App.xaml</DependentUpon></ClInclude>
     <ClInclude Include="MainWindow.xaml.h"><DependentUpon>MainWindow.xaml</DependentUpon></ClInclude>
@@ -116,6 +117,7 @@
     <ClCompile Include="ViewModels\ImageSourceDiscoveryIssueViewModel.cpp" />
     <ClCompile Include="Localization\ImageProcessingErrorText.cpp" />
     <ClCompile Include="Composition\SelectedFolderBatchComposition.cpp" />
+    <ClCompile Include="Diagnostics\LocalDiagnosticLog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Presentation.idl" />

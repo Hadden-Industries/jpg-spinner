@@ -229,9 +229,15 @@
   <data name="ImageSourceDiscoveryObservation_ApplicationOwnedFolderExcluded" xml:space="preserve"><value>Папка, созданная приложением, исключена</value></data>
   <data name="Shell_StartupRecoveryProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Проверка незавершённых транзакций</value></data>
   <data name="Shell_StartupRecoveryError.Title" xml:space="preserve"><value>Восстановление требует внимания</value></data>
-  <data name="Shell_StartupRecoveryError.Message" xml:space="preserve"><value>Обработка отключена. Сохраните оригиналы, проверенные резервные копии, временные результаты и записи транзакций приложения. Восстановите доступ к исходной папке или подключите её диск, затем повторите восстановление. Неоднозначные файлы не заменяются и не удаляются автоматически.</value></data>
+  <data name="StartupRecovery_PreservationNotice" xml:space="preserve"><value>Обработка отключена. Сохраните оригиналы, проверенные резервные копии, временные результаты и записи транзакций приложения. Неоднозначные файлы не заменяются и не удаляются автоматически.</value></data>
   <data name="Shell_StartupRecoveredCount.Text" xml:space="preserve"><value>Транзакций согласовано при запуске:</value></data>
   <data name="Shell_RestoreRecoverySource.Content" xml:space="preserve"><value>Восстановить доступ к исходной папке</value></data>
   <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Восстановить доступ к исходной папке</value></data>
   <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Выберите исходную папку. Доступ используется только для восстановления; обработка остаётся отключённой до согласования всех транзакций.</value></data>
+  <data name="Shell_ExportDiagnostics.Content" xml:space="preserve"><value>Экспортировать локальную диагностику</value></data>
+  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Экспортировать локальную диагностику</value></data>
+  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Выберите место для безопасных локальных записей диагностики. Ничего не отправляется; пути к исходникам, метаданные изображений и сообщения исключений не включаются.</value></data>
+  <data name="Shell_DiagnosticFileType" xml:space="preserve"><value>Записи диагностики JSON Lines</value></data>
+  <data name="Shell_DiagnosticLogError.Title" xml:space="preserve"><value>Диагностика недоступна или экспорт не завершён</value></data>
+  <data name="Shell_DiagnosticLogError.Message" xml:space="preserve"><value>Обработку изображений можно продолжить. Экспорт не меняет локальные записи, но выбранный файл экспорта может быть неполным. Изображения и личные пути к исходникам не собираются.</value></data>
 </root>

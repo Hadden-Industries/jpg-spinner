@@ -25,6 +25,12 @@ struct ImageProcessingErrorText final
     domain::ImageProcessingErrorCode code,
     const winrt::Microsoft::Windows::ApplicationModel::Resources::ResourceMap &resources,
     const winrt::Microsoft::Windows::ApplicationModel::Resources::ResourceContext &context);
+/// Startup recovery adds its preservation context to the specific localized
+/// remedy; reconnecting a drive is not a remedy for every recovery refusal.
+[[nodiscard]] winrt::hstring loadStartupRecoveryErrorMessage(
+    domain::ImageProcessingErrorCode code,
+    const winrt::Microsoft::Windows::ApplicationModel::Resources::ResourceMap &resources,
+    const winrt::Microsoft::Windows::ApplicationModel::Resources::ResourceContext &context);
 /// Native integration exceptions have no domain identity; do not invent one or
 /// expose the exception message. Use the same explicitly generic resources.
 [[nodiscard]] ImageProcessingErrorText loadGenericImageProcessingErrorText(

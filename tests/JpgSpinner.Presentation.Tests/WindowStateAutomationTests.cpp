@@ -8,6 +8,18 @@
 #include <wil/resource.h>
 #include <winrt/base.h>
 #include <winrt/Microsoft.Windows.ApplicationModel.Resources.h>
+#include <winrt/Windows.Management.Core.h>
+#include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.Search.h>
+// Win32's printing macro collides with the projected runtime-class name.
+// Scope Microsoft's documented C++/WinRT macro-collision remedy to this header.
+#pragma push_macro("DocumentProperties")
+#undef DocumentProperties
+#include <winrt/Windows.Storage.FileProperties.h>
+#pragma pop_macro("DocumentProperties")
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Security.Cryptography.h>
+#include <appmodel.h>
 #include <catch2/catch_test_macros.hpp>
 #include <array>
 #include <filesystem>
@@ -56,7 +68,9 @@ wil::com_ptr<IUIAutomationElement> findControl(IUIAutomation2 *automation, IUIAu
 /// Opens the production picker and admits only an enabled popup owned by the
 /// verified product HWND. A missing broker relationship fails qualification;
 /// never search unrelated desktop dialogs by title or guessed process identity.
-wil::com_ptr<IUIAutomationElement> openOwnedSourceFolderPicker(IUIAutomation2 *automation, IUIAutomationElement *window)
+wil::com_ptr<IUIAutomationElement> openOwnedSourceFolderPicker(
+    IUIAutomation2 *automation, IUIAutomationElement *window,
+    const wchar_t *pickerButtonIdentifier = L"SourceFolderPicker")
 {
     UIA_HWND nativeWindow{};
     THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
@@ -66,7 +80,7 @@ wil::com_ptr<IUIAutomationElement> openOwnedSourceFolderPicker(IUIAutomation2 *a
     // GetWindow's general no-relationship result can be null. Neither that
     // result nor the owner itself admits a separate dialog as an input target.
     REQUIRE((existingPopup == nullptr || existingPopup == owner));
-    const auto sourcePicker = findControl(automation, window, L"SourceFolderPicker");
+    const auto sourcePicker = findControl(automation, window, pickerButtonIdentifier);
     REQUIRE(sourcePicker);
     wil::com_ptr<IUIAutomationInvokePattern> invoke;
     THROW_IF_FAILED(sourcePicker->GetCurrentPatternAs(UIA_InvokePatternId, IID_PPV_ARGS(invoke.put())));
@@ -409,6 +423,66 @@ TEST_CASE("The isolated shell starts with only source selection available",
         // This test deliberately does not invoke Start/Analyze or supply a
         // path through a production test hook. Actual grants require the
         // HWND-owned picker and a separately qualified keyboard workflow.
+    });
+}
+
+TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local log byte unchanged",
+          "[presentation][automation][diagnostic-export][native-picker][ui-automation]")
+{
+    std::array<wchar_t, 32768> executablePath{};
+    const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
+    REQUIRE(length != 0);
+    REQUIRE(length < executablePath.size());
+    const auto applicationDirectory =
+        std::filesystem::path{executablePath.data()}.parent_path().parent_path() / L"JpgSpinner.App";
+    jpg_spinner::test_support::withIsolatedShellWindow(applicationDirectory, [](IUIAutomation2 *automation,
+                                                                                IUIAutomationElement *window) {
+        REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
+        int processId{};
+        THROW_IF_FAILED(window->get_CurrentProcessId(&processId));
+        const wil::unique_handle process{
+            OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, static_cast<DWORD>(processId))};
+        REQUIRE(process);
+        UINT32 familyLength{};
+        REQUIRE(GetPackageFamilyName(process.get(), &familyLength, nullptr) == ERROR_INSUFFICIENT_BUFFER);
+        std::vector<wchar_t> family(familyLength);
+        REQUIRE(GetPackageFamilyName(process.get(), &familyLength, family.data()) == ERROR_SUCCESS);
+        INFO("Verified owned family=" << winrt::to_string(winrt::hstring{family.data()}));
+        const auto local =
+            winrt::Windows::Management::Core::ApplicationDataManager::CreateForPackageFamily(family.data())
+                .LocalFolder();
+        const auto folder = local.GetFolderAsync(L"LocalDiagnostics").get();
+        // The controller owns this exclusively created test package. Physical
+        // fixture inspection is not a product source grant or picker bypass.
+        const auto physicalFolder = winrt::Windows::Storage::StorageFolder::GetFolderFromPathAsync(folder.Path()).get();
+        const auto files = physicalFolder.GetFilesAsync(winrt::Windows::Storage::Search::CommonFileQuery::DefaultQuery, 0, 130).get();
+        REQUIRE(files.Size() >= 2); // A startup record and its native empty lease.
+        std::vector<std::pair<winrt::Windows::Storage::StorageFile, winrt::Windows::Storage::Streams::IBuffer>> before;
+        for (const auto &file : files)
+        {
+            // Empty lease files have no payload to compare. Prove their size
+            // independently and byte-compare the nonempty published records.
+            const auto size = file.GetBasicPropertiesAsync().get().Size();
+            if (size == 0)
+                before.emplace_back(file, nullptr);
+            else
+                before.emplace_back(file, winrt::Windows::Storage::FileIO::ReadBufferAsync(file).get());
+        }
+        const auto picker = openOwnedSourceFolderPicker(automation, window, L"ExportDiagnostics");
+        const auto cancel =
+            findControl(automation, picker.get(), std::to_wstring(IDCANCEL).c_str(), UIA_ButtonControlTypeId);
+        REQUIRE(cancel);
+        invokeControl(cancel.get());
+        REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
+        CHECK(physicalFolder.GetFilesAsync().get().Size() == files.Size());
+        for (const auto &[file, bytes] : before)
+        {
+            if (bytes)
+                CHECK(winrt::Windows::Security::Cryptography::CryptographicBuffer::Compare(
+                    bytes, winrt::Windows::Storage::FileIO::ReadBufferAsync(file).get()));
+            else
+                CHECK(file.GetBasicPropertiesAsync().get().Size() == 0);
+        }
     });
 }
 

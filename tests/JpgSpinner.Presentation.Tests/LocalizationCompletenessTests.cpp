@@ -129,6 +129,28 @@ TEST_CASE("Unavailable Windows long paths have specific localized guidance rathe
         resources.GetValue(L"ImageProcessingError_WindowsLongPathSupportUnavailable_Remedy", context).ValueAsString());
 }
 
+TEST_CASE("Startup recovery preserves the specific localized explanation and remedy",
+          "[presentation][localization][startup-recovery-guidance]")
+{
+    jpg_spinner::test_support::ensurePresentationTestApartment();
+    const auto language = GENERATE(L"en-US", L"en-GB", L"ru");
+    const auto code = GENERATE(ErrorCode::WindowsLongPathSupportUnavailable, ErrorCode::RecoveryConflict);
+    using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    const auto context = manager.CreateResourceContext();
+    context.QualifierValues().Insert(L"Language", language);
+    const auto resources = manager.MainResourceMap().GetSubtree(L"Resources");
+    // Independent resource identities distinguish the administrator/restart
+    // remedy from the source-access remedy without activating a XAML Window.
+    const auto stem = code == ErrorCode::WindowsLongPathSupportUnavailable
+                          ? L"ImageProcessingError_WindowsLongPathSupportUnavailable"
+                          : L"ImageProcessingError_RecoveryConflict";
+    const auto expected = resources.GetValue(L"StartupRecovery_PreservationNotice", context).ValueAsString() + L"\n" +
+                          resources.GetValue(std::wstring{stem} + L"_Explanation", context).ValueAsString() + L"\n" +
+                          resources.GetValue(std::wstring{stem} + L"_Remedy", context).ValueAsString();
+    CHECK(jpg_spinner::presentation::loadStartupRecoveryErrorMessage(code, resources, context) == expected);
+}
+
 TEST_CASE("Unknown errors use safe generic resources without diagnostic interpolation", "[presentation][localization]")
 {
     jpg_spinner::test_support::ensurePresentationTestApartment();
@@ -204,9 +226,13 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
         L"Shell_InitialInstruction/Text",
         L"Shell_StartupRecoveryProgress/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name",
         L"Shell_StartupRecoveryError/Title",
-        L"Shell_StartupRecoveryError/Message",
+        L"StartupRecovery_PreservationNotice",
         L"Shell_StartupRecoveredCount/Text",
-        L"Shell_RestoreRecoverySource/Content"};
+        L"Shell_RestoreRecoverySource/Content",
+        L"Shell_ExportDiagnostics/Content",
+        L"Shell_DiagnosticFileType",
+        L"Shell_DiagnosticLogError/Title",
+        L"Shell_DiagnosticLogError/Message"};
     for (const auto *key : keys)
     {
         INFO("Shell resource=" << winrt::to_string(key));
@@ -219,7 +245,7 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
     // this is the native MakePRI resource shape, not a home-grown URI parser.
     for (const auto *control :
          {L"SourcePicker", L"Analyze", L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization",
-          L"StartProcessing", L"CancelOperation", L"RetryRecovery", L"RestoreRecoverySource"})
+          L"StartProcessing", L"CancelOperation", L"RetryRecovery", L"RestoreRecoverySource", L"ExportDiagnostics"})
         for (const auto *property : {L"Name", L"HelpText"})
         {
             const auto key = std::wstring{L"Shell_"} + control +

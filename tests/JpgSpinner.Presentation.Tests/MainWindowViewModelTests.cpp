@@ -248,14 +248,17 @@ class PresentationDispatcher final
         // Catch2's reporter is not a multi-threaded assertion consumer.
         finished.get();
     }
-    auto createModel(std::shared_ptr<RecoveryEngine> recovery = std::make_shared<RecoveryEngine>(),
-                     std::shared_ptr<const jpg_spinner::jpeg::JpegTransformationEngine> transformation =
-                         std::make_shared<RefusingTransformationEngine>()) const
+    auto createModel(
+        std::shared_ptr<RecoveryEngine> recovery = std::make_shared<RecoveryEngine>(),
+        std::shared_ptr<const jpg_spinner::jpeg::JpegTransformationEngine> transformation =
+            std::make_shared<RefusingTransformationEngine>(),
+        winrt::JpgSpinner::Presentation::implementation::MainWindowViewModel::OperationFailureDiagnosticObserver
+            observer = {}) const
     {
         return winrt::make_self<winrt::JpgSpinner::Presentation::implementation::MainWindowViewModel>(
             controller_.DispatcherQueue(),
             std::make_shared<jpg_spinner::batch_processing::BatchProcessingCoordinator>(std::move(transformation)),
-            std::move(recovery));
+            std::move(recovery), std::move(observer));
     }
 
   private:
@@ -426,6 +429,40 @@ TEST_CASE("Replacement review exposes its supplied computed backup destination",
         auto model = implementation.as<winrt::JpgSpinner::Presentation::MainWindowViewModel>();
         REQUIRE(model.BackupRootDisplayPath() == L"selected/JPG Spinner Backups/batch-identity");
         REQUIRE(model.CanBeginProcessing());
+    });
+}
+
+TEST_CASE("Recovery diagnostics observe the actual structured failure without changing recovery admission",
+          "[presentation][view-model][diagnostics][failure-observer]")
+{
+    auto &dispatcher = presentationDispatcher();
+    auto recovery = std::make_shared<RecoveryEngine>();
+    recovery->refuseRecovery = true;
+    std::optional<domain::ImageProcessingError> observed;
+    std::chrono::milliseconds elapsed{-1};
+    std::uint32_t observations{};
+    winrt::com_ptr<winrt::JpgSpinner::Presentation::implementation::MainWindowViewModel> model;
+    winrt::Windows::Foundation::IAsyncAction action{nullptr};
+    dispatcher.invoke([&] {
+        model = dispatcher.createModel(
+            recovery, std::make_shared<RefusingTransformationEngine>(),
+            [&](const domain::ImageProcessingError &error, std::chrono::milliseconds duration) {
+                observed.emplace(error);
+                elapsed = duration;
+                ++observations;
+                throw std::runtime_error{"private observer failure must not enter UI or change recovery"};
+            });
+        action = model->RecoverAsync();
+    });
+    action.get(); // Only the MTA test driver waits for the real dispatcher worker.
+    REQUIRE(observed);
+    CHECK(observations == 1);
+    CHECK(observed->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+    CHECK(observed->stage == domain::ImageProcessingStage::TransactionRecovery);
+    CHECK(elapsed.count() >= 0);
+    dispatcher.invoke([&] {
+        CHECK(model->State() == winrt::JpgSpinner::Presentation::ImageProcessingExperienceState::RecoveryRequired);
+        CHECK_FALSE(model->CanSelectSourceFolder());
     });
 }
 

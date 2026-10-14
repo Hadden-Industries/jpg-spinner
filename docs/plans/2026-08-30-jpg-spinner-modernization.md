@@ -1243,6 +1243,45 @@ and original/stage/journal outcomes. Headless projection/resource tests do not
 claim an interactive picker acceptance pass. Closing, local diagnostics, export,
 and final Task 14 acceptance remain subsequent work.
 
+Shutdown/diagnostic implementation now uses native AppWindow closing admission
+with cooperative async cancellation and actual-work completion. The AppWindow
+source does not support weak references: subscribe/remove by event token with
+a weak receiver, following [Microsoft's event guidance](https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/handle-events),
+not `auto_revoke` on that source. Diagnostic records expose no arbitrary text,
+paths, image/metadata payloads, endpoint or device ID. Windows JSON owns wire
+syntax, and standard chrono/from_chars/native GUID consumers validate replay.
+Shared Domain symbols also supply localized error resource identities.
+The app-private log defaults to 64 retained files/256 KiB, with a 4096-byte
+record bound, native exclusive writer lease, monotonic publication sequence,
+and one reserved scratch slot renamed only after its bytes are written.
+Export rehydrates the closed typed schema instead of copying persisted text.
+Observed unknown/corrupt entries remain untouched and refuse logging/export;
+native Storage can omit unsupported objects, so this is not a physical audit.
+Reported files reuse brokered direct-child containment proof; no path fallback
+exists in production. One representative structured failure is sampled per
+awaited operation to bound logging overhead; logger failure cannot change the
+coordinator/recovery outcome. The actual HWND-owned export picker is cancellable,
+and successful provider updates are awaited. Its real cancel acceptance compares
+all local record bytes and empty-lease sizes without granting a source folder.
+Remaining Task 14 evidence is kept distinct: native x86 Debug UI deployment needs
+the missing VC Debug framework, and final candidate review/checks do not imply
+release or HISEW completion while the known evidence-refresh bug remains.
+
+The shutdown/diagnostic source checkpoint also preserves each startup refusal's
+localized explanation and remedy alongside the artifact-preservation notice.
+In particular, a Windows long-path prerequisite refusal must retain its
+administrator/restart guidance rather than suggest reconnecting a drive.
+The final review's targeted repair has a headless native-resource regression
+for long-path and recovery-conflict guidance in all three supported languages.
+`WindowsAppSDKSelfContained` remains root-owned; the app inherits the
+framework-dependent setting instead of redeclaring it.
+This is an implementation checkpoint, not final Task 14 acceptance: active-work
+close, successful provider export, policy-disabled startup UI presentation,
+and the unavailable x86 Debug UI lane remain explicit acceptance obligations.
+Pause after the signed shutdown/diagnostic commit as requested; resume those
+bounded acceptance checks before Task 15, without repeating unchanged evidence
+solely for the known HISEW receipt-admission defect.
+
 **Files:**
 
 - Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/WindowsStorageImageFileTransactionRecoveryCatalog.h`

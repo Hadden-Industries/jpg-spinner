@@ -16,7 +16,10 @@ namespace JpgSpinner
         // view model. A missing grant keeps normal interaction disabled.
         Boolean IsStartupRecoveryPending{ get; };
         Boolean HasStartupRecoveryError{ get; };
+        String StartupRecoveryErrorMessage{ get; };
         Boolean CanRestoreStartupSourceAccess{ get; };
+        Boolean CanExportDiagnostics{ get; };
+        Boolean HasDiagnosticLogError{ get; };
         String StartupRecoveredTransactionCount{ get; };
         // Window-only projection of the model's semantic state, not additional
         // processing states or a second workflow decision engine.

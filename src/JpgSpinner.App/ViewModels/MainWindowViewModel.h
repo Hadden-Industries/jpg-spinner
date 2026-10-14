@@ -6,6 +6,8 @@
 #include <winrt/Microsoft.UI.Dispatching.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <optional>
+#include <functional>
+#include <chrono>
 #include "Localization/ImageProcessingErrorText.h"
 
 namespace winrt::JpgSpinner::Presentation::implementation
@@ -15,9 +17,15 @@ namespace winrt::JpgSpinner::Presentation::implementation
 /// here. Construction and every projected call require the supplied queue thread.
 struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::non_agile>
 {
+    /// At most one representative structured failure per awaited operation,
+    /// delivered on its owned MTA. No filename/display/metadata/native message
+    /// is supplied. Observer failures never change processing/recovery outcomes.
+    using OperationFailureDiagnosticObserver =
+        std::function<void(const jpg_spinner::domain::ImageProcessingError &, std::chrono::milliseconds)>;
     MainWindowViewModel(Microsoft::UI::Dispatching::DispatcherQueue dispatcherQueue,
                         std::shared_ptr<const jpg_spinner::batch_processing::BatchProcessingCoordinator> coordinator,
-                        std::shared_ptr<const jpg_spinner::storage::ImageFileTransactionEngine> recoveryEngine);
+                        std::shared_ptr<const jpg_spinner::storage::ImageFileTransactionEngine> recoveryEngine,
+                        OperationFailureDiagnosticObserver diagnosticObserver = {});
 
     /// Stable workflow state and its permitted user actions; processing requires
     /// a coordinator-produced reviewed batch, never just a Boolean UI flag.
@@ -94,6 +102,8 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     void showError(jpg_spinner::domain::ImageProcessingErrorCode code);
     void clearError();
     void showUnexpectedError();
+    void observeFailure(const jpg_spinner::domain::ImageProcessingError &error,
+                        std::chrono::steady_clock::time_point beganAt) const noexcept;
     void projectDiscoveryIssues(std::span<const jpg_spinner::domain::ImageSourceDiscoveryIssue> issues);
     /// Cancellation reaches native stop_source only. The private operation must
     /// still publish its terminal facts on the UI queue before its waiter ends.
@@ -107,6 +117,7 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     Microsoft::UI::Dispatching::DispatcherQueue dispatcherQueue_;
     std::shared_ptr<const jpg_spinner::batch_processing::BatchProcessingCoordinator> coordinator_;
     std::shared_ptr<const jpg_spinner::storage::ImageFileTransactionEngine> recoveryEngine_;
+    const OperationFailureDiagnosticObserver diagnosticObserver_;
     event<Microsoft::UI::Xaml::Data::PropertyChangedEventHandler> propertyChanged_;
     Presentation::ImageProcessingExperienceState state_{ImageProcessingExperienceState::SourceSelection};
     Windows::Foundation::Collections::IVectorView<Windows::Foundation::IInspectable> rows_{

@@ -19,7 +19,10 @@ TEST_CASE("Window metadata exposes typed observable shell bindings", "[presentat
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().CanRetryRecovery()), bool>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().IsStartupRecoveryPending()), bool>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().HasStartupRecoveryError()), bool>);
+    STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().StartupRecoveryErrorMessage()), winrt::hstring>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().CanRestoreStartupSourceAccess()), bool>);
+    STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().CanExportDiagnostics()), bool>);
+    STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().HasDiagnosticLogError()), bool>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().StartupRecoveredTransactionCount()), winrt::hstring>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().SourceSelectionRegionVisibility()), Visibility>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().AnalysisRegionVisibility()), Visibility>);

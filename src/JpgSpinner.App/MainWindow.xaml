@@ -93,6 +93,7 @@
                 <ProgressRing IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Width="32" Height="32"
                               x:Uid="Shell_StartupRecoveryProgress" AutomationProperties.AutomationId="StartupRecoveryProgress" />
                 <InfoBar x:Uid="Shell_StartupRecoveryError" Severity="Error" IsClosable="False"
+                         Message="{x:Bind StartupRecoveryErrorMessage, Mode=OneWay}"
                          IsOpen="{x:Bind HasStartupRecoveryError, Mode=OneWay}"
                          AutomationProperties.AutomationId="StartupRecoveryError" AutomationProperties.LiveSetting="Assertive" />
                 <Button x:Uid="Shell_RestoreRecoverySource" ContentTemplate="{StaticResource WrappingTextContentTemplate}"
@@ -255,6 +256,12 @@
                 </StackPanel>
                 <Button x:Uid="Shell_ReturnToSourceSelection" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanReturnToSourceSelection, Mode=OneWay, FallbackValue=False}"
                         AutomationProperties.AutomationId="ReturnToSourceSelection" Click="ReturnToSourceSelection_Click" />
+                <Button x:Uid="Shell_ExportDiagnostics" ContentTemplate="{StaticResource WrappingTextContentTemplate}"
+                        IsEnabled="{x:Bind CanExportDiagnostics, Mode=OneWay}"
+                        AutomationProperties.AutomationId="ExportDiagnostics" Click="ExportDiagnostics_Click" />
+                <InfoBar x:Uid="Shell_DiagnosticLogError" Severity="Warning" IsClosable="False"
+                         IsOpen="{x:Bind HasDiagnosticLogError, Mode=OneWay}"
+                         AutomationProperties.AutomationId="DiagnosticLogError" AutomationProperties.LiveSetting="Polite" />
                 <Button x:Uid="Shell_RetryRecovery" ContentTemplate="{StaticResource WrappingTextContentTemplate}" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}"
                         IsEnabled="{x:Bind CanRetryRecovery, Mode=OneWay}"
                         AutomationProperties.AutomationId="RetryRecovery" Click="RetryRecovery_Click" />

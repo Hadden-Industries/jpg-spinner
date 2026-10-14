@@ -10,12 +10,23 @@
 
 namespace winrt::JpgSpinner::Presentation::implementation
 {
+namespace
+{
+template <typename Files> const jpg_spinner::domain::ImageProcessingError *firstFileFailure(const Files &files)
+{
+    for (const auto &file : files)
+        if (file.error)
+            return &*file.error;
+    return nullptr;
+}
+} // namespace
 MainWindowViewModel::MainWindowViewModel(
     Microsoft::UI::Dispatching::DispatcherQueue dispatcherQueue,
     std::shared_ptr<const jpg_spinner::batch_processing::BatchProcessingCoordinator> coordinator,
-    std::shared_ptr<const jpg_spinner::storage::ImageFileTransactionEngine> recoveryEngine)
+    std::shared_ptr<const jpg_spinner::storage::ImageFileTransactionEngine> recoveryEngine,
+    OperationFailureDiagnosticObserver diagnosticObserver)
     : dispatcherQueue_(std::move(dispatcherQueue)), coordinator_(std::move(coordinator)),
-      recoveryEngine_(std::move(recoveryEngine))
+      recoveryEngine_(std::move(recoveryEngine)), diagnosticObserver_(std::move(diagnosticObserver))
 {
     if (!dispatcherQueue_ || !coordinator_ || !recoveryEngine_)
         throw hresult_invalid_argument();
@@ -414,6 +425,7 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::analyzeAsync(
     auto queue = dispatcherQueue_;
     auto coordinator = coordinator_;
     auto weak = get_weak();
+    const auto beganAt = std::chrono::steady_clock::now();
     co_await resume_background();
     // Thread-pool scheduling is not a storage apartment contract. Establish and
     // balance MTA explicitly within this synchronous native-operation segment.
@@ -427,6 +439,10 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::analyzeAsync(
                     model->applyProgress(progress);
             });
         }));
+        if (const auto error = result->errorIfPresent())
+            observeFailure(*error, beganAt);
+        else if (const auto fileFailure = firstFileFailure(result->valueIfPresent()->files()))
+            observeFailure(*fileFailure, beganAt);
     }
     catch (...)
     {
@@ -495,6 +511,7 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::processAsync(
     auto queue = dispatcherQueue_;
     auto coordinator = coordinator_;
     auto weak = get_weak();
+    const auto beganAt = std::chrono::steady_clock::now();
     co_await resume_background();
     std::optional<jpg_spinner::domain::ImageProcessingResult<jpg_spinner::batch_processing::BatchProcessingSummary>>
         result;
@@ -508,6 +525,10 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::processAsync(
                         model->applyProgress(progress);
                 });
             }));
+        if (const auto error = result->errorIfPresent())
+            observeFailure(*error, beganAt);
+        else if (const auto fileFailure = firstFileFailure(result->valueIfPresent()->fileResults))
+            observeFailure(*fileFailure, beganAt);
     }
     catch (...)
     {
@@ -563,6 +584,7 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::recoverAsync(std::stop_so
     auto lifetime = get_strong();
     auto queue = dispatcherQueue_;
     auto recovery = recoveryEngine_;
+    const auto beganAt = std::chrono::steady_clock::now();
     co_await resume_background();
     std::optional<jpg_spinner::domain::ImageProcessingResult<jpg_spinner::storage::ImageFileTransactionRecoverySummary>>
         result;
@@ -570,6 +592,8 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::recoverAsync(std::stop_so
     {
         auto apartmentLifetime = wil::RoInitialize(RO_INIT_MULTITHREADED);
         result.emplace(recovery->recoverIncompleteTransactions(cancellation.get_token()));
+        if (const auto error = result->errorIfPresent())
+            observeFailure(*error, beganAt);
     }
     catch (...)
     {
@@ -593,6 +617,22 @@ Windows::Foundation::IAsyncAction MainWindowViewModel::recoverAsync(std::stop_so
         notify(L"Rows");
         progress_ = {};
         changeState(ImageProcessingExperienceState::SourceSelection);
+    }
+}
+void MainWindowViewModel::observeFailure(const jpg_spinner::domain::ImageProcessingError &error,
+                                         const std::chrono::steady_clock::time_point beganAt) const noexcept
+{
+    if (!diagnosticObserver_)
+        return;
+    try
+    {
+        diagnosticObserver_(
+            error, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - beganAt));
+    }
+    catch (...)
+    {
+        // Diagnostic failure cannot replace a real coordinator/recovery result
+        // or skip its mandatory UI finalization. Do not log recursively.
     }
 }
 event_token MainWindowViewModel::PropertyChanged(Microsoft::UI::Xaml::Data::PropertyChangedEventHandler const &handler)
