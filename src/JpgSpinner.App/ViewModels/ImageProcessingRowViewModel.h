@@ -22,6 +22,9 @@ struct ImageProcessingRowViewModel : ImageProcessingRowViewModelT<ImageProcessin
     /// Source-space discarded extents from the approved planner, not output geometry.
     std::uint64_t DiscardedSourceRightEdgeWidthInPixels() const;
     std::uint64_t DiscardedSourceBottomEdgeHeightInPixels() const;
+    /// Localized exact pixel extents; geometry remains available as UInt64.
+    hstring DiscardedSourceRightEdgeWidthInPixelsText() const;
+    hstring DiscardedSourceBottomEdgeHeightInPixelsText() const;
     bool IsEdgeTrimmingAcknowledged() const;
     /// A one-time consent affordance only for an eligible row that discards
     /// pixels. The owning model still enforces Review state before accepting it.

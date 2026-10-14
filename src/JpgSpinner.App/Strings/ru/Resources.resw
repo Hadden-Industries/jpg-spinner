@@ -2,7 +2,7 @@
 <root>
   <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
   <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
-  <!-- A minimum coded unit is a JPEG coding block; trim removes exact source-edge pixels permanently. -->
+  <!-- A minimum coded unit follows JPEG component sampling; it need not be an 8 by 8 pixel block. -->
   <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve"><value>Нет доступа к исходному файлу</value></data>
   <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve"><value>Предоставленного доступа недостаточно для чтения выбранного изображения.</value></data>
   <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve"><value>Выберите папку, файлы которой доступны для чтения, и повторите попытку.</value></data>
@@ -79,7 +79,7 @@
   <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve"><value>Блок JUMBF не входит в поддерживаемый профиль сохранения метаданных.</value></data>
   <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и используйте поддерживаемый профиль метаданных.</value></data>
   <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve"><value>Не удалось согласовать встроенный предпросмотр</value></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>Структуру встроенного предпросмотра нельзя безопасно обновить или удалить в этом профиле.</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>Структуру встроенного предпросмотра нельзя безопасно обновить или удалить в этом профиле.</value><comment>Embedded thumbnail means a small image preview stored within image metadata, distinct from the primary JPEG. Unsupported preview structures are refused rather than silently discarded.</comment></data>
   <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve"><value>Сохраните исходный файл и используйте изображение с поддерживаемой структурой предпросмотра.</value></data>
   <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve"><value>Не поддерживается изменение расширенного XMP</value></data>
   <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve"><value>Необходимое изменение метаданных затрагивает неподдерживаемый блок расширенного XMP.</value></data>
@@ -176,12 +176,12 @@
   <data name="Shell_SelectedFolderOnly.Content" xml:space="preserve"><value>Только выбранная папка</value></data>
   <data name="Shell_SelectedFolderAndDescendants.Content" xml:space="preserve"><value>Выбранная папка и вложенные папки</value></data>
   <data name="Shell_CreateCorrectedCopy.Content" xml:space="preserve"><value>Создать исправленные копии; сохранить оригиналы</value></data>
-  <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve"><value>Заменить оригиналы; сохранить проверенные резервные копии</value></data>
-  <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve"><value>Требовать точное преобразование коэффициентов</value></data>
-  <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve"><value>Обрезать неполные минимальные кодируемые блоки</value></data>
+  <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve"><value>Заменить оригиналы; сохранить проверенные резервные копии</value><comment>Verified backup means retained bytes were reopened and checked against the observed source revision before replacement. It is not a guarantee against physical-media or device loss.</comment></data>
+  <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve"><value>Требовать точное преобразование коэффициентов</value><comment>Lossless means transforming existing quantized JPEG coefficients without decoding/re-encoding or new quantization. It does not promise identical file bytes, and partial coding units may prevent a perfect transform.</comment></data>
+  <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve"><value>Обрезать неполные минимальные кодируемые блоки</value><comment>Minimum coded unit is JPEG's component-sampling coding unit, not necessarily an 8 by 8 pixel block. Trimming permanently discards the exact source-space edge pixels shown in review; consent is required.</comment></data>
   <data name="Shell_PreserveSourceScans.Content" xml:space="preserve"><value>Сохранить исходные сканы</value></data>
   <data name="Shell_SequentialDct.Content" xml:space="preserve"><value>Последовательные сканы ДКП</value></data>
-  <data name="Shell_ProgressiveDct.Content" xml:space="preserve"><value>Прогрессивные сканы ДКП</value></data>
+  <data name="Shell_ProgressiveDct.Content" xml:space="preserve"><value>Прогрессивные сканы ДКП</value><comment>Progressive DCT stores frequency coefficients across multiple JPEG scans. This choice reorganizes scans without re-quantization; it does not increase image quality or describe animation.</comment></data>
   <data name="Shell_ReviewInstruction.Text" xml:space="preserve"><value>Изменение параметров требует нового анализа и повторного согласия на обрезку.</value></data>
   <data name="Shell_RecursiveExclusionNotice.Text" xml:space="preserve"><value>Рекурсивный анализ исключает папки результатов и резервных копий, принадлежность которых приложению подтверждена. Замечания обхода отображаются при проверке.</value></data>
   <data name="Shell_BackupDestinationLabel.Text" xml:space="preserve"><value>Проверенные резервные копии будут сохранены в:</value></data>
@@ -240,4 +240,22 @@
   <data name="Shell_DiagnosticFileType" xml:space="preserve"><value>Записи диагностики JSON Lines</value></data>
   <data name="Shell_DiagnosticLogError.Title" xml:space="preserve"><value>Диагностика недоступна или экспорт не завершён</value></data>
   <data name="Shell_DiagnosticLogError.Message" xml:space="preserve"><value>Обработку изображений можно продолжить. Экспорт не меняет локальные записи, но выбранный файл экспорта может быть неполным. Изображения и личные пути к исходникам не собираются.</value></data>
+  <data name="Shell_SourcePicker.AccessKey" xml:space="preserve"><value>П</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_Analyze.AccessKey" xml:space="preserve"><value>А</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_StartProcessing.AccessKey" xml:space="preserve"><value>З</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_CancelOperation.AccessKey" xml:space="preserve"><value>О</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ReturnToSourceSelection.AccessKey" xml:space="preserve"><value>Н</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_RetryRecovery.AccessKey" xml:space="preserve"><value>В</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_RestoreRecoverySource.AccessKey" xml:space="preserve"><value>Д</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ExportDiagnostics.AccessKey" xml:space="preserve"><value>Э</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_TraversalScope.AccessKey" xml:space="preserve"><value>У</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_OutputDisposition.AccessKey" xml:space="preserve"><value>Р</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_EdgeHandling.AccessKey" xml:space="preserve"><value>К</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ScanOrganization.AccessKey" xml:space="preserve"><value>С</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Вернуться к выбору исходной папки</value></data>
+  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Сбросить текущую проверку и снова выбрать исходные изображения; завершённая операция не отменяется.</value></data>
+  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Подтвердить удаление указанных пикселей на краях</value></data>
+  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Подтвердить только показанную для этого изображения потерю пикселей на краях перед проверенным преобразованием.</value></data>
+  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Замечания обхода папок</value></data>
+  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Развернуть сведения о пропущенных папках и доступе к исходным файлам; это не успешные преобразования изображений.</value></data>
 </root>

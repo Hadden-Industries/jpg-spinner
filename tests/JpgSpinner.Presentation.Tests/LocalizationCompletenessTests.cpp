@@ -245,7 +245,8 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
     // this is the native MakePRI resource shape, not a home-grown URI parser.
     for (const auto *control :
          {L"SourcePicker", L"Analyze", L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization",
-          L"StartProcessing", L"CancelOperation", L"RetryRecovery", L"RestoreRecoverySource", L"ExportDiagnostics"})
+          L"StartProcessing", L"CancelOperation", L"RetryRecovery", L"RestoreRecoverySource", L"ExportDiagnostics",
+          L"ReturnToSourceSelection", L"TrimConsent", L"DiscoveryObservations"})
         for (const auto *property : {L"Name", L"HelpText"})
         {
             const auto key = std::wstring{L"Shell_"} + control +
@@ -285,5 +286,28 @@ TEST_CASE("Every discovery observation kind has a localized explanation", "[pres
         REQUIRE_FALSE(candidate.ValueAsString().empty());
         REQUIRE(CompareStringOrdinal(candidate.QualifierValues().Lookup(L"Language").c_str(), -1, language, -1, TRUE) ==
                 CSTR_EQUAL);
+    }
+}
+
+TEST_CASE("Every top-level access key has its own native PRI candidate in each supported locale",
+          "[presentation][localization][access-keys][compiled-resources]")
+{
+    jpg_spinner::test_support::ensurePresentationTestApartment();
+    using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    const auto resources = manager.MainResourceMap().GetSubtree(L"Resources");
+    const auto context = manager.CreateResourceContext();
+    const auto language = GENERATE(L"en-US", L"en-GB", L"ru");
+    context.QualifierValues().Insert(L"Language", language);
+    for (const auto *control :
+         {L"SourcePicker", L"Analyze", L"StartProcessing", L"CancelOperation", L"ReturnToSourceSelection",
+          L"RetryRecovery", L"RestoreRecoverySource", L"ExportDiagnostics", L"TraversalScope", L"OutputDisposition",
+          L"EdgeHandling", L"ScanOrganization"})
+    {
+        INFO("Language=" << winrt::to_string(language) << ", control=" << winrt::to_string(control));
+        const auto candidate = resources.GetValue(std::wstring{L"Shell_"} + control + L"/AccessKey", context);
+        CHECK(candidate.ValueAsString().size() == 1);
+        CHECK(CompareStringOrdinal(candidate.QualifierValues().Lookup(L"Language").c_str(), -1, language, -1, TRUE) ==
+              CSTR_EQUAL);
     }
 }

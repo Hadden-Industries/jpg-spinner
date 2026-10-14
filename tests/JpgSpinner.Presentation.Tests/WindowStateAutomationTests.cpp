@@ -303,6 +303,9 @@ void requireControl(IUIAutomation2 *automation, IUIAutomationElement *window, co
     wil::unique_bstr name;
     THROW_IF_FAILED(control->get_CurrentName(name.put()));
     CHECK((name && SysStringLen(name.get()) != 0));
+    wil::unique_bstr help;
+    THROW_IF_FAILED(control->get_CurrentHelpText(help.put()));
+    CHECK((help && SysStringLen(help.get()) != 0));
 }
 
 /// Query the native selection provider even while initial controls are disabled.
@@ -437,7 +440,9 @@ TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local
         std::filesystem::path{executablePath.data()}.parent_path().parent_path() / L"JpgSpinner.App";
     jpg_spinner::test_support::withIsolatedShellWindow(applicationDirectory, [](IUIAutomation2 *automation,
                                                                                 IUIAutomationElement *window) {
-        REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
+        const auto exportButton = waitForEnabledControl(automation, window, L"ExportDiagnostics");
+        REQUIRE(exportButton);
+        THROW_IF_FAILED(exportButton->SetFocus());
         int processId{};
         THROW_IF_FAILED(window->get_CurrentProcessId(&processId));
         const wil::unique_handle process{
@@ -475,6 +480,11 @@ TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local
         REQUIRE(cancel);
         invokeControl(cancel.get());
         REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
+        // Characterize native focus restoration before adding app focus code.
+        // A declaration cannot substitute for the actual post-picker peer state.
+        BOOL restoredFocus{};
+        THROW_IF_FAILED(exportButton->get_CurrentHasKeyboardFocus(&restoredFocus));
+        CHECK(restoredFocus);
         CHECK(physicalFolder.GetFilesAsync().get().Size() == files.Size());
         for (const auto &[file, bytes] : before)
         {

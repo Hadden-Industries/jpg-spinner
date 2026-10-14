@@ -14,6 +14,15 @@ TEST_CASE("Window metadata exposes typed observable shell bindings", "[presentat
     // Exercise the owning MIDL/cppwinrt consumer output, not handwritten ABI
     // declarations. No Window activation, deployment or UI tree is claimed.
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().ViewModel()), Model>);
+    STATIC_REQUIRE(std::same_as<decltype(std::declval<Model>().EligibleFileCountText()), winrt::hstring>);
+    STATIC_REQUIRE(std::same_as<decltype(std::declval<Model>().CompletedFileCountText()), winrt::hstring>);
+    STATIC_REQUIRE(std::same_as<decltype(std::declval<Model>().FailedFileCountText()), winrt::hstring>);
+    STATIC_REQUIRE(std::same_as<decltype(std::declval<Model>().CancelledFileCountText()), winrt::hstring>);
+    using Row = winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel;
+    STATIC_REQUIRE(
+        std::same_as<decltype(std::declval<Row>().DiscardedSourceRightEdgeWidthInPixelsText()), winrt::hstring>);
+    STATIC_REQUIRE(
+        std::same_as<decltype(std::declval<Row>().DiscardedSourceBottomEdgeHeightInPixelsText()), winrt::hstring>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().CanPickSourceFolder()), bool>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().IsWorkflowInteractionEnabled()), bool>);
     STATIC_REQUIRE(std::same_as<decltype(std::declval<Window>().CanRetryRecovery()), bool>);

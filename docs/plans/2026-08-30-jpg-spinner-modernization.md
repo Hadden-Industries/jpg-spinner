@@ -1363,6 +1363,38 @@ git commit -m "feat: recover transactions and record local diagnostics"
 
 ## Task 15: Complete localization and accessibility release behavior
 
+Implementation proceeds in logical source checkpoints; source implementation is
+not final assistive-technology qualification. Native Windows `DecimalFormatter`
+formats unsigned 64-bit counts/pixel extents without a Double intermediate, with
+whole-number/grouping options; numeric coordinator facts remain numeric. See
+[Microsoft's global-ready formatting guidance](https://learn.microsoft.com/en-us/windows/apps/design/globalizing/use-global-ready-formats)
+and [the UInt64 entry point](https://learn.microsoft.com/en-us/uwp/api/windows.globalization.numberformatting.decimalformatter.formatuint).
+No dates or byte sizes are currently displayed, so no unused formatters are added.
+Current label/value separation uses no interpolated placeholders or plural
+templates; source-contract tests reject their accidental introduction until a
+native formatting/plural contract and per-locale tests are deliberately adopted.
+
+Native XML DOM reads test-only copies of the owning XAML/RESW declarations, with
+external entities and DTDs disabled. It complements, not replaces, MIDL/compiled
+XAML and native MRT language-provenance tests. Locale key equality, per-entry
+translator context, single-character collision-free native access keys, restrained
+live declarations and row-major policy declaration order are checked headlessly.
+Native controls/peers remain the keyboard and accessibility implementation; no
+custom key parser, speech implementation, automation peer or production test hook
+is added. [Access-key localization](https://learn.microsoft.com/en-us/windows/apps/develop/input/access-keys)
+and [native keyboard order](https://learn.microsoft.com/en-us/windows/apps/design/accessibility/keyboard-accessibility)
+own those contracts. The explicit release protocol is
+[`docs/accessibility-release-checklist.md`](../accessibility-release-checklist.md).
+Human Narrator/FastPass/contrast/reflow/RTL and actual UIA focus observations
+remain distinct release obligations; headless passes cannot close them.
+The consolidated checkpoint passes 12,120 headless Presentation assertions on
+both x64 and x86, with compiled-resource language provenance and repository
+policy passing. The bounded local UIA follow-up could not qualify native
+foreground focus, so no product/UI focus test executed and no such pass is
+claimed. Screen-saver active/secure/timeout state was restored exactly. Do not
+repeat that unavailable check without a changed lane/foreground condition;
+continue subsequent safe source work while retaining final release obligations.
+
 **Files:**
 
 - Create: `src/JpgSpinner.App/Strings/en-US/Resources.resw`

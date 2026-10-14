@@ -95,6 +95,7 @@
     <ClInclude Include="ViewModels\ImageProcessingRowViewModel.h" />
     <ClInclude Include="ViewModels\ImageSourceDiscoveryIssueViewModel.h" />
     <ClInclude Include="Localization\ImageProcessingErrorText.h" />
+    <ClInclude Include="Localization\UnsignedIntegerText.h" />
     <ClInclude Include="Composition\SelectedFolderBatchComposition.h" />
     <ClInclude Include="Composition\StartupRecoveryComposition.h" />
     <ClInclude Include="Composition\CooperativeWindowClose.h" />

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ViewModels/MainWindowViewModel.h"
+#include "Localization/UnsignedIntegerText.h"
 #include "ViewModels/ImageProcessingRowViewModel.h"
 #include "ViewModels/ImageSourceDiscoveryIssueViewModel.h"
 #include "Presentation.MainWindowViewModel.g.cpp"
@@ -109,6 +110,22 @@ std::uint64_t MainWindowViewModel::CancelledFileCount() const
 {
     requireDispatcherThread();
     return progress_.cancelled;
+}
+hstring MainWindowViewModel::EligibleFileCountText() const
+{
+    return jpg_spinner::presentation::formatUnsignedInteger(EligibleFileCount());
+}
+hstring MainWindowViewModel::CompletedFileCountText() const
+{
+    return jpg_spinner::presentation::formatUnsignedInteger(CompletedFileCount());
+}
+hstring MainWindowViewModel::FailedFileCountText() const
+{
+    return jpg_spinner::presentation::formatUnsignedInteger(FailedFileCount());
+}
+hstring MainWindowViewModel::CancelledFileCountText() const
+{
+    return jpg_spinner::presentation::formatUnsignedInteger(CancelledFileCount());
 }
 Presentation::OutputDisposition MainWindowViewModel::OutputDisposition() const
 {
@@ -288,7 +305,8 @@ void MainWindowViewModel::changeState(Presentation::ImageProcessingExperienceSta
     for (auto const *property :
          {L"CanSelectSourceFolder", L"CanAnalyzeSelectedSource", L"CanBeginProcessing", L"CanCancelCurrentOperation",
           L"CanReturnToSourceSelection", L"ProgressPercentage", L"IsProgressIndeterminate", L"ProgressPercentageOrZero",
-          L"EligibleFileCount", L"CompletedFileCount", L"FailedFileCount", L"CancelledFileCount"})
+          L"EligibleFileCount", L"CompletedFileCount", L"FailedFileCount", L"CancelledFileCount",
+          L"EligibleFileCountText", L"CompletedFileCountText", L"FailedFileCountText", L"CancelledFileCountText"})
         notify(property);
 }
 void MainWindowViewModel::selectSource(jpg_spinner::batch_processing::BatchProcessingRequest request,
@@ -326,6 +344,10 @@ void MainWindowViewModel::applyProgress(jpg_spinner::batch_processing::BatchProc
     notify(L"CompletedFileCount");
     notify(L"FailedFileCount");
     notify(L"CancelledFileCount");
+    notify(L"EligibleFileCountText");
+    notify(L"CompletedFileCountText");
+    notify(L"FailedFileCountText");
+    notify(L"CancelledFileCountText");
 }
 Windows::Foundation::IAsyncAction MainWindowViewModel::AnalyzeAsync()
 {

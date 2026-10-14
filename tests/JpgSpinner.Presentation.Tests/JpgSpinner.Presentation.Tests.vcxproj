@@ -54,6 +54,8 @@
     <Manifest Include="PresentationTestHost.manifest" />
     <ClCompile Include="MainWindowViewModelTests.cpp" />
     <ClCompile Include="LocalizationCompletenessTests.cpp" />
+    <ClCompile Include="UnsignedIntegerTextTests.cpp" />
+    <ClCompile Include="AccessibilityContractTests.cpp" />
     <ClCompile Include="InteractiveUiEnvironment.cpp" />
     <ClCompile Include="InteractiveUiEnvironmentTests.cpp" />
     <ClCompile Include="SelectedFolderBatchCompositionTests.cpp" />
@@ -102,4 +104,16 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
+  <!-- Test-only declarations complement native compiled XAML/PRI tests. Copy
+       from the owning files, never maintain a second translation set. -->
+  <Target Name="CopyPresentationSourceContracts" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App\MainWindow.xaml"
+          DestinationFiles="$(OutDir)SourceContracts\MainWindow.xaml" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App\Strings\en-US\Resources.resw"
+          DestinationFiles="$(OutDir)SourceContracts\en-US.resw" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App\Strings\en-GB\Resources.resw"
+          DestinationFiles="$(OutDir)SourceContracts\en-GB.resw" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App\Strings\ru\Resources.resw"
+          DestinationFiles="$(OutDir)SourceContracts\ru.resw" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

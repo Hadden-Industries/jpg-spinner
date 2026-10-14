@@ -5,6 +5,7 @@
 #include "Composition/SelectedFolderBatchComposition.h"
 #include "Composition/StartupRecoveryComposition.h"
 #include "Localization/ImageProcessingErrorText.h"
+#include "Localization/UnsignedIntegerText.h"
 #include "Diagnostics/DiagnosticLogExport.h"
 #include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
 #include <winrt/Microsoft.UI.Dispatching.h>
@@ -141,7 +142,7 @@ bool MainWindow::CanRestoreStartupSourceAccess() const
 hstring MainWindow::StartupRecoveredTransactionCount() const
 {
     requireUiThread();
-    return to_hstring(startupRecoveredTransactionCount_);
+    return jpg_spinner::presentation::formatUnsignedInteger(startupRecoveredTransactionCount_);
 }
 bool MainWindow::CanExportDiagnostics() const
 {

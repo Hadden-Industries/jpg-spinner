@@ -1179,13 +1179,18 @@ TEST_CASE("Review transformation totals exclude unsupported and already-normaliz
     winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
     winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
     auto eligibilityNotifications = std::make_shared<unsigned>(0);
+    auto eligibilityTextNotifications = std::make_shared<unsigned>(0);
     dispatcher.invoke([&] {
         implementation = dispatcher.createModel();
         CHECK(implementation->EligibleFileCount() == 0);
-        implementation->PropertyChanged([eligibilityNotifications](auto const &, auto const &arguments) {
-            if (arguments.PropertyName() == L"EligibleFileCount")
-                ++*eligibilityNotifications;
-        });
+        CHECK(implementation->EligibleFileCountText() == L"0");
+        implementation->PropertyChanged(
+            [eligibilityNotifications, eligibilityTextNotifications](auto const &, auto const &arguments) {
+                if (arguments.PropertyName() == L"EligibleFileCount")
+                    ++*eligibilityNotifications;
+                if (arguments.PropertyName() == L"EligibleFileCountText")
+                    ++*eligibilityTextNotifications;
+            });
         implementation->selectSource({collection}, L"selected", L"");
         analysis = implementation->AnalyzeAsync();
     });
@@ -1194,6 +1199,7 @@ TEST_CASE("Review transformation totals exclude unsupported and already-normaliz
         auto model = implementation.as<presentation::MainWindowViewModel>();
         REQUIRE(model.Rows().Size() == 3);
         CHECK(model.EligibleFileCount() == 1);
+        CHECK(model.EligibleFileCountText() == L"1");
         for (const auto &item : model.Rows())
         {
             const auto row = item.as<presentation::ImageProcessingRowViewModel>();
@@ -1204,12 +1210,17 @@ TEST_CASE("Review transformation totals exclude unsupported and already-normaliz
                 CHECK_FALSE(row.ErrorExplanation().empty());
         }
         CHECK(model.CompletedFileCount() == 0); // Analysis is not a completed transformation.
+        CHECK(model.CompletedFileCountText() == L"0");
+        CHECK(model.FailedFileCountText() == L"0");
+        CHECK(model.CancelledFileCountText() == L"0");
         CHECK(*eligibilityNotifications != 0);
+        CHECK(*eligibilityTextNotifications != 0);
         model.SetProcessingOptions(presentation::OutputDisposition::CreateCorrectedCopy,
                                    presentation::TraversalScope::SelectedFolderAndDescendants,
                                    presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
                                    presentation::OutputScanOrganization::PreserveSource);
         CHECK(model.EligibleFileCount() == 0); // Invalidated review cannot retain an execution count.
+        CHECK(model.EligibleFileCountText() == L"0");
     });
 }
 

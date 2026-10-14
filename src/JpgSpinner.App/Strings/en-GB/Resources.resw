@@ -2,7 +2,7 @@
 <root>
   <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
   <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
-  <!-- A minimum coded unit is a JPEG coding block; trim removes exact source-edge pixels permanently. -->
+  <!-- A minimum coded unit follows JPEG component sampling; it need not be an 8 by 8 pixel block. -->
   <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve"><value>Source access denied</value></data>
   <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve"><value>The selected image could not be read with the granted access.</value></data>
   <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve"><value>Select a folder you can read and try again.</value></data>
@@ -79,7 +79,7 @@
   <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve"><value>The JUMBF payload is outside the app's supported preservation profile.</value></data>
   <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve"><value>Keep the source unchanged and use a supported metadata profile.</value></data>
   <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve"><value>Embedded preview cannot be reconciled</value></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>An embedded preview layout cannot be safely updated or removed by this profile.</value></data>
+  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>An embedded preview layout cannot be safely updated or removed by this profile.</value><comment>Embedded thumbnail means a small image preview stored within image metadata, distinct from the primary JPEG. Unsupported preview structures are refused rather than silently discarded.</comment></data>
   <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve"><value>Keep the source and use an image with a supported embedded preview layout.</value></data>
   <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve"><value>Extended XMP change is not supported</value></data>
   <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve"><value>The required metadata change would modify an unsupported extended-XMP payload.</value></data>
@@ -176,12 +176,12 @@
   <data name="Shell_SelectedFolderOnly.Content" xml:space="preserve"><value>Selected folder only</value></data>
   <data name="Shell_SelectedFolderAndDescendants.Content" xml:space="preserve"><value>Selected folder and descendants</value></data>
   <data name="Shell_CreateCorrectedCopy.Content" xml:space="preserve"><value>Create corrected copies; retain originals</value></data>
-  <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve"><value>Replace originals; retain verified backups</value></data>
-  <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve"><value>Require a perfect coefficient transform</value></data>
-  <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve"><value>Trim partial minimum coded units</value></data>
+  <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve"><value>Replace originals; retain verified backups</value><comment>Verified backup means retained bytes were reopened and checked against the observed source revision before replacement. It is not a guarantee against physical-media or device loss.</comment></data>
+  <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve"><value>Require a perfect coefficient transform</value><comment>Lossless means transforming existing quantized JPEG coefficients without decoding/re-encoding or new quantization. It does not promise identical file bytes, and partial coding units may prevent a perfect transform.</comment></data>
+  <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve"><value>Trim partial minimum coded units</value><comment>Minimum coded unit is JPEG's component-sampling coding unit, not necessarily an 8 by 8 pixel block. Trimming permanently discards the exact source-space edge pixels shown in review; consent is required.</comment></data>
   <data name="Shell_PreserveSourceScans.Content" xml:space="preserve"><value>Preserve source scans</value></data>
   <data name="Shell_SequentialDct.Content" xml:space="preserve"><value>Sequential DCT scans</value></data>
-  <data name="Shell_ProgressiveDct.Content" xml:space="preserve"><value>Progressive DCT scans</value></data>
+  <data name="Shell_ProgressiveDct.Content" xml:space="preserve"><value>Progressive DCT scans</value><comment>Progressive DCT stores frequency coefficients across multiple JPEG scans. This choice reorganizes scans without re-quantization; it does not increase image quality or describe animation.</comment></data>
   <data name="Shell_ReviewInstruction.Text" xml:space="preserve"><value>Changing any processing choice requires a new analysis and fresh trimming consent.</value></data>
   <data name="Shell_RecursiveExclusionNotice.Text" xml:space="preserve"><value>Recursive analysis excludes proven app-owned output and backup folders. Traversal observations appear with the review.</value></data>
   <data name="Shell_BackupDestinationLabel.Text" xml:space="preserve"><value>Verified backups will be retained at:</value></data>
@@ -240,4 +240,22 @@
   <data name="Shell_DiagnosticFileType" xml:space="preserve"><value>JSON Lines diagnostic records</value></data>
   <data name="Shell_DiagnosticLogError.Title" xml:space="preserve"><value>Local diagnostics unavailable or export incomplete</value></data>
   <data name="Shell_DiagnosticLogError.Message" xml:space="preserve"><value>Image processing can continue. Export does not change retained local records, but a chosen export file may be incomplete. No image data or private source paths are collected.</value></data>
+  <data name="Shell_SourcePicker.AccessKey" xml:space="preserve"><value>F</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_Analyze.AccessKey" xml:space="preserve"><value>A</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_StartProcessing.AccessKey" xml:space="preserve"><value>S</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_CancelOperation.AccessKey" xml:space="preserve"><value>C</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ReturnToSourceSelection.AccessKey" xml:space="preserve"><value>B</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_RetryRecovery.AccessKey" xml:space="preserve"><value>R</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_RestoreRecoverySource.AccessKey" xml:space="preserve"><value>U</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ExportDiagnostics.AccessKey" xml:space="preserve"><value>E</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_TraversalScope.AccessKey" xml:space="preserve"><value>T</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_OutputDisposition.AccessKey" xml:space="preserve"><value>O</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_EdgeHandling.AccessKey" xml:space="preserve"><value>H</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ScanOrganization.AccessKey" xml:space="preserve"><value>D</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
+  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Return to source selection</value></data>
+  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Discard the current review and choose source images again; this does not undo a completed transaction.</value></data>
+  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Acknowledge exact discarded edge pixels</value></data>
+  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Acknowledge only this row's displayed source-edge loss before its reviewed transformation.</value></data>
+  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Folder traversal observations</value></data>
+  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Expand to read skipped folders and source-access observations; these are not successful image transformations.</value></data>
 </root>

@@ -59,6 +59,12 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     std::uint64_t CompletedFileCount() const;
     std::uint64_t FailedFileCount() const;
     std::uint64_t CancelledFileCount() const;
+    /// Whole-number display in the application's runtime language/region.
+    /// These text properties notify alongside their underlying exact counts.
+    hstring EligibleFileCountText() const;
+    hstring CompletedFileCountText() const;
+    hstring FailedFileCountText() const;
+    hstring CancelledFileCountText() const;
     /// These closed policy projections preserve the native safe defaults.
     Presentation::OutputDisposition OutputDisposition() const;
     Presentation::TraversalScope TraversalScope() const;

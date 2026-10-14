@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ViewModels/ImageProcessingRowViewModel.h"
+#include "Localization/UnsignedIntegerText.h"
 #include "Presentation.ImageProcessingRowViewModel.g.cpp"
 #include <filesystem>
 
@@ -59,6 +60,14 @@ bool ImageProcessingRowViewModel::IsEdgeTrimmingAcknowledged() const
 {
     requireDispatcherThread();
     return isEdgeTrimmingAcknowledged_;
+}
+hstring ImageProcessingRowViewModel::DiscardedSourceRightEdgeWidthInPixelsText() const
+{
+    return jpg_spinner::presentation::formatUnsignedInteger(DiscardedSourceRightEdgeWidthInPixels());
+}
+hstring ImageProcessingRowViewModel::DiscardedSourceBottomEdgeHeightInPixelsText() const
+{
+    return jpg_spinner::presentation::formatUnsignedInteger(DiscardedSourceBottomEdgeHeightInPixels());
 }
 bool ImageProcessingRowViewModel::RequiresEdgeTrimmingAcknowledgment() const
 {

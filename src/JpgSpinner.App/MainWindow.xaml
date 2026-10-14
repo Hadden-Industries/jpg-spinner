@@ -132,17 +132,17 @@
                     <ComboBoxItem x:Uid="Shell_SelectedFolderOnly" />
                     <ComboBoxItem x:Uid="Shell_SelectedFolderAndDescendants" />
                 </ComboBox>
-                <ComboBox x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" Grid.Row="1" HorizontalAlignment="Stretch"
-                          IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
-                          AutomationProperties.AutomationId="OutputDisposition" SelectedIndex="0" SelectionChanged="ProcessingOptions_SelectionChanged">
-                    <ComboBoxItem x:Uid="Shell_CreateCorrectedCopy" />
-                    <ComboBoxItem x:Uid="Shell_ReplaceWithVerifiedBackup" />
-                </ComboBox>
                 <ComboBox x:Name="EdgeHandlingControl" x:Uid="Shell_EdgeHandling" Grid.Column="1" HorizontalAlignment="Stretch"
                           IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
                           AutomationProperties.AutomationId="EdgeHandling" SelectedIndex="0" SelectionChanged="ProcessingOptions_SelectionChanged">
                     <ComboBoxItem x:Uid="Shell_RequirePerfectTransform" />
                     <ComboBoxItem x:Uid="Shell_TrimPartialMinimumCodedUnits" />
+                </ComboBox>
+                <ComboBox x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" Grid.Row="1" HorizontalAlignment="Stretch"
+                          IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
+                          AutomationProperties.AutomationId="OutputDisposition" SelectedIndex="0" SelectionChanged="ProcessingOptions_SelectionChanged">
+                    <ComboBoxItem x:Uid="Shell_CreateCorrectedCopy" />
+                    <ComboBoxItem x:Uid="Shell_ReplaceWithVerifiedBackup" />
                 </ComboBox>
                 <ComboBox x:Name="ScanOrganizationControl" x:Uid="Shell_ScanOrganization" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch"
                           IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
@@ -169,7 +169,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Spacing="4">
                         <TextBlock x:Uid="Shell_EligibleFilesLabel" TextWrapping="Wrap" />
-                        <TextBlock Text="{x:Bind ViewModel.EligibleFileCount, Mode=OneWay}" AutomationProperties.AutomationId="EligibleFileCount" />
+                        <TextBlock Text="{x:Bind ViewModel.EligibleFileCountText, Mode=OneWay}" AutomationProperties.AutomationId="EligibleFileCount" />
                     </StackPanel>
                     <StackPanel x:Name="BackupDestinationPanel" Grid.Column="1"
                                 Visibility="{x:Bind BackupDestinationVisibility, Mode=OneWay}" Spacing="4">
@@ -205,9 +205,9 @@
                                         </StackPanel>
                                     </InfoBar>
                                     <TextBlock x:Uid="Shell_DiscardedRightEdgeLabel" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind DiscardedSourceRightEdgeWidthInPixels}" AutomationProperties.AutomationId="DiscardedRightEdgePixels" />
+                                    <TextBlock Text="{x:Bind DiscardedSourceRightEdgeWidthInPixelsText}" AutomationProperties.AutomationId="DiscardedRightEdgePixels" />
                                     <TextBlock x:Uid="Shell_DiscardedBottomEdgeLabel" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind DiscardedSourceBottomEdgeHeightInPixels}" AutomationProperties.AutomationId="DiscardedBottomEdgePixels" />
+                                    <TextBlock Text="{x:Bind DiscardedSourceBottomEdgeHeightInPixelsText}" AutomationProperties.AutomationId="DiscardedBottomEdgePixels" />
                                     <!-- The row is the event's DataContext; the owning model checks exact identity/state. -->
                                     <Button x:Uid="Shell_TrimConsent" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind RequiresEdgeTrimmingAcknowledgment, Mode=OneWay}"
                                             AutomationProperties.AutomationId="AcknowledgeEdgeTrimming" Click="TrimConsent_Click" />
@@ -215,7 +215,7 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
-                    <Expander Grid.Row="2" AutomationProperties.AutomationId="DiscoveryObservations">
+                    <Expander x:Uid="Shell_DiscoveryObservations" Grid.Row="2" AutomationProperties.AutomationId="DiscoveryObservations">
                         <Expander.Header><TextBlock x:Uid="Shell_RecursiveExclusionNotice" TextWrapping="Wrap" /></Expander.Header>
                         <ItemsControl ItemsSource="{x:Bind ViewModel.DiscoveryIssues, Mode=OneWay}">
                             <ItemsControl.ItemTemplate>
@@ -242,9 +242,9 @@
                              AutomationProperties.AutomationId="OperationProgress" />
                 <StackPanel x:Name="ResultsCounters" Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ResultsRegionVisibility, Mode=OneWay}"
                             AutomationProperties.AutomationId="ResultsSummary" AutomationProperties.LiveSetting="Polite">
-                    <StackPanel><TextBlock x:Uid="Shell_CompletedRowsLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.CompletedFileCount, Mode=OneWay}" /></StackPanel>
-                    <StackPanel><TextBlock x:Uid="Shell_FailedFilesLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.FailedFileCount, Mode=OneWay}" /></StackPanel>
-                    <StackPanel><TextBlock x:Uid="Shell_CancelledFilesLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.CancelledFileCount, Mode=OneWay}" /></StackPanel>
+                    <StackPanel><TextBlock x:Uid="Shell_CompletedRowsLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.CompletedFileCountText, Mode=OneWay}" /></StackPanel>
+                    <StackPanel><TextBlock x:Uid="Shell_FailedFilesLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.FailedFileCountText, Mode=OneWay}" /></StackPanel>
+                    <StackPanel><TextBlock x:Uid="Shell_CancelledFilesLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.CancelledFileCountText, Mode=OneWay}" /></StackPanel>
                 </StackPanel>
                 <StackPanel x:Name="ActionButtons" Orientation="Horizontal" Spacing="8">
                     <Button x:Uid="Shell_Analyze" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanAnalyzeSelectedSource, Mode=OneWay, FallbackValue=False}"
