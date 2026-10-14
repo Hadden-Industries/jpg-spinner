@@ -61,6 +61,8 @@
     <ClCompile Include="StartupRecoveryTests.cpp" />
     <ClCompile Include="CooperativeWindowCloseTests.cpp" />
     <ClCompile Include="LocalDiagnosticLogTests.cpp" />
+    <ClCompile Include="DiagnosticLogExportTests.cpp" />
+    <ClCompile Include="..\..\src\JpgSpinner.App\Diagnostics\DiagnosticLogExport.cpp" />
     <ClCompile Include="..\..\src\JpgSpinner.App\Diagnostics\LocalDiagnosticLog.cpp" />
     <ClCompile Include="ShellProjectionContractTests.cpp" />
     <ClCompile Include="WindowStateAutomationTests.cpp" />

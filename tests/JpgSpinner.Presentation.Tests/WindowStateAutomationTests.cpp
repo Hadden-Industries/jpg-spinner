@@ -32,6 +32,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 namespace
 {
@@ -68,9 +69,8 @@ wil::com_ptr<IUIAutomationElement> findControl(IUIAutomation2 *automation, IUIAu
 /// Opens the production picker and admits only an enabled popup owned by the
 /// verified product HWND. A missing broker relationship fails qualification;
 /// never search unrelated desktop dialogs by title or guessed process identity.
-wil::com_ptr<IUIAutomationElement> openOwnedSourceFolderPicker(
-    IUIAutomation2 *automation, IUIAutomationElement *window,
-    const wchar_t *pickerButtonIdentifier = L"SourceFolderPicker")
+wil::com_ptr<IUIAutomationElement> openOwnedStoragePicker(IUIAutomation2 *automation, IUIAutomationElement *window,
+                                                          const wchar_t *pickerButtonIdentifier = L"SourceFolderPicker")
 {
     UIA_HWND nativeWindow{};
     THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
@@ -126,7 +126,7 @@ void awaitKeyboardSourceFolderGrant(IUIAutomation2 *automation, IUIAutomationEle
 {
     REQUIRE(source.is_absolute());
     REQUIRE(std::filesystem::is_directory(source));
-    const auto picker = openOwnedSourceFolderPicker(automation, window);
+    const auto picker = openOwnedStoragePicker(automation, window);
     const auto folder = findControl(automation, picker.get(), std::to_wstring(edt1).c_str());
     REQUIRE(folder);
     CONTROLTYPEID type{};
@@ -343,7 +343,7 @@ TEST_CASE("The real source picker exposes an owned native automation provider",
         std::filesystem::path{executablePath.data()}.parent_path().parent_path() / L"JpgSpinner.App";
     jpg_spinner::test_support::withIsolatedShellWindow(
         applicationDirectory, [](IUIAutomation2 *automation, IUIAutomationElement *window) {
-            const auto picker = openOwnedSourceFolderPicker(automation, window);
+            const auto picker = openOwnedStoragePicker(automation, window);
             // These SDK identifiers were independently observed from the real
             // native provider. Qualify its operations, not directory contents.
             const auto folder = findControl(automation, picker.get(), std::to_wstring(edt1).c_str());
@@ -455,7 +455,8 @@ TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local
         // The controller owns this exclusively created test package. Physical
         // fixture inspection is not a product source grant or picker bypass.
         const auto physicalFolder = winrt::Windows::Storage::StorageFolder::GetFolderFromPathAsync(folder.Path()).get();
-        const auto files = physicalFolder.GetFilesAsync(winrt::Windows::Storage::Search::CommonFileQuery::DefaultQuery, 0, 130).get();
+        const auto files =
+            physicalFolder.GetFilesAsync(winrt::Windows::Storage::Search::CommonFileQuery::DefaultQuery, 0, 130).get();
         REQUIRE(files.Size() >= 2); // A startup record and its native empty lease.
         std::vector<std::pair<winrt::Windows::Storage::StorageFile, winrt::Windows::Storage::Streams::IBuffer>> before;
         for (const auto &file : files)
@@ -468,7 +469,7 @@ TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local
             else
                 before.emplace_back(file, winrt::Windows::Storage::FileIO::ReadBufferAsync(file).get());
         }
-        const auto picker = openOwnedSourceFolderPicker(automation, window, L"ExportDiagnostics");
+        const auto picker = openOwnedStoragePicker(automation, window, L"ExportDiagnostics");
         const auto cancel =
             findControl(automation, picker.get(), std::to_wstring(IDCANCEL).c_str(), UIA_ButtonControlTypeId);
         REQUIRE(cancel);
@@ -483,6 +484,99 @@ TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local
             else
                 CHECK(file.GetBasicPropertiesAsync().get().Size() == 0);
         }
+    });
+}
+
+TEST_CASE("A real save-picker grant exports exact sanitized diagnostics and completes its provider",
+          "[presentation][automation][diagnostic-save][native-picker][ui-automation]")
+{
+    jpg_spinner::test_support::requireApprovedInteractiveLane();
+    const jpg_spinner::test_support::TemporaryDirectory directory{std::filesystem::temp_directory_path() /
+                                                                  L"jpg-spinner-diagnostic-save-tests"};
+    const auto destination = directory.directoryPath() / L"diagnostics.jsonl";
+    REQUIRE_FALSE(std::filesystem::exists(destination));
+    std::array<wchar_t, 32768> executablePath{};
+    const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
+    REQUIRE(length != 0);
+    REQUIRE(length < executablePath.size());
+    const auto applicationDirectory =
+        std::filesystem::path{executablePath.data()}.parent_path().parent_path() / L"JpgSpinner.App";
+    jpg_spinner::test_support::withIsolatedShellWindow(applicationDirectory, [&](IUIAutomation2 *automation,
+                                                                                 IUIAutomationElement *window) {
+        REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
+        int processId{};
+        THROW_IF_FAILED(window->get_CurrentProcessId(&processId));
+        const wil::unique_handle process{
+            OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, static_cast<DWORD>(processId))};
+        REQUIRE(process);
+        UINT32 familyLength{};
+        REQUIRE(GetPackageFamilyName(process.get(), &familyLength, nullptr) == ERROR_INSUFFICIENT_BUFFER);
+        std::vector<wchar_t> family(familyLength);
+        REQUIRE(GetPackageFamilyName(process.get(), &familyLength, family.data()) == ERROR_SUCCESS);
+        const auto local =
+            winrt::Windows::Management::Core::ApplicationDataManager::CreateForPackageFamily(family.data())
+                .LocalFolder();
+        const auto logFolder = local.GetFolderAsync(L"LocalDiagnostics").get();
+        const auto physicalLogFolder =
+            winrt::Windows::Storage::StorageFolder::GetFolderFromPathAsync(logFolder.Path()).get();
+        std::vector<std::pair<std::wstring, std::string>> records;
+        for (const auto &file : physicalLogFolder.GetFilesAsync().get())
+            if (std::wstring_view{file.Name()}.starts_with(L"diagnostic-"))
+                records.emplace_back(std::wstring{file.Name()},
+                                     winrt::to_string(winrt::Windows::Storage::FileIO::ReadTextAsync(file).get()));
+        REQUIRE_FALSE(records.empty());
+        std::sort(records.begin(), records.end()); // Persisted publication ordinal is part of the filename.
+        std::string expected;
+        for (const auto &[name, bytes] : records)
+            expected += bytes;
+        const auto picker = openOwnedStoragePicker(automation, window, L"ExportDiagnostics");
+        // Observed native Save-provider identity, not the Folder provider's edt1
+        // contract. Exercise supported Value/Invoke patterns and fail if their
+        // contract changes; no private notification or product grant injection.
+        const auto fileName = findControl(automation, picker.get(), L"1001", UIA_EditControlTypeId);
+        REQUIRE(fileName);
+        wil::com_ptr<IUIAutomationValuePattern> value;
+        THROW_IF_FAILED(fileName->GetCurrentPatternAs(UIA_ValuePatternId, IID_PPV_ARGS(value.put())));
+        BOOL readOnly{};
+        THROW_IF_FAILED(value->get_CurrentIsReadOnly(&readOnly));
+        REQUIRE_FALSE(readOnly);
+        const wil::unique_bstr fileNameValue{SysAllocString(destination.c_str())};
+        REQUIRE(fileNameValue);
+        THROW_IF_FAILED(value->SetValue(fileNameValue.get()));
+        wil::unique_bstr selectedName;
+        THROW_IF_FAILED(value->get_CurrentValue(selectedName.put()));
+        REQUIRE(std::wstring_view{selectedName.get()} == destination.native());
+        const auto save = findControl(automation, picker.get(), std::to_wstring(IDOK).c_str(), UIA_ButtonControlTypeId);
+        REQUIRE(save);
+        invokeControl(save.get());
+        UIA_HWND nativeWindow{};
+        THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+        while (!IsWindowEnabled(reinterpret_cast<HWND>(nativeWindow)) && std::chrono::steady_clock::now() < deadline)
+            std::this_thread::sleep_for(std::chrono::milliseconds{20});
+        REQUIRE(IsWindowEnabled(reinterpret_cast<HWND>(nativeWindow)));
+        REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
+        REQUIRE(std::filesystem::is_regular_file(destination));
+        std::ifstream exported{destination, std::ios::binary};
+        const std::string actual{std::istreambuf_iterator<char>{exported}, std::istreambuf_iterator<char>{}};
+        REQUIRE_FALSE(actual.empty());
+        CHECK(actual == expected);
+        const auto warning = findControl(automation, window, L"DiagnosticLogError");
+        if (warning)
+        {
+            BOOL offscreen{};
+            THROW_IF_FAILED(warning->get_CurrentIsOffscreen(&offscreen));
+            CHECK(offscreen); // The write alone is not a completed provider export.
+        }
+        for (const auto &file : physicalLogFolder.GetFilesAsync().get())
+            if (std::wstring_view{file.Name()}.starts_with(L"diagnostic-"))
+            {
+                const auto before = std::find_if(records.begin(), records.end(), [&](const auto &record) {
+                    return record.first == std::wstring{file.Name()};
+                });
+                REQUIRE(before != records.end());
+                CHECK(winrt::to_string(winrt::Windows::Storage::FileIO::ReadTextAsync(file).get()) == before->second);
+            }
     });
 }
 
@@ -566,7 +660,7 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
         REQUIRE(itemCount == 1); // A correct total alone does not prove that review rows rendered.
         requireControl(automation, window, L"StartProcessing", UIA_ButtonControlTypeId, true);
         THROW_IF_FAILED(picker->SetFocus());
-        const auto reopenedPicker = openOwnedSourceFolderPicker(automation, window);
+        const auto reopenedPicker = openOwnedStoragePicker(automation, window);
         const bool pickerWasOpened = !IsWindowEnabled(reinterpret_cast<HWND>(nativeWindow));
         const auto cancel = findControl(automation, reopenedPicker.get(), std::to_wstring(IDCANCEL).c_str());
         invokeControl(cancel.get());

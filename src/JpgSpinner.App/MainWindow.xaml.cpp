@@ -5,6 +5,7 @@
 #include "Composition/SelectedFolderBatchComposition.h"
 #include "Composition/StartupRecoveryComposition.h"
 #include "Localization/ImageProcessingErrorText.h"
+#include "Diagnostics/DiagnosticLogExport.h"
 #include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
 #include <winrt/Microsoft.UI.Dispatching.h>
 #include <winrt/Microsoft.UI.Windowing.h>
@@ -699,33 +700,14 @@ fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspec
         activeOperation_ = picking.as<Windows::Foundation::IAsyncInfo>();
         if (const auto destination = co_await picking)
         {
-            const auto extension = destination.FileType();
-            if (CompareStringOrdinal(extension.c_str(), -1, L".jsonl", -1, TRUE) != CSTR_EQUAL)
-                throw hresult_invalid_argument();
-            std::string snapshot;
-            co_await resume_background();
-            {
-                auto apartment = wil::RoInitialize(RO_INIT_MULTITHREADED);
-                snapshot = log->snapshot();
-            }
-            co_await wil::resume_foreground(queue);
             // No logger snapshot or retention effect occurs if the picker was
             // cancelled. Export writes only sanitized bytes to this explicit
             // grant; no path is used to acquire another destination or source.
             if (!closeAdmission_.closeRequested())
             {
-                Windows::Storage::CachedFileManager::DeferUpdates(destination);
-                const auto *bytes = reinterpret_cast<const std::uint8_t *>(snapshot.data());
-                const auto writing = Windows::Storage::FileIO::WriteBytesAsync(
-                    destination, array_view<const std::uint8_t>{bytes, bytes + snapshot.size()});
-                activeOperation_ = writing.as<Windows::Foundation::IAsyncInfo>();
-                co_await writing;
-                const auto updating = Windows::Storage::CachedFileManager::CompleteUpdatesAsync(destination);
-                activeOperation_ = updating.as<Windows::Foundation::IAsyncInfo>();
-                const auto status = co_await updating;
-                if (status != Windows::Storage::Provider::FileUpdateStatus::Complete &&
-                    status != Windows::Storage::Provider::FileUpdateStatus::CompleteAndRenamed)
-                    throw hresult_error{E_FAIL};
+                const auto exporting = jpg_spinner::diagnostics::exportDiagnosticLogAsync(log, destination);
+                activeOperation_ = exporting.as<Windows::Foundation::IAsyncInfo>();
+                co_await exporting;
                 diagnosticLogError_ = false;
             }
         }

@@ -1282,6 +1282,31 @@ Pause after the signed shutdown/diagnostic commit as requested; resume those
 bounded acceptance checks before Task 15, without repeating unchanged evidence
 solely for the known HISEW receipt-admission defect.
 
+On the subsequently authorized resume, diagnostic export is one app-private
+`exportDiagnosticLogAsync` operation used by both the window and native tests.
+It accepts only an existing StorageFile grant and logger, validates the .jsonl
+destination before effects, snapshots on the native background MTA, restores
+the caller's apartment for provider work, and awaits native write/update
+completion with cancellation propagation. No path-based grant, test hook or
+provider shim is added. Microsoft owns
+[cached-provider completion](https://learn.microsoft.com/en-us/uwp/api/windows.storage.cachedfilemanager.completeupdatesasync)
+and [C++/WinRT cancellation](https://learn.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/concurrency-2).
+Directly created unpackaged test files on this lane lack cached-provider completion metadata;
+their explicit native ERROR_NOT_FOUND precondition qualifies error propagation,
+not successful picker export. Corrupt-log refusal preserves destination bytes.
+The actual AppContainer's local files do support provider completion; the
+separate windowless packaged-worker positive control proves that precondition
+and requires completed export with the same independent byte/retention oracle.
+The actual Save-provider ID 1001 and its supported Value/Invoke patterns qualify
+the real picker grant and successful local-provider export, with exact output
+bytes and unchanged retained records. This is native UI Automation acceptance,
+not a claim of keyboard-only acceptance or arbitrary cloud-provider coverage.
+The earlier Folder-provider edt1 assumption and unavailable Computer Use modal
+observation were fixture/input gaps, not product-regression RED.
+Remaining active-processing close and policy-disabled startup UI observations
+stay in the final acceptance ledger; source implementation can proceed to Task
+15 without declaring those release obligations passed.
+
 **Files:**
 
 - Create: `src/JpgSpinner.WindowsStorage/include/jpg_spinner/storage/WindowsStorageImageFileTransactionRecoveryCatalog.h`
