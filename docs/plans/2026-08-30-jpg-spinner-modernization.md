@@ -1447,6 +1447,25 @@ git commit -m "feat: localize and verify the accessible experience"
 
 ## Task 16: Preserve Store identity in an AppContainer single-project MSIX
 
+The manifest/association and least-privilege policy were brought forward as
+Task13 prerequisites; preserve those qualified native contracts rather than
+adding alternate identities or full-trust bootstrap paths. The artwork source
+checkpoint retains byte-identical existing per-context masters under
+[`assets-source`](../../assets-source/README.md). Native Windows GDI+ generates
+55 PNG variants: manifest scales100/200/400 plus fourteen exact app-list target
+sizes in three theme forms. No custom PNG codec, AI branding or runtime image
+generation is added. Two same-lane invocations produce identical hashes; this
+does not promise byte identity across OS/.NET/GDI+ versions. Required larger
+rasters are documented as upsampled, not higher-detail sources. Explicit owned
+orange/white palette controls allow only native8-bit resampling quantization;
+exact dimensions, white-glyph presence and original master hashes remain checked.
+[Microsoft's current icon guidance](https://learn.microsoft.com/en-us/windows/apps/design/iconography/app-icon-construction)
+owns the qualifier/dimension contract. Actual shell rendering/contrast and Store
+qualification remain final acceptance. The unused template lock-screen logo is
+recycled recoverably; only generated shipping PNGs enter the asset inventory.
+Native x64 Debug build and existing manifest-preservation policy pass with the
+new inventory; this is not signed bundle, trusted upgrade or WACK qualification.
+
 **Files:**
 
 - Create: `src/JpgSpinner.App/Package.appxmanifest`

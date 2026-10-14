@@ -27,6 +27,13 @@ foreach ($size in @(16,20,24,30,32,36,40,48,60,64,72,80,96,256)) {
         $required["Square44x44Logo.targetsize-$size$theme.png"] = @($size,$size)
     }
 }
+$actual = @(Get-ChildItem -LiteralPath $assets -Filter '*.png' -File)
+if ($actual.Count -ne $required.Count) { throw 'Package artwork PNG inventory differs from the closed 55-file contract.' }
+foreach ($file in $actual) {
+    if (-not $required.Contains($file.Name) -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw "Unexpected or redirected shipping PNG: $($file.Name)"
+    }
+}
 foreach ($name in $required.Keys) {
     $path = Join-Path $assets $name
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Required owned package artwork is absent: $name" }

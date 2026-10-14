@@ -2294,6 +2294,15 @@ Test-VcpkgTriplet -Architecture x64
 Test-VcpkgTriplet -Architecture x64 -AddressSanitizer
 Test-VcpkgTriplet -Architecture arm64
 
+# Only closed, decoded, owned artwork may enter the app's wildcard PNG inventory.
+# This remains a read-only policy check; generation is an explicit separate step.
+try {
+    & (Join-Path $PSScriptRoot 'tests/Test-PackageArtwork.ps1') -RepositoryRoot $repositoryRoot
+}
+catch {
+    $policyFailures.Add("Package artwork policy: $($_.Exception.Message)")
+}
+
 if ($policyFailures.Count -gt 0) {
     Write-Error "Repository policy failed with $($policyFailures.Count) violation(s):`n - $($policyFailures -join "`n - ")"
     exit 1

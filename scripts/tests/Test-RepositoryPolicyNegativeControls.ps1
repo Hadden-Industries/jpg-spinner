@@ -2,7 +2,9 @@
 param(
     # Cheap follow-up for the Task 9 test-only capability edge. The default
     # continues to execute every existing negative control without filtering.
-    [switch]$StorageTransactionReferenceControlsOnly
+    [switch]$StorageTransactionReferenceControlsOnly,
+    # Bound follow-up to the new real PNG inventory/decoder admission checks.
+    [switch]$PackageArtworkControlsOnly
 )
 
 Set-StrictMode -Version Latest
@@ -97,6 +99,30 @@ try {
     $baselineResult = Invoke-IsolatedRepositoryPolicy
     if ($baselineResult.exitCode -ne 0) {
         throw "The isolated valid configuration must pass before negative controls run.`n$($baselineResult.output)"
+    }
+
+    # The owning fixture copied the real asset inventory and first passed full
+    # policy. Mutate only fixture PNGs; never alter the checkout's brand assets.
+    $fixtureAssets = Join-Path $temporaryRoot 'src/JpgSpinner.App/Assets'
+    $unexpectedArtwork = Join-Path $fixtureAssets 'Unexpected.png'
+    Copy-Item -LiteralPath (Join-Path $fixtureAssets 'StoreLogo.png') -Destination $unexpectedArtwork
+    Assert-RejectedMutation -ExpectedDiagnostics 'PNG inventory differs from the closed 55-file contract'
+    Add-Type -AssemblyName Microsoft.VisualBasic
+    [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($unexpectedArtwork,
+        [Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs,
+        [Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin,
+        [Microsoft.VisualBasic.FileIO.UICancelOption]::ThrowException)
+    Add-Type -AssemblyName System.Drawing
+    $wrongSizePath = Join-Path $fixtureAssets 'Square44x44Logo.scale-100.png'
+    $wrongSizeImage = [Drawing.Bitmap]::new(1,1)
+    try { $wrongSizeImage.Save($wrongSizePath, [Drawing.Imaging.ImageFormat]::Png) }
+    finally { $wrongSizeImage.Dispose() }
+    Assert-RejectedMutation -ExpectedDiagnostics 'incorrect decoded dimensions'
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'src/JpgSpinner.App/Assets/Square44x44Logo.scale-100.png') `
+        -Destination $wrongSizePath -Force
+    if ($PackageArtworkControlsOnly) {
+        Write-Output 'PASS: real PNG admission rejects unexpected shipping content and incorrect native dimensions.'
+        return
     }
 
     # Real validation capabilities belong in transaction tests, not in the
