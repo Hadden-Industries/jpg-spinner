@@ -1,25 +1,25 @@
 #define NOMINMAX
-#include <windows.h>
-#include <fileapifromapp.h>
-#include <pathcch.h>
 #include "RecoverableImageFileTransaction.h"
-#include "StorageItemProof.h"
-#include "ImageFileTransactionJournal.h"
-#include <winrt/Windows.Storage.Search.h>
 #include "CorrectedCopyPathPolicy.h"
-#include <jpg_spinner/storage/SourceFileRevisionCalculator.h>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Security.Cryptography.h>
-#include <winrt/Windows.Storage.Streams.h>
+#include "ImageFileTransactionJournal.h"
+#include "StorageItemProof.h"
 #include <algorithm>
 #include <cstring>
+#include <fileapifromapp.h>
 #include <filesystem>
-#include <new>
+#include <jpg_spinner/storage/SourceFileRevisionCalculator.h>
 #include <limits>
-#include <string>
+#include <new>
+#include <pathcch.h>
 #include <stdexcept>
+#include <string>
 #include <utility>
+#include <windows.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Security.Cryptography.h>
+#include <winrt/Windows.Storage.Search.h>
+#include <winrt/Windows.Storage.Streams.h>
 
 #pragma comment(lib, "windowsapp.lib")
 #pragma comment(lib, "ole32.lib")
@@ -271,13 +271,16 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             if (!isCorrectedCopyOutputRootPath(outputProof.canonicalPath, rootProof.canonicalPath))
                 throw winrt::hresult_invalid_argument();
             batchFolder = operations.createBatchDestination(outputRoot, winrt::hstring{batchDirectoryName});
-            // Capture identity when the exclusive creation succeeds. Later
-            // same-path folders cannot inherit this batch's ownership.
-            batch.correctedCopyFolderIdentity = inspectItem(batchFolder, true).identity;
+            // Retain the creation-time identity and location, not a later
+            // reinspection that could publish a substituted folder as owned.
+            const auto createdProof = inspectItem(batchFolder, true);
+            batch.correctedCopyFolderOwnership =
+                IdentityBoundStorageFolder{batchFolder, createdProof.identity, createdProof.canonicalPath};
         }
         const auto batchProof = inspectItem(batchFolder, true);
-        if (!batch.correctedCopyFolderIdentity ||
-            !isSameIdentity(batchProof.identity, *batch.correctedCopyFolderIdentity))
+        if (!batch.correctedCopyFolderOwnership ||
+            !isSameIdentity(batchProof.identity, batch.correctedCopyFolderOwnership->identity) ||
+            batchProof.canonicalPath != batch.correctedCopyFolderOwnership->canonicalPath)
             return failure(ImageProcessingErrorCode::RecoveryConflict, ImageProcessingStage::TransactionRecovery);
         if (batchProof.canonicalPath.parent_path() != rootProof.canonicalPath / L"JPG Spinner Output" ||
             batchProof.canonicalPath.filename() != batchDirectoryName)
@@ -435,11 +438,14 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
                 if (inspectItem(backupRoot, true).canonicalPath != rootProof.canonicalPath / L"JPG Spinner Backups")
                     throw winrt::hresult_invalid_argument();
                 batch.backupFolder = operations.createBatchDestination(backupRoot, winrt::hstring{batchDirectoryName});
-                batch.backupFolderIdentity = inspectItem(batch.backupFolder, true).identity;
+                const auto createdProof = inspectItem(batch.backupFolder, true);
+                batch.backupFolderOwnership =
+                    IdentityBoundStorageFolder{batch.backupFolder, createdProof.identity, createdProof.canonicalPath};
             }
             const auto backupBatchProof = inspectItem(batch.backupFolder, true);
-            if (!batch.backupFolderIdentity ||
-                !isSameIdentity(backupBatchProof.identity, *batch.backupFolderIdentity) ||
+            if (!batch.backupFolderOwnership ||
+                !isSameIdentity(backupBatchProof.identity, batch.backupFolderOwnership->identity) ||
+                backupBatchProof.canonicalPath != batch.backupFolderOwnership->canonicalPath ||
                 backupBatchProof.canonicalPath != rootProof.canonicalPath / L"JPG Spinner Backups" / batchDirectoryName)
                 throw winrt::hresult_invalid_argument();
             auto backupDestination = batch.backupFolder;

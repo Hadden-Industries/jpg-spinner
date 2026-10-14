@@ -1,22 +1,24 @@
 #define NOMINMAX
 #include <windows.h>
-#include <sddl.h>
-#include <fileapifromapp.h>
-#include <jpg_spinner/storage/WindowsStorageImageSourceCollection.h>
-#include <jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h>
-#include <jpg_spinner/storage/SourceFileRevisionCalculator.h>
-#include "TemporaryDirectory.h"
 #include "DeterministicJpegFixtureFactory.h"
-#include <jpg_spinner/jpeg/JpegImageAnalyzer.h>
-#include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
+#include "TemporaryDirectory.h"
 #include <catch2/catch_test_macros.hpp>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Storage.Streams.h>
-#include <winrt/Windows.Storage.FileProperties.h>
+#include <catch2/generators/catch_generators.hpp>
+#include <fileapifromapp.h>
 #include <filesystem>
 #include <fstream>
+#include <jpg_spinner/jpeg/JpegImageAnalyzer.h>
+#include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
+#include <jpg_spinner/storage/SourceFileRevisionCalculator.h>
+#include <jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h>
+#include <jpg_spinner/storage/WindowsStorageImageSourceCollection.h>
+#include <sddl.h>
 #include <set>
 #include <string_view>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Storage.FileProperties.h>
+#include <winrt/Windows.Storage.Streams.h>
 
 namespace
 {
@@ -51,7 +53,15 @@ jpg_spinner::storage::IdentityBoundStorageFolder identityBoundTestFolder(
     REQUIRE(handle.get() != INVALID_HANDLE_VALUE);
     FILE_ID_INFO identity{};
     REQUIRE(GetFileInformationByHandleEx(handle.get(), FileIdInfo, &identity, sizeof(identity)));
-    return {folder, identity};
+    // Independent native observation of the fixture's location, not a copy of
+    // the discovery relevance predicate or an inferred display-name prefix.
+    std::wstring canonicalPath(32768, L'\0');
+    const auto length = GetFinalPathNameByHandleW(handle.get(), canonicalPath.data(),
+                                                  static_cast<DWORD>(canonicalPath.size()), VOLUME_NAME_NT);
+    REQUIRE(length > 0);
+    REQUIRE(length < canonicalPath.size());
+    canonicalPath.resize(length);
+    return {folder, identity, std::filesystem::path{canonicalPath}};
 }
 
 std::set<std::wstring> relativeNames(const jpg_spinner::domain::ImageSourceDiscovery &discovery);
@@ -486,4 +496,126 @@ TEST_CASE("Discovery refuses an exclusion whose folder was replaced after owners
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceDiscoveryFailed);
     CHECK(std::filesystem::exists(fixture.directoryPath() / L"owned" / L"user.jpg"));
+}
+
+TEST_CASE("Historical owned folders outside the selected tree cannot block discovery",
+          "[storage][batch][discovery][owned-folder-scope]")
+{
+    using namespace jpg_spinner;
+    using namespace winrt::Windows::Storage;
+    const DiscoveryTestApartment apartment;
+    const test_support::TemporaryDirectory fixture{std::filesystem::current_path() / "artifacts/tests"};
+    const auto owner = StorageFolder::GetFolderFromPathAsync(fixture.directoryPath().wstring()).get();
+    // Adjacent names exercise component containment, not a string-prefix test.
+    const auto earlier = owner.CreateFolderAsync(L"selected").get();
+    const auto selected = owner.CreateFolderAsync(L"selected-again").get();
+    const auto journal = owner.CreateFolderAsync(L"journal").get();
+    const auto owned = earlier.CreateFolderAsync(L"owned").get();
+    const auto exclusion = identityBoundTestFolder(owned);
+    const auto earlierPath = fixture.directoryPath() / L"selected";
+    const auto selectedPath = fixture.directoryPath() / L"selected-again";
+    const auto scope =
+        GENERATE(domain::TraversalScope::SelectedFolderOnly, domain::TraversalScope::SelectedFolderAndDescendants);
+    SECTION("An unrelated historical output was deleted")
+    {
+        owned.DeleteAsync().get();
+        REQUIRE_FALSE(std::filesystem::exists(earlierPath / L"owned"));
+    }
+    SECTION("An unrelated historical output was substituted")
+    {
+        // Keep the original ID alive so the new directory cannot reuse it.
+        std::filesystem::rename(earlierPath / L"owned", earlierPath / L"retired-owned");
+        earlier.CreateFolderAsync(L"owned").get();
+        REQUIRE(std::filesystem::exists(earlierPath / L"retired-owned"));
+    }
+    selected.CreateFolderAsync(L"owned").get();
+    writeCandidate(selectedPath / L"chosen.jpg");
+    writeCandidate(selectedPath / L"owned" / L"user.jpg");
+    const auto transactions = std::make_shared<storage::WindowsStorageImageFileTransactionEngine>(selected, journal);
+    const storage::WindowsStorageImageSourceCollection collection{selected, transactions, {exclusion}};
+    const auto result = collection.discover(scope);
+    REQUIRE(result.valueIfPresent() != nullptr);
+    const auto expectedNames = scope == domain::TraversalScope::SelectedFolderOnly
+                                   ? std::set<std::wstring>{L"chosen.jpg"}
+                                   : std::set<std::wstring>{L"chosen.jpg", L"owned/user.jpg"};
+    CHECK(relativeNames(*result.valueIfPresent()) == expectedNames);
+    CHECK(result.valueIfPresent()->issues.empty());
+    CHECK(std::filesystem::exists(selectedPath / L"owned" / L"user.jpg"));
+    CHECK(journal.GetItemsAsync().get().Size() == 0);
+}
+
+TEST_CASE("Recursive ancestor selection preserves exact historical output exclusion",
+          "[storage][batch][discovery][owned-folder-scope]")
+{
+    using namespace jpg_spinner;
+    using namespace winrt::Windows::Storage;
+    const DiscoveryTestApartment apartment;
+    const test_support::TemporaryDirectory fixture{std::filesystem::current_path() / "artifacts/tests"};
+    const auto selected = StorageFolder::GetFolderFromPathAsync(fixture.directoryPath().wstring()).get();
+    const auto earlier = selected.CreateFolderAsync(L"earlier").get();
+    const auto owned = earlier.CreateFolderAsync(L"owned").get();
+    const auto journal = selected.CreateFolderAsync(L"journal").get();
+    const auto exclusion = identityBoundTestFolder(owned);
+    writeCandidate(fixture.directoryPath() / L"earlier" / L"original.jpg");
+    writeCandidate(fixture.directoryPath() / L"earlier" / L"owned" / L"corrected.jpg");
+    const auto transactions = std::make_shared<storage::WindowsStorageImageFileTransactionEngine>(selected, journal);
+    const storage::WindowsStorageImageSourceCollection collection{selected, transactions, {exclusion}};
+    const auto result = collection.discover(domain::TraversalScope::SelectedFolderAndDescendants);
+    REQUIRE(result.valueIfPresent() != nullptr);
+    CHECK(relativeNames(*result.valueIfPresent()) == std::set<std::wstring>{L"earlier/original.jpg"});
+    REQUIRE(result.valueIfPresent()->issues.size() == 1);
+    CHECK(result.valueIfPresent()->issues[0].relativePath == L"earlier/owned");
+    CHECK(result.valueIfPresent()->issues[0].kind ==
+          domain::ImageSourceDiscoveryIssueKind::ApplicationOwnedFolderExcluded);
+    CHECK(std::filesystem::exists(fixture.directoryPath() / L"earlier" / L"owned" / L"corrected.jpg"));
+}
+
+TEST_CASE("Relocated historical owned folders are refused when encountered in a new traversal",
+          "[storage][batch][discovery][owned-folder-relocation]")
+{
+    using namespace jpg_spinner;
+    using namespace winrt::Windows::Storage;
+    const DiscoveryTestApartment apartment;
+    const test_support::TemporaryDirectory fixture{std::filesystem::current_path() / "artifacts/tests"};
+    const auto owner = StorageFolder::GetFolderFromPathAsync(fixture.directoryPath().wstring()).get();
+    const auto earlier = owner.CreateFolderAsync(L"earlier").get();
+    const auto owned = earlier.CreateFolderAsync(L"owned-backup").get();
+    const auto journal = owner.CreateFolderAsync(L"journal").get();
+    const auto exclusion = identityBoundTestFolder(owned);
+    writeCandidate(fixture.directoryPath() / L"earlier" / L"original.jpg");
+    writeCandidate(fixture.directoryPath() / L"earlier" / L"owned-backup" / L"backup.jpg");
+    const auto movedPath = fixture.directoryPath() / L"relocated";
+    std::filesystem::rename(fixture.directoryPath() / L"earlier", movedPath);
+    const auto relocated = owner.GetFolderAsync(L"relocated").get();
+    const auto movedOwnership = identityBoundTestFolder(relocated.GetFolderAsync(L"owned-backup").get());
+    // A same-volume tree rename preserves the actual file identity. This is
+    // relocation of a known output, not substitution by a same-named user folder.
+    REQUIRE(movedOwnership.identity.VolumeSerialNumber == exclusion.identity.VolumeSerialNumber);
+    REQUIRE(std::memcmp(movedOwnership.identity.FileId.Identifier, exclusion.identity.FileId.Identifier,
+                        sizeof(exclusion.identity.FileId.Identifier)) == 0);
+    REQUIRE(movedOwnership.canonicalPath != exclusion.canonicalPath);
+    const bool selectAncestor = GENERATE(false, true);
+    const auto selected = selectAncestor ? owner : relocated;
+    const auto transactions = std::make_shared<storage::WindowsStorageImageFileTransactionEngine>(selected, journal);
+    const storage::WindowsStorageImageSourceCollection collection{selected, transactions, {exclusion}};
+    const auto result = collection.discover(domain::TraversalScope::SelectedFolderAndDescendants);
+    if (selectAncestor)
+    {
+        // The old location is still inside this selected ancestor. Its missing
+        // grant retains the existing pre-enumeration fail-closed contract.
+        REQUIRE(result.errorIfPresent() != nullptr);
+        CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::SourceDiscoveryFailed);
+    }
+    else
+    {
+        REQUIRE(result.valueIfPresent() != nullptr);
+        CHECK(relativeNames(*result.valueIfPresent()) == std::set<std::wstring>{L"original.jpg"});
+        REQUIRE(result.valueIfPresent()->issues.size() == 1);
+        CHECK(result.valueIfPresent()->issues[0].relativePath == L"owned-backup");
+        CHECK(result.valueIfPresent()->issues[0].kind == domain::ImageSourceDiscoveryIssueKind::SourceAccessFailed);
+        REQUIRE(result.valueIfPresent()->issues[0].error.has_value());
+        CHECK(result.valueIfPresent()->issues[0].error->code ==
+              domain::ImageProcessingErrorCode::SourceDiscoveryFailed);
+    }
+    CHECK(std::filesystem::exists(movedPath / L"owned-backup" / L"backup.jpg"));
 }

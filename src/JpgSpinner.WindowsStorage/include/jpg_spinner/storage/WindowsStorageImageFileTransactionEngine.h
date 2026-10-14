@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ImageFileTransactionEngine.h"
 #include "IdentityBoundStorageFolder.h"
-#include <mutex>
-#include <memory>
+#include "ImageFileTransactionEngine.h"
 #include <chrono>
+#include <memory>
+#include <mutex>
 
 namespace jpg_spinner::storage
 {
@@ -42,9 +42,9 @@ class WindowsStorageImageFileTransactionEngine final : public ImageFileTransacti
     [[nodiscard]] domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> recoverIncompleteTransactions(
         std::stop_token cancellationToken = {}) const override;
     /// Snapshot only batch folders actually created by this engine and their
-    /// original identities. Does not enumerate names, create directories, or
+    /// original identities and canonical locations. Does not enumerate names, create directories, or
     /// classify an existing user folder as application-owned. Discovery must
-    /// revalidate/pin each identity before using it as an exclusion.
+    /// revalidate/pin relevant identities and locations before excluding them.
     [[nodiscard]] std::vector<IdentityBoundStorageFolder> applicationOwnedFolders() const;
 
   private:

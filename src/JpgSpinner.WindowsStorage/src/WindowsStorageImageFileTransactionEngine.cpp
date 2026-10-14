@@ -1,12 +1,12 @@
 #define NOMINMAX
-#include <windows.h>
-#include <jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h>
-#include "internal/RecoverableImageFileTransaction.h"
 #include "internal/ImageFileTransactionBatch.h"
+#include "internal/RecoverableImageFileTransaction.h"
 #include <chrono>
 #include <format>
+#include <jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h>
 #include <new>
 #include <utility>
+#include <windows.h>
 
 #pragma comment(lib, "ole32.lib")
 
@@ -79,10 +79,10 @@ std::vector<IdentityBoundStorageFolder> WindowsStorageImageFileTransactionEngine
 {
     const std::lock_guard lock{executionMutex_};
     std::vector<IdentityBoundStorageFolder> folders;
-    if (batch_->correctedCopyFolder && batch_->correctedCopyFolderIdentity)
-        folders.push_back({batch_->correctedCopyFolder, *batch_->correctedCopyFolderIdentity});
-    if (batch_->backupFolder && batch_->backupFolderIdentity)
-        folders.push_back({batch_->backupFolder, *batch_->backupFolderIdentity});
+    if (batch_->correctedCopyFolderOwnership)
+        folders.push_back(*batch_->correctedCopyFolderOwnership);
+    if (batch_->backupFolderOwnership)
+        folders.push_back(*batch_->backupFolderOwnership);
     return folders;
 }
 } // namespace jpg_spinner::storage

@@ -1,16 +1,16 @@
 #define NOMINMAX
-#include <windows.h>
-#include <jpg_spinner/storage/WindowsStorageImageSourceCollection.h>
-#include "internal/StorageItemProof.h"
 #include "internal/SourceFileCapture.h"
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Storage.Search.h>
-#include <array>
+#include "internal/StorageItemProof.h"
 #include <algorithm>
+#include <array>
+#include <jpg_spinner/storage/WindowsStorageImageSourceCollection.h>
 #include <limits>
 #include <stdexcept>
 #include <utility>
+#include <windows.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Storage.Search.h>
 
 namespace jpg_spinner::storage
 {
@@ -187,17 +187,28 @@ domain::ImageProcessingResult<domain::ImageSourceDiscovery> WindowsStorageImageS
         }
         const auto rootAncestry =
             std::make_shared<SourceFolderAncestry>(internal::inspectItem(selectedRoot_, true), selectedRoot_, nullptr);
-        std::vector<internal::StorageItemProof> excludedFolders;
+        std::vector<internal::StorageItemProof> retainedExclusionProofs;
         for (const auto &folder : applicationOwnedFolders_)
         {
-            if (!folder.folder)
+            if (!folder.folder || folder.canonicalPath.empty())
                 throw winrt::hresult_invalid_argument();
+            // Compare the creation-time native location before opening the
+            // historical grant. A deleted/disconnected/substituted output in
+            // another source tree must not poison this review. Component-wise
+            // relative paths also retain exclusions when selecting an ancestor;
+            // display-name prefixes cannot establish this relationship.
+            const auto relativePath = folder.canonicalPath.lexically_relative(rootAncestry->proof.canonicalPath);
+            if (relativePath.empty() || relativePath.has_root_path() ||
+                std::any_of(relativePath.begin(), relativePath.end(),
+                            [](const auto &component) { return component == L".."; }))
+                continue;
             auto proof = internal::inspectItem(folder.folder, true);
-            if (!internal::isSameIdentity(proof.identity, folder.identity))
+            if (!internal::isSameIdentity(proof.identity, folder.identity) ||
+                proof.canonicalPath != folder.canonicalPath)
                 throw winrt::hresult_error{HRESULT_FROM_WIN32(ERROR_FILE_INVALID)};
             // Keep the native handle for this traversal. Comparing IDs once
             // without retaining the handle would permit a later substitution.
-            excludedFolders.push_back(std::move(proof));
+            retainedExclusionProofs.push_back(std::move(proof));
         }
 
         struct PendingFolder final
@@ -261,11 +272,22 @@ domain::ImageProcessingResult<domain::ImageSourceDiscovery> WindowsStorageImageS
                                 relativePath = current.relativePath.empty() ? name : current.relativePath + L"/" + name;
                                 if (directory)
                                 {
-                                    const bool excluded = std::any_of(
-                                        excludedFolders.begin(), excludedFolders.end(), [&](const auto &owned) {
-                                            return internal::isSameIdentity(proof.identity, owned.identity);
+                                    // A same-volume tree rename preserves file
+                                    // IDs but can move ownership outside its
+                                    // recorded location. Check encountered IDs
+                                    // against every retained record, even those
+                                    // whose historical grants were not opened.
+                                    // Refuse relocation rather than traverse a
+                                    // known backup/output as a new source tree.
+                                    const auto ownership = std::find_if(
+                                        applicationOwnedFolders_.begin(), applicationOwnedFolders_.end(),
+                                        [&](const auto &record) {
+                                            return internal::isSameIdentity(proof.identity, record.identity);
                                         });
-                                    if (excluded)
+                                    if (ownership != applicationOwnedFolders_.end() &&
+                                        proof.canonicalPath != ownership->canonicalPath)
+                                        throw winrt::hresult_error{HRESULT_FROM_WIN32(ERROR_FILE_INVALID)};
+                                    if (ownership != applicationOwnedFolders_.end())
                                         discovery.issues.push_back(
                                             {relativePath,
                                              domain::ImageSourceDiscoveryIssueKind::ApplicationOwnedFolderExcluded,

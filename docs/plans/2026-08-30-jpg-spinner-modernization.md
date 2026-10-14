@@ -985,7 +985,8 @@ git commit -m "feat: model the image-processing experience precisely"
 
 ## Task 13: Implement the WinUI 3 shell and folder-review workflow
 
-Development checkpoint (2026-10-14): Task 13 remains active, uncommitted and
+Development checkpoint (2026-10-14): Task 13's source checkpoint is committed as
+`2b169b45787421019bd23dd3603666c7c22cbd4a`; the task remains active and
 incomplete under execution `21e2eb0a-48a5-4f37-a7df-e1f113a30d98`. The authorized
 dev23 engine transition transferred this same chat's installation actor, paused
 the execution, then restored it at generation 4. Runtime selection is generation
@@ -1126,17 +1127,19 @@ Both current desktop-test sessions restored and verified the original active,
 secure and timeout values. Suppression is limited to an active bounded desktop
 test session; it is unnecessary during headless-only work.
 
-Next, finish the two final real-picker checks under the actual AppContainer trust
-model, including minimum-size review reachability after consent. Headless/native
-package evidence supplies the recursive exclusion, row/count, trim/backup and
-token/denial contracts; do not repeat these through manual input unnecessarily.
-The screen saver was restored after the first pass. A subsequent suppression
-attempt was refused while it was already running; native observation reports an
-unlocked session but a non-default input desktop. Return to the ordinary desktop
-before another bounded acceptance pass. Preserve all refusals and unexecuted
-operator cases as counterevidence, not product regressions. Finish consolidated
-assurance and canonical verification before committing; no completion or release
-is claimed here.
+The final real-picker checks have passed under AppContainer trust, including
+minimum-size review reachability after consent; the desktop controls were
+restored. Reuse those acceptance observations rather than repeating manual input.
+The final ordinary review found a cross-selection exclusion defect: historical
+output/backup grants outside the selected tree must not be opened during discovery.
+Retain each actually created folder's native identity and canonical location,
+scope its relevance by native path components, and revalidate both for relevant
+folders. A recorded path is comparison metadata, never an I/O authority. Preserve
+exclusions when recursively selecting an ancestor and refuse relevant identity
+substitution. Match encountered directory IDs against historical records as well:
+a relocated known output/backup must be refused, not traversed as new input.
+Focused repair evidence is separate from final task assurance;
+neither this source checkpoint nor the repair claims completion or release.
 
 **Files:**
 

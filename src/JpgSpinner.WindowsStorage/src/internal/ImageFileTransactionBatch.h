@@ -1,10 +1,11 @@
 #pragma once
 
-#include <windows.h>
-#include <winrt/Windows.Storage.h>
+#include <chrono>
+#include <jpg_spinner/storage/IdentityBoundStorageFolder.h>
 #include <optional>
 #include <string>
-#include <chrono>
+#include <windows.h>
+#include <winrt/Windows.Storage.h>
 
 namespace jpg_spinner::storage::internal
 {
@@ -26,7 +27,7 @@ struct ImageFileTransactionBatch final
     winrt::Windows::Storage::StorageFolder correctedCopyFolder{nullptr};
     winrt::Windows::Storage::StorageFolder backupFolder{nullptr};
     std::optional<FILE_ID_INFO> selectedRootIdentity;
-    std::optional<FILE_ID_INFO> correctedCopyFolderIdentity;
-    std::optional<FILE_ID_INFO> backupFolderIdentity;
+    std::optional<IdentityBoundStorageFolder> correctedCopyFolderOwnership;
+    std::optional<IdentityBoundStorageFolder> backupFolderOwnership;
 };
 } // namespace jpg_spinner::storage::internal
