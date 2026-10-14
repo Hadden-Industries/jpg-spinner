@@ -125,10 +125,10 @@ if ($null -ne $packageOutputPath) {
     # https://learn.microsoft.com/windows/apps/windows-app-sdk/single-project-msix
     foreach ($argument in @('-p:GenerateAppxPackageOnBuild=true',
         "-p:AppxPackageDir=$packageOutputPath\", '-p:AppxBundle=Never',
-        # Release CI omits the SDK's separate sideload installer/dependency
-        # drop. Debug remains an SDK sideload qualification package, even with
-        # CI selected; do not misreport that consumer-owned distinction.
-        # Deployment prerequisites remain in the native package manifest.
+        # CI requests the SDK's Release upload artifacts. The native targets
+        # may also emit sideload/dependency working material during execution;
+        # evaluated properties alone do not prove those files were omitted.
+        # Inventory the actual drop and retain deployment prerequisites.
         '-p:UapAppxPackageBuildMode=CI', '-p:AppxPackageSigningEnabled=false')) {
         [void]$startInfo.ArgumentList.Add($argument)
     }

@@ -789,6 +789,9 @@ function Test-VisualStudioConfiguration {
         'Microsoft.VisualStudio.Workload.Universal',
         'Microsoft.VisualStudio.Component.VC.Tools.x86.x64',
         'Microsoft.VisualStudio.Component.VC.Tools.ARM64',
+        # Native ARM64 compiler tools alone do not supply the UAP metadata that
+        # the current packaged C++/WinUI/C++/WinRT build consumes.
+        'Microsoft.VisualStudio.Component.UWP.VC.ARM64',
         'Microsoft.VisualStudio.Component.VC.ASAN',
         'Microsoft.VisualStudio.Component.VC.Llvm.Clang',
         'Microsoft.VisualStudio.Component.VC.CMake.Project',

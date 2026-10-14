@@ -1479,15 +1479,35 @@ extraction/manifest/payload/artwork checks establish unsigned app identity,
 architecture and framework dependency, rather than accepting dependency sidecars
 as the product. Output-entry/fresh-directory refusals preserve the source sentinel.
 
-The locked MSIX targets' CI behavior is configuration-dependent: Release omits
-the separate sideload drop; Debug still includes it. Do not infer otherwise from
-general CI examples or bypass that consumer with a private property shim.
+The locked MSIX targets' CI behavior is configuration-dependent: Release requests
+upload artifacts, while Debug remains a qualification package. Actual Release
+execution also emits sideload/dependency working material despite pre-build
+property evaluation. Do not infer file absence from that evaluation or general
+CI examples, or bypass the consumer with a private property shim. Measure the
+actual drop and reconcile duplicate working copies within its finite allowance.
 Duplicate Debug framework/symbol working copies were hash-matched to retained
 originals and recycled; raw outcomes and both main packages remain. Release
 multi-architecture packages/bundle, trusted upgrade, physical ARM64 and WACK
 qualification remain subsequent obligations. See
 [official CI packaging guidance](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/ci-for-winui3)
 and [native MakeAppx](https://learn.microsoft.com/en-us/windows/msix/package/create-app-package-with-makeappx-tool).
+
+ARM64 WinUI compilation additionally requires the stable
+`Microsoft.VisualStudio.Component.UWP.VC.ARM64` platform-support component;
+`Microsoft.VisualStudio.Component.VC.Tools.ARM64` alone supplies the compiler,
+not the UAP platform metadata. Native `CppWinRTVerifyKitVersion` reproduced
+MSB8036 with `TargetPlatformVersion=7.0` / `TargetPlatformIdentifier=Windows`
+on the incomplete installation, while x64 selected the locked SDK and UAP.
+The repository configuration and prerequisite policy now require the component.
+The exact component installation initially stopped at 0x80131500 under
+`--noUpdateInstaller`. After separate human approval, Installer updated from
+4.10.30.62513 to 4.11.24.2075 and added the component; native discovery now
+confirms it and the same `CppWinRTVerifyKitVersion` target passes. Build Tools
+remains 18.10.12306.391. No SDK retargeting, vendor-file edit, toolchain-property
+override or automatic restart was requested. The ARM64 package/runtime gates
+remain distinct from this repaired prerequisite. See
+[Microsoft's Installer parameters](https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio)
+for component modification and the no-update/no-restart controls.
 
 **Files:**
 
