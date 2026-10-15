@@ -63,6 +63,7 @@ if (-not $neededJobs.SetEquals([string[]]@('policy','build','asan','analysis')))
 }
 $packageSteps = Get-NodeProperty $packageJob 'steps'
 $hasNativePackageBuild=$false; $hasNativeBundle=$false; $hasBundleInspection=$false
+$hasPayloadComparisonControls=$false;$hasBlockIntegrityControl=$false
 foreach ($step in $packageSteps.Children) {
     $key = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
     if (-not $step.Children.ContainsKey($key)) { continue }
@@ -71,7 +72,10 @@ foreach ($step in $packageSteps.Children) {
         $command.Contains("@('x86','x64','ARM64')",[StringComparison]::Ordinal)) { $hasNativePackageBuild=$true }
     if ($command.Contains('scripts/New-MsixBundle.ps1',[StringComparison]::Ordinal)) { $hasNativeBundle=$true }
     if ($command.Contains('scripts/Expand-JpgSpinnerBundle.ps1',[StringComparison]::Ordinal)) { $hasBundleInspection=$true }
+    if ($command.Contains('scripts/tests/Test-JpgSpinnerBundlePayloadComparison.ps1 -BundlePath $bundle',[StringComparison]::Ordinal)) {$hasPayloadComparisonControls=$true}
+    if ($command.Contains('scripts/tests/Test-NativePackageBlockIntegrity.ps1 -PackagePath $packages[1]',[StringComparison]::Ordinal)) {$hasBlockIntegrityControl=$true}
 }
+if (-not ($hasPayloadComparisonControls -and $hasBlockIntegrityControl)) {throw 'Unsigned packaging lacks native closed-comparison and false-block-hash controls.'}
 if (-not ($hasNativePackageBuild -and $hasNativeBundle -and $hasBundleInspection)) {
     throw 'Unsigned packaging lacks the real architecture producer, native bundle or payload inspection.'
 }

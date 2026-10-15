@@ -129,6 +129,17 @@ publishing success. The test checks original source/control container hashes.
 These are package-comparison controls, not application activation or independent
 clean-build qualification. No shipping input was repacked or changed.
 
+`Test-NativePackageBlockIntegrity.ps1` separately characterizes the actual SDK's
+hash-consumption boundary. A valid native fixture package extracts first; native
+ZIP/XML writers then create an intentionally invalid owned copy with a validly
+encoded but false WinMD block hash, retaining its payload and valid ZIP CRC.
+MakeAppx unpack refuses with `APPX_E_BLOCK_HASH_INVALID` (`0x80080207`), and the
+original package hash remains unchanged. This passing existing-behavior control
+is not manufactured RED or a new local MSIX validator. Microsoft's
+[lazy file-stream validation contract](https://learn.microsoft.com/en-us/windows/win32/api/appxpackaging/nf-appxpackaging-iappxfile-getstream)
+explains why complete native sequential extraction, rather than merely reading
+manifest syntax, matters here.
+
 The detailed `package-payload-comparison.json` reports separate acceptance,
 payload-byte identity and container-byte identity, complete raw hashes and
 actual identity/block fields. Inventory and inspection references are report-
@@ -149,9 +160,36 @@ duplicate extraction. Its `independent-package-build-comparison.json` links the
 detailed report without converting accepted variance into byte equality.
 Cheap wrong-source/existing/nested-output refusal controls pass before builds.
 
-New independent clean application builds and the remaining Store workflow
-integration are still required; this source checkpoint does not complete Task
-17 or any certification, legal, device, release or hosted-execution gate.
+## New clean-build counterevidence
+
+Two independent clean, signature-verified checkouts of source
+`9e23722b30afaf827c1ac3df59aa682452ac8e82` now each build Release x86/x64/ARM64
+and produce native-valid bundles with actual per-architecture provenance. Each
+Release image passes the native basename-only PDB-reference check. The closed
+comparison nevertheless refuses, correctly: executable, WinMD and block-map
+hashes differ in every architecture. No success report/output is promoted.
+
+Native PEReader inspection of x64 shows differences in code/read-only/data/
+relocation sections, not just build-identity fields. Both PDB references are
+`JpgSpinner.pdb`. Twenty-seven current clone-root strings remain in read-only
+data, including C++/WinRT error-origin information. That is a concrete varying
+input, not permission to exclude more bytes or proof that it is the only cause.
+The next minimized qualification uses Microsoft's documented
+[`WINRT_NO_SOURCE_LOCATION`](https://learn.microsoft.com/en-us/windows/apps/develop/cpp-winrt/macros#winrt_no_source_location)
+Release configuration, consistently across files/static libraries, while
+preserving Debug information, HRESULTs, the app's diagnostic contract and all
+WinMD metadata. No new compiler-path shim or binary patch is proposed.
+
+The manual CI source now includes the two narrow native-writer predicates and
+real package-comparison/false-block-hash controls. The hosted source-contract
+test first refuses their absence, then passes after wiring. Native YAML/
+actionlint and automatic/mixed-trigger refusal controls pass; no workflow is
+dispatched. The false-block-hash control also passes on the new real clean x64
+application package, not only the synthetic fixture.
+
+Independent application comparison qualification and the remaining Store
+workflow integration are still required; this source checkpoint does not
+complete Task 17 or any certification, legal, device, release or hosted gate.
 
 ## Authoritative and practice anchors
 

@@ -12,6 +12,16 @@ It reduces the former unconditional byte-equality guarantee; original bytes and
 raw identity results remain. Until native controls and independent-build
 integration pass, this gate remains unqualified. No other release gate changes.
 
+At signed source `9e23722b30afaf827c1ac3df59aa682452ac8e82`, native synthetic
+container controls pass the approved identity-only policy and refuse unrelated
+changed/extra/omitted files or false native block hashes. New independent clean
+three-architecture build sets complete, and their basename-only PDB checks pass,
+but complete application comparison still refuses differing executable bytes.
+Native inspection identifies clone-root strings in C++/WinRT error-origin data;
+the next bounded native configuration qualification is not yet acceptance.
+The [comparison checkpoint](implementation/2026-10-15-package-payload-comparison-contract.md)
+retains the exact distinction. Historical failures are not relabelled.
+
 ## Gate register
 
 | Gate | Current evidence boundary / remaining proof | Accountable role |

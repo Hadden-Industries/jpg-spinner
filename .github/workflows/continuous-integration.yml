@@ -33,6 +33,8 @@ jobs:
           ./scripts/tests/Test-ReleaseSbomBindingContract.ps1
           ./scripts/tests/Test-StoreSubmissionBindingContract.ps1
           ./scripts/tests/Test-ArtifactToolProcessLifecycle.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+          ./scripts/tests/Test-WinmdBuildIdentityVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+          ./scripts/tests/Test-JpgSpinnerBlockMapVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           # Isolate intentional negative-control native exit codes from the
           # caller's LASTEXITCODE; only this script's process result is a gate.
           pwsh -NoProfile -File ./scripts/Test-RepositoryPolicy.ps1
@@ -186,6 +188,12 @@ jobs:
           $bundle = Join-Path $PWD 'artifacts/unsigned-drop/JpgSpinner.msixbundle'
           ./scripts/New-MsixBundle.ps1 -PackagePaths $packages.ToArray() -OutputPath $bundle -WorkingDirectory artifacts/bundle-staging
           ./scripts/Expand-JpgSpinnerBundle.ps1 -BundlePath $bundle -InspectionDirectory artifacts/bundle-inspection
+          # Qualification creates only owned synthetic copies. These controls
+          # do not repack the shipping bundle or claim independent-build proof.
+          ./scripts/tests/Test-JpgSpinnerBundlePayloadComparison.ps1 -BundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
+          # The producer above appends x86, x64, ARM64 in that explicit order.
+          # This real x64 package supplies the native single-WinMD-block case.
+          ./scripts/tests/Test-NativePackageBlockIntegrity.ps1 -PackagePath $packages[1] -OwnedOutputRoot $env:RUNNER_TEMP
           # These real-container controls must preserve the distinct signed
           # distribution and pre-certification Store-submission boundaries.
           ./scripts/tests/Test-ReleaseSbomRefusalControls.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
