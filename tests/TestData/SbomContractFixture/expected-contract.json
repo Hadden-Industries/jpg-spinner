@@ -1,0 +1,13 @@
+{
+  "context": "https://spdx.org/rdf/3.0.1/spdx-context.jsonld",
+  "specVersion": "3.0.1",
+  "payload": {
+    "fixture.txt": "634073ab8f2a89bf749373045683c28da783014554321b2de4ea222f3ac23cce"
+  },
+  "requiredPackages": [
+    { "name": "Microsoft.Windows.CppWinRT", "version": "3.0.260818.1" },
+    { "name": "libjpeg-turbo", "version": "3.2.0#1" },
+    { "name": "exiv2", "version": "0.28.9#1" },
+    { "name": "adobe-xmp-core", "version": "2025.03#1" }
+  ]
+}

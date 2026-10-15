@@ -19,7 +19,7 @@ owns full acceptance; nothing here replaces its thresholds.
 | UI/accessibility/localization | Some real picker/layout evidence exists; final Narrator, high contrast, keyboard, scaling and locale acceptance remain | Accessibility owner |
 | OS/device matrix | Minimum OS, approved long-path-disabled refusal lane and physical ARM64 remain | Windows qualification owner |
 | Reproducibility | Payload manifest contract passes fixtures; two independent clean builds and exact manifests remain | Build maintainer |
-| SBOM | Pinned Microsoft CLI fails the SPDX 3.0.1 fixture and omits vcpkg output; backend qualification/design decision remains; no compliant release SBOM | Supply-chain owner |
+| SBOM | Approved Syft 1.54.1 public-SDK adapter passes retained payload/hash/package/overlay fixtures and pinned official SPDX schema/semantic validators; complete bundle integration, architecture-specific dependency coverage and release-tool rights/security qualification remain; no compliant release SBOM | Supply-chain owner |
 | Package identity/update | Unsigned native packages/bundle exist; trusted 1.1.3.0 upgrade and all-architecture runtime qualification remain | Release owner |
 | Signing/WACK | No final trusted signed bundle/WACK approval claimed | Credentialed release owner |
 | Licensing/source | Exact shipped dependency notices, GPL/Exiv2 compatibility, corresponding source and current Store terms need qualified legal review | Maintainer and qualified legal reviewer |

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "syftSdk": {
+    "module": "github.com/anchore/syft",
+    "version": "v1.54.1",
+    "moduleSum": "h1:IdNS5Ha7WfatXHDL0qzjdf7DBVnfb8OI3FpSbltv0nc="
+  },
+  "spdxSchema": {
+    "version": "3.0.1",
+    "url": "https://spdx.org/schema/3.0.1/spdx-json-schema.json",
+    "sha256": "582c64e809d5b3ef9bd0c4de13a32391b47b0284a3e8d199569fb96f649234b1"
+  },
+  "spdxWorkgroupTools": {
+    "version": "2.0.7",
+    "url": "https://github.com/spdx/tools-java/releases/download/v2.0.7/tools-java-2.0.7.zip",
+    "archiveSha256": "2dc63c3399c5178058b1be8a3de6f13b9f24981cd86c4292ef98f4a7e90de36d",
+    "jarSha256": "bf99a8b2ffbea238c1451c6b4be568870f18b4aac93d0dbff755f2b0b7ce43f3"
+  }
+}

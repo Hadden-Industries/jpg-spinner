@@ -38,9 +38,16 @@ The remaining complete exact-payload notice inventory is pending.
 
 ## Engineering tools
 
-Microsoft SBOM Tool 4.1.5 is release tooling under its upstream MIT license, not
-an application runtime. Its SPDX/dependency fixture currently fails; it is not
-qualified simply because its executable hash matches. YamlDotNet 18.1.0 and
+Syft SDK 1.54.1, go-sync 0.1.2 and stereoscope 0.3.4 use Apache-2.0 and serve
+the isolated release-engineering adapter, not the application runtime. The
+[Apache-2.0 license text](eng/licenses/Anchore.Apache-2.0.txt) is retained. SPDX
+Workgroup Tools 2.0.7 is an Apache-2.0 qualification tool. Their exact pins and
+validator digests are in `eng/sbom-tools.json`; native Go module checksums are
+retained under `eng/artifact-sbom`. The SDK's upstream transitive graph includes
+prerelease/pseudo-version modules: retain its native rights inventory and notices
+before redistributing a built tool; do not imply stable-only transitive or legal
+clearance. Microsoft SBOM Tool 4.1.5 failed the retained contract and is not the
+selected backend. YamlDotNet 18.1.0 and
 actionlint 1.7.12 are MIT-licensed workflow validation tools. Their pins live in
 [`eng/workflow-verification-tools.json`](eng/workflow-verification-tools.json);
 the full YamlDotNet notice is retained under `eng/licenses` and actionlint's
@@ -48,5 +55,5 @@ downloaded archive includes its upstream notice. Pinned GitHub Actions and
 CodeQL licensing/usage terms are separate from the generated application.
 
 New tooling must pass version, immutable identity, native consumer and rights
-qualification before adoption. No prospective SBOM alternative is adopted by
-mentioning it in a development decision.
+qualification before adoption. Backend fixture qualification is not a release
+SBOM or final rights approval for the complete tool/application distribution.
