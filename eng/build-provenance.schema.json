@@ -39,14 +39,9 @@
     "vcpkgBaseline": { "$ref": "#/$defs/commit" },
     "vcpkgManifestSha256": { "$ref": "#/$defs/sha256" },
     "actionCommits": {
-      "type": "object", "additionalProperties": false,
-      "required": ["actions/checkout", "actions/cache", "actions/upload-artifact", "github/codeql-action"],
-      "properties": {
-        "actions/checkout": { "$ref": "#/$defs/commit" },
-        "actions/cache": { "$ref": "#/$defs/commit" },
-        "actions/upload-artifact": { "$ref": "#/$defs/commit" },
-        "github/codeql-action": { "$ref": "#/$defs/commit" }
-      }
+      "type": "object", "minProperties": 1,
+      "description": "Exact member set and values are checked against eng/github-actions-lock.json by the record consumer.",
+      "additionalProperties": { "$ref": "#/$defs/commit" }
     }
   },
   "$defs": {

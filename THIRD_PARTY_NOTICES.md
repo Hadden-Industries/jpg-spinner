@@ -54,6 +54,13 @@ the full YamlDotNet notice is retained under `eng/licenses` and actionlint's
 downloaded archive includes its upstream notice. Pinned GitHub Actions and
 CodeQL licensing/usage terms are separate from the generated application.
 
+The immutable workflow pins include actions/download-artifact 8.0.2 and
+actions/attest 4.2.2. Their exact MIT notices are retained in
+[download-artifact](eng/licenses/actions-download-artifact.LICENSE.txt) and
+[attest](eng/licenses/actions-attest.LICENSE.txt). They run only as external
+workflow tooling; neither is an application runtime dependency. Source contracts
+and local tool tests do not establish a successful hosted action invocation.
+
 The large official SPDX schema uses [Ajv](https://github.com/ajv-validator/ajv/tree/v8.20.0)
 8.20.0 through its public draft-2020-12 API, as recommended by SPDX. This is
 external release tooling, not an application runtime dependency. The complete

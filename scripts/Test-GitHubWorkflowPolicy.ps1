@@ -98,15 +98,28 @@ foreach ($path in $WorkflowPaths) {
         $timeout = 0
         if (-not [int]::TryParse($timeoutText,[ref]$timeout) -or $timeout -lt 1 -or $timeout -gt 180) { throw 'Require a bounded literal job timeout between 1 and 180 minutes.' }
         $jobPermissions = Get-WorkflowProperty $job 'permissions'
+        $steps = Get-WorkflowProperty $job 'steps'
+        if ($steps -isnot [YamlDotNet.RepresentationModel.YamlSequenceNode]) { throw 'Job must declare actual steps.' }
+        $hasNativeAttestation=$false
+        foreach ($step in $steps.Children) {
+            $uses=Get-WorkflowScalar (Get-WorkflowProperty $step 'uses')
+            if ($uses -ceq "actions/attest@$($pins.actions['actions/attest'].commit)") {$hasNativeAttestation=$true}
+        }
         if ($null -ne $jobPermissions) {
             if ($jobPermissions -isnot [YamlDotNet.RepresentationModel.YamlMappingNode]) { throw 'Job permissions must be an explicit mapping.' }
             foreach ($permission in $jobPermissions.Children.GetEnumerator()) {
                 $pair = "$(Get-WorkflowScalar $permission.Key):$(Get-WorkflowScalar $permission.Value)"
-                if ($pair -cnotin @('contents:read','actions:read','security-events:write')) { throw 'Job requests unapproved permissions.' }
+                if ($pair -cin @('attestations:write','id-token:write')) {
+                    # Only a trusted-main hosted publisher can request platform
+                    # signing. Compilers and self-hosted desktop jobs retain
+                    # read-only tokens; the signing job has no product secrets.
+                    if (-not $hasNativeAttestation -or $isInteractive -or
+                        (Get-WorkflowScalar (Get-WorkflowProperty $job 'if')) -cne "github.ref == 'refs/heads/main'") {
+                        throw 'Platform attestation permissions require a trusted-main hosted native publisher.'
+                    }
+                } elseif ($pair -cnotin @('contents:read','actions:read','security-events:write')) { throw 'Job requests unapproved permissions.' }
             }
         }
-        $steps = Get-WorkflowProperty $job 'steps'
-        if ($steps -isnot [YamlDotNet.RepresentationModel.YamlSequenceNode]) { throw 'Job must declare actual steps.' }
         foreach ($step in $steps.Children) {
             $usesNode = Get-WorkflowProperty $step 'uses'
             if ($null -eq $usesNode) { continue }

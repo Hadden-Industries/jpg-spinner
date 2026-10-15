@@ -19,6 +19,8 @@ $record = [ordered]@{
         'actions/checkout'='3d3c42e5aac5ba805825da76410c181273ba90b1'
         'actions/cache'='55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
         'actions/upload-artifact'='cf430e030ddbb5b0abf93d22962f4752f3646cd9'
+        'actions/download-artifact'='9000827ccba6bdab643e8b6fd33ac0654aef8333'
+        'actions/attest'='1e69f48acb82d1966a394da916b4c1698aa569d6'
         'github/codeql-action'='24c54180a607b1449ed407dd24f251e4e9147c8d'
     }
 }
@@ -28,7 +30,7 @@ foreach ($name in @('msBuild','compiler','linker','makeAppx')) {
 $valid = Join-Path $fixtureRoot 'valid.json'
 [IO.File]::WriteAllText($valid,($record | ConvertTo-Json -Depth 10),[Text.UTF8Encoding]::new($false))
 & $validator -Path $valid
-foreach ($case in @('empty','wrong-type','absolute-path','duplicate','stale-action','array-root')) {
+foreach ($case in @('empty','wrong-type','absolute-path','duplicate','stale-action','missing-action','unexpected-action','substituted-action','array-root')) {
     $copy = $record | ConvertTo-Json -Depth 10 | ConvertFrom-Json -AsHashtable
     switch ($case) {
         'empty' { $json='{}' }
@@ -39,6 +41,9 @@ foreach ($case in @('empty','wrong-type','absolute-path','duplicate','stale-acti
             $json=$json.Substring(0,$json.LastIndexOf('}')) + ',"schemaVersion":1}'
         }
         'stale-action' { $copy.actionCommits['actions/checkout']='3'*40;$json=$copy | ConvertTo-Json -Depth 10 }
+        'missing-action' { $copy.actionCommits.Remove('actions/attest');$json=$copy | ConvertTo-Json -Depth 10 }
+        'unexpected-action' { $copy.actionCommits['unapproved/action']='3'*40;$json=$copy | ConvertTo-Json -Depth 10 }
+        'substituted-action' { $copy.actionCommits.Remove('actions/attest');$copy.actionCommits['unapproved/action']='3'*40;$json=$copy | ConvertTo-Json -Depth 10 }
         'array-root' { $json='[]' }
     }
     $path = Join-Path $fixtureRoot ($case+'.json')

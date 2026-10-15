@@ -21,7 +21,11 @@ if (-not $valid) { throw "Build provenance schema refused: $($schemaErrors -join
 $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (
     Get-Content -LiteralPath (Join-Path $root 'eng/github-actions-lock.json') -Raw
 ) -SourceDescription 'Approved action pins' -RequiredRootValueKind Object -AsHashtable
+# The pin file owns action membership as well as values. Keep the schema's
+# structural hash contract independent of that changing inventory; reject both
+# missing and additional actions rather than maintaining a second name enum.
+if ($record.actionCommits.Count -ne $pins.actions.Count) {throw 'Build provenance action membership differs from the reviewed pins.'}
 foreach ($action in $pins.actions.Keys) {
-    if ($record.actionCommits[$action] -cne $pins.actions[$action].commit) { throw 'Build provenance differs from current reviewed action pins.' }
+    if (-not $record.actionCommits.Contains($action) -or $record.actionCommits[$action] -cne $pins.actions[$action].commit) { throw 'Build provenance differs from current reviewed action pins.' }
 }
 Write-Output 'PASS: strict build provenance schema, unique members, normalized paths and current action pins.'

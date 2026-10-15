@@ -110,3 +110,29 @@ genuinely signed, qualified JPG Spinner input and protected-release authority.
 That positive end-to-end release run remains pending. Unsigned/native component
 tests and real signature-refusal controls cannot satisfy it. Remote CI remains
 manual-only, and this guidance does not dispatch a workflow.
+
+## Prebuilt interactive inputs
+
+The x64 Release CI producer stages only its existing application and presentation
+test-host directories with [`New-InteractiveTestDrop.ps1`](../scripts/New-InteractiveTestDrop.ps1).
+It copies every ordinary native output file, preserves assets/dependencies and
+compares inventories before/after copying. It does not compile on the test VM.
+The schema-bound `build-context.json` binds the selected commit and complete
+payload inventory. [`Test-InteractiveTestDrop.ps1`](../scripts/Test-InteractiveTestDrop.ps1)
+re-inventories actual bytes, rejects extra binary roots and returns the payload
+root for existing deployment/test scripts. Hashes alone establish no publisher.
+
+A separate hosted trusted-main publisher waits for policy, build, ASan and
+analysis. It uses GitHub's native [generic attestation action](https://github.com/actions/attest/tree/1e69f48acb82d1966a394da916b4c1698aa569d6)
+with the input-context predicate, then publishes `interactive-test-drop`.
+Signing permissions are absent from compiler and self-hosted desktop jobs.
+The [download action](https://github.com/actions/download-artifact/tree/9000827ccba6bdab643e8b6fd33ac0654aef8333)
+must fail on digest mismatch. Consumers must independently verify the context's
+platform attestation, source commit/ref and signer workflow with native
+[`gh attestation verify`](https://cli.github.com/manual/gh_attestation_verify)
+before running any downloaded executable. No custom signature verifier is used.
+
+This attestation authenticates **inputs**, not UI execution or acceptance. A
+successful hosted run, protected dedicated test lane and separately recorded
+executed-test evidence remain pending. Local sentinel/copy tests and native YAML
+validation cannot satisfy those gates. All workflows remain manual-only.

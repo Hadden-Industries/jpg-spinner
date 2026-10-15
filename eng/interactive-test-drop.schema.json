@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JPG Spinner prebuilt interactive test inputs, not test execution evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceCommit", "architecture", "configuration", "payloadManifestSha256"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "architecture": { "const": "x64" },
+    "configuration": { "const": "Release" },
+    "payloadManifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

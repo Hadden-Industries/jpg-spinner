@@ -23,7 +23,9 @@ jobs:
           ./scripts/tests/Test-WorkflowVerificationToolContract.ps1 -ToolsDirectory $tools
           ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools -WorkflowPaths @('.github/workflows/continuous-integration.yml', '.github/workflows/codeql.yml', '.github/workflows/scanner-fuzz.yml')
           ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
+          ./scripts/tests/Test-WorkflowAttestationPermissions.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
+          ./scripts/tests/Test-InteractiveTestDrop.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-BuildProvenanceControls.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           # Isolate intentional negative-control native exit codes from the
           # caller's LASTEXITCODE; only this script's process result is a gate.
@@ -88,6 +90,17 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts/provenance -Force | Out-Null
           ./scripts/New-BuildProvenance.ps1 -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}' -RequireCleanSourceTree -OutputPath 'artifacts/provenance/build.json'
+      - name: Prepare deployment-only interactive test inputs
+        if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
+        run: |
+          ./scripts/New-InteractiveTestDrop.ps1 -BinaryDirectory artifacts/bin/x64/Release -SourceCommit '${{ github.sha }}' -OutputDirectory artifacts/interactive-inputs -WorkingDirectory artifacts/interactive-input-staging
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
+        with:
+          name: unsigned-interactive-inputs
+          retention-days: 14
+          if-no-files-found: error
+          path: artifacts/interactive-inputs/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -97,6 +110,41 @@ jobs:
             artifacts/build-logs/
             artifacts/TestResults/
             artifacts/provenance/
+  interactive-inputs:
+    # Keep OIDC/signing permission out of all compiler and desktop processes.
+    # This stage signs an input inventory, not a claim that UI acceptance ran.
+    needs: [policy, build, asan, analysis]
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: unsigned-interactive-inputs
+          path: artifacts/interactive-inputs
+          digest-mismatch: error
+      - name: Verify complete prebuilt inputs
+        run: |
+          ./scripts/Test-InteractiveTestDrop.ps1 -DropDirectory artifacts/interactive-inputs -ExpectedSourceCommit '${{ github.sha }}' -WorkingDirectory artifacts/interactive-input-validation
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: artifacts/interactive-inputs/build-context.json
+          predicate-type: https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1
+          predicate-path: artifacts/interactive-inputs/build-context.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: interactive-test-drop
+          retention-days: 14
+          if-no-files-found: error
+          path: artifacts/interactive-inputs/
   unsigned-package:
     # A development/qualification drop only. Signing, trust changes, WACK and
     # Store submission belong to the separate protected release route.

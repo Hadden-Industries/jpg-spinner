@@ -13,10 +13,11 @@ $reader = [IO.File]::OpenText($workflow)
 try { $yaml.Load($reader) } finally { $reader.Dispose() }
 function Get-NodeProperty { param($Mapping,[string]$Name); return ,$Mapping.Children[[YamlDotNet.RepresentationModel.YamlScalarNode]::new($Name)] }
 $jobs = Get-NodeProperty $yaml.Documents[0].RootNode 'jobs'
-foreach ($name in @('build','policy','asan','analysis','unsigned-package')) {
+foreach ($name in @('build','policy','asan','analysis','unsigned-package','interactive-inputs')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Missing required hosted job: $name" }
 }
 $build = Get-NodeProperty $jobs 'build'
+if ($build.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new('permissions'))) {throw 'Compiler jobs must inherit only the read-only workflow token.'}
 $strategy = Get-NodeProperty $build 'strategy'
 $matrix = Get-NodeProperty $strategy 'matrix'
 $include = Get-NodeProperty $matrix 'include'
@@ -74,4 +75,51 @@ foreach ($step in $packageSteps.Children) {
 if (-not ($hasNativePackageBuild -and $hasNativeBundle -and $hasBundleInspection)) {
     throw 'Unsigned packaging lacks the real architecture producer, native bundle or payload inspection.'
 }
+$interactivePublisher=Get-NodeProperty $jobs 'interactive-inputs'
+$publisherNeeds=Get-NodeProperty $interactivePublisher 'needs'
+$neededJobs.Clear()
+foreach ($dependency in $publisherNeeds.Children) {[void]$neededJobs.Add($dependency.Value)}
+if (-not $neededJobs.SetEquals([string[]]@('policy','build','asan','analysis'))) {throw 'Interactive input publication must wait for all automated qualification jobs.'}
+if ((Get-NodeProperty $interactivePublisher 'if').Value -cne "github.ref == 'refs/heads/main'") {throw 'Interactive attestation must be restricted to the trusted main ref.'}
+$hasDropProducer=$false
+foreach ($step in $steps.Children) {
+    $runKey=[YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
+    if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/New-InteractiveTestDrop.ps1',[StringComparison]::Ordinal)) {
+        if ((Get-NodeProperty $step 'if').Value -cne "matrix.architecture == 'x64' && matrix.configuration == 'Release'") {throw 'Interactive inputs must use the real x64 Release producer only.'}
+        $hasDropProducer=$true
+    }
+}
+if (-not $hasDropProducer) {throw 'The prebuilt interactive input producer is absent from the hosted build.'}
+$publisherSteps=Get-NodeProperty $interactivePublisher 'steps'
+$publisherPermissions=Get-NodeProperty $interactivePublisher 'permissions'
+$actualPermissions=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+foreach ($permission in $publisherPermissions.Children.GetEnumerator()) {[void]$actualPermissions.Add("$($permission.Key.Value):$($permission.Value.Value)")}
+if (-not $actualPermissions.SetEquals([string[]]@('contents:read','actions:read','id-token:write','attestations:write'))) {throw 'Input publisher requires exactly the native platform signing permissions.'}
+$hasInputValidation=$false;$hasInputAttestation=$false;$hasDownload=$false;$hasPublication=$false
+foreach ($step in $publisherSteps.Children) {
+    $runKey=[YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
+    if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/Test-InteractiveTestDrop.ps1',[StringComparison]::Ordinal)) {$hasInputValidation=$true}
+    $usesKey=[YamlDotNet.RepresentationModel.YamlScalarNode]::new('uses')
+    if (-not $step.Children.ContainsKey($usesKey)) {continue}
+    $uses=$step.Children[$usesKey].Value
+    $arguments=Get-NodeProperty $step 'with'
+    if ($uses.StartsWith('actions/download-artifact@',[StringComparison]::Ordinal)) {
+        if ((Get-NodeProperty $arguments 'name').Value -cne 'unsigned-interactive-inputs' -or
+            (Get-NodeProperty $arguments 'digest-mismatch').Value -cne 'error') {throw 'Publisher must download exact inputs with native digest failure enabled.'}
+        $hasDownload=$true
+    }
+    if ($uses.StartsWith('actions/attest@',[StringComparison]::Ordinal)) {
+        if (-not ($hasDownload -and $hasInputValidation)) {throw 'Input attestation precedes download or independent byte validation.'}
+        if ((Get-NodeProperty $arguments 'subject-path').Value -cne 'artifacts/interactive-inputs/build-context.json' -or
+            (Get-NodeProperty $arguments 'predicate-path').Value -cne 'artifacts/interactive-inputs/build-context.json' -or
+            (Get-NodeProperty $arguments 'predicate-type').Value -cne 'https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1') {throw 'Publisher attests the wrong subject or input predicate.'}
+        $hasInputAttestation=$true
+    }
+    if ($uses.StartsWith('actions/upload-artifact@',[StringComparison]::Ordinal)) {
+        if (-not $hasInputAttestation -or (Get-NodeProperty $arguments 'name').Value -cne 'interactive-test-drop' -or
+            (Get-NodeProperty $arguments 'if-no-files-found').Value -cne 'error') {throw 'Complete input publication must follow attestation.'}
+        $hasPublication=$true
+    }
+}
+if (-not ($hasDownload -and $hasInputValidation -and $hasInputAttestation -and $hasPublication)) {throw 'Prebuilt interactive inputs require native validation and platform attestation before publication.'}
 Write-Output 'PASS: native-validated CI source wiring and exact build/test architecture matrix; hosted execution remains unqualified.'
