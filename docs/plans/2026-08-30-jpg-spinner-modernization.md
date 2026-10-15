@@ -1921,6 +1921,8 @@ git commit -m "docs: define support privacy and release contracts"
 
 ### Step 19.4: GREEN legacy absence and full system
 
+- [ ] Resolve the five existing `cpp/integer-multiplication-cast-to-long` alerts through this auditable deletion, not edits to the quarantined codec: [alert 1](https://github.com/Hadden-Industries/jpg-spinner/security/code-scanning/1) names `JPG Spinner/jdmainct.c:186`; [alert 2](https://github.com/Hadden-Industries/jpg-spinner/security/code-scanning/2), [alert 3](https://github.com/Hadden-Industries/jpg-spinner/security/code-scanning/3), [alert 4](https://github.com/Hadden-Industries/jpg-spinner/security/code-scanning/4) and [alert 5](https://github.com/Hadden-Industries/jpg-spinner/security/code-scanning/5) name `JPG Spinner/jmemmgr.c:601-612`. Intake on 2026-10-15 found all five open against `c8151907ebf58a33f752de0dce04c32500963a0a`; these are not stale source locations. Prove the modern solution consumes maintained libjpeg-turbo instead, retain the legacy-absence regression and inspect a deliberately requested post-cutover CodeQL analysis before claiming GitHub resolution. Keep historical default-setup and new manual-build analysis categories distinct: a successful new category does not itself close old-category alerts. Do not hide the files with scanning exclusions or dismiss alerts merely because the runtime is retired. Remote CI remains manual-only; this checklist does not dispatch a workflow.
+
 - [ ] Run:
 
 ```powershell
