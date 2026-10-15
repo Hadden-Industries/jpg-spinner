@@ -1608,6 +1608,43 @@ qualification remain separate obligations. Native API references:
 [SHA256.HashData](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.sha256.hashdata),
 and [Utf8JsonWriter](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.utf8jsonwriter).
 
+**Native workflow-validation source checkpoint (2026-10-15):**
+Latest upstream release/API inspection selects YamlDotNet 18.1.0 and actionlint
+1.7.12 (both MIT, tool-only, not application runtime dependencies). The standard
+PowerShell runtime has no built-in YAML/Actions semantic validator. YamlDotNet's
+representation model rejects duplicate mapping keys before conversion; native
+scanner comment events retain version annotations without a parallel YAML
+grammar. actionlint owns GitHub workflow/expression syntax. Residual repository
+policy is explicit action pins, runner/permission/timeout/concurrency constraints,
+PR secret-token prohibition and bounded artifact retention. No custom YAML or
+Actions expression parser is introduced. Tool archives are exact-version/hash
+pinned; cached DLL/EXE bytes are compared to their authenticated archive entries
+before loading. NuGet repository signature and GitHub actionlint attestation
+verification passed during qualification; the extracted MIT notices are retained.
+
+The actual positive fixture passes both native consumers; duplicate-key and
+undefined-context fixtures fail at their respective consumers. Producer/policy
+stubs reached meaningful RED, then passed focused GREEN and archive/assembly
+poison controls. Nine targeted workflow mutations fail. A separate relative-path
+regression reached RED and now passes after binding paths through PowerShell's
+provider, not the distinct process current directory. Setup-only failures (log
+path, ABI version expectation, scanner constructor and invalid join operator)
+are retained separately. These checks do not claim hosted CI, execution of any
+workflow step, whole Task 17 completion, or application release qualification.
+The default policy intentionally requires the five final workflows; fixture mode
+qualifies the validator before those workflows are implemented and integrated.
+
+Sources and reviewed contracts:
+[YamlDotNet release](https://github.com/aaubry/YamlDotNet/releases/tag/v18.1.0),
+[native duplicate-key handling](https://github.com/aaubry/YamlDotNet/blob/v18.1.0/YamlDotNet/RepresentationModel/YamlMappingNode.cs),
+[actionlint release and attested assets](https://github.com/rhysd/actionlint/releases/tag/v1.7.12),
+[YamlDotNet MIT notice](https://github.com/aaubry/YamlDotNet/blob/v18.1.0/LICENSE.txt),
+[actionlint MIT notice](https://github.com/rhysd/actionlint/blob/v1.7.12/LICENSE.txt),
+and [PowerShell/native working-directory distinction](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-location#notes).
+The action pins below supersede the original research snapshot using current
+official release tags resolved to full commits; all four action licenses remain
+MIT, and their selected entry points use the hosted runner's Node 24 runtime.
+
 **Files:**
 
 - Create: `scripts/Invoke-StaticAnalysis.ps1`
@@ -1631,10 +1668,10 @@ and [Utf8JsonWriter](https://learn.microsoft.com/en-us/dotnet/api/system.text.js
 - [ ] Extend repository policy to parse workflow YAML and reject mutable action tags, `windows-latest`, prerelease tools, unbounded permissions, missing timeouts, artifact retention over 30 days, and any secret passed to pull-request builds.
 - [ ] Require `scripts/Invoke-Sbom.ps1` to name Microsoft SBOM Tool CLI version 4.1.5, its versioned release URL, and Windows x64 SHA-256 `625767b371b7fdd58f40f618b8a86da0247a33c89e419039c86b4edba1dad4b5`; reject `releases/latest`, an absent digest, and `Microsoft.Sbom.Targets`, whose NuGet `Pack` integration does not describe an MSIX release drop.
 - [ ] Require these reviewed action commits with a version comment:
-  - `actions/checkout` v6.0.2 at `de0fac2e4500dabe0009e67214ff5f5447ce83dd`;
-  - `actions/cache` v5.1.0 at `caa296126883cff596d87d8935842f9db880ef25`;
-  - `actions/upload-artifact` v7.0.1 at `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`;
-  - `github/codeql-action` v4.37.9 at `cdf488f595d80d6e07e03d4674febd5ab45fa938`.
+  - `actions/checkout` v7.0.1 at `3d3c42e5aac5ba805825da76410c181273ba90b1`;
+  - `actions/cache` v6.1.0 at `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`;
+  - `actions/upload-artifact` v7.0.2 at `cf430e030ddbb5b0abf93d22962f4752f3646cd9`;
+  - `github/codeql-action` v4.38.3 at `24c54180a607b1449ed407dd24f251e4e9147c8d`.
 - [ ] Require `windows-2025-vs2026`, least-privilege workflow permissions, job timeouts, and concurrency cancellation for superseded pull requests.
 - [ ] Require every build/package job to capture runner `ImageVersion`, OS build, exact `VCToolsVersion`, full `cl.exe`/`link.exe` versions and paths, Windows SDK/MakeAppx versions, NuGet lock hashes, vcpkg baseline, action commits, and source commit. The runner label is selection policy, not immutable provenance.
 - [ ] Implement `Test-BuildProvenance.ps1` before workflow provenance emission. Give it an empty or deliberately incomplete JSON record and observe RED diagnostics for every missing field; then make the workflow emit one versioned, schema-checked record whose executable/file paths are normalized without leaking the developer profile path.

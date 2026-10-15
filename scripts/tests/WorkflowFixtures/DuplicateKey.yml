@@ -1,0 +1,12 @@
+name: Duplicate mapping fixture
+on: pull_request
+permissions:
+  contents: read
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 15
+    steps:
+      - run: Write-Output 'Must never run.'
