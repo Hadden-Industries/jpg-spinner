@@ -1578,7 +1578,7 @@ submission or complete Task 16 acceptance is claimed by this source checkpoint.
 
 ### Step 16.4: Validate package and commit
 
-- [ ] Run manifest policy, MakeAppx bundle validation, signature verification, and Windows App Certification Kit against Release packages for all architectures.
+- [ ] Run manifest policy, MakeAppx bundle validation and Windows App Certification Kit against the applicable Release candidate for all architectures. Native signature verification is mandatory for signed-distribution inputs; the approved Store-only submission route uses Microsoft-managed post-certification signing and must not invent a trusted-signature claim for its unsigned input.
 - [ ] Keep certificates and passwords outside the repository; CI obtains signing material only from protected release secrets.
 - [ ] Commit:
 
@@ -1624,6 +1624,22 @@ qualification remain separate obligations. Native API references:
 [File.OpenRead](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.openread),
 [SHA256.HashData](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.sha256.hashdata),
 and [Utf8JsonWriter](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.utf8jsonwriter).
+
+**Independent-build counterevidence (2026-10-15):** Two independent clean native
+checkouts of signed commit `1cafa5b680f014d1c6808f2a309851f25b9e6201` each built
+Release x86, x64 and ARM64, recorded actual per-architecture provenance, and
+produced/recursively unpacked a valid unsigned bundle. Canonical payload equality
+then correctly refused: `JpgSpinner.exe`, `JpgSpinner.winmd` and `AppxBlockMap.xml`
+differ in each architecture (nine paths). Both container hashes differ as well.
+The output was not promoted, and both bundles/manifests/native logs are retained
+under the owning execution. Cause remains to be diagnosed with authoritative
+compiler/metadata-tool guidance; do not normalize away binary differences or
+claim payload/container reproducibility. An earlier attempt failed before any
+clone because multiple PowerShell Git matches formed one invalid filename; its
+resolution was fixed. A deeper workspace then hit CMake/MSVC's path budget;
+the successful build execution used an independently allocated short E: root,
+without changing toolchain flags or Windows settings. These failures remain
+separate from the completed native builds and failed equality gate.
 
 **Native workflow-validation source checkpoint (2026-10-15):**
 Latest upstream release/API inspection selects YamlDotNet 18.1.0 and actionlint
@@ -1845,7 +1861,7 @@ complete from this source checkpoint. Sources:
 - [ ] Implement `Invoke-Sbom.ps1` around that qualified adapter. Native Go owns the readonly SDK graph/checksums; use the exact schema and Workgroup validator identities in `eng/sbom-tools.json`. Acquire tooling only into an approved external tool cache, validate before execution and retain mismatched downloads as failed evidence or dispose recoverably when eligible. Never fall back to a different version or moving URL. Recheck latest applicable stable tooling and exact transitive rights/security before final release-tool adoption; the stable SDK's upstream graph contains prerelease/pseudo-version modules.
 - [ ] Have the script recursively unpack the exact input `.msixbundle` and each contained architecture `.msix` into a newly created inspection directory. Reject path traversal, reparse points, duplicate output paths, an unexpected architecture, a package manifest that differs from the bundle declaration, or a signature/hash verification failure. Treat the extracted tree as read-only input and put the generated manifest outside it so the SBOM cannot inventory itself.
 - [ ] Give the adapter the verified extracted payload tree and separate resolved architecture-specific component evidence, with explicit public artifact name and observed version. Use native NuGet lock cataloging and native vcpkg SPDX decoding, not a second manifest resolver. Rebind document-local package identities through the native typed model before encoding. Compare output against the complete installed build-component closure of the two application roots for each architecture and the application's resolved NuGet lock. A schema-valid SBOM that loses a required build component still fails. Do not describe this closure as the exact linked, deployed or instrumented runtime graph; qualify those separately under the approved scope contract below.
-- [ ] Require root `@context` to equal `https://spdx.org/rdf/3.0.1/spdx-context.jsonld`, every emitted `CreationInfo.specVersion` to equal `3.0.1`, and every shipped payload file to have the expected SHA-256. Validate against the pinned official schema and SPDX Workgroup semantic verifier; preserve the SBOM beside the bundle and record the outer signed-bundle SHA-256 in provenance. Do not emit an obsolete-format duplicate without a named consumer requirement.
+- [ ] Require root `@context` to equal `https://spdx.org/rdf/3.0.1/spdx-context.jsonld`, every emitted `CreationInfo.specVersion` to equal `3.0.1`, and every inventoried artifact payload file to have the expected SHA-256. Validate against the pinned official schema and SPDX Workgroup semantic verifier; preserve the SBOM beside the exact distribution-role bundle and record that container's SHA-256 in provenance. Signed distribution requires native signature trust before extraction; the separately labelled Store-submission artifact does not imply certification or customer-delivered bytes. Do not emit an obsolete-format duplicate without a named consumer requirement.
 - [x] Run the maintained contract runner on the pinned native SDK and validators. GREEN proves output scope, 3.0.1 context/specVersion/schema, the expected fixture file hash, NuGet/libjpeg-turbo/Exiv2/Adobe XMP identities, membership and semantic validity. Actual signed-bundle dependency coverage, extraction and release integration remain pending.
 
 **Reusable artifact-validation checkpoint (2026-10-15):**
@@ -2103,6 +2119,23 @@ distinct entry points and schema-bound evidence; do not add an unsigned-release
 bypass. Preserve WACK, device/upgrade/accessibility, legal, deliberate Partner
 Center submission and rollout gates. Historical signed-route checkpoints above
 describe their original scope, not a requirement to buy Store signing services.
+
+**Separate SBOM-entry-point source checkpoint (2026-10-15):**
+`New-StoreSubmissionSbom.ps1` selects the pre-certification Store role;
+`Invoke-Sbom.ps1` retains the fixed signed-distribution role with native trust
+before extraction. `BundleSbomEvidence.psm1` shares native inspection/cataloging,
+bounded validation, input rechecks and complete-directory publication, not a
+signature bypass or an SDK-output rewriting shim. The Store binding explicitly
+leaves certification/release approval pending and is mutually exclusive with
+the signed-route binding. The initial permissive schema admitted a certification
+claim (RED); the closed schema and cross-role/native PowerShell AST controls
+now refuse it (GREEN). Wrong-digest Store refusal and unchanged real unsigned
+signed-route refusal controls pass. The real Store integration attempt did not
+reach cataloging: native Go `mod verify` exceeded the existing 180-second budget.
+Its terminated process was confirmed absent, partial diagnostics retained and
+no evidence directory published. Positive integration and the protected Store
+workflow remain pending; no deadline extension or repeated expensive retry was
+used to manufacture success.
 
 - [ ] Trigger Store packaging only by explicit `workflow_dispatch` into a protected environment. A signed release tag may identify the reviewed source, but must not itself start a workflow.
 - [ ] Write `New-PayloadManifest.ps1` test-first. Given an unpacked package tree, it emits a path-ordinal, UTF-8 manifest of normalized relative path, byte length, and SHA-256 and rejects reparse points, duplicate normalized paths, or files outside the root. A one-byte fixture mutation must produce an observed RED mismatch before the final comparison is accepted.

@@ -30,6 +30,8 @@ jobs:
           ./scripts/tests/Test-InteractiveTestEvidence.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-InteractiveWorkflowContract.ps1 -ToolsDirectory $tools
           ./scripts/tests/Test-BuildProvenanceControls.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+          ./scripts/tests/Test-ReleaseSbomBindingContract.ps1
+          ./scripts/tests/Test-StoreSubmissionBindingContract.ps1
           # Isolate intentional negative-control native exit codes from the
           # caller's LASTEXITCODE; only this script's process result is a gate.
           pwsh -NoProfile -File ./scripts/Test-RepositoryPolicy.ps1
@@ -177,6 +179,10 @@ jobs:
           $bundle = Join-Path $PWD 'artifacts/unsigned-drop/JpgSpinner.msixbundle'
           ./scripts/New-MsixBundle.ps1 -PackagePaths $packages.ToArray() -OutputPath $bundle -WorkingDirectory artifacts/bundle-staging
           ./scripts/Expand-JpgSpinnerBundle.ps1 -BundlePath $bundle -InspectionDirectory artifacts/bundle-inspection
+          # These real-container controls must preserve the distinct signed
+          # distribution and pre-certification Store-submission boundaries.
+          ./scripts/tests/Test-ReleaseSbomRefusalControls.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
+          ./scripts/tests/Test-StoreSubmissionSbomRefusals.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

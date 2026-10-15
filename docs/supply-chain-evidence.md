@@ -180,10 +180,33 @@ The 2026-10-15 approval separates the unsigned Store-submission artifact from
 signed sideload distribution. [Microsoft supplies the Store signature](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-package-requirements#code-signing-for-microsoft-store-submissions)
 after certification. The protected Store route must authenticate its exact
 reproducible submission bundle and separately labelled SBOM/provenance; it must
-not claim a trusted installed or Store-delivered package. That maintained route
-is still being implemented. `Invoke-Sbom.ps1` remains the signed-distribution
-entry point described above, not an unsigned Store switch. Neither route waives
+not claim a trusted installed or Store-delivered package.
+[`New-StoreSubmissionSbom.ps1`](../scripts/New-StoreSubmissionSbom.ps1) is the
+separate submission-artifact producer. It shares native bundle inspection,
+cataloging, bounded official validation and complete-directory publication with
+the signed route, but emits the distinct closed
+[Store-submission binding](../eng/store-submission-sbom-binding.schema.json).
+Certification and release approval remain explicitly pending. Its caller must
+authenticate the actual clean-build provenance and selected container; matching
+a caller-provided digest alone does not establish publisher trust.
+`Invoke-Sbom.ps1` remains the signed-distribution entry point described above,
+not an unsigned Store switch. Neither route waives
 WACK, upgrade/device/accessibility, legal, deliberate submission or rollout gates.
+
+The public entry points fix their respective artifact roles; callers cannot
+select a signature bypass on the signed route. Native PowerShell AST and JSON
+Schema controls reject a wrong role, cross-role binding, missing contract,
+unqualified runtime/approval claims and bad JSON types. Real unsigned input is
+still refused by native trust before signed-route extraction. Store workflow
+composition, authenticated hosted execution and final artifact qualification
+remain pending. The real unsigned Store integration reached the existing native
+Go module-integrity check and exceeded its unchanged 180-second deadline before
+cataloging, official validation or publication. The owned process was terminated
+and its absence checked; partial inspection plus module-identity/definition
+diagnostics are retained. No completed integrity result or passing integration
+is claimed. Diagnose this bounded failure before another expensive attempt; do
+not increase the deadline, suppress integrity verification or infer success from
+the earlier SDK fixture results.
 
 [`Invoke-PackageReproducibility.ps1`](../scripts/Invoke-PackageReproducibility.ps1)
 owns two independent native Git clones of one exact signature-verified clean
@@ -193,8 +216,12 @@ with the owning SDK and compares canonical full payload manifests. It records
 container hashes separately; different container hashes cannot become a
 byte-identical-container claim. Working/output directories must be fresh,
 disjoint and outside the source checkout. Failed native logs and partial work
-remain diagnostic, not published qualification. The first real independent-build
-run remains pending at this source checkpoint; no result is inferred from the
-cheap refusal controls. Use an explicitly allocated workspace with adequate
+remain diagnostic, not published qualification. The first complete real run at
+signed source `1cafa5b680f014d1c6808f2a309851f25b9e6201` built all three
+architectures twice, but canonical equality refused nine executable/WinMD/block
+map paths. Nothing was promoted as reproducible; both native bundle snapshots
+and comparison evidence are retained for diagnosis. Do not remove those paths
+from the manifest or rewrite their bytes merely to obtain equality. Use an
+explicitly allocated short workspace with adequate
 disk headroom, and recycle released clones only after retaining their required
 results and provenance.

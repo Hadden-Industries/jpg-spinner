@@ -36,7 +36,7 @@ $binding=ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content -Literal
 if ($binding.bundle.sha256 -cne $ExpectedBundleSha256 -or
     $binding.bundle.fileName -cne [IO.Path]::GetFileName($BundlePath)) {throw 'Published binding differs from the exact selected container.'}
 $files=@(Get-ChildItem -LiteralPath $parameters.OutputDirectory -File)
-if ($files.Count -ne 5 -or [IO.Directory]::Exists((Join-Path $parameters.WorkingDirectory 'release-evidence'))) {
+if ($files.Count -ne 5 -or [IO.Directory]::Exists((Join-Path $parameters.WorkingDirectory 'bundle-sbom-evidence'))) {
     throw 'Release publication did not promote exactly one complete evidence directory.'
 }
 foreach ($entry in $binding.evidence.GetEnumerator()) {
