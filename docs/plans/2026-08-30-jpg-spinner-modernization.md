@@ -1766,6 +1766,19 @@ project reports from the preceding run remain separate retained evidence.
 
 ### Step 17.3: GREEN CodeQL and fuzz workflows
 
+**Native corpus checkpoint (2026-10-15):** The retained one-second regression
+first completed the existing instrumented fuzz path and failed because no
+minimized corpus was produced. Each invocation now owns a fresh UUID run,
+preserves full inputs and native diagnostics, replays the complete corpus before
+native `-merge=1`, then audits the result with a second native merge that must add
+no inputs. Deliberately redundant synthetic seeds prove actual reduction rather
+than copying everything; original inputs remain unchanged. Process deadlines,
+two-process MSBuild concurrency and the documented native vcpkg Release mapping
+bound this development path. No custom minimizer or coverage-prose parser is
+introduced; [LLVM's corpus contract](https://llvm.org/docs/LibFuzzer.html#corpus)
+owns feature selection. These bounded development passes do not establish the
+final aggregate fuzz duration or authorize a remote CI run.
+
 - [ ] CodeQL runs C++ analysis on a clean x64 build with `security-extended`; no high-severity result may remain open at release.
 - [ ] Manually dispatched fuzz qualification runs the scanner target under AddressSanitizer for a bounded duration, minimizes new corpus inputs, uploads only non-user corpus/reproducers, and fails on crash, timeout, leak, or memory-limit violation. It has no scheduled trigger.
 - [ ] A pull request adding a fuzzer reproducer first adds a named deterministic regression test that fails without the fix.
