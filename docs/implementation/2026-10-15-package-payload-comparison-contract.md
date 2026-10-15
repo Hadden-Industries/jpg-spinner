@@ -381,6 +381,59 @@ The selected native MakeAppx help and native MSIX target source define the exact
 required; neither this integration nor the scoped NOICF proof accepts an earlier
 failed pair, relaxes the comparison or establishes release approval.
 
+### Actual integrated pair outcome and next decision (2026-10-16)
+
+All six native builds at signed source
+`d29b594df3f821a0771a47a420643bbde494f35f` complete and retain both clean
+checkouts. **Every executable pair is byte-identical**, including x64 with the
+scoped NOICF policy. Every app WinMD passes the existing timestamp/MVID-only
+predicate. Complete raw manifests differ at six paths: the app WinMD and block
+map for each architecture. The overall comparison still **fails** and promotes
+no qualified output.
+
+The SDK's original upload mapping files are hash-identical between builds for
+each architecture. Native MSBuild binary-log replay confirms the actual selected
+Store-component MakeAppx command includes `/np`. Nevertheless, native XML
+inspection observes reordered asset `File` siblings. Each map has 61 unique file
+names; comparing native XML file subtrees by name finds changes only in the app
+WinMD entry. This is diagnostic evidence, **not** a passing raw-byte comparison
+or authority to normalize XML. The existing four-file ARM64 predicate replay
+reproduces the refusal in under one second, without a build. No further full
+pair is launched for this unchanged condition.
+
+The first set's original bundle has SHA-256
+`3d83dbaf7ba8d9dac8fb4d9c92b6253cc0ada67b4e6af78eda1e041c8879d78f`.
+Native exports from its completed checkout and resolved NuGet lock compose all
+38 required identities. The maintained actual Store-SBOM integration passes
+native generation, exact component/payload checks, official SPDX schema and
+semantic validation, complete five-file evidence publication and input
+preservation. Its binding keeps certification/release approval pending and
+build execution unattested. This independently successful test does not waive
+the failed package comparison or prove hosted provenance.
+
+**Proposed, not approved:** permit only a permutation of complete `File`
+elements in a read-only comparison view, indexed by exact native filename.
+Keep the document envelope, every per-file byte and ordered block list strict
+except the already approved app WinMD fields/consequences. Reject duplicate,
+missing, extra or changed filenames and every other difference. Preserve original
+containers, native validation, raw XML/manifests/hashes and explicit variance
+reporting; never call that result byte-identical payloads. Qualify on retained
+originals and negative controls before amending the active policy. Do not sort
+or rewrite a shipping artifact, disable compression, adopt an older packager or
+build another package writer merely to evade the current refusal.
+
+First principles separate executable content from packaging metadata order;
+maintainability favors the existing native producer and parser over a new
+container implementation. Microsoft's [block-map schema](https://learn.microsoft.com/en-us/uwp/schemas/blockmapschema/element-blockmap)
+describes repeated `File` children, and its
+[native reader retrieves a file by name](https://learn.microsoft.com/en-us/windows/win32/api/appxpackaging/nf-appxpackaging-iappxblockmapreader-getfile).
+Neither is a promise of deterministic producer ordering. Native
+[`AddPayloadFile`](https://learn.microsoft.com/en-us/windows/win32/api/appxpackaging/nf-appxpackaging-iappxpackagewriter-addpayloadfile)
+could support another original-package producer, but that is a larger unqualified
+integration, not a justified shortcut. The broader reproducible-build community
+requires an explicit comparison/exclusion contract, not a retroactive success
+claim. The narrow whole-element-order amendment requires the owner's decision.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):

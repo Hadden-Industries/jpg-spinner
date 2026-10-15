@@ -39,6 +39,16 @@ exact successful clean-build binding and certification remain pending.
 
 ## Gate register
 
+At signed source `d29b594df3f821a0771a47a420643bbde494f35f`, both new native
+three-architecture sets finish with byte-identical executable pairs and accepted
+WinMD-only identity variance. Identical SDK upload file maps and actual `/np`
+commands still produce reordered block-map `File` entries. The comparison
+correctly refuses them and publishes no qualified bundle. The exact first-bundle
+Store-SBOM test passes with all 38 required component identities and official
+validation; hosted authentication, comparison acceptance, certification and
+release are separate, still pending. See the
+[recorded outcome and unapproved ordering proposal](implementation/2026-10-15-package-payload-comparison-contract.md#actual-integrated-pair-outcome-and-next-decision-2026-10-16).
+
 The [legacy outcome coverage map](legacy-cutover-coverage.md) links supported
 behaviors to maintained executable tests and names deliberately retired
 surfaces. It is selection guidance, not pre-cutover execution/upgrade approval.

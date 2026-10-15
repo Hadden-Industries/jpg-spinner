@@ -3,6 +3,27 @@
 This is release-engineering guidance, not permission to sign, publish or release.
 JPG Spinner 2.0 remains [not release-qualified](release-qualification.md).
 
+## Latest integrated development evidence (2026-10-16)
+
+The actual independent pair at signed source
+`d29b594df3f821a0771a47a420643bbde494f35f` completes all six native builds.
+All three executable pairs are byte-identical, but reordered native block-map
+file entries remain outside the approved comparison and correctly refuse
+qualification. Serial MakeAppx `/np` is present in the actual SDK command;
+mapping-file inputs agree. No qualified drop or complete-payload reproducibility
+is claimed. The [comparison checkpoint](implementation/2026-10-15-package-payload-comparison-contract.md#actual-integrated-pair-outcome-and-next-decision-2026-10-16)
+retains the exact result and a separate, unapproved order-only proposal.
+
+The completed first checkout supplies new native triplet exports and its actual
+resolved NuGet lock: 38 required component identities. The real Store-submission
+integration passes against that set's exact original bundle SHA-256
+`3d83dbaf7ba8d9dac8fb4d9c92b6253cc0ada67b4e6af78eda1e041c8879d78f`,
+including official SPDX schema/semantic validation and complete five-file
+evidence publication. It preserves original bytes and records certification,
+release approval and runtime qualification as pending. This is exact local
+clean-build artifact evidence, not hosted provenance, a passing independent
+comparison, Store acceptance or whole Task 17 completion.
+
 ## What each result establishes
 
 | Result | Claim | Not established |
