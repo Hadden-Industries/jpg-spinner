@@ -37,6 +37,13 @@
       <!-- Keep /O2 explicit so Release behavior cannot drift with imported defaults. -->
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <!-- Optional C++/WinRT error-origin data embeds clone-local source paths.
+           Use the documented configuration consistently across all files and
+           static libraries in a Release module, before projection headers.
+           HRESULTs, application diagnostics and PDB symbols remain; Debug keeps
+           source origins. This does not omit or rewrite any WinMD metadata.
+           https://learn.microsoft.com/windows/apps/develop/cpp-winrt/macros#winrt_no_source_location -->
+      <PreprocessorDefinitions>WINRT_NO_SOURCE_LOCATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>

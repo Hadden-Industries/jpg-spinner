@@ -191,6 +191,32 @@ Independent application comparison qualification and the remaining Store
 workflow integration are still required; this source checkpoint does not
 complete Task 17 or any certification, legal, device, release or hosted gate.
 
+## Release error-origin configuration checkpoint
+
+The minimized `WinrtErrorSourceLocationProbe` uses the actual qualified
+C++/WinRT projection and native error-origin/WIL-interoperation callback. Its
+first Release build succeeds but execution returns 3 because source file/line
+information is present (behavioural RED). Root Release item definitions now
+select Microsoft's documented `WINRT_NO_SOURCE_LOCATION` before projection
+headers, consistently for modern files/static libraries. No internal compiler
+path option, vendor patch, binary rewriting or expanded byte exclusion is used.
+
+`Test-WinrtErrorSourceLocationPolicy.ps1` then builds from two distinct owned
+source directories through the real root MSBuild policy. Both Release consumers
+preserve the expected `E_ACCESSDENIED` through origination, callback and exception,
+omit optional file/line information and produce equal executable hashes. A
+separate Debug consumer retains nonempty file and line origins. All pass in the
+bounded native probe (GREEN). No application diagnostic field, HRESULT, PDB
+symbol or WinMD table/member is removed. These results qualify this configuration
+mechanism, not the whole application or the dependency's absolute source paths.
+Microsoft's configuration contract requires consistent settings within each
+linked module; Debug and Release remain independently built graphs.
+
+The manual CI packaging lane uses its actual prebuilt projection to run this
+control. Its source-contract check first refuses missing wiring, then passes
+after the call is added. The prior complete application comparison remains
+failed. A new clean signed-source pair is still required before qualification.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):
