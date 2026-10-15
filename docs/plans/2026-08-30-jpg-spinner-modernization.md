@@ -1831,6 +1831,21 @@ while preserving the independent fixed fixture hash oracle. This checks caller
 requirements, not whether a caller's dependency list is complete; production
 architecture-specific graph coverage and signed-bundle integration remain open.
 
+**Native signature-verification checkpoint (2026-10-15):**
+`Resolve-MsixToolchain.ps1` evaluates the locked owning app targets for MakeAppx
+and selects its companion SignTool in that same SDK architecture directory,
+not the unrelated legacy `SignToolPath` property or a PATH/newest-SDK fallback.
+`Test-MsixSignature.ps1` holds the exact container read-only while hashing and
+running native `verify /pa /all`, retains diagnostics, fails on every nonzero
+exit, and bounds the owned process with no retry or trust-store changes. The
+initial hash-only seam wrongly accepted the unsigned bundle (observed RED);
+native verification now accepts an existing genuine Microsoft-signed runtime
+MSIX and refuses both the unsigned app bundle and a well-formed tampered copy
+with its original signature still present. Original inputs remain unchanged.
+This qualifies the native trust boundary, not a signed JPG Spinner release or
+Store submission. See [SignTool verification policies and exit codes](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool)
+and [MSIX signing guidance](https://learn.microsoft.com/en-us/windows/msix/package/sign-app-package-using-signtool).
+
 - [ ] Dependabot version 2 monitors NuGet and GitHub Actions weekly, groups related Microsoft Windows packages, and never auto-merges.
 - [ ] Include `Test-DependencyFreshness.ps1` in deliberately requested qualification for vcpkg/upstream release drift; do not add a scheduled remote CI trigger. An upgrade updates baseline/override/notice together and runs the entire release suite.
 
@@ -1914,7 +1929,7 @@ these source edits. Those steps remain mandatory below.
 ### Step 18.3: Generate and verify third-party notices
 
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
-- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, Microsoft SBOM Tool CLI 4.1.5 as release tooling, and each transitive native dependency actually present in the bundle.
+- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
 - [ ] Prepare the exact corresponding source, patches, dependency locks, and reproducible build instructions for the distributed binary. Do not assume that static versus dynamic linkage or a separate process removes license obligations, and do not introduce a loader/process boundary merely as a licensing shim.
 - [ ] Include libjpeg-turbo’s applicable BSD-style and IJG notices verbatim from its packaged copyright files, not from memory.
