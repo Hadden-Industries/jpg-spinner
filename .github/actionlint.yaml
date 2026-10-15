@@ -1,0 +1,5 @@
+# Register the one deployment-only lane label with actionlint's native schema.
+# This declares a label, not a runner installation or an isolation claim.
+self-hosted-runner:
+  labels:
+    - jpg-spinner-interactive

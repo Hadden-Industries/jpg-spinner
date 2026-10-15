@@ -1589,6 +1589,23 @@ git commit -m "build: preserve Store identity in the WinUI package"
 
 ## Task 17: Add continuous integration, security analysis, and supply-chain evidence
 
+**Deployment-only interactive workflow source checkpoint (2026-10-15):**
+`New-InteractiveTestDrop.ps1` preserves the complete prebuilt app and presentation
+test-host outputs; a separate hosted main publisher authenticates their input
+context using GitHub's native attestation action. The manual interactive workflow
+admits only a successful same-commit/manual CI producer and an existing
+reviewer-protected environment. The dedicated self-hosted job has read-only
+permissions, native input-attestation/hash verification and the existing bounded
+native desktop qualification/test host; no build is performed on the test VM.
+A separate hosted job signs schema-bound, nonempty, fresh, passing native JUnit
+evidence, with operator acceptance explicitly pending. Native Catch2 assertion
+and reported-case counts retain their actual meanings. Automated UIA excludes
+operator-assisted cases rather than waiting for unattended human input. Source
+contracts, typed REST/JSON refusal controls and native XML result controls pass;
+actual protected environment/runner configuration, hosted dispatch and all
+assistive-technology/operator acceptance remain open. See the maintained
+[input and execution evidence procedure](../supply-chain-evidence.md#prebuilt-interactive-inputs).
+
 **Incremental payload-reproducibility source checkpoint (2026-10-15):**
 `New-PayloadManifest.ps1` uses the already-adopted PowerShell/.NET runtime,
 native filesystem/stream APIs, SHA-256, and `Utf8JsonWriter`; no additional

@@ -136,3 +136,37 @@ This attestation authenticates **inputs**, not UI execution or acceptance. A
 successful hosted run, protected dedicated test lane and separately recorded
 executed-test evidence remain pending. Local sentinel/copy tests and native YAML
 validation cannot satisfy those gates. All workflows remain manual-only.
+
+The [interactive workflow](../.github/workflows/interactive-qualification.yml)
+requires a successful manually dispatched CI run for the **same main commit**.
+It reads unfiltered native [workflow-run metadata](https://docs.github.com/en/rest/actions/workflow-runs#get-a-workflow-run)
+and the [existing environment](https://docs.github.com/en/rest/deployments/environments#get-an-environment),
+requiring nonempty required reviewers and prevention of self-review before
+scheduling the dedicated runner. Referencing an environment name alone does not
+configure its protection. An absent, unreadable or unprotected environment
+refuses admission. Repository administrators must separately configure/review
+reviewer membership, bypass policy and the dedicated runner; source changes here
+do not create those live settings or prove VM isolation.
+
+The runner verifies the input attestation, re-inventories payload bytes and uses
+the prebuilt host through `Invoke-TestSuite.ps1`; its native environment probe
+runs first. No compilation, toolchain installation, signing key or trust-store
+change occurs on that runner. The fixed selection
+`[ui-automation]~[operator-assisted]` is bounded; unavailable desktops fail with
+78. The workflow does not suppress or change the dedicated host's screen saver.
+The lane owner must provide its ordinary unlocked interactive test session.
+
+The native Catch2 [JUnit reporter](https://github.com/catchorg/Catch2/blob/v3.16.0/src/catch2/reporters/catch_reporter_junit.cpp)
+counts assertions in the suite's `tests` attribute and can emit sections as
+`testcase` elements. The result uses `assertionCount` and `reportedCaseCount`,
+not an invented executed-test count. The platform XML reader prohibits DTDs and
+is size-bounded; zero execution, failures, errors, skips and stale timestamps
+refuse publication. A separate hosted job checks strict schema/run identities,
+input/report digests and the input attestation before signing the native report
+with the automated-execution predicate. The record explicitly leaves operator
+acceptance pending. The protected runner and observed process result supply the
+execution claim; a cryptographic attestation alone cannot prove an honest runner.
+
+Actual dispatch/deployment, Narrator/high-contrast/scaling/keyboard and
+operator-assisted picker acceptance remain independent pending gates. The
+workflow's local contract tests neither run UI actions nor satisfy those gates.

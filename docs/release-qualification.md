@@ -17,6 +17,7 @@ owns full acceptance; nothing here replaces its thresholds.
 | Storage/recovery | Retained identity/backup/journal/refusal cases; final supported-provider and interruption matrix remain | Storage owner |
 | AppContainer | Actual grant/denial development cases exist; final packaged candidate and capability/traffic checks remain | Windows qualification owner |
 | UI/accessibility/localization | Some real picker/layout evidence exists; final Narrator, high contrast, keyboard, scaling and locale acceptance remain | Accessibility owner |
+| Dedicated interactive workflow | Deployment-only, manual same-main CI input authentication, protected-environment admission and automated-only signed-result source wiring pass local contracts; live environment/runner setup and deliberate hosted execution remain pending | Windows qualification owner |
 | OS/device matrix | Minimum OS, approved long-path-disabled refusal lane and physical ARM64 remain | Windows qualification owner |
 | Reproducibility | Payload manifest contract passes fixtures; two independent clean builds and exact manifests remain | Build maintainer |
 | SBOM | Native build-context composition retains 21 triplet-qualified ports and 17 resolved NuGet identities; real unsigned-bundle payload/membership and bounded Ajv 8.20.0 plus Workgroup validation pass. Release entry-point trust/digest refusals pass. Positive signed JPG Spinner integration, actual clean-build binding and final release-tool rights/security qualification remain; no compliant release SBOM | Supply-chain owner |
