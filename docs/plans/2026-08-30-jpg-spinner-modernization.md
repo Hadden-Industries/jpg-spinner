@@ -1855,6 +1855,46 @@ The [SPDX property](https://spdx.github.io/spdx-spec/v3.0.1/model/Software/Prope
 and [native vcpkg SBOM contract](https://learn.microsoft.com/en-us/vcpkg/reference/software-bill-of-materials)
 remain the authoritative identifier/installed-metadata boundaries.
 
+**Validated native-generation checkpoint (2026-10-15):**
+`New-ArtifactSbom.ps1` composes the maintained native SDK adapter, readonly Go
+module/checksum verification, independent payload inventory and existing
+`Test-ArtifactSbom.ps1` consumer gate. It publishes only after required component
+identities, exact payload scope/hashes, official schema and Workgroup semantics
+pass. A wrong required version reached the original seam and was incorrectly
+published (observed RED); the candidate is now refused and retained separately.
+The real fixture passes without changing its inputs or the caller's process
+environment. A preservation assertion exposed imperfect environment restoration;
+Go settings now apply only to owned child processes. Native argument lists,
+repository-relative execution, two-worker compilation and finite child deadlines
+bound generation without installing tools or resolving new dependencies.
+
+Focused controls also reject existing output, output inside inventory inputs,
+mismatched validator pins and an actual output-ancestor junction before tools or
+output creation. The junction test reached the defective preflight before the
+ancestor checks were added (observed RED). These ordinary, caller-owned snapshot
+boundaries are not a hostile filesystem sandbox or release approval. Snapshot
+preconditions and output invariants belong to this generation boundary; payload,
+component and SPDX meaning remain owned by their reused validators. No new JSON,
+SPDX, package-URL or dependency grammar is introduced.
+
+Native Go verification initially refused a cached upstream zero-byte test fixture
+whose archived filename ends in a space. Windows extraction had normalized its
+name. Restoring that exact name changed no source bytes or expected checksum;
+`go mod verify` then passed using the documented extended Win32 namespace. Only
+verification uses that path form: native Go embed globbing rejects the prefix's
+`?` during compilation. A cache with incorrect contents/names still fails; this
+script never repairs a cache or suppresses verification. See Microsoft's
+[file namespace contract](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)
+and the [native Go verification contract](https://go.dev/ref/mod#go-mod-verify).
+
+This source checkpoint does **not** finish `Invoke-Sbom.ps1`, actual complete
+architecture-specific dependency coverage, signed-bundle generation or release
+qualification. In particular, the installed vcpkg experimental package query
+emits dependency JSON but exits nonzero. That failed result is retained, not
+admitted as graph evidence; successful installed-package listing alone does not
+prove dependency edges. Keep the release block until a supported native route
+qualifies the actual graph rather than adding a shadow dependency resolver.
+
 **Native signature-verification checkpoint (2026-10-15):**
 `Resolve-MsixToolchain.ps1` evaluates the locked owning app targets for MakeAppx
 and selects its companion SignTool in that same SDK architecture directory,
