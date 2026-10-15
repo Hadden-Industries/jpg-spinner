@@ -43,6 +43,23 @@ schema and Workgroup semantic verification. It requires explicit Go, Java,
 schema, verifier JAR, cache and fresh external output paths; it installs nothing.
 Immutable validator identities are in [the pins](../sbom-tools.json).
 
+The reusable [artifact validator](../../scripts/Test-ArtifactSbom.ps1) consumes
+an unmodified native document, a separate `New-PayloadManifest.ps1` inventory,
+an independent JSON component contract with nonempty `requiredPackages`
+(`name`/`version` pairs), and explicit public artifact name/version. It checks
+exact payload scope/hashes, SBOM membership and required components before the
+official semantic verifier. The fixture runner additionally checks its payload
+against the independently fixed hash vector, rather than letting two generated
+inventories define their own oracle. Negative controls accept a schema-valid
+wrong hash only in the initial RED seam, then require refusal of wrong hashes,
+missing membership, changed component/public versions and duplicate members.
+
+The component contract states required identities, not an exhaustive dependency
+resolver. Its producer must independently establish complete architecture-specific
+runtime coverage; this validator cannot prove a caller supplied every dependency.
+Name/version-only requirements must be unambiguous within the selected inventory.
+Full multi-architecture release composition and dependency evidence remain open.
+
 For an already-qualified inspection tree, the command syntax is:
 
 ```powershell

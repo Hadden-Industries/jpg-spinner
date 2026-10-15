@@ -54,28 +54,21 @@ finally {
     foreach ($name in $settings.Keys) { [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process') }
     Pop-Location
 }
-$json = Get-Content -LiteralPath $manifestPath -Raw
-$document = ConvertFrom-JsonWithUniqueObjectMembers -JsonText $json -RequiredRootValueKind Object -SourceDescription 'Native SPDX fixture output' -AsHashtable
-if (-not (Test-Json -Json $json -SchemaFile $SpdxSchemaPath)) { throw 'Official SPDX 3.0.1 schema rejected the unmodified native output.' }
-if ($document['@context'] -cne $expected.context) { throw 'Wrong native SPDX context.' }
-$nodes = @($document['@graph'])
-$creation = @($nodes | Where-Object { $_.type -ceq 'CreationInfo' })
-if ($creation.Count -eq 0 -or @($creation | Where-Object { $_.specVersion -cne $expected.specVersion }).Count -ne 0) { throw 'Wrong native SPDX specification version.' }
-$publicDocument = @($nodes | Where-Object { $_.type -ceq 'SpdxDocument' })
-if ($publicDocument.Count -ne 1 -or $publicDocument[0].name -cne 'JpgSpinner.OverlayQualification') { throw 'Public artifact identity is missing or ambiguous.' }
-$files = @($nodes | Where-Object { $_.type -ceq 'software_File' })
-$sbom = @($nodes | Where-Object { $_.type -ceq 'software_Sbom' })
-if ($files.Count -ne $expected.payload.Count -or $sbom.Count -ne 1) { throw 'Native SPDX payload scope differs from the independent contract.' }
-foreach ($file in $files) {
-    $hashes = @($file.verifiedUsing)
-    if (-not $expected.payload.Contains($file.name) -or $hashes.Count -ne 1 -or $hashes[0].algorithm -cne 'sha256' -or $hashes[0].hashValue -cne $expected.payload[$file.name] -or $file.spdxId -cnotin $sbom[0].element) { throw 'Native SPDX payload identity, digest or membership differs from the reviewed fixture.' }
+$payloadManifestPath = Join-Path $OutputDirectory 'payload.json'
+& (Join-Path $repositoryRoot 'scripts/New-PayloadManifest.ps1') `
+    -PayloadRoot (Join-Path $repositoryRoot 'tests/TestData/SbomContractFixture/payload') -OutputPath $payloadManifestPath | Out-Null
+$payload = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content -LiteralPath $payloadManifestPath -Raw) `
+    -RequiredRootValueKind Object -SourceDescription 'Observed fixture payload' -AsHashtable
+# Keep the independently fixed hashes as the fixture oracle. Merely comparing
+# two generated inventories could let both consumers agree on the same mistake.
+if ($payload.files.Count -ne $expected.payload.Count) { throw 'Fixture payload scope changed.' }
+foreach ($file in $payload.files) {
+    if (-not $expected.payload.Contains($file.relativePath) -or $file.sha256 -cne $expected.payload[$file.relativePath]) {
+        throw 'Fixture payload differs from its independent fixed hash contract.'
+    }
 }
-foreach ($identity in $expected.requiredPackages) {
-    $packages = @($nodes | Where-Object { $_.type -ceq 'software_Package' -and $_.name -ceq $identity.name -and $_.software_packageVersion -ceq $identity.version })
-    if ($packages.Count -ne 1 -or $packages[0].spdxId -cnotin $sbom[0].element) { throw "Native SPDX lost or ambiguously identifies $($identity.name)@$($identity.version)." }
-}
-# The official verifier resolves its bundled licence data, not remote licence
-# services. Its schema initialization requires the qualified bounded 1 GiB heap.
-& $JavaExecutablePath -Xmx1024m '-Dorg.spdx.useJARLicenseInfoOnly=true' -jar $SpdxToolsJarPath Verify $manifestPath
-if ($LASTEXITCODE -ne 0) { throw 'Official SPDX Workgroup semantic verification failed.' }
+& (Join-Path $repositoryRoot 'scripts/Test-ArtifactSbom.ps1') -ManifestPath $manifestPath `
+    -PayloadManifestPath $payloadManifestPath -ComponentContractPath (Join-Path $repositoryRoot 'tests/TestData/SbomContractFixture/expected-contract.json') `
+    -PublicArtifactName 'JpgSpinner.OverlayQualification' -PublicArtifactVersion '2.0.0' `
+    -SpdxSchemaPath $SpdxSchemaPath -JavaExecutablePath $JavaExecutablePath -SpdxToolsJarPath $SpdxToolsJarPath
 Write-Output 'PASS: pinned native SDK, exact SPDX 3.0.1, payload SHA-256/scope, overlay and NuGet identities, membership, schema and semantic verification.'

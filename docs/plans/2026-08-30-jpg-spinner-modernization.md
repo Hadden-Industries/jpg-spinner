@@ -1818,6 +1818,19 @@ complete from this source checkpoint. Sources:
 - [ ] Give the adapter the verified extracted payload tree and separate resolved architecture-specific component evidence, with explicit public artifact name and observed version. Use native NuGet lock cataloging and native vcpkg SPDX decoding, not a second manifest resolver. Rebind document-local package identities through the native typed model before encoding. Compare output against the complete resolved runtime graph for each architecture; a schema-valid SBOM that loses a dependency still fails.
 - [ ] Require root `@context` to equal `https://spdx.org/rdf/3.0.1/spdx-context.jsonld`, every emitted `CreationInfo.specVersion` to equal `3.0.1`, and every shipped payload file to have the expected SHA-256. Validate against the pinned official schema and SPDX Workgroup semantic verifier; preserve the SBOM beside the bundle and record the outer signed-bundle SHA-256 in provenance. Do not emit an obsolete-format duplicate without a named consumer requirement.
 - [x] Run the maintained contract runner on the pinned native SDK and validators. GREEN proves output scope, 3.0.1 context/specVersion/schema, the expected fixture file hash, NuGet/libjpeg-turbo/Exiv2/Adobe XMP identities, membership and semantic validity. Actual signed-bundle dependency coverage, extraction and release integration remain pending.
+
+**Reusable artifact-validation checkpoint (2026-10-15):**
+`Test-ArtifactSbom.ps1` now shares the pinned official schema/semantic consumers
+between fixture qualification and future release integration. A schema-valid
+wrong payload digest passed the initial schema-only seam (observed RED at the
+artifact gate); exact independent payload hashes/scope and membership now refuse
+it. Controls also reject changed required-component/public versions, missing file
+membership and duplicate JSON members before lossy conversion. The refactored
+native contract runner passes all nine Go tests plus schema and semantic checks,
+while preserving the independent fixed fixture hash oracle. This checks caller
+requirements, not whether a caller's dependency list is complete; production
+architecture-specific graph coverage and signed-bundle integration remain open.
+
 - [ ] Dependabot version 2 monitors NuGet and GitHub Actions weekly, groups related Microsoft Windows packages, and never auto-merges.
 - [ ] Include `Test-DependencyFreshness.ps1` in deliberately requested qualification for vcpkg/upstream release drift; do not add a scheduled remote CI trigger. An upgrade updates baseline/override/notice together and runs the entire release suite.
 
