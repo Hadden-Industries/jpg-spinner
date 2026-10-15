@@ -2128,6 +2128,19 @@ composition, clean-build binding, strict payload reproducibility, final rights/
 security qualification, WACK and deliberate submission remain open; no signed
 distribution, Store certification or release acceptance is implied.
 
+The maintained `Restore-GoModuleCache.ps1` prepares fresh private caches from
+unchanged copied locks using native authentication/extraction and literal Windows
+namespace semantics. Its offline real-archive control checks filename, lock and
+host-setting preservation plus existing-output refusal; removing literal
+extraction in a disposable copy fails native integrity. The first synthetic
+module's missing direct-module `go.mod` checksum was a fixture setup error, not
+behavioural RED; the earlier real ordinary-extraction refusal is the causal
+counterevidence. `ArtifactToolProcess.psm1` is the one current runner authority
+for this preparation and generation boundary, with explicit child context and
+unchanged deadlines/diagnostic guarantees. Existing lifecycle controls pass
+before and after extraction into the importable module. This is workflow source
+preparation, not a dispatched hosted run.
+
 **Release symbol-path checkpoint (2026-10-15):** Native inspection of the retained
 failed build pair identifies absolute clone-local PDB references in the EXEs
 and independent timestamp/MVID changes in the WinMDs. Release links now use the

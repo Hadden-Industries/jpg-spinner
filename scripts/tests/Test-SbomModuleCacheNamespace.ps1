@@ -32,17 +32,8 @@ try {
         throw 'Upstream fixture lacks the literal trailing-space filename.'
     }
 } finally {$archive.Dispose()}
-# Reuse the actual bounded native-process boundary, including diagnostic and
-# termination behavior, rather than introduce a second test process runner.
-$tokens=$null;$parseErrors=$null
-$syntax=[Management.Automation.Language.Parser]::ParseFile(
-    (Join-Path $repositoryRoot 'scripts/New-ArtifactSbom.ps1'),[ref]$tokens,[ref]$parseErrors)
-$helpers=@($syntax.FindAll({param($node)
-    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
-        $node.Name -ceq 'Invoke-ArtifactToolProcess'
-},$true))
-if ($parseErrors.Count -ne 0 -or $helpers.Count -ne 1) {throw 'Native artifact process boundary is unavailable.'}
-$invokeProcess=$helpers[0].Body.GetScriptBlock()
+# Import the same bounded runner used by native artifact generation.
+Import-Module (Join-Path $repositoryRoot 'scripts/ArtifactToolProcess.psm1') -Force
 foreach ($namespace in @('ordinary','literal')) {
     $cache=Join-Path $working $namespace
     $destination=Join-Path $cache "cache/download/$module/@v"
@@ -61,11 +52,12 @@ foreach ($namespace in @('ordinary','literal')) {
         GOMAXPROCS='2';GOTOOLCHAIN='local';GOWORK='off';GOENV='off';GOFLAGS=''
         GOPROXY='off';GOSUMDB='sum.golang.org'
     }
-    & $invokeProcess -Executable $GoExecutablePath -Arguments @('-C',$inputs,'mod','download','-json',"$module@$version") `
+    $toolContext=@{WorkingDirectory=$inputs;LogDirectory=$working;EnvironmentValues=$settings}
+    Invoke-ArtifactToolProcess @toolContext -Executable $GoExecutablePath -Arguments @('-C',$inputs,'mod','download','-json',"$module@$version") `
         -LogName "$namespace-extraction" -TimeoutSeconds 20 | Out-Null
     $failure=$null
     try {
-        & $invokeProcess -Executable $GoExecutablePath -Arguments @('-C',$inputs,'mod','verify') `
+        Invoke-ArtifactToolProcess @toolContext -Executable $GoExecutablePath -Arguments @('-C',$inputs,'mod','verify') `
             -EnvironmentOverrides @{GOMODCACHE=$literalCache} -LogName "$namespace-integrity" -TimeoutSeconds 20 | Out-Null
     } catch {$failure=$_.Exception.Message}
     $diagnostic=[IO.File]::ReadAllText((Join-Path $working "$namespace-integrity.stderr.log"))

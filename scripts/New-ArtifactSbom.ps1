@@ -64,66 +64,20 @@ foreach ($validator in @(@{Path=$SpdxSchemaPath;Hash=$pins.spdxSchema.sha256},@{
 }
 [void][IO.Directory]::CreateDirectory($working)
 
-function Invoke-ArtifactToolProcess {
-    <# Bound one owned native child; preserve both diagnostic streams separately.
-       Native ArgumentList owns quoting. Nonzero/timeout is never retried. #>
-    param([string]$Executable,[string[]]$Arguments,[string]$LogName,[int]$TimeoutSeconds=180,[hashtable]$EnvironmentOverrides=@{})
-    $start = [Diagnostics.ProcessStartInfo]::new()
-    $start.FileName = $Executable
-    $start.WorkingDirectory = Join-Path $repositoryRoot 'eng/artifact-sbom'
-    $start.UseShellExecute = $false
-    $start.CreateNoWindow = $true
-    $start.RedirectStandardOutput = $true
-    $start.RedirectStandardError = $true
-    # Configure only owned children. Restoring an absent host environment value
-    # through PowerShell/.NET can conflate null and empty strings; no restoration
-    # is needed when the caller's process environment never changes.
-    foreach ($name in $settings.Keys) { $start.Environment[$name] = $settings[$name] }
-    foreach ($name in $EnvironmentOverrides.Keys) { $start.Environment[$name] = $EnvironmentOverrides[$name] }
-    foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
-    $process = [Diagnostics.Process]::new()
-    $process.StartInfo = $start
-    try {
-        if (-not $process.Start()) { throw "Artifact tool did not start: $LogName" }
-        $stdout = $process.StandardOutput.ReadToEndAsync()
-        $stderr = $process.StandardError.ReadToEndAsync()
-        $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
-        if ($timedOut) {
-            $process.Kill($true)
-            # A kill request is not an exit observation. Never dispose the
-            # process and present an unresolved child as safely terminated.
-            if (-not $process.WaitForExit(5000)) {
-                throw "Artifact tool termination remains unresolved: $LogName"
-            }
-        }
-        # Descendants can inherit redirected handles. Bound stream completion
-        # separately rather than turning GetResult into an unbounded wait.
-        if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout,$stderr), 5000)) {
-            throw "Artifact tool diagnostic stream completion remains unresolved: $LogName"
-        }
-        $standardOutput = $stdout.GetAwaiter().GetResult()
-        [IO.File]::WriteAllText((Join-Path $working "$LogName.stdout.log"),$standardOutput)
-        [IO.File]::WriteAllText((Join-Path $working "$LogName.stderr.log"),$stderr.GetAwaiter().GetResult())
-        # Preserve available native diagnostics before reporting the timeout.
-        # This changes neither the tool's deadline nor integrity acceptance.
-        if ($timedOut) { throw "Artifact tool exceeded its deadline: $LogName" }
-        if ($process.ExitCode -ne 0) { throw "Native artifact tool failed: $LogName (exit $($process.ExitCode))" }
-        return $standardOutput
-    }
-    finally { $process.Dispose() }
-}
+Import-Module (Join-Path $PSScriptRoot 'ArtifactToolProcess.psm1') -Force
 
 $settings = @{
     GOMODCACHE=$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ModuleCacheDirectory)
     GOCACHE=$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BuildCacheDirectory)
     GOMAXPROCS='2';GOTOOLCHAIN='local';GOWORK='off';GOENV='off';GOFLAGS='';GOPROXY='off'
 }
-$moduleJson = Invoke-ArtifactToolProcess -Executable $GoExecutablePath -Arguments @('list','-mod=readonly','-m','-json',$pins.syftSdk.module) -LogName sdk-identity
+$toolContext=@{WorkingDirectory=(Join-Path $repositoryRoot 'eng/artifact-sbom');LogDirectory=$working;EnvironmentValues=$settings}
+$moduleJson = Invoke-ArtifactToolProcess @toolContext -Executable $GoExecutablePath -Arguments @('list','-mod=readonly','-m','-json',$pins.syftSdk.module) -LogName sdk-identity
 $sdk = ConvertFrom-JsonWithUniqueObjectMembers -JsonText $moduleJson -RequiredRootValueKind Object -SourceDescription 'Native Syft module identity' -AsHashtable
 if ($sdk.Version -cne $pins.syftSdk.version -or $sdk.Sum -cne $pins.syftSdk.moduleSum -or $sdk.Contains('Replace')) {
     throw 'Native Syft SDK identity differs from the reviewed pin.'
 }
-$moduleDefinitionJson = Invoke-ArtifactToolProcess -Executable $GoExecutablePath -Arguments @('mod','edit','-json') -LogName module-definition
+$moduleDefinitionJson = Invoke-ArtifactToolProcess @toolContext -Executable $GoExecutablePath -Arguments @('mod','edit','-json') -LogName module-definition
 $moduleDefinition = ConvertFrom-JsonWithUniqueObjectMembers -JsonText $moduleDefinitionJson -RequiredRootValueKind Object -SourceDescription 'Native Go module definition' -AsHashtable
 if ($moduleDefinition.Contains('Replace') -and $null -ne $moduleDefinition.Replace -and $moduleDefinition.Replace.Count -ne 0) {
     throw 'Artifact tool module replacements are forbidden.'
@@ -139,15 +93,15 @@ if ($IsWindows -and -not $verificationCache.StartsWith('\\?\',[StringComparison]
         '\\?\UNC\' + $verificationCache.Substring(2)
     } else { '\\?\' + $verificationCache }
 }
-[void](Invoke-ArtifactToolProcess -Executable $GoExecutablePath -Arguments @('mod','verify') -LogName module-integrity -EnvironmentOverrides @{GOMODCACHE=$verificationCache})
+[void](Invoke-ArtifactToolProcess @toolContext -Executable $GoExecutablePath -Arguments @('mod','verify') -LogName module-integrity -EnvironmentOverrides @{GOMODCACHE=$verificationCache})
 # Establish the independent byte inventory before asking the cataloger to
 # describe it. The generator never supplies its own acceptance expectation.
 $payloadManifest = Join-Path $working 'payload.json'
 & (Join-Path $PSScriptRoot 'New-PayloadManifest.ps1') -PayloadRoot $payload -OutputPath $payloadManifest | Out-Null
 $executable = Join-Path $working 'artifact-sbom.exe'
-[void](Invoke-ArtifactToolProcess -Executable $GoExecutablePath -Arguments @('build','-mod=readonly','-p=2','-trimpath','-o',$executable,'.') -LogName sdk-build -TimeoutSeconds 600)
+[void](Invoke-ArtifactToolProcess @toolContext -Executable $GoExecutablePath -Arguments @('build','-mod=readonly','-p=2','-trimpath','-o',$executable,'.') -LogName sdk-build -TimeoutSeconds 600)
 $candidate = Join-Path $working 'candidate.spdx.json'
-[void](Invoke-ArtifactToolProcess -Executable $executable -Arguments @('-payload',$payload,'-components',$components,'-name',$PublicArtifactName,'-version',$PublicArtifactVersion,'-output',$candidate) -LogName native-spdx)
+[void](Invoke-ArtifactToolProcess @toolContext -Executable $executable -Arguments @('-payload',$payload,'-components',$components,'-name',$PublicArtifactName,'-version',$PublicArtifactVersion,'-output',$candidate) -LogName native-spdx)
 # Successful serialization alone is insufficient. Reuse the official schema
 # and semantic consumers plus the separate payload/component evidence gate.
 # On refusal the candidate stays diagnostic, not a published release file.

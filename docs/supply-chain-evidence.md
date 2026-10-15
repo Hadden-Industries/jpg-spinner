@@ -95,6 +95,16 @@ preserves literal filename spelling. Ordinary extraction can remove a trailing
 space from upstream test fixtures; adding the prefix only when verifying an
 already damaged extraction cannot repair it.
 
+[`Restore-GoModuleCache.ps1`](../scripts/Restore-GoModuleCache.ps1) provides this
+bounded preparation boundary. Supply the module directory, explicit Go
+executable, fresh disjoint module/build cache paths, fresh external working
+directory and approved proxy. It copies both locks, uses only child environment
+values, selects literal Windows extraction, retains separate diagnostic streams,
+and refuses changed source/staged locks or pre-existing output roots. Native
+download and integrity operations retain their 180-second deadlines without
+retry. It returns ordinary absolute cache paths for subsequent offline builds;
+it never repairs an existing cache or installs a tool.
+
 In that bounded child, with the approved proxy/checksum database, run native
 `go -C <staged-lock-directory> mod download -json`, then `go ... mod verify`.
 Go owns [module authentication, extraction and cache integrity](https://go.dev/ref/mod#module-cache).
@@ -121,6 +131,19 @@ output root. With networking disabled, ordinary native extraction reproduces the
 integrity failure and literal native extraction preserves the trailing-space
 fixture and passes. It leaves both diagnostic cases for retention decisions.
 This bounded environment regression is not application qualification.
+[`Test-GoModuleCacheRestore.ps1`](../scripts/tests/Test-GoModuleCacheRestore.ps1)
+exercises the maintained preparation entry point against an authenticated local
+proxy snapshot, checks literal filename/lock/host-setting preservation and
+refuses existing outputs. Removing literal extraction in an isolated copy causes
+native integrity refusal. The initial fixture's newly promoted direct module
+needed its own authenticated `go.mod` checksum; that setup correction does not
+change the production graph or relax the unchanged-lock acceptance condition.
+
+`ArtifactToolProcess.psm1` owns the shared bounded child/diagnostic contract for
+preparation and generation. The consumers pass explicit directories/environment
+values; maintained tests import the real boundary rather than extracting a
+private function through a syntax tree. Native namespace and lifecycle controls
+remain separate from complete SDK and real-container integration qualification.
 
 ## Generate and qualify
 
