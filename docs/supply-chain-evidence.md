@@ -79,9 +79,7 @@ Validation itself never installs tools or fetches remote schemas. Its owned
 child uses a 512 MiB V8 old-space limit, 1 GiB working-set refusal and 30-second
 deadline. Limit/tool/validator failures never become success.
 
-## Prepare the native Go module cache
-
-### Restore the reviewed verification tools
+## Restore the reviewed verification tools
 
 [`Restore-SbomVerificationTools.ps1`](../scripts/Restore-SbomVerificationTools.ps1)
 composes the already-qualified native tools, rather than inventing an archive,
@@ -107,7 +105,7 @@ changed-tool-before-effects and reused-destination refusals (GREEN). Original
 download hashes and staged/source locks stay unchanged. This is not SBOM,
 application-build, hosted-execution or release qualification.
 
-### Portable source-signature trust
+## Portable source-signature trust
 
 [`eng/source-commit-allowed-signers`](../eng/source-commit-allowed-signers)
 contains only the maintainer's existing reviewed public SSH signing identity,
@@ -125,7 +123,7 @@ only its own disposable source checkout before the existing producer verifies
 the exact commit. This is configuration qualification, not invented behavioural
 RED, signature creation or proof that remote protection is configured.
 
-### Prepare private module caches
+## Prepare the native Go module cache
 
 Stage unchanged copies of `eng/artifact-sbom/go.mod` and `go.sum` in an owned
 external provisioning directory. Use an explicit private module/build cache,
@@ -298,8 +296,45 @@ renamed with its consumers, without an alias. Positive native-response-shaped
 fixtures and producer/type/duplicate/root/protection/cross-role refusal controls
 pass for both roles. These local predicates do not authenticate caller-written
 JSON, configure a GitHub environment, schedule a runner or prove hosted execution.
-Store producer/publisher integration and live protection qualification remain
-separate pending obligations.
+The [Store evidence workflow](../.github/workflows/store-package.yml) composes
+these roles without dispatching or configuring them. Only an explicit manual run
+on `main` can reach admission. The protected compiler job has a read-only token;
+it authenticates the exact signed source, creates two fresh native build sets,
+requires the closed comparison and selects the first original unsigned bundle.
+The selected retained build's actual installed roots and unchanged application
+lock supply native component exports and the exact-container submission SBOM.
+Existing caches are never repaired; tools and native Go modules restore into
+fresh private external directories. Failure prevents the successful input drop.
+
+A separate hosted publisher downloads only the same run's successful evidence
+with digest-mismatch refusal. It has no checkout, compiler, dependency restore
+or application execution. The reviewed native attestation action's
+[default SLSA mode](https://github.com/actions/attest/tree/1e69f48acb82d1966a394da916b4c1698aa569d6)
+authenticates both original containers, all JSON evidence and observed runtime
+versions; no local signature format is implemented. A consumer must use native
+[`gh attestation verify`](https://cli.github.com/manual/gh_attestation_verify)
+with this repository, exact Store signer workflow, source digest, main ref and
+hosted-runner requirement before trusting a downloaded subject. Signed provenance
+does not prove an honest builder or supply certification/installation evidence.
+
+Source composition uses immutable setup-go 7.0.0 and setup-java 6.1.0 action
+revisions, verified against their official release/commit APIs on 2026-10-16.
+The exact MIT notice is retained in
+[`eng/licenses`](../eng/licenses/actions-setup-runtimes.LICENSE.txt). They are
+external engineering tools, not app runtime packages. Native Go 1.27.2 was the
+then-current stable patch from the official Go distribution; its authentic
+Windows archive and complete BSD-style notice were retained. It passes the actual
+SDK fixture and restored official schema/semantic validators. Temurin
+25.0.4.1+1 is the current patch of the applicable newest LTS line; setup-java's
+documented multi-field syntax is used with mandatory fresh-download signature
+verification. The locally installed matching Java runtime passes the native
+semantic verifier. Hosted installation/action execution remains unqualified.
+
+Native YAML/actionlint/PowerShell syntax and protected-order/permission/role/
+digest negative controls validate source wiring, not live protection, package
+comparison success, hosted execution, WACK or certification. The actual clean
+pair still refuses unrelated differences, so no qualified Store artifact or
+release authorization is claimed. The workflow never submits or stages rollout.
 
 The subsequent owner-approved
 [closed package-payload comparison contract](implementation/2026-10-15-package-payload-comparison-contract.md)

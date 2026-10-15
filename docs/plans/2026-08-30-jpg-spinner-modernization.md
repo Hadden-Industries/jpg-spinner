@@ -2105,6 +2105,25 @@ and [MSIX signing guidance](https://learn.microsoft.com/en-us/windows/msix/packa
 
 ### Step 17.5: Protected Store packaging workflow
 
+**Protected source-composition checkpoint (2026-10-16):**
+The manual-only `store-package.yml` now composes same-candidate native admission,
+existing reviewer protection, portable source-signature trust, two independent
+clean builds, closed comparison, the selected build's native component snapshots
+and exact-container Store SBOM. Compiler tokens remain read-only; a separate
+hosted native SLSA publisher has no checkout/compiler/restore/application run.
+Native YAML/actionlint/PowerShell source contracts and seven targeted negative
+controls pass. Real pinned-tool restoration and the Go 1.27.2 SDK/official SPDX
+qualification pass independently. This is not a dispatched hosted run, configured
+environment, successful application comparison, WACK or certification.
+
+The actual controlled-path pair at signed source `b9cd6b9ade93` completes all six
+builds but remains refused: reordered block-map assets and 163 x64 executable byte
+differences are outside policy. ARM64/x86 executable bytes match. Keep original
+evidence and no qualified promotion; see the maintained
+[comparison outcome](../implementation/2026-10-15-package-payload-comparison-contract.md#actual-controlled-path-pair-outcome).
+Native producer/parallelism qualification precedes any further complete retry;
+do not broaden the permitted differences or claim whole Task 17 completion.
+
 **Approved comparison-contract amendment (2026-10-15):** The owner approved
 bounded qualification of the closed
 [native metadata/block-map variance contract](../implementation/2026-10-15-package-payload-comparison-contract.md),

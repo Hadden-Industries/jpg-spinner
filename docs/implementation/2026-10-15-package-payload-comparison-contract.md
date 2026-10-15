@@ -273,6 +273,31 @@ CI source contract first refuses missing lifecycle coverage, then passes its
 new call. A full application pair under this explicit environment remains
 required; the fast native lifecycle test is not that proof.
 
+### Actual controlled-path pair outcome
+
+The complete pair at signed source
+`b9cd6b9ade93621d5c135b2bd6932443bf6e45c5` finishes all six native architecture
+builds and separately retains both clean source trees. It still **fails** the
+closed comparison and publishes no qualified output. The raw inventory differs
+at seven paths: each app WinMD and block map, plus the x64 executable. ARM64 and
+x86 executable bytes match exactly; x64 has 163 changed bytes. Native PEReader
+localizes x64 differences to code/read-only data and consequential header/debug
+identity; data, exception, resource and relocation section hashes match. Every
+application/intermediate x64 `.obj` under the compared object trees and the
+recorded native LINK command agree exactly. This narrows investigation without
+proving every external native input agrees or identifying a sole cause.
+
+The native XML reader independently exposes reordered unchanged asset `File`
+entries in all three block maps. This is outside the approved exception, not a
+comparison-span defect or permission to sort away differences. Preserve every
+original container and manifest. No further complete build is launched merely
+to retry this outcome. Bounded native controls are the next step: the installed
+MakeAppx help documents `/np` (disable parallel execution), while Microsoft's
+[LINK reference](https://learn.microsoft.com/cpp/build/reference/cgthreads-compiler-threads)
+documents `/CGTHREADS:1` for LTCG. Neither option has yet qualified the full
+application; ordinary compilation parallelism need not change. Native SDK task
+integration and a fresh passing whole pair are still required.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):

@@ -61,6 +61,15 @@ actions/attest 4.2.2. Their exact MIT notices are retained in
 workflow tooling; neither is an application runtime dependency. Source contracts
 and local tool tests do not establish a successful hosted action invocation.
 
+The Store evidence source also pins actions/setup-go 7.0.0 and
+actions/setup-java 6.1.0. Both exact revisions use the
+[retained MIT notice](eng/licenses/actions-setup-runtimes.LICENSE.txt). Their
+Go 1.27.2 and Temurin 25.0.4.1+1 inputs are external engineering runtimes, not
+application payload dependencies. Go's archive carries its BSD-style notice;
+Temurin's exact distribution notices and signature verification remain with the
+selected runtime. Native local qualification is not hosted installation proof
+or legal clearance for redistribution of a tool/runtime distribution.
+
 The large official SPDX schema uses [Ajv](https://github.com/ajv-validator/ajv/tree/v8.20.0)
 8.20.0 through its public draft-2020-12 API, as recommended by SPDX. This is
 external release tooling, not an application runtime dependency. The complete

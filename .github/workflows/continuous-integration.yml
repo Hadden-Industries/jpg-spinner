@@ -21,7 +21,7 @@ jobs:
         run: |
           $tools = Join-Path $env:RUNNER_TEMP 'jpg-spinner-workflow-tools'
           ./scripts/tests/Test-WorkflowVerificationToolContract.ps1 -ToolsDirectory $tools
-          ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools -WorkflowPaths @('.github/workflows/continuous-integration.yml', '.github/workflows/codeql.yml', '.github/workflows/scanner-fuzz.yml')
+          ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools
           ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-WorkflowAttestationPermissions.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
@@ -29,6 +29,7 @@ jobs:
           ./scripts/tests/Test-ProtectedWorkflowAdmission.ps1
           ./scripts/tests/Test-InteractiveTestEvidence.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-InteractiveWorkflowContract.ps1 -ToolsDirectory $tools
+          ./scripts/tests/Test-StoreWorkflowControls.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-BuildProvenanceControls.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-ReleaseSbomBindingContract.ps1
           ./scripts/tests/Test-StoreSubmissionBindingContract.ps1

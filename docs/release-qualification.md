@@ -22,6 +22,21 @@ the next bounded native configuration qualification is not yet acceptance.
 The [comparison checkpoint](implementation/2026-10-15-package-payload-comparison-contract.md)
 retains the exact distinction. Historical failures are not relabelled.
 
+The subsequent controlled-path pair at signed source
+`b9cd6b9ade93621d5c135b2bd6932443bf6e45c5` also completes all six native builds,
+but still refuses unrelated differences. ARM64/x86 executables are byte-identical;
+x64 differs by 163 bytes despite matching application objects and recorded LINK
+commands. Native XML inspection exposes reordered unchanged asset entries in the
+block maps. No new exception is accepted and no qualified output is published.
+Bounded native packaging/LTCG controls remain investigation, not release proof.
+
+The protected manual Store workflow now has locally validated source composition
+and seven negative controls for role, ordering, digest and privilege boundaries.
+It remains fail-closed on the unsuccessful native comparison. The restored native
+tools and current Go 1.27.2 pass the maintained SDK fixture, official SPDX schema
+and semantic verifier; actual hosted action/protection/attestation execution,
+exact successful clean-build binding and certification remain pending.
+
 ## Gate register
 
 | Gate | Current evidence boundary / remaining proof | Accountable role |
