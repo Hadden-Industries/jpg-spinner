@@ -5,6 +5,7 @@ param(
     [Parameter(Mandatory)][string]$QualifiedManifestPath,
     [Parameter(Mandatory)][string]$OwnedOutputRoot,
     [Parameter(Mandatory)][string]$SpdxSchemaPath,
+    [Parameter(Mandatory)][string]$SchemaValidatorToolsDirectory,
     [Parameter(Mandatory)][string]$JavaExecutablePath,
     [Parameter(Mandatory)][string]$SpdxToolsJarPath
 )
@@ -21,7 +22,7 @@ $arguments = @{
     ComponentContractPath=(Join-Path $repositoryRoot 'tests/TestData/SbomContractFixture/expected-contract.json')
     PublicArtifactName='JpgSpinner.OverlayQualification'
     PublicArtifactVersion='2.0.0'
-    SpdxSchemaPath=$SpdxSchemaPath; JavaExecutablePath=$JavaExecutablePath; SpdxToolsJarPath=$SpdxToolsJarPath
+    SpdxSchemaPath=$SpdxSchemaPath;SchemaValidatorToolsDirectory=$SchemaValidatorToolsDirectory;JavaExecutablePath=$JavaExecutablePath;SpdxToolsJarPath=$SpdxToolsJarPath
 }
 $producer = Join-Path $repositoryRoot 'scripts/Test-ArtifactSbom.ps1'
 $before = (Get-FileHash -LiteralPath $QualifiedManifestPath -Algorithm SHA256).Hash

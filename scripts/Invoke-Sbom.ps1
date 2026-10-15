@@ -18,6 +18,7 @@ param(
     [Parameter(Mandatory)][string]$ModuleCacheDirectory,
     [Parameter(Mandatory)][string]$BuildCacheDirectory,
     [Parameter(Mandatory)][string]$SpdxSchemaPath,
+    [Parameter(Mandatory)][string]$SchemaValidatorToolsDirectory,
     [Parameter(Mandatory)][string]$JavaExecutablePath,
     [Parameter(Mandatory)][string]$SpdxToolsJarPath
 )
@@ -102,7 +103,7 @@ try {
         -ComponentContractPath $contractCopy -PublicArtifactName $name -PublicArtifactVersion $version `
         -OutputPath $sbom -WorkingDirectory $generation -GoExecutablePath $GoExecutablePath `
         -ModuleCacheDirectory $ModuleCacheDirectory -BuildCacheDirectory $BuildCacheDirectory `
-        -SpdxSchemaPath $SpdxSchemaPath -JavaExecutablePath $JavaExecutablePath -SpdxToolsJarPath $SpdxToolsJarPath | Out-Null
+        -SpdxSchemaPath $SpdxSchemaPath -SchemaValidatorToolsDirectory $SchemaValidatorToolsDirectory -JavaExecutablePath $JavaExecutablePath -SpdxToolsJarPath $SpdxToolsJarPath | Out-Null
     [IO.File]::Copy((Join-Path $generation 'payload.json'),(Join-Path $candidate 'payload.json'),$false)
     # Recheck quiescent inputs after cataloging. A changed component snapshot or
     # contract cannot inherit a passing result for different bytes.

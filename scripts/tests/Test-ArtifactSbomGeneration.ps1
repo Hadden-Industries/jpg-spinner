@@ -7,6 +7,7 @@ param(
     [Parameter(Mandatory)][string]$ModuleCacheDirectory,
     [Parameter(Mandatory)][string]$BuildCacheDirectory,
     [Parameter(Mandatory)][string]$SpdxSchemaPath,
+    [Parameter(Mandatory)][string]$SchemaValidatorToolsDirectory,
     [Parameter(Mandatory)][string]$JavaExecutablePath,
     [Parameter(Mandatory)][string]$SpdxToolsJarPath
 )
@@ -25,7 +26,7 @@ $arguments = @{
     ComponentEvidenceRoot=(Join-Path $repositoryRoot 'tests/TestData/SbomContractFixture/source')
     PublicArtifactName='JpgSpinner.OverlayQualification'; PublicArtifactVersion='2.0.0'
     GoExecutablePath=$GoExecutablePath;ModuleCacheDirectory=$ModuleCacheDirectory;BuildCacheDirectory=$BuildCacheDirectory
-    SpdxSchemaPath=$SpdxSchemaPath;JavaExecutablePath=$JavaExecutablePath;SpdxToolsJarPath=$SpdxToolsJarPath
+    SpdxSchemaPath=$SpdxSchemaPath;SchemaValidatorToolsDirectory=$SchemaValidatorToolsDirectory;JavaExecutablePath=$JavaExecutablePath;SpdxToolsJarPath=$SpdxToolsJarPath
 }
 $inputHashes = @{}
 foreach ($directory in @($arguments.PayloadRoot,$arguments.ComponentEvidenceRoot)) {

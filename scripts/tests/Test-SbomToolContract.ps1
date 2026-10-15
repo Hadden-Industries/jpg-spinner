@@ -9,6 +9,7 @@ param(
     [Parameter(Mandatory)][string]$BuildCacheDirectory,
     [Parameter(Mandatory)][string]$OutputDirectory,
     [Parameter(Mandatory)][string]$SpdxSchemaPath,
+    [Parameter(Mandatory)][string]$SchemaValidatorToolsDirectory,
     [Parameter(Mandatory)][string]$JavaExecutablePath,
     [Parameter(Mandatory)][string]$SpdxToolsJarPath
 )
@@ -70,5 +71,5 @@ foreach ($file in $payload.files) {
 & (Join-Path $repositoryRoot 'scripts/Test-ArtifactSbom.ps1') -ManifestPath $manifestPath `
     -PayloadManifestPath $payloadManifestPath -ComponentContractPath (Join-Path $repositoryRoot 'tests/TestData/SbomContractFixture/expected-contract.json') `
     -PublicArtifactName 'JpgSpinner.OverlayQualification' -PublicArtifactVersion '2.0.0' `
-    -SpdxSchemaPath $SpdxSchemaPath -JavaExecutablePath $JavaExecutablePath -SpdxToolsJarPath $SpdxToolsJarPath
+    -SpdxSchemaPath $SpdxSchemaPath -SchemaValidatorToolsDirectory $SchemaValidatorToolsDirectory -JavaExecutablePath $JavaExecutablePath -SpdxToolsJarPath $SpdxToolsJarPath
 Write-Output 'PASS: pinned native SDK, exact SPDX 3.0.1, payload SHA-256/scope, overlay and NuGet identities, membership, schema and semantic verification.'

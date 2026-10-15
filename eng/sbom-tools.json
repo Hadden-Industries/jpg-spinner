@@ -18,6 +18,11 @@
     "url": "https://spdx.org/schema/3.0.1/spdx-json-schema.json",
     "sha256": "582c64e809d5b3ef9bd0c4de13a32391b47b0284a3e8d199569fb96f649234b1"
   },
+  "spdxSchemaValidator": {
+    "package": "ajv",
+    "version": "8.20.0",
+    "lockFile": "eng/spdx-validation/package-lock.json"
+  },
   "spdxWorkgroupTools": {
     "version": "2.0.7",
     "url": "https://github.com/spdx/tools-java/releases/download/v2.0.7/tools-java-2.0.7.zip",

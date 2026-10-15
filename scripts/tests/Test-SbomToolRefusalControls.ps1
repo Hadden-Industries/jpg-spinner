@@ -23,7 +23,7 @@ foreach ($case in $cases) {
         & (Join-Path $PSScriptRoot 'Test-SbomToolContract.ps1') `
             -GoExecutablePath 'must-not-execute-go.exe' -JavaExecutablePath 'must-not-execute-java.exe' `
             -ModuleCacheDirectory (Join-Path $output 'modules') -BuildCacheDirectory (Join-Path $output 'build') `
-            -OutputDirectory $output -SpdxSchemaPath $case.Schema -SpdxToolsJarPath $case.Jar
+            -OutputDirectory $output -SpdxSchemaPath $case.Schema -SpdxToolsJarPath $case.Jar -SchemaValidatorToolsDirectory 'must-not-use-validator-tools'
     }
     catch {
         if (-not $_.Exception.Message.StartsWith('SPDX validator identity differs from the reviewed pin:', [StringComparison]::Ordinal)) { throw }

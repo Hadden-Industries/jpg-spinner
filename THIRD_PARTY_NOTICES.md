@@ -54,6 +54,19 @@ the full YamlDotNet notice is retained under `eng/licenses` and actionlint's
 downloaded archive includes its upstream notice. Pinned GitHub Actions and
 CodeQL licensing/usage terms are separate from the generated application.
 
+The large official SPDX schema uses [Ajv](https://github.com/ajv-validator/ajv/tree/v8.20.0)
+8.20.0 through its public draft-2020-12 API, as recommended by SPDX. This is
+external release tooling, not an application runtime dependency. The complete
+native npm integrity lock is under `eng/spdx-validation`. Exact upstream notices
+are retained for [Ajv](eng/licenses/spdx-validation/ajv.LICENSE.txt),
+[fast-deep-equal](eng/licenses/spdx-validation/fast-deep-equal.LICENSE.txt),
+[fast-uri](eng/licenses/spdx-validation/fast-uri.LICENSE.txt),
+[json-schema-traverse](eng/licenses/spdx-validation/json-schema-traverse.LICENSE.txt)
+and [require-from-string](eng/licenses/spdx-validation/require-from-string.LICENSE.txt).
+The locked versions are 8.20.0, 3.1.3, 3.1.8, 1.0.0 and 2.0.2 respectively;
+fast-uri is BSD-3-Clause and the other four are MIT. These notices do not clear
+the separately qualified Syft graph or the application's distribution rights.
+
 New tooling must pass version, immutable identity, native consumer and rights
 qualification before adoption. Backend fixture qualification is not a release
 SBOM or final rights approval for the complete tool/application distribution.

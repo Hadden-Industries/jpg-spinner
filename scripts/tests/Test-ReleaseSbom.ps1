@@ -13,6 +13,7 @@ param(
     [Parameter(Mandatory)][string]$ModuleCacheDirectory,
     [Parameter(Mandatory)][string]$BuildCacheDirectory,
     [Parameter(Mandatory)][string]$SpdxSchemaPath,
+    [Parameter(Mandatory)][string]$SchemaValidatorToolsDirectory,
     [Parameter(Mandatory)][string]$JavaExecutablePath,
     [Parameter(Mandatory)][string]$SpdxToolsJarPath
 )

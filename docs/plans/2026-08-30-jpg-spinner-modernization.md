@@ -1995,6 +1995,39 @@ and no remote workflow was dispatched. Final native tool rights/security,
 build-input-to-build-execution binding, hosted workflow composition and whole
 Task 17 acceptance remain open.
 
+**Bounded official-schema consumer repair (2026-10-15):** Replaying the real
+186-file/38-required-identity document exposed excessive memory use in the
+PowerShell `Test-Json`/JsonSchema.Net 7.4.0 path (approximately 13 GB observed).
+The owned producer was stopped; no document was promoted. Two isolated replay
+controls, each with a 1 GiB GC heap cap, 768 MiB working-set refusal and 30-second
+deadline, reproduced the resource refusal in about 1.7 seconds. Selecting the
+library's public Boolean-only `Flag` output did not solve it. The retained
+candidate, original schema and native SDK outputs remain unchanged; this is not
+evidence attributing earlier machine crashes to the same cause.
+
+Use SPDX's [recommended Ajv schema consumer](https://github.com/spdx/spdx-3-model/blob/develop/serialization/jsonld/validation.md#ajv)
+instead of retrying that unbounded path. The latest stable native SDK, Ajv
+8.20.0, is pinned with a complete npm integrity lock under
+`eng/spdx-validation`; its five-package graph is release tooling, not an app
+dependency. Restore only into an explicit external private tool tree with
+`npm ci --ignore-scripts`, never globally or during validation. The unchanged
+pinned official schema and native document passed in the qualification worker
+at approximately 89 MB RSS; complete artifact/schema/Workgroup verification then
+passed in about 2.4 seconds. Retain exact dependency notices and complete final
+tool rights/security qualification; the bounded npm audit reported no known
+advisories for this five-package graph, not a whole-application security review.
+
+`Test-SpdxJsonSchema.ps1` uses the native draft-2020-12 compiler, unchanged
+assertions and no coercion, defaults, removal, custom keywords, network schema
+fetching or output rewriting. An owned hidden child has a 512 MiB V8 old-space
+limit, 1 GiB working-set refusal and 30-second deadline; timeout/OOM/tool failure
+never becomes validation success. The required tool-tree argument propagates
+through generation, release entry points and maintained tests. Raw duplicate
+members still fail before PowerShell conversion. Controls reject a wrong
+context, unknown class, wrong JSON type and altered tool definitions while
+preserving the original document. Small repository schemas may continue using
+`Test-Json`; this fixes the measured large SPDX validation path only.
+
 **Native signature-verification checkpoint (2026-10-15):**
 `Resolve-MsixToolchain.ps1` evaluates the locked owning app targets for MakeAppx
 and selects its companion SignTool in that same SDK architecture directory,

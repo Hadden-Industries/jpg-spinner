@@ -16,6 +16,7 @@ param(
     [Parameter(Mandatory)][string]$ModuleCacheDirectory,
     [Parameter(Mandatory)][string]$BuildCacheDirectory,
     [Parameter(Mandatory)][string]$SpdxSchemaPath,
+    [Parameter(Mandatory)][string]$SchemaValidatorToolsDirectory,
     [Parameter(Mandatory)][string]$JavaExecutablePath,
     [Parameter(Mandatory)][string]$SpdxToolsJarPath
 )
@@ -140,7 +141,7 @@ $candidate = Join-Path $working 'candidate.spdx.json'
 # On refusal the candidate stays diagnostic, not a published release file.
 & (Join-Path $PSScriptRoot 'Test-ArtifactSbom.ps1') -ManifestPath $candidate -PayloadManifestPath $payloadManifest `
     -ComponentContractPath $ComponentContractPath -PublicArtifactName $PublicArtifactName -PublicArtifactVersion $PublicArtifactVersion `
-    -SpdxSchemaPath $SpdxSchemaPath -JavaExecutablePath $JavaExecutablePath -SpdxToolsJarPath $SpdxToolsJarPath |
+    -SpdxSchemaPath $SpdxSchemaPath -SchemaValidatorToolsDirectory $SchemaValidatorToolsDirectory -JavaExecutablePath $JavaExecutablePath -SpdxToolsJarPath $SpdxToolsJarPath |
     Out-File -LiteralPath (Join-Path $working 'validation.log') -Encoding utf8NoBOM
 [IO.File]::Move($candidate,$output)
 Write-Output $output

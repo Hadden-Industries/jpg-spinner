@@ -11,6 +11,7 @@ param(
     [Parameter(Mandatory)][string]$PublicArtifactName,
     [Parameter(Mandatory)][string]$PublicArtifactVersion,
     [Parameter(Mandatory)][string]$SpdxSchemaPath,
+    [Parameter(Mandatory)][string]$SchemaValidatorToolsDirectory,
     [Parameter(Mandatory)][string]$JavaExecutablePath,
     [Parameter(Mandatory)][string]$SpdxToolsJarPath
 )
@@ -31,7 +32,11 @@ foreach ($inputFile in @(
 $json = Get-Content -LiteralPath $ManifestPath -Raw
 $document = ConvertFrom-JsonWithUniqueObjectMembers -JsonText $json -RequiredRootValueKind Object `
     -SourceDescription 'Native artifact SPDX output' -AsHashtable
-if (-not (Test-Json -Json $json -SchemaFile $SpdxSchemaPath)) { throw 'Official SPDX 3.0.1 schema rejected native output.' }
+# PowerShell's Test-Json/JsonSchema.Net exhausts memory on this real multi-
+# architecture schema/document pair. Reuse the schema author's recommended Ajv
+# consumer in a bounded owned child; keep the strict duplicate-member gate above.
+& (Join-Path $PSScriptRoot 'Test-SpdxJsonSchema.ps1') -ManifestPath $ManifestPath -SpdxSchemaPath $SpdxSchemaPath `
+    -SchemaValidatorToolsDirectory $SchemaValidatorToolsDirectory
 $payloadManifest = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content -LiteralPath $PayloadManifestPath -Raw) `
     -RequiredRootValueKind Object -SourceDescription 'Independent payload manifest' -AsHashtable
 $componentContract = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content -LiteralPath $ComponentContractPath -Raw) `

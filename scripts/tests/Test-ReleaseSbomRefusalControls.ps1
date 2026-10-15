@@ -24,6 +24,7 @@ $arguments=@{
     ModuleCacheDirectory=(Join-Path $fixture 'unused-module-cache')
     BuildCacheDirectory=(Join-Path $fixture 'unused-build-cache')
     SpdxSchemaPath=(Join-Path $fixture 'unused-schema.json')
+    SchemaValidatorToolsDirectory=(Join-Path $fixture 'unused-validator-tools')
     JavaExecutablePath=(Join-Path $fixture 'must-not-run-java.exe')
     SpdxToolsJarPath=(Join-Path $fixture 'unused-validator.jar')
 }

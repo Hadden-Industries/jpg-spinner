@@ -26,7 +26,7 @@ $arguments = @{
     PublicArtifactName='JpgSpinner.OverlayQualification';PublicArtifactVersion='2.0.0'
     GoExecutablePath='must-not-execute-go.exe';JavaExecutablePath='must-not-execute-java.exe'
     ModuleCacheDirectory=$fixture;BuildCacheDirectory=$fixture
-    SpdxSchemaPath=$SpdxSchemaPath;SpdxToolsJarPath=$SpdxToolsJarPath
+    SpdxSchemaPath=$SpdxSchemaPath;SpdxToolsJarPath=$SpdxToolsJarPath;SchemaValidatorToolsDirectory='must-not-use-validator-tools'
 }
 foreach ($case in @(
     @{Name='existing-output';Output=$sentinel;Working=(Join-Path $fixture 'existing-work');Diagnostic='fresh and absent'},
