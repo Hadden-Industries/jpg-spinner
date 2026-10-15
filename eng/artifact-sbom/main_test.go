@@ -205,6 +205,55 @@ func TestInstalledOverlayComponentsSurviveComposition(t *testing.T) {
 	}
 }
 
+// Equal source packages from different installed triplets are not interchangeable
+// build components. Change only the opaque native package URL in a test input;
+// do not edit generator output or supply a replacement JSON/SPDX parser.
+func TestInstalledTripletsSurviveComposition(t *testing.T) {
+	components := t.TempDir()
+	fixture := contractFixtureRoot(t)
+	lock, err := os.ReadFile(filepath.Join(fixture, "source", "packages.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(components, "packages.lock.json"), lock, 0600); err != nil {
+		t.Fatal(err)
+	}
+	original, err := os.ReadFile(filepath.Join(fixture, "source", "installed", "x64-windows-static-md", "share", "adobe-xmp-core", "vcpkg.spdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const x64URL = "pkg:vcpkg/adobe-xmp-core@2025.03?port_version=1&triplet=x64-windows-static-md"
+	const x86URL = "pkg:vcpkg/adobe-xmp-core@2025.03?port_version=1&triplet=x86-windows-static-md"
+	if bytes.Count(original, []byte(x64URL)) != 1 {
+		t.Fatal("Independent native package-URL fixture precondition changed")
+	}
+	for name, content := range map[string][]byte{
+		"x64": original,
+		"x86": bytes.Replace(original, []byte(x64URL), []byte(x86URL), 1),
+	} {
+		directory := filepath.Join(components, name)
+		if err := os.Mkdir(directory, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(directory, "vcpkg.spdx.json"), content, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	inventory, err := inventoryArtifact(context.Background(), filepath.Join(fixture, "payload"), components, source.Alias{Name: "JpgSpinner.TripletContract", Version: "2.0.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := map[string]bool{}
+	for _, component := range inventory.Artifacts.Packages.Sorted() {
+		if component.Name == "adobe-xmp-core" && component.Version == "2025.03#1" {
+			found[component.PURL] = true
+		}
+	}
+	if len(found) != 2 || !found[x64URL] || !found[x86URL] {
+		t.Fatalf("Distinct installed triplet identities were collapsed: %+v", found)
+	}
+}
+
 // contractFixtureRoot resolves maintained synthetic inputs, never a user folder.
 func contractFixtureRoot(t *testing.T) string {
 	t.Helper()

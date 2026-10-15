@@ -137,7 +137,14 @@ func inventoryArtifact(ctx context.Context, payloadRoot, componentRoot string, i
 		imported := map[artifact.ID]pkg.Package{}
 		for _, component := range decoded.Artifacts.Packages.Sorted() {
 			originalID := component.ID()
-			contentID, err := artifact.IDByHash(&component)
+			// Syft's default package hash deliberately ignores PURL. Native
+			// installed vcpkg documents carry triplet identity in that opaque
+			// value, so include it explicitly in the public hash input rather
+			// than merging equal name/version packages from different builds.
+			contentID, err := artifact.IDByHash(struct {
+				Component  pkg.Package
+				PackageURL string
+			}{component, component.PURL})
 			if err != nil {
 				return fmt.Errorf("native package identity: %w", err)
 			}

@@ -1895,6 +1895,54 @@ admitted as graph evidence; successful installed-package listing alone does not
 prove dependency edges. Keep the release block until a supported native route
 qualifies the actual graph rather than adding a shadow dependency resolver.
 
+**Installed-closure composition checkpoint (2026-10-15):** The supported native
+route is now qualified: standalone Microsoft vcpkg `2026-09-26` exports the
+**already installed** closure of `exiv2` and `libjpeg-turbo`, with no version
+resolution or installation. The Visual Studio edition correctly refuses
+selective classic-mode export; it is not patched or replaced. The latest stable
+standalone release and its bundle are digest-pinned in `eng/sbom-tools.json`;
+the downloaded executable's Microsoft Authenticode signature verified, and its
+MIT licence plus bundled native fmt/CMakeRC/curl notices are retained. This tool
+is isolated in the external qualification cache, not added to the application or
+system PATH. The optional vcpkg-artifacts JavaScript service is not executed.
+
+`Export-JpgSpinnerVcpkgEvidence.ps1` retains exact exported target-triplet SPDX
+documents and cross-checks their hashes against the original installed tree,
+their identities against native `list --x-json`, and their count against native
+target ownership lists. It preserves native package URLs without parsing them.
+vcpkg, not repository code or a parsed console plan, owns dependency traversal.
+Initial direct-root-only copying lost transitive ports (observed RED); tests now
+retain seven target ports for each of x86, x64 and ARM64, excluding unrelated
+Catch2 and separating host tools. Missing installed roots fail the actual native
+exporter without promoting evidence; existing outputs and wrong executable pins
+refuse before export. Native output ancestry/containment and process deadlines
+are checked, and bulky raw exports have an explicit caller cleanup obligation.
+
+Combining actual three-architecture evidence exposed another genuine RED:
+Syft's default package hash deliberately excludes `PURL`, so otherwise equal
+port packages from different triplets collapsed. The adapter now gives the
+native `artifact.IDByHash` API the typed component **and its opaque package URL**,
+then uses the existing public ID override and relationship rebinding. No SDK
+patch, custom hash implementation, URL parser or JSON rewriting is introduced.
+A focused two-triplet regression failed before the change; all ten native Go
+tests now pass. The retained unsigned bundle's 186 extracted payload files and
+38 required component identities (21 architecture-qualified native ports and 17
+resolved NuGet packages) pass composition, exact hashes/membership, official
+SPDX 3.0.1 schema and Workgroup semantic verification together.
+
+This qualifies complete installed **build-component closure** for the two app
+roots, not proof that every such package contributes linked runtime code. It
+does not bind that current installed tree to a newly signed release bundle or
+close clean-build provenance, final security/rights review or release approval.
+The failed combined candidate and original native refusals remain evidence.
+Spent executables and raw exports are recycled recoverably after their consumers
+finish, with hashes/inventories and thin native metadata retained separately.
+Sources: [native export](https://learn.microsoft.com/en-us/vcpkg/commands/export),
+[Visual Studio distribution limitation](https://learn.microsoft.com/en-us/vcpkg/troubleshoot/build-failures#cannot-install-packages-using-classic-mode),
+[immutable standalone tool release](https://github.com/microsoft/vcpkg-tool/releases/tag/2026-09-26),
+[native package identity fields](https://github.com/anchore/syft/blob/v1.54.1/syft/pkg/package.go),
+and [public content-hash API](https://github.com/anchore/syft/blob/v1.54.1/syft/artifact/id.go).
+
 **Native signature-verification checkpoint (2026-10-15):**
 `Resolve-MsixToolchain.ps1` evaluates the locked owning app targets for MakeAppx
 and selects its companion SignTool in that same SDK architecture directory,
