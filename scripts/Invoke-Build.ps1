@@ -157,4 +157,15 @@ finally {
     $process.Dispose()
 }
 
+# Inspect the produced release image rather than accepting an option-shaped
+# string in project XML. This also catches a later per-project LINK override.
+# Debug builds retain their ordinary local debugging paths; this gate neither
+# changes the actual symbol output nor asserts whole-payload reproducibility.
+if ($buildExitCode -eq 0 -and $Configuration -ceq 'Release') {
+    $applicationImagePath = Join-Path $repositoryRoot (
+        "artifacts/bin/$msBuildPlatform/$Configuration/JpgSpinner.App/JpgSpinner.exe"
+    )
+    & (Join-Path $PSScriptRoot 'Test-PeProgramDatabaseReference.ps1') -ImagePath $applicationImagePath
+}
+
 exit $buildExitCode

@@ -225,3 +225,28 @@ from the manifest or rewrite their bytes merely to obtain equality. Use an
 explicitly allocated short workspace with adequate
 disk headroom, and recycle released clones only after retaining their required
 results and provenance.
+
+### Release symbol-path checkpoint (2026-10-15)
+
+Native `DUMPBIN /headers` and .NET `PEReader` inspection of the retained pair
+identified an absolute clone-local PDB reference in each executable. The x64
+WinMD differs only at the COFF timestamp and module-version identifier (MVID).
+These are separate producer inputs; fixing one does not qualify the other.
+
+Release links now use Microsoft's documented
+[`/PDBALTPATH:%_PDB%`](https://learn.microsoft.com/en-us/cpp/build/reference/pdbaltpath-use-alternate-pdb-path)
+to embed the PDB filename without changing where symbols are actually written.
+[`Test-PeProgramDatabaseReference.ps1`](../scripts/Test-PeProgramDatabaseReference.ps1)
+uses the platform PE/CodeView reader, requires exactly one symbol reference,
+and refuses directory-bearing references without repeating the private path
+in its diagnostic. Successful Release application builds inspect their actual
+output; Debug retains ordinary local debugging paths.
+
+The native build-policy probe first reproduced the absolute-reference refusal
+(RED). After the option change, independently placed probe outputs were
+byte-identical and the positive/absolute-reference negative control passed
+(GREEN). This is a bounded probe result, not a clean application rebuild or
+whole-package reproducibility proof. The original six application builds and
+their WinMD timestamp/MVID failure remain retained; no package bytes are patched,
+filtered or normalized. Metadata reproducibility and final payload equality
+remain release blockers.

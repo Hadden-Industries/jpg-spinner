@@ -86,6 +86,12 @@ jobs:
         run: |
           ./scripts/tests/Test-PresentationHostShutdown.ps1 -Scenario RecoveryDiagnostic -OutputDirectory 'artifacts/TestResults/x64/Release/PresentationShutdown'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Check release PE symbol references and negative controls
+        if: matrix.configuration == 'Release'
+        run: |
+          # PEReader can inspect every target architecture without executing it.
+          $platform = if ('${{ matrix.architecture }}' -eq 'x86') { 'Win32' } else { '${{ matrix.architecture }}' }
+          ./scripts/tests/Test-PeProgramDatabaseReference.ps1 -PortableImagePath "artifacts/bin/$platform/Release/JpgSpinner.App/JpgSpinner.exe" -OwnedOutputRoot $env:RUNNER_TEMP
       - name: Run native headless tests
         if: matrix.architecture != 'ARM64'
         run: |

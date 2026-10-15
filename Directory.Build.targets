@@ -40,6 +40,13 @@
     </ClCompile>
     <Link>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <!-- Keep the actual PDB in OutDir, but embed only its filename in the
+           release image. LINK expands its own %_PDB% variable; do not expand
+           it in a shell or replace it with a workstation-specific path.
+           This removes one cross-root input without claiming the MIDL/XAML
+           toolchain or the remaining binary contents are reproducible.
+           https://learn.microsoft.com/cpp/build/reference/pdbaltpath-use-alternate-pdb-path -->
+      <AdditionalOptions>/PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 

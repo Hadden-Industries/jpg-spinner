@@ -2105,6 +2105,18 @@ and [MSIX signing guidance](https://learn.microsoft.com/en-us/windows/msix/packa
 
 ### Step 17.5: Protected Store packaging workflow
 
+**Release symbol-path checkpoint (2026-10-15):** Native inspection of the retained
+failed build pair identifies absolute clone-local PDB references in the EXEs
+and independent timestamp/MVID changes in the WinMDs. Release links now use the
+documented `/PDBALTPATH:%_PDB%` to retain symbols while embedding only their
+filename; successful Release application builds validate the actual PE/CodeView
+record through the platform reader. The native probe demonstrated RED before
+the correction and GREEN with a real absolute-reference negative control; two
+separate probe output roots produced identical executable bytes. This does not
+qualify the application, resolve WinMD generation, or satisfy complete payload
+reproducibility. Preserve both original build snapshots and the unchanged strict
+comparison; do not patch binary metadata or remove files to obtain equality.
+
 **Approved distribution-contract amendment (2026-10-15):** The user approved
 separating unsigned Store-submission artifacts from signed sideload distribution.
 Microsoft [signs MSIX/AppX submissions after certification](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-package-requirements#code-signing-for-microsoft-store-submissions);

@@ -201,8 +201,15 @@ if ($buildParseErrors.Count -ne 0) { throw 'Build entry point has PowerShell syn
 $argumentLoops = @($buildSyntax.FindAll({
     param($node)
     $node -is [System.Management.Automation.Language.ForEachStatementAst] -and
-        $node.Variable.VariablePath.UserPath -ceq 'argument'
+        $node.Variable.VariablePath.UserPath -ceq 'argument' -and
+        @($node.Condition.FindAll({
+            param($argumentNode)
+            $argumentNode -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                $argumentNode.VariablePath.UserPath -ceq 'buildEntryPointPath'
+        }, $true)).Count -eq 1
 }, $true))
+# Packaging legitimately appends another argument group. Identify the base
+# native invocation by its project operand, not the number of foreach loops.
 if ($argumentLoops.Count -ne 1) { throw 'Expected one MSBuild argument construction loop.' }
 $nodeReuseArguments = @($argumentLoops[0].Condition.FindAll({
     param($node)
@@ -237,6 +244,22 @@ Assert-RejectedInvocation `
     -RelativeScriptPath 'scripts/Invoke-Build.ps1' `
     -ArgumentList @('-Configuration', 'Debug', '-Architecture', 'x64', '-MaximumBuildProcessCount', '0') `
     -ExpectedDiagnostic 'minimum allowed range of 1'
+
+# The native image check must be in the successful Release branch. Merely
+# declaring /PDBALTPATH in XML cannot prove the final linker honored it.
+$releaseImageGate = @($buildSyntax.FindAll({
+    param($node)
+    $node -is [System.Management.Automation.Language.IfStatementAst] -and
+        $node.Clauses.Count -eq 1 -and
+        $node.Clauses[0].Item1.Extent.Text -ceq '$buildExitCode -eq 0 -and $Configuration -ceq ''Release'''
+}, $true))
+if ($releaseImageGate.Count -ne 1) { throw 'Expected one successful-Release PE inspection branch.' }
+$imageValidators = @($releaseImageGate[0].Clauses[0].Item2.FindAll({
+    param($node)
+    $node -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+        $node.Value -ceq 'Test-PeProgramDatabaseReference.ps1'
+}, $true))
+if ($imageValidators.Count -ne 1) { throw 'Release builds must inspect the produced PE program-database reference.' }
 
 # A UIA transaction timeout does not bound OS deployment or an entire test host.
 # Require the runner's native Process deadline in its explicit Interactive branch.
