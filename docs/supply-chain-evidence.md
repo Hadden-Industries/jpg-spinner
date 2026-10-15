@@ -262,3 +262,12 @@ whole-package reproducibility proof. The original six application builds and
 their WinMD timestamp/MVID failure remain retained; no package bytes are patched,
 filtered or normalized. Metadata reproducibility and final payload equality
 remain release blockers.
+
+The subsequent approved
+[native WinMD merger qualification](implementation/2026-10-15-native-winmd-merger-qualification.md)
+rejects Microsoft's `windows-metadata` 0.100.0 for this purpose: its public merge
+API produces identical files but removes properties, events and method metadata.
+The platform-reader preservation oracle fails. The portable Rust experiment
+changes no application build input; this SDK is not adopted release tooling.
+Retain the existing merger, all shipping metadata and the strict complete-payload
+gate rather than wrapping incomplete output with custom reconstruction code.
