@@ -1663,6 +1663,33 @@ MIT, and their selected entry points use the hosted runner's Node 24 runtime.
 - Create: `.github/dependabot.yml`
 - Modify: `scripts/Test-RepositoryPolicy.ps1`
 
+**Incremental selected-input provenance checkpoint (2026-10-15):**
+`New-BuildProvenance.ps1` observes the owning app project's native MSBuild
+properties, selected executable file versions/SHA-256, committed modern project
+NuGet locks, vcpkg manifest/baseline, current action commits, source cleanliness,
+and actual hosted `ImageVersion` when hosted. Installation-root placeholders
+preserve tool location scope without exposing a developer profile. The record
+does not certify that a build or tests executed. `-RequireCleanSourceTree` refuses
+a dirty checkout rather than presenting its HEAD as an exact build candidate.
+
+`Test-BuildProvenance.ps1` reuses the platform strict-JSON reader before lossy
+PowerShell conversion and validates original JSON through native `Test-Json`
+against a closed local JSON Schema 2020-12 contract. Literal positive and six
+negative controls pass: missing required fields with full native diagnostics,
+wrong JSON boolean type, absolute profile path, duplicate member, stale action
+commit and array root. The live observation test also passes against actual
+MSBuild and selected binaries; local identity remains explicitly non-hosted.
+The retained RED/GREEN logs and observed record are in the owning execution's
+external Task 17 evidence group. This source checkpoint does not close hosted
+execution, SBOM completeness, two-clean-build reproducibility, interactive
+qualification or whole Task 17 acceptance.
+
+Selected executable versions are observed independently of the selected toolset
+directory name: servicing can change bytes inside that directory. The observed
+compiler is 19.51.36260.0 and linker 14.51.36260.0 under selected directory
+14.51.36231. Their hashes, not that directory name alone, identify this local
+observation; release qualification must bind its own exact tools and artifacts.
+
 ### Step 17.1: RED on immutable CI policy
 
 - [ ] Extend repository policy to parse workflow YAML and reject mutable action tags, `windows-latest`, prerelease tools, unbounded permissions, missing timeouts, artifact retention over 30 days, and any secret passed to pull-request builds.

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JPG Spinner selected build inputs and environment observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceCommit", "sourceTreeIsClean", "architecture", "configuration", "runnerImage", "operatingSystemVersion", "vcToolsVersion", "windowsSdkVersion", "selectedTools", "nugetLocks", "vcpkgBaseline", "vcpkgManifestSha256", "actionCommits"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sourceCommit": { "$ref": "#/$defs/commit" },
+    "sourceTreeIsClean": { "type": "boolean" },
+    "architecture": { "enum": ["x86", "x64", "ARM64"] },
+    "configuration": { "enum": ["Debug", "Release"] },
+    "runnerImage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["label", "version"],
+      "properties": {
+        "label": { "enum": ["windows-2025-vs2026", "local-development"] },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "operatingSystemVersion": { "type": "string", "pattern": "^10\\.0\\.[0-9]+\\.[0-9]+$" },
+    "vcToolsVersion": { "type": "string", "pattern": "^14\\.51\\.[0-9]+$" },
+    "windowsSdkVersion": { "const": "10.0.28000.0" },
+    "selectedTools": {
+      "type": "object", "additionalProperties": false,
+      "required": ["msBuild", "compiler", "linker", "makeAppx"],
+      "properties": {
+        "msBuild": { "$ref": "#/$defs/executable" },
+        "compiler": { "$ref": "#/$defs/executable" },
+        "linker": { "$ref": "#/$defs/executable" },
+        "makeAppx": { "$ref": "#/$defs/executable" }
+      }
+    },
+    "nugetLocks": {
+      "type": "object", "minProperties": 1,
+      "propertyNames": { "pattern": "^(src|tests)/[^\\\\]+/packages\\.lock\\.json$" },
+      "additionalProperties": { "$ref": "#/$defs/sha256" }
+    },
+    "vcpkgBaseline": { "$ref": "#/$defs/commit" },
+    "vcpkgManifestSha256": { "$ref": "#/$defs/sha256" },
+    "actionCommits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["actions/checkout", "actions/cache", "actions/upload-artifact", "github/codeql-action"],
+      "properties": {
+        "actions/checkout": { "$ref": "#/$defs/commit" },
+        "actions/cache": { "$ref": "#/$defs/commit" },
+        "actions/upload-artifact": { "$ref": "#/$defs/commit" },
+        "github/codeql-action": { "$ref": "#/$defs/commit" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "executable": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "fileVersion", "sha256"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^<(visual-studio|nuget-packages|windows-sdk)>/[^\\\\]+$" },
+        "fileVersion": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}
