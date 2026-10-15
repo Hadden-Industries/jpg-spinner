@@ -38,7 +38,7 @@ foreach ($job in $jobs.Children.Values) {
     }
 }
 $commandsText=$commands -join "`n"
-foreach ($required in @('Test-InteractiveWorkflowAdmission.ps1','gh attestation verify','--source-digest','--source-ref refs/heads/main',
+foreach ($required in @('Test-ProtectedWorkflowAdmission.ps1 -TargetEnvironmentName interactive-qualification','gh attestation verify','--source-digest','--source-ref refs/heads/main',
     '--signer-workflow Hadden-Industries/jpg-spinner/.github/workflows/continuous-integration.yml','--deny-self-hosted-runners',
     'Test-InteractiveTestDrop.ps1','Invoke-TestSuite.ps1','-ExecutionEnvironment Interactive',
     "'[ui-automation]~[operator-assisted]'",'New-InteractiveTestEvidence.ps1')) {

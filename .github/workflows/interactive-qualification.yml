@@ -36,7 +36,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Could not read the native producer response.' }
           $environment = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' repos/Hadden-Industries/jpg-spinner/environments/interactive-qualification | Out-String
           if ($LASTEXITCODE -ne 0) { throw 'Protected environment is absent or unreadable; no self-hosted job is admitted.' }
-          ./scripts/Test-InteractiveWorkflowAdmission.ps1 -SourceRunJson $run -EnvironmentJson $environment -ExpectedSourceCommit $env:GITHUB_SHA -ExpectedRunId $env:SOURCE_RUN_ID
+          ./scripts/Test-ProtectedWorkflowAdmission.ps1 -TargetEnvironmentName interactive-qualification -SourceRunJson $run -EnvironmentJson $environment -ExpectedSourceCommit $env:GITHUB_SHA -ExpectedRunId $env:SOURCE_RUN_ID
   qualification:
     needs: admission
     if: github.ref == 'refs/heads/main'

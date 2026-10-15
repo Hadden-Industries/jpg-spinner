@@ -242,6 +242,19 @@ workflow's local contract tests neither run UI actions nor satisfy those gates.
 
 ## Approved Store-only distinction
 
+The shared [`Test-ProtectedWorkflowAdmission.ps1`](../scripts/Test-ProtectedWorkflowAdmission.ps1)
+requires an explicit current environment role: `interactive-qualification` or
+`store-submission`. It reuses the native JSON/schema consumer for the same
+successful, same-commit, trusted-main manual CI producer and reviewer-protection
+contract; it does not duplicate an evolving REST grammar. A protected environment
+for the other role is not interchangeable. The former UI-only entry point is
+renamed with its consumers, without an alias. Positive native-response-shaped
+fixtures and producer/type/duplicate/root/protection/cross-role refusal controls
+pass for both roles. These local predicates do not authenticate caller-written
+JSON, configure a GitHub environment, schedule a runner or prove hosted execution.
+Store producer/publisher integration and live protection qualification remain
+separate pending obligations.
+
 The subsequent owner-approved
 [closed package-payload comparison contract](implementation/2026-10-15-package-payload-comparison-contract.md)
 is a bounded-qualification amendment to the earlier unconditional equality gate.

@@ -26,7 +26,7 @@ jobs:
           ./scripts/tests/Test-WorkflowAttestationPermissions.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
           ./scripts/tests/Test-InteractiveTestDrop.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-InteractiveWorkflowAdmission.ps1
+          ./scripts/tests/Test-ProtectedWorkflowAdmission.ps1
           ./scripts/tests/Test-InteractiveTestEvidence.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-InteractiveWorkflowContract.ps1 -ToolsDirectory $tools
           ./scripts/tests/Test-BuildProvenanceControls.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
