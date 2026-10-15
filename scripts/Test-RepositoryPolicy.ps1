@@ -2297,6 +2297,15 @@ Test-VcpkgTriplet -Architecture x64
 Test-VcpkgTriplet -Architecture x64 -AddressSanitizer
 Test-VcpkgTriplet -Architecture arm64
 
+# Notice bytes must remain available independently of regenerable installed
+# trees. Keep the document owner's checksum contract as the single authority.
+try {
+    & (Join-Path $PSScriptRoot 'Test-DocumentationPolicy.ps1') -RepositoryRoot $repositoryRoot
+}
+catch {
+    $policyFailures.Add("Documentation policy: $($_.Exception.Message)")
+}
+
 # Only closed, decoded, owned artwork may enter the app's wildcard PNG inventory.
 # This remains a read-only policy check; generation is an explicit separate step.
 try {

@@ -11,6 +11,8 @@ the outstanding legal and supply-chain gates.
 
 ## Native components
 
+This software is based in part on the work of the Independent JPEG Group.
+
 | Component | Reviewed version / role | Upstream terms to retain |
 | --- | --- | --- |
 | [libjpeg-turbo](https://github.com/libjpeg-turbo/libjpeg-turbo/tree/3.2.0) | 3.2.0, port revision 1; image runtime | Actual packaged BSD-style and IJG notices, not a shortened SPDX label |
@@ -22,6 +24,16 @@ The actual transitive native closure is determined by resolved vcpkg installatio
 metadata and shipped payloads, not this list of direct names alone. Retain every
 native port's copyright file and source/patch locator. Static linkage is not an
 exemption from obligations. No loader or process boundary is a licensing remedy.
+
+The [retained native notice inventory](docs/licenses/native/README.md) now
+includes the exact installed copyright files for seven native build-context
+ports, plus the test-only Catch2 notice and libjpeg-turbo's upstream IJG README.
+This preserves notice text; it does not prove every installed library contributes
+to the application, package those notices into an MSIX, deliver corresponding
+source, or complete final binary/terms comparison. Transitive libspng and zlib
+are retained conservatively as resolved inputs, not asserted runtime features.
+Adobe's combined notice includes the RSA Data Security, Inc. MD5 Message-Digest
+Algorithm notice; the committed overlay patches remain separately inspectable.
 
 ## Windows packages
 

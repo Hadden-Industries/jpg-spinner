@@ -68,6 +68,9 @@ try {
         'Directory.Build.targets',
         'NuGet.config',
         'vcpkg.json',
+        'README.md',
+        'SECURITY.md',
+        'THIRD_PARTY_NOTICES.md',
         'JpgSpinner.sln',
         'JPG Spinner/JPG Spinner.vcxproj'
     )) {
@@ -78,6 +81,12 @@ try {
     Copy-Item `
         -LiteralPath (Join-Path $repositoryRoot 'eng') `
         -Destination (Join-Path $temporaryRoot 'eng') `
+        -Recurse
+    # The real repository policy now consumes documentation and exact native
+    # notices. Keep the valid fixture complete before mutating other contracts.
+    Copy-Item `
+        -LiteralPath (Join-Path $repositoryRoot 'docs') `
+        -Destination (Join-Path $temporaryRoot 'docs') `
         -Recurse
     Copy-Item `
         -LiteralPath (Join-Path $repositoryRoot 'vcpkg-triplets') `

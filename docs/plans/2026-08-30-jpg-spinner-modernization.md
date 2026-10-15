@@ -2303,6 +2303,26 @@ these source edits. Those steps remain mandatory below.
 
 ### Step 18.3: Generate and verify third-party notices
 
+**Native-notice preservation checkpoint (2026-10-16):** The
+[native inventory](../licenses/native/README.md) retains eight exact installed
+copyright assets (seven resolved native build-context ports and test-only
+Catch2), plus the complete selected upstream IJG README. All four retained
+triplets agree on the installed notice hashes; the seven non-test notices also
+match the independent-build native export. Native vcpkg status supplies the
+versions; ABI hashes and `NOASSERTION` are not reinterpreted as release versions
+or legal approval. Upstream complete source sections and original notice
+newlines remain unchanged. The public inventory carries the IJG acknowledgement.
+
+The missing-notice control failed against the previous documentation policy,
+which accepted that omission. The new native-hash contract passes the valid
+owned copy and refuses missing/edited notices, missing documents and missing
+sections. Repository policy now invokes that same contract, with its existing
+negative-control fixture updated to include the newly required inputs. This is
+focused test-first preservation, not a license parser or completed release gate.
+Microsoft/NuGet and engineering-tool transitive notices, exact final package
+inclusion/contribution, source delivery, qualified legal review and credential
+revocation remain open. No build, hosted CI or desktop control is implied.
+
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
 - [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
