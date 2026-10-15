@@ -2317,6 +2317,13 @@ git commit -m "docs: define support privacy and release contracts"
 
 ## Task 19: Cut over in one auditable change and delete the legacy implementation
 
+**Coverage-mapping checkpoint (2026-10-16):**
+[`docs/legacy-cutover-coverage.md`](../legacy-cutover-coverage.md) now maps each
+supported user outcome to maintained executable test boundaries and explicitly
+records retired surfaces. Test existence, development runs and final candidate
+acceptance remain separate. The pre-deletion full-system/upgrade gates below
+are not marked passed and the quarantined legacy tree remains untouched.
+
 **Files:**
 
 - Delete: `JPG Spinner.sln`

@@ -39,6 +39,10 @@ exact successful clean-build binding and certification remain pending.
 
 ## Gate register
 
+The [legacy outcome coverage map](legacy-cutover-coverage.md) links supported
+behaviors to maintained executable tests and names deliberately retired
+surfaces. It is selection guidance, not pre-cutover execution/upgrade approval.
+
 | Gate | Current evidence boundary / remaining proof | Accountable role |
 | --- | --- | --- |
 | Locked builds | Local native x86/x64/ARM64 package checkpoints exist; final exact clean-source and hosted matrix remain | Build maintainer |
