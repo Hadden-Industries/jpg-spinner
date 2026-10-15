@@ -1,0 +1,3 @@
+# Public identity already used by the maintainer's native Git trust policy.
+# Review changes as trust-policy changes. Never put private signing material here.
+maksym@shostak.info ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGpqSjJMHCFWXzxM8jB87C66pKkTWLNi4a7scQ/KSDo/

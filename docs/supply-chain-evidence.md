@@ -81,6 +81,52 @@ deadline. Limit/tool/validator failures never become success.
 
 ## Prepare the native Go module cache
 
+### Restore the reviewed verification tools
+
+[`Restore-SbomVerificationTools.ps1`](../scripts/Restore-SbomVerificationTools.ps1)
+composes the already-qualified native tools, rather than inventing an archive,
+dependency or schema implementation. Supply a frozen `DownloadDirectory` with
+`vcpkg.exe`, `vcpkg-standalone-bundle.tar.gz`, `spdx-json-schema.json` and
+`tools-java.zip`, acquired from the exact URLs in
+[`eng/sbom-tools.json`](../eng/sbom-tools.json). All four digests must match that
+single authority before output creation or execution. Original inputs stay held
+read-only throughout restoration. Supply an explicit selected Node executable
+and its npm CLI path; they are caller-owned toolchain inputs, not downloads
+selected by this script.
+
+The fresh external output retains Microsoft's native standalone bundle and
+notices, the exact Workgroup verifier and schema, and unchanged copied npm locks.
+Windows `tar`, .NET ZIP extraction and native `npm ci --ignore-scripts --no-audit
+--no-fund` own their formats. No system-wide installation, global setting, module
+resolution, cache repair or application compilation occurs. Partial failures stay
+diagnostic; an existing destination is refused, not repaired or overwritten.
+
+The real-archive provisioning control first reaches an explicitly unimplemented
+restoration boundary (RED), then passes actual native extraction/npm restoration,
+changed-tool-before-effects and reused-destination refusals (GREEN). Original
+download hashes and staged/source locks stay unchanged. This is not SBOM,
+application-build, hosted-execution or release qualification.
+
+### Portable source-signature trust
+
+[`eng/source-commit-allowed-signers`](../eng/source-commit-allowed-signers)
+contains only the maintainer's existing reviewed public SSH signing identity,
+not a private key or new signer. It makes the same native Git trust decision
+available on an ephemeral hosted runner without depending on a personal file.
+Changes to this file are trust-policy changes requiring review in protected main;
+a file from an arbitrary checkout is not an independent trust anchor.
+
+Use Git's documented [`gpg.ssh.allowedSignersFile`](https://git-scm.com/docs/git-config#gpgsshallowedSignersFile)
+configuration and [`verify-commit`](https://git-scm.com/docs/git-verify-commit),
+not a repository signature parser. The maintained native test verifies the real
+signed source with command-scoped trust and confirms that an empty policy refuses
+it, without changing any Git configuration. The protected workflow may configure
+only its own disposable source checkout before the existing producer verifies
+the exact commit. This is configuration qualification, not invented behavioural
+RED, signature creation or proof that remote protection is configured.
+
+### Prepare private module caches
+
 Stage unchanged copies of `eng/artifact-sbom/go.mod` and `go.sum` in an owned
 external provisioning directory. Use an explicit private module/build cache,
 the qualified Go executable, `GOTOOLCHAIN=local`, `GOWORK=off`, `GOENV=off`, empty
