@@ -1843,6 +1843,18 @@ while preserving the independent fixed fixture hash oracle. This checks caller
 requirements, not whether a caller's dependency list is complete; production
 architecture-specific graph coverage and signed-bundle integration remain open.
 
+**Architecture-qualified identity checkpoint (2026-10-15):** Required-component
+entries may now include an exact native `packageUrl`, retaining vcpkg triplet
+qualifiers without another URL parser. Name/version alone remains fail-closed
+when ambiguous. A wrong-triplet requirement passed the previous validator
+(observed RED); it now refuses, while a synthetic two-architecture document
+passes the exact qualified requirement and both official validators. Non-string
+URLs and unknown identity fields also refuse. This synthetic policy control is
+not evidence that the actual three-architecture release graph was cataloged.
+The [SPDX property](https://spdx.github.io/spdx-spec/v3.0.1/model/Software/Properties/packageUrl/)
+and [native vcpkg SBOM contract](https://learn.microsoft.com/en-us/vcpkg/reference/software-bill-of-materials)
+remain the authoritative identifier/installed-metadata boundaries.
+
 **Native signature-verification checkpoint (2026-10-15):**
 `Resolve-MsixToolchain.ps1` evaluates the locked owning app targets for MakeAppx
 and selects its companion SignTool in that same SDK architecture directory,

@@ -46,7 +46,9 @@ Immutable validator identities are in [the pins](../sbom-tools.json).
 The reusable [artifact validator](../../scripts/Test-ArtifactSbom.ps1) consumes
 an unmodified native document, a separate `New-PayloadManifest.ps1` inventory,
 an independent JSON component contract with nonempty `requiredPackages`
-(`name`/`version` pairs), and explicit public artifact name/version. It checks
+(`name`/`version` pairs with an optional exact native `packageUrl`), and explicit
+public artifact name/version. Component entries reject unknown fields and
+non-string URL values. It checks
 exact payload scope/hashes, SBOM membership and required components before the
 official semantic verifier. The fixture runner additionally checks its payload
 against the independently fixed hash vector, rather than letting two generated
@@ -58,6 +60,13 @@ The component contract states required identities, not an exhaustive dependency
 resolver. Its producer must independently establish complete architecture-specific
 runtime coverage; this validator cannot prove a caller supplied every dependency.
 Name/version-only requirements must be unambiguous within the selected inventory.
+When multiple architectures share that pair, require their exact native package
+URLs, including triplet qualifiers. The validator compares emitted identifiers;
+it does not parse, reorder or reconstruct URLs. A synthetic two-architecture
+control rejects the ambiguous pair and accepts the qualified identity through
+both official validators; a wrong-triplet requirement fails. This follows the
+[SPDX packageUrl contract](https://spdx.github.io/spdx-spec/v3.0.1/model/Software/Properties/packageUrl/)
+and [vcpkg's triplet-separated installed metadata](https://learn.microsoft.com/en-us/vcpkg/reference/software-bill-of-materials).
 Full multi-architecture release composition and dependency evidence remain open.
 
 For an already-qualified inspection tree, the command syntax is:

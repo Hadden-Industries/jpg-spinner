@@ -1,5 +1,8 @@
 <# Validate native SPDX output against pinned official consumers and independent
-   artifact evidence. Does not generate, repair, sign or publish an SBOM. #>
+   artifact evidence. ComponentContractPath supplies nonempty requiredPackages
+   entries with name/version and an optional exact native packageUrl; no other
+   identity fields are accepted. Does not generate, repair, sign or publish an
+   SBOM or resolve missing dependencies. #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$ManifestPath,
@@ -76,15 +79,31 @@ foreach ($file in $files) {
 }
 $seenComponents = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 foreach ($identity in $componentContract.requiredPackages) {
+    if ($identity -isnot [Collections.IDictionary] -or
+        @($identity.Keys | Where-Object { $_ -cnotin @('name','version','packageUrl') }).Count -ne 0) {
+        throw 'Required component contract contains unsupported identity fields.'
+    }
     if ($identity.name -isnot [string] -or [string]::IsNullOrEmpty($identity.name) -or
         $identity.version -isnot [string] -or [string]::IsNullOrEmpty($identity.version)) {
         throw 'Required component contract contains an invalid package identity.'
     }
+    $requiresPackageUrl = $identity.Contains('packageUrl')
+    $packageUrl = if ($requiresPackageUrl) { $identity.packageUrl } else { $null }
+    if ($requiresPackageUrl -and ($packageUrl -isnot [string] -or [string]::IsNullOrEmpty($packageUrl))) {
+        throw 'Required component contract contains an invalid native package URL.'
+    }
     # A native tuple encoding avoids conflating name/version strings containing
     # delimiters; this is identity bookkeeping, not another dependency resolver.
-    $identityKey = ConvertTo-Json -InputObject @($identity.name,$identity.version) -Compress
+    $identityKey = ConvertTo-Json -InputObject @($identity.name,$identity.version,$packageUrl) -Compress
     if (-not $seenComponents.Add($identityKey)) { throw 'Required component contract contains a duplicate package identity.' }
-    $packages = @($nodes | Where-Object { $_.type -ceq 'software_Package' -and $_.name -ceq $identity.name -and $_.software_packageVersion -ceq $identity.version })
+    # Compare the exact native identifier, including its triplet qualifiers.
+    # Do not parse, reorder or reconstruct package URLs here. A name/version
+    # requirement alone must still be unique in a multi-architecture document.
+    # https://spdx.github.io/spdx-spec/v3.0.1/model/Software/Properties/packageUrl/
+    $packages = @($nodes | Where-Object {
+        $_.type -ceq 'software_Package' -and $_.name -ceq $identity.name -and $_.software_packageVersion -ceq $identity.version -and
+        (-not $requiresPackageUrl -or ($_.Contains('software_packageUrl') -and $_.software_packageUrl -ceq $packageUrl))
+    })
     if ($packages.Count -ne 1 -or $packages[0].spdxId -cnotin $sboms[0].element) {
         throw "Artifact SPDX required component is absent or ambiguous: $($identity.name)@$($identity.version)"
     }

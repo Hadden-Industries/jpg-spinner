@@ -76,6 +76,62 @@ try { & $producer -ManifestPath $duplicate @arguments } catch { $message = $_.Ex
 if ($null -eq $message -or -not $message.Contains('not valid strict JSON',[StringComparison]::Ordinal)) {
     throw "Duplicate-member rejection before conversion is absent: $message"
 }
+
+# Name/version can repeat across architectures. The independent native vcpkg
+# fixture supplies its full package URL; require it without parsing qualifiers.
+$jpegPackageUrl = 'pkg:vcpkg/libjpeg-turbo@3.2.0?port_version=1&triplet=x64-windows-static-md&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fmicrosoft%2Fvcpkg%40768361c24a39c9a0afd9d43c9a17e21ba781b445'
+$jpeg = @($original['@graph'] | Where-Object { $_.type -ceq 'software_Package' -and $_.name -ceq 'libjpeg-turbo' -and $_.software_packageVersion -ceq '3.2.0#1' })
+if ($jpeg.Count -ne 1 -or $jpeg[0].software_packageUrl -cne $jpegPackageUrl) { throw 'Native package URL fixture precondition changed.' }
+$componentContract = Get-Content -LiteralPath $arguments.ComponentContractPath -Raw | ConvertFrom-Json -AsHashtable
+$jpegRequirement = @($componentContract.requiredPackages | Where-Object name -CEQ 'libjpeg-turbo')[0]
+$jpegRequirement.packageUrl = $jpegPackageUrl.Replace('triplet=x64-windows-static-md','triplet=arm64-windows-static-md')
+$qualifiedContract = Join-Path $fixture 'qualified-components.json'
+$componentContract | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $qualifiedContract -Encoding utf8NoBOM
+$qualifiedArguments = $arguments.Clone()
+$qualifiedArguments.ComponentContractPath = $qualifiedContract
+$message = $null
+try { & $producer -ManifestPath $QualifiedManifestPath @qualifiedArguments }
+catch { $message = $_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('required component is absent',[StringComparison]::Ordinal)) {
+    throw "Wrong native package URL/triplet was not refused: $message"
+}
+$jpegRequirement.packageUrl = $jpegPackageUrl
+$componentContract | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $qualifiedContract -Encoding utf8NoBOM
+# The synthetic second architecture deliberately reuses name/version while
+# retaining a distinct URL/element identity. This is not a claim that a native
+# x86 release was cataloged by this test; it exercises the ambiguity boundary.
+$multiArchitecture = Get-Content -LiteralPath $QualifiedManifestPath -Raw | ConvertFrom-Json -AsHashtable
+$secondArchitecture = $jpeg[0] | ConvertTo-Json -Depth 100 | ConvertFrom-Json -AsHashtable
+$secondArchitecture.spdxId += '-synthetic-second-architecture'
+$secondArchitecture.software_packageUrl = $jpegPackageUrl.Replace('triplet=x64-windows-static-md','triplet=x86-windows-static-md')
+$multiArchitecture['@graph'] += $secondArchitecture
+$multiSbom = @($multiArchitecture['@graph'] | Where-Object { $_.type -ceq 'software_Sbom' })[0]
+$multiSbom.element += $secondArchitecture.spdxId
+$multiPath = Join-Path $fixture 'synthetic-multiple-architectures.spdx.json'
+$multiArchitecture | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $multiPath -Encoding utf8NoBOM
+$message = $null
+try { & $producer -ManifestPath $multiPath @arguments } catch { $message = $_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('required component is absent or ambiguous',[StringComparison]::Ordinal)) {
+    throw "Name/version-only architecture ambiguity was not refused: $message"
+}
+& $producer -ManifestPath $multiPath @qualifiedArguments
+foreach ($case in @(
+    @{Name='non-string-package-url';Diagnostic='invalid native package URL';Mutate={ param($entry) $entry.packageUrl = 42 }},
+    @{Name='unsupported-identity-field';Diagnostic='unsupported identity fields';Mutate={ param($entry) $entry.triplet = 'x64-windows-static-md' }}
+)) {
+    $candidateContract = $componentContract | ConvertTo-Json -Depth 100 | ConvertFrom-Json -AsHashtable
+    $candidateRequirement = @($candidateContract.requiredPackages | Where-Object name -CEQ 'libjpeg-turbo')[0]
+    & $case.Mutate $candidateRequirement
+    $candidateContractPath = Join-Path $fixture "$($case.Name).json"
+    $candidateContract | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $candidateContractPath -Encoding utf8NoBOM
+    $candidateArguments = $arguments.Clone()
+    $candidateArguments.ComponentContractPath = $candidateContractPath
+    $message = $null
+    try { & $producer -ManifestPath $QualifiedManifestPath @candidateArguments } catch { $message = $_.Exception.Message }
+    if ($null -eq $message -or -not $message.Contains($case.Diagnostic,[StringComparison]::Ordinal)) {
+        throw "Malformed component contract '$($case.Name)' was not refused: $message"
+    }
+}
 & $producer -ManifestPath $QualifiedManifestPath @arguments
 if ((Get-FileHash -LiteralPath $QualifiedManifestPath -Algorithm SHA256).Hash -cne $before) { throw 'Artifact validation changed its native input.' }
-Write-Output 'PASS: artifact validator refuses wrong hashes/membership/component/public versions and duplicate JSON members, accepting the unchanged native fixture.'
+Write-Output 'PASS: artifact validator refuses wrong hashes/membership/component/public versions, native package URL/triplet and duplicate JSON members, accepting the unchanged native fixture.'
