@@ -45,7 +45,10 @@ if ($LASTEXITCODE -ne 0) {throw 'Reproducibility source commit signature verific
 [void][IO.Directory]::CreateDirectory($working)
 $candidate=Join-Path $working evidence
 [void][IO.Directory]::CreateDirectory($candidate)
-$git=(Get-Command git -CommandType Application -ErrorAction Stop).Source
+# PowerShell may enumerate multiple Application matches when CommandType is
+# constrained. Match ordinary command resolution's first executable, not a
+# space-joined list of PATH candidates passed to ProcessStartInfo.FileName.
+$git=(Get-Command git -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $powershell=(Get-Process -Id $PID).Path
 function Invoke-OwnedTool([string]$Executable,[string]$Directory,[string[]]$Arguments,[string]$LogPath,[int]$TimeoutMilliseconds) {
     $start=[Diagnostics.ProcessStartInfo]::new()
