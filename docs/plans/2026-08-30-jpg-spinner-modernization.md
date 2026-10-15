@@ -1827,7 +1827,7 @@ complete from this source checkpoint. Sources:
 - [x] Qualify `eng/artifact-sbom` and `Test-SbomToolContract.ps1` against the retained synthetic payload, native installed vcpkg SPDX documents, resolved NuGet lock and independent expected-contract JSON. User-approved native SDK qualification passed on 2026-10-15: exact SPDX 3.0.1, payload SHA-256, package identities/membership, official schema and SPDX Workgroup semantic validation. Preserve the original Microsoft 4.1.5 failure; do not repair its output JSON or weaken the requirement. Test-first refusal cases cover empty payload, absent resolved NuGet/vcpkg evidence and output inside inventory input; retained overlay metadata protects document-local-ID composition. This is a backend checkpoint, not release integration or a compliant application SBOM.
 - [ ] Implement `Invoke-Sbom.ps1` around that qualified adapter. Native Go owns the readonly SDK graph/checksums; use the exact schema and Workgroup validator identities in `eng/sbom-tools.json`. Acquire tooling only into an approved external tool cache, validate before execution and retain mismatched downloads as failed evidence or dispose recoverably when eligible. Never fall back to a different version or moving URL. Recheck latest applicable stable tooling and exact transitive rights/security before final release-tool adoption; the stable SDK's upstream graph contains prerelease/pseudo-version modules.
 - [ ] Have the script recursively unpack the exact input `.msixbundle` and each contained architecture `.msix` into a newly created inspection directory. Reject path traversal, reparse points, duplicate output paths, an unexpected architecture, a package manifest that differs from the bundle declaration, or a signature/hash verification failure. Treat the extracted tree as read-only input and put the generated manifest outside it so the SBOM cannot inventory itself.
-- [ ] Give the adapter the verified extracted payload tree and separate resolved architecture-specific component evidence, with explicit public artifact name and observed version. Use native NuGet lock cataloging and native vcpkg SPDX decoding, not a second manifest resolver. Rebind document-local package identities through the native typed model before encoding. Compare output against the complete resolved runtime graph for each architecture; a schema-valid SBOM that loses a dependency still fails.
+- [ ] Give the adapter the verified extracted payload tree and separate resolved architecture-specific component evidence, with explicit public artifact name and observed version. Use native NuGet lock cataloging and native vcpkg SPDX decoding, not a second manifest resolver. Rebind document-local package identities through the native typed model before encoding. Compare output against the complete installed build-component closure of the two application roots for each architecture and the application's resolved NuGet lock. A schema-valid SBOM that loses a required build component still fails. Do not describe this closure as the exact linked, deployed or instrumented runtime graph; qualify those separately under the approved scope contract below.
 - [ ] Require root `@context` to equal `https://spdx.org/rdf/3.0.1/spdx-context.jsonld`, every emitted `CreationInfo.specVersion` to equal `3.0.1`, and every shipped payload file to have the expected SHA-256. Validate against the pinned official schema and SPDX Workgroup semantic verifier; preserve the SBOM beside the bundle and record the outer signed-bundle SHA-256 in provenance. Do not emit an obsolete-format duplicate without a named consumer requirement.
 - [x] Run the maintained contract runner on the pinned native SDK and validators. GREEN proves output scope, 3.0.1 context/specVersion/schema, the expected fixture file hash, NuGet/libjpeg-turbo/Exiv2/Adobe XMP identities, membership and semantic validity. Actual signed-bundle dependency coverage, extraction and release integration remain pending.
 
@@ -1942,6 +1942,58 @@ Sources: [native export](https://learn.microsoft.com/en-us/vcpkg/commands/export
 [immutable standalone tool release](https://github.com/microsoft/vcpkg-tool/releases/tag/2026-09-26),
 [native package identity fields](https://github.com/anchore/syft/blob/v1.54.1/syft/pkg/package.go),
 and [public content-hash API](https://github.com/anchore/syft/blob/v1.54.1/syft/artifact/id.go).
+
+**Approved build-context scope amendment (2026-10-15):** The user approved
+separating three independently evidenced claims rather than inferring runtime
+composition from installed package membership:
+
+1. **Build-context components:** the full native installed closure selected by
+   vcpkg for `exiv2` and `libjpeg-turbo`, separately qualified for all three
+   target triplets, plus the application's resolved NuGet lock. Preserve exact
+   opaque native package URLs and all required identities. Keep host tools and
+   unrelated test-only packages out of the application component requirements.
+2. **Artifact bytes:** inventory every extracted architecture payload file and
+   its SHA-256; verify the exact outer signed bundle before extraction, retain
+   its selected SHA-256, and bind the unmodified native SPDX document and its
+   independent payload/component evidence to that container. No generated SPDX
+   rewriting or unsupported encoder changes are permitted to label this scope.
+3. **Deployment/runtime:** retain separate installation, framework dependency,
+   minimum-OS, physical ARM64, privacy/network and dynamic-loading evidence.
+   Installed build packages do not prove static-linker contribution or every
+   scenario-dependent runtime component. Neither a schema-valid document nor
+   the new binding is a build-execution attestation or release approval.
+
+This amends the erroneous "complete resolved runtime graph" SBOM criterion;
+it does not relax preservation, exact dependency coverage, signing, security,
+licensing, reproducibility or release gates. SPDX explicitly distinguishes
+[build, deployed and runtime SBOM types](https://spdx.github.io/spdx-spec/v3.0.1/model/Software/Vocabularies/SbomType/).
+Its runtime type requires instrumentation of running software; the selected
+build-context inputs do not establish that claim. Corresponding Task 18 notices
+must distinguish build-component rights from proof of actual redistribution,
+and Tasks 17/20 retain deployment and runtime qualification independently.
+
+**Release entry-point checkpoint (2026-10-15):** `Invoke-Sbom.ps1` composes the
+existing native trust, extraction, inventory, generation and official validation
+consumers. It requires the caller-selected exact bundle SHA-256 and frozen
+component evidence/independent requirements, holds the bundle read-only across
+the operation, and has no unsigned bypass. A real unsigned bundle reached native
+extraction in the initial seam (observed RED); native SignTool now refuses it
+before extraction or cataloging (GREEN). Focused preflight controls also reject
+a wrong digest, an existing output and overlapping destinations without creating
+work or changing the original bundle. The same-volume no-overwrite publication
+boundary exposes one complete evidence directory only after all downstream
+checks succeed. Its separately schema-constrained binding retains the exact
+container, SBOM, payload inventory, build-component input inventory and required
+component contract hashes; it explicitly makes no linkage, build-execution or
+deployment/runtime attestation.
+
+The downstream components already have real unsigned-bundle/three-architecture
+qualification. A **positive end-to-end signed JPG Spinner release run is still
+required**; this checkpoint does not pretend that an unsigned development bundle
+meets it. No certificate was created, used or trusted, no package was installed,
+and no remote workflow was dispatched. Final native tool rights/security,
+build-input-to-build-execution binding, hosted workflow composition and whole
+Task 17 acceptance remain open.
 
 **Native signature-verification checkpoint (2026-10-15):**
 `Resolve-MsixToolchain.ps1` evaluates the locked owning app targets for MakeAppx

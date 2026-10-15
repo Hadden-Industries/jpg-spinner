@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JPG Spinner signed-bundle SBOM evidence binding, not build or runtime attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "artifact", "inventoryScope", "bundle", "evidence"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version", "architectures"],
+      "properties": {
+        "name": { "const": "HaddenIndustriesLtd.JPGSpinner" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "architectures": { "const": ["arm64", "x64", "x86"] }
+      }
+    },
+    "inventoryScope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["components", "componentInputs", "payload", "staticLinkage", "deploymentRuntime", "buildExecution"],
+      "properties": {
+        "components": { "const": "build-context" },
+        "componentInputs": { "const": "resolved-nuget-lock-and-installed-vcpkg-spdx" },
+        "payload": { "const": "exact-verified-bundle-payload" },
+        "staticLinkage": { "const": "not-inferred" },
+        "deploymentRuntime": { "const": "requires-separate-qualification" },
+        "buildExecution": { "const": "not-attested" }
+      }
+    },
+    "bundle": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fileName", "sha256"],
+      "properties": {
+        "fileName": { "type": "string", "pattern": "^[^/\\\\]+\\.msixbundle$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["manifest.spdx.json", "payload.json", "build-component-inputs.json", "required-components.json"],
+      "properties": {
+        "manifest.spdx.json": { "$ref": "#/$defs/sha256" },
+        "payload.json": { "$ref": "#/$defs/sha256" },
+        "build-component-inputs.json": { "$ref": "#/$defs/sha256" },
+        "required-components.json": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}
