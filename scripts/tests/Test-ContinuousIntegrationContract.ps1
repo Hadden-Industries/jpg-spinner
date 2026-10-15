@@ -18,13 +18,16 @@ foreach ($name in @('build','policy','asan','analysis','unsigned-package','inter
 }
 $hasSourcePairControl=$false
 $hasSourceTrustControl=$false
+$hasComdatIdentityControl=$false
 foreach ($step in (Get-NodeProperty (Get-NodeProperty $jobs 'policy') 'steps').Children) {
     $runKey=[YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
     if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-IndependentSourceBuildPair.ps1',[StringComparison]::Ordinal)) {$hasSourcePairControl=$true}
     if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-SourceCommitSignatureTrust.ps1',[StringComparison]::Ordinal)) {$hasSourceTrustControl=$true}
+    if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1',[StringComparison]::Ordinal)) {$hasComdatIdentityControl=$true}
 }
 if (-not $hasSourcePairControl) {throw 'Manual CI lacks the real independent-checkout lifecycle control.'}
 if (-not $hasSourceTrustControl) {throw 'Manual CI lacks the portable native source-signature trust control.'}
+if (-not $hasComdatIdentityControl) {throw 'Manual CI lacks the native x64 Release COMDAT identity control.'}
 $build = Get-NodeProperty $jobs 'build'
 if ($build.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new('permissions'))) {throw 'Compiler jobs must inherit only the read-only workflow token.'}
 $strategy = Get-NodeProperty $build 'strategy'

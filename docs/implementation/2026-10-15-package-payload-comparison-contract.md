@@ -298,6 +298,40 @@ documents `/CGTHREADS:1` for LTCG. Neither option has yet qualified the full
 application; ordinary compilation parallelism need not change. Native SDK task
 integration and a fresh passing whole pair are still required.
 
+### Native folding qualification and scoped source fix
+
+Six predeclared LINK replays consume the unchanged vendor response file: three
+at the default four LTCG threads, then three at one. Both sets vary, so serial
+LTCG is rejected. Do not slow ordinary builds for that failed hypothesis.
+
+A tighter six-run experiment holds **every** captured file read-only throughout,
+uses one fixed absolute output path, and retains each complete result elsewhere
+before the next execution. The existing inventory producer records all captured
+input bytes before/after; the manifests are identical. Default ICF still varies
+in three trials. Adding only Microsoft's documented `/OPT:NOICF` produces three
+identical complete executable hashes. This supports the folding decision in this
+native reproducer; it does not prove universal determinism or accept a prior
+failed application pair. No response, object, PDB, image or shipping container
+is rewritten. Raw captures/results remain external and are not redistributed.
+
+The shared policy now disables identical COMDAT folding for **x64 Release only**
+through native `EnableCOMDATFolding` metadata. Other architectures and Debug keep
+their existing settings. Retain `/O2`, LTCG, reference elimination, symbols, CFG,
+CET and normal MSBuild/compiler parallelism. The native replay image grows from
+4,973,568 to 5,552,128 bytes; final package size/performance gates still apply.
+This is configuration of an existing native optimizer, not a compatibility shim,
+metadata mask or extra comparison exception. See Microsoft's
+[`/OPT` semantics](https://learn.microsoft.com/cpp/build/reference/opt-optimizations).
+
+The maintained headless probe observes distinct function identities through
+volatile pointer reads. Its initial bare console already passes because `/DEBUG`
+defaults to NOICF; that was an inadequate fixture, not behavioural RED. Mirroring
+the actual WinUI consumer's incoming Release ICF setting reaches exit 42 (RED).
+The shared scoped override then passes Release and preserved Debug (GREEN), and
+the manual CI contract detects missing wiring before the call is added. Native
+replay qualification and this policy/identity control remain separate from the
+still-required new application build pair and package-producer qualification.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):
