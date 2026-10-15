@@ -1750,6 +1750,25 @@ git commit -m "ci: enforce build security and supply-chain gates"
 
 ## Task 18: Document the shipped system and remove secret-bearing telemetry
 
+**Incremental documentation checkpoint (2026-10-15):** Public development docs
+now describe safe defaults, exact output/backup roots, supported-format/resource
+boundaries, module and transaction contracts, typed diagnostic fields, retention
+and explicit export. They distinguish declared OS/device support, implemented
+behavior and retained development evidence from unqualified release claims.
+The release register explicitly leaves native analysis, final accessibility,
+physical-device/upgrade, reproducibility, SBOM, legal, credential revocation and
+rollout obligations open. Third-party notices are deliberately marked an
+incomplete development inventory, not distribution clearance. The private
+vulnerability-reporting route also needs maintainer enablement confirmation.
+
+The structural documentation policy observed missing-required-document RED,
+then current source GREEN; owned-copy missing-document and missing-section
+controls pass. PowerShell's bundled native Markdown AST parsed all six documents
+and every relative local target exists. This is not external-link liveness,
+spelling, runtime privacy/traffic proof, exact transitive notice comparison or
+whole Task 18 completion. No historical telemetry credential was revoked by
+these source edits. Those steps remain mandatory below.
+
 **Files:**
 
 - Create: `README.md`
