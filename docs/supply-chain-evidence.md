@@ -208,6 +208,18 @@ is claimed. Diagnose this bounded failure before another expensive attempt; do
 not increase the deadline, suppress integrity verification or infer success from
 the earlier SDK fixture results.
 
+The timeout diagnostic boundary has a separate test-first correction: the
+producer now observes owned-process exit after requesting tree termination,
+bounds redirected-stream completion, and saves both completed streams before
+reporting a deadline failure. Its regression reproduces the lost-stream defect
+with a five-second owned child, then checks success, nonzero exit and timeout
+without compiling the SDK. The original 180-second module-integrity deadline
+and all acceptance conditions are unchanged. A bounded local diagnostic verifies
+a minimal cached dependency in under one second, while full offline module-list
+inspection refuses missing cache entries. Neither result qualifies the complete
+SDK cache or resolves the retained full integration timeout; complete native
+dependency restoration/integrity remains required before another producer run.
+
 [`Invoke-PackageReproducibility.ps1`](../scripts/Invoke-PackageReproducibility.ps1)
 owns two independent native Git clones of one exact signature-verified clean
 commit. It sequentially builds Release x86/x64/ARM64 with two MSBuild workers,

@@ -87,14 +87,26 @@ function Invoke-ArtifactToolProcess {
         if (-not $process.Start()) { throw "Artifact tool did not start: $LogName" }
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+        $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
+        if ($timedOut) {
             $process.Kill($true)
-            [void]$process.WaitForExit(5000)
-            throw "Artifact tool exceeded its deadline: $LogName"
+            # A kill request is not an exit observation. Never dispose the
+            # process and present an unresolved child as safely terminated.
+            if (-not $process.WaitForExit(5000)) {
+                throw "Artifact tool termination remains unresolved: $LogName"
+            }
+        }
+        # Descendants can inherit redirected handles. Bound stream completion
+        # separately rather than turning GetResult into an unbounded wait.
+        if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout,$stderr), 5000)) {
+            throw "Artifact tool diagnostic stream completion remains unresolved: $LogName"
         }
         $standardOutput = $stdout.GetAwaiter().GetResult()
         [IO.File]::WriteAllText((Join-Path $working "$LogName.stdout.log"),$standardOutput)
         [IO.File]::WriteAllText((Join-Path $working "$LogName.stderr.log"),$stderr.GetAwaiter().GetResult())
+        # Preserve available native diagnostics before reporting the timeout.
+        # This changes neither the tool's deadline nor integrity acceptance.
+        if ($timedOut) { throw "Artifact tool exceeded its deadline: $LogName" }
         if ($process.ExitCode -ne 0) { throw "Native artifact tool failed: $LogName (exit $($process.ExitCode))" }
         return $standardOutput
     }

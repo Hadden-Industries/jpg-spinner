@@ -29,6 +29,13 @@ transitive graph. Its graph includes upstream prerelease/pseudo-version modules;
 the stable top-level SDK version does not establish a stable-only transitive
 graph or final release-tool rights/security clearance.
 
+The PowerShell producer preserves both native streams for a successfully
+terminated deadline failure and separately refuses unresolved process exit or
+stream completion. The deadline is not extended and timed-out integrity is not
+accepted. [`Test-ArtifactToolProcessLifecycle.ps1`](../../scripts/tests/Test-ArtifactToolProcessLifecycle.ps1)
+exercises this actual helper with owned success, failure and timeout children;
+it runs no SDK compilation, dependency download or package generation.
+
 From this directory, with caller-selected external Go caches:
 
 ```powershell
