@@ -1785,6 +1785,33 @@ final aggregate fuzz duration or authorize a remote CI run.
 
 ### Step 17.4: Pin SBOM generation and dependency updates
 
+**Native bundle-inspection checkpoint (2026-10-15):**
+`Expand-JpgSpinnerBundle.ps1` now uses the owning locked MSBuild targets to
+select MakeAppx, then native `unbundle` and `unpack` with validation enabled
+and overwrite disabled. It extracts the retained real x86/x64/ARM64 development
+bundle into separate payload roots, reuses `PackageManifestPolicy.psm1` for
+Store/AppContainer policy, checks bundle/declaration/package identity agreement,
+and reuses `New-PayloadManifest.ps1` for non-following traversal and SHA-256
+inventories outside the payloads. Native diagnostics remain alongside, not in,
+the payloads. The first executable seam successfully unbundled but failed the
+new test because it did not extract the inner payloads (observed RED); recursive
+extraction and all three independent executable-hash assertions now pass.
+Focused controls cover duplicate/missing architectures, resource packages,
+unsafe/duplicate package filenames, identity/version disagreement, an actual
+output-ancestor junction, existing output, and native refusal of a truncated
+bundle without promoting partial output. The original container is unchanged.
+
+This is **structural inspection of caller-qualified, quiescent inputs**, not a
+hostile-archive sandbox, signature/hash authenticity verifier, installation test,
+or release SBOM. Release integration must verify the exact outer signed bundle
+before invoking it and enforce complete dependency coverage afterward. Microsoft
+specifies that the outer bundle signature covers its inner packages; separate
+inner signatures are not required. MakeAppx's semantic checks are limited, not
+proof of installability. Do not mark the extraction/signing/release items below
+complete from this source checkpoint. Sources:
+[native extraction and validation limits](https://learn.microsoft.com/en-us/windows/msix/package/create-app-package-with-makeappx-tool),
+[bundle signing boundary](https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview).
+
 - [x] Qualify `eng/artifact-sbom` and `Test-SbomToolContract.ps1` against the retained synthetic payload, native installed vcpkg SPDX documents, resolved NuGet lock and independent expected-contract JSON. User-approved native SDK qualification passed on 2026-10-15: exact SPDX 3.0.1, payload SHA-256, package identities/membership, official schema and SPDX Workgroup semantic validation. Preserve the original Microsoft 4.1.5 failure; do not repair its output JSON or weaken the requirement. Test-first refusal cases cover empty payload, absent resolved NuGet/vcpkg evidence and output inside inventory input; retained overlay metadata protects document-local-ID composition. This is a backend checkpoint, not release integration or a compliant application SBOM.
 - [ ] Implement `Invoke-Sbom.ps1` around that qualified adapter. Native Go owns the readonly SDK graph/checksums; use the exact schema and Workgroup validator identities in `eng/sbom-tools.json`. Acquire tooling only into an approved external tool cache, validate before execution and retain mismatched downloads as failed evidence or dispose recoverably when eligible. Never fall back to a different version or moving URL. Recheck latest applicable stable tooling and exact transitive rights/security before final release-tool adoption; the stable SDK's upstream graph contains prerelease/pseudo-version modules.
 - [ ] Have the script recursively unpack the exact input `.msixbundle` and each contained architecture `.msix` into a newly created inspection directory. Reject path traversal, reparse points, duplicate output paths, an unexpected architecture, a package manifest that differs from the bundle declaration, or a signature/hash verification failure. Treat the extracted tree as read-only input and put the generated manifest outside it so the SBOM cannot inventory itself.
