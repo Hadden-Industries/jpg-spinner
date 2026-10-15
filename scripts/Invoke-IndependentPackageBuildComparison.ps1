@@ -63,10 +63,25 @@ $buildAction={
         $packageOutput=Join-Path $clone "artifacts/package-comparison-packages/$architecture"
         & $invokeNativeProcess -Executable $powershell -WorkingDirectory $clone -Arguments @('-NoProfile','-File',(Join-Path $clone 'scripts/Invoke-Build.ps1'),
             '-Configuration','Release','-Architecture',$architecture,'-MaximumBuildProcessCount','2',
-            '-BuildEntryPoint','PackagedApplication','-UnsignedPackageOutputDirectory',$packageOutput) -LogDirectory $evidence -LogName "build-$architecture" -TimeoutSeconds 2400 | Out-Null
-        $produced=@(Get-ChildItem -LiteralPath $packageOutput -File -Recurse -Filter 'JpgSpinner.App_*.msix')
-        if ($produced.Count -ne 1) {throw 'Independent build did not emit exactly one architecture package.'}
-        $packages.Add($produced[0].FullName)
+            '-BuildEntryPoint','PackagedApplication','-UnsignedPackageOutputDirectory',$packageOutput,
+            '-PrepareStoreSubmissionPackage') -LogDirectory $evidence -LogName "build-$architecture" -TimeoutSeconds 2400 | Out-Null
+        # MSBuild owns the evaluated output name. Ordinary and upload components
+        # can coexist; choosing the first glob match would bypass serial packing.
+        $selection=@(Get-Content -LiteralPath (Join-Path $packageOutput store-submission-package-path.txt))
+        if ($selection.Count -ne 1 -or [string]::IsNullOrWhiteSpace($selection[0]) -or
+            -not [IO.Path]::IsPathFullyQualified($selection[0])) {throw 'Native Store package selection must be one absolute path.'}
+        $selectedPackage=$selection[0]
+        $selectedRelativePath=[IO.Path]::GetRelativePath($packageOutput,$selectedPackage)
+        if ([IO.Path]::IsPathRooted($selectedRelativePath) -or $selectedRelativePath -eq '..' -or
+            $selectedRelativePath.StartsWith("..$([IO.Path]::DirectorySeparatorChar)",[StringComparison]::Ordinal) -or
+            -not [IO.File]::Exists($selectedPackage) -or
+            [IO.Path]::GetExtension($selectedPackage) -cne '.msix') {throw 'Native Store package selection must identify an existing MSIX within its owned output.'}
+        $ancestor=$selectedPackage
+        while (-not [string]::IsNullOrEmpty($ancestor)) {
+            if (([IO.File]::GetAttributes($ancestor) -band [IO.FileAttributes]::ReparsePoint) -ne 0) {throw 'Native Store package selection refuses redirected paths.'}
+            $ancestor=[IO.Path]::GetDirectoryName($ancestor)
+        }
+        $packages.Add($selectedPackage)
         & $invokeNativeProcess -Executable $powershell -WorkingDirectory $clone -Arguments @('-NoProfile','-File',(Join-Path $clone 'scripts/New-BuildProvenance.ps1'),
             '-Configuration','Release','-Architecture',$architecture,'-RequireCleanSourceTree',
             '-OutputPath',(Join-Path $evidence "provenance-$architecture.json")) -LogDirectory $evidence -LogName "provenance-$architecture" -TimeoutSeconds 120 | Out-Null

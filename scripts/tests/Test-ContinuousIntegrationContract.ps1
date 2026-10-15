@@ -75,7 +75,7 @@ if (-not $neededJobs.SetEquals([string[]]@('policy','build','asan','analysis')))
 }
 $packageSteps = Get-NodeProperty $packageJob 'steps'
 $hasNativePackageBuild=$false; $hasNativeBundle=$false; $hasBundleInspection=$false
-$hasPayloadComparisonControls=$false;$hasBlockIntegrityControl=$false;$hasWinrtOriginControl=$false
+$hasPayloadComparisonControls=$false;$hasBlockIntegrityControl=$false;$hasWinrtOriginControl=$false;$hasStoreComponentControl=$false
 foreach ($step in $packageSteps.Children) {
     $key = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
     if (-not $step.Children.ContainsKey($key)) { continue }
@@ -87,9 +87,11 @@ foreach ($step in $packageSteps.Children) {
     if ($command.Contains('scripts/tests/Test-JpgSpinnerBundlePayloadComparison.ps1 -BundlePath $bundle',[StringComparison]::Ordinal)) {$hasPayloadComparisonControls=$true}
     if ($command.Contains('scripts/tests/Test-NativePackageBlockIntegrity.ps1 -PackagePath $packages[1]',[StringComparison]::Ordinal)) {$hasBlockIntegrityControl=$true}
     if ($command.Contains('scripts/tests/Test-WinrtErrorSourceLocationPolicy.ps1 -WinrtProjectionDirectory',[StringComparison]::Ordinal)) {$hasWinrtOriginControl=$true}
+    if ($command.Contains('scripts/tests/Test-StoreSubmissionPackageBuild.ps1',[StringComparison]::Ordinal)) {$hasStoreComponentControl=$true}
 }
 if (-not ($hasPayloadComparisonControls -and $hasBlockIntegrityControl)) {throw 'Unsigned packaging lacks native closed-comparison and false-block-hash controls.'}
 if (-not $hasWinrtOriginControl) {throw 'Unsigned packaging lacks the native Release/Debug error-origin policy control.'}
+if (-not $hasStoreComponentControl) {throw 'Unsigned packaging lacks the native Store submission-component build control.'}
 if (-not ($hasNativePackageBuild -and $hasNativeBundle -and $hasBundleInspection)) {
     throw 'Unsigned packaging lacks the real architecture producer, native bundle or payload inspection.'
 }

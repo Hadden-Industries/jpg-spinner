@@ -199,6 +199,10 @@ jobs:
           # This real x64 package supplies the native single-WinMD-block case.
           ./scripts/tests/Test-NativePackageBlockIntegrity.ps1 -PackagePath $packages[1] -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-WinrtErrorSourceLocationPolicy.ps1 -WinrtProjectionDirectory (Join-Path $PWD 'src/JpgSpinner.App/Generated Files') -OwnedOutputRoot $env:RUNNER_TEMP
+          # Reuse the completed x64 build, but prepare and natively validate a
+          # fresh Store component through the real serial-packaging entry point.
+          # This is not a Store submission or an independent-build claim.
+          ./scripts/tests/Test-StoreSubmissionPackageBuild.ps1 -Architecture x64 -WorkingDirectory (Join-Path $env:RUNNER_TEMP 'store-component-build')
           # These real-container controls must preserve the distinct signed
           # distribution and pre-certification Store-submission boundaries.
           ./scripts/tests/Test-ReleaseSbomRefusalControls.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP

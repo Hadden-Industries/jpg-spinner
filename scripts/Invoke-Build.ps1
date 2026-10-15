@@ -24,12 +24,22 @@ param(
     # Signing/installing/publishing are deliberately separate operations.
     [string]$UnsignedPackageOutputDirectory = '',
 
+    # Prepare a Release Store-upload component and report its native SDK path.
+    # Requires PackagedApplication and a fresh UnsignedPackageOutputDirectory;
+    # this does not sign, install, certify or submit a release.
+    [switch]$PrepareStoreSubmissionPackage,
+
     [Parameter()]
     [string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot)
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ($PrepareStoreSubmissionPackage -and ($Configuration -cne 'Release' -or
+    $BuildEntryPoint -cne 'PackagedApplication' -or [string]::IsNullOrEmpty($UnsignedPackageOutputDirectory))) {
+    throw 'Store submission packaging requires Release, PackagedApplication and an unsigned package output directory.'
+}
 
 $repositoryRoot = [System.IO.Path]::GetFullPath($RepositoryRoot)
 if (-not (Test-Path -LiteralPath $repositoryRoot -PathType Container)) {
@@ -43,7 +53,8 @@ if (-not [string]::IsNullOrEmpty($UnsignedPackageOutputDirectory)) {
     }
     $packageOutputPath = [IO.Path]::GetFullPath($UnsignedPackageOutputDirectory)
     # Do not overwrite a previously qualified drop or mix old package files into
-    # a new run. Native targets create this explicit new directory themselves.
+    # a new run. Native targets populate this explicit new directory; Store
+    # selection reporting also requires its parent before MSBuild starts.
     if (Test-Path -LiteralPath $packageOutputPath) {
         throw 'Unsigned package output directory must be fresh and absent.'
     }
@@ -132,6 +143,28 @@ if ($null -ne $packageOutputPath) {
         '-p:UapAppxPackageBuildMode=CI', '-p:AppxPackageSigningEnabled=false')) {
         [void]$startInfo.ArgumentList.Add($argument)
     }
+}
+
+if ($PrepareStoreSubmissionPackage) {
+    # The native upload-component task forwards these parameters; the ordinary
+    # package task in the selected SDK does not. /np is MakeAppx's documented
+    # serial pack mode, not a reduction in compiler or MSBuild concurrency.
+    # Preserve the original component bytes and let MSBuild report its actual
+    # evaluated output, rather than guessing between ordinary/upload siblings.
+    # With -getProperty, omitting -target performs evaluation only, even when
+    # -restore is present. Explicit Build is required for post-build values:
+    # https://learn.microsoft.com/visualstudio/msbuild/evaluate-items-and-properties
+    foreach ($argument in @('-target:Build', '-p:BuildAppxUploadPackageForUap=true',
+        # Upload components otherwise default below TargetDir, independently of
+        # AppxPackageDir. Keep both native package roles in this fresh drop.
+        "-p:AppxUploadPackageDir=$(Join-Path $packageOutputPath StoreComponents)\",
+        '-p:CreatePackageMakeAppxParameters=/np', '-getProperty:AppxUploadPackageOutput',
+        "-getResultOutputFile:$(Join-Path $packageOutputPath store-submission-package-path.txt)")) {
+        [void]$startInfo.ArgumentList.Add($argument)
+    }
+    # MSBuild opens -getResultOutputFile before executing targets, rather than
+    # after the package producer has had a chance to create the directory.
+    [void][IO.Directory]::CreateDirectory($packageOutputPath)
 }
 
 $process = [System.Diagnostics.Process]::new()

@@ -19,7 +19,20 @@ foreach ($case in @(
         throw "Package output refusal was absent or imprecise: $($output -join "`n")"
     }
 }
+foreach ($case in @(
+    @{Configuration='Debug'; EntryPoint='PackagedApplication'; Output=$root},
+    @{Configuration='Release'; EntryPoint='ModernSolution'; Output=$root},
+    @{Configuration='Release'; EntryPoint='PackagedApplication'; Output=''}
+)) {
+    $arguments=@('-NoProfile','-File',$sentinel,'-Configuration',$case.Configuration,'-Architecture','x64',
+        '-BuildEntryPoint',$case.EntryPoint,'-PrepareStoreSubmissionPackage')
+    if($case.Output){$arguments+=@('-UnsignedPackageOutputDirectory',$case.Output)}
+    $output=& $powershell @arguments 2>&1
+    if($LASTEXITCODE -eq 0 -or ($output -join "`n").IndexOf('Store submission packaging requires Release, PackagedApplication and an unsigned package output directory.',[StringComparison]::Ordinal) -lt 0){
+        throw "Store output prerequisite refusal was absent or imprecise: $($output -join "`n")"
+    }
+}
 if ((Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash -cne $before) {
     throw 'Package-output refusal changed the existing source sentinel.'
 }
-Write-Output 'PASS: unsigned packaging rejects a solution entry point and an existing output; source sentinel unchanged.'
+Write-Output 'PASS: unsigned packaging and Store prerequisites refuse invalid selection/output before native effects; source sentinel unchanged.'

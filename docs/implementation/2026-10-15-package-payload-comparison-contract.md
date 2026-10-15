@@ -332,6 +332,55 @@ the manual CI contract detects missing wiring before the call is added. Native
 replay qualification and this policy/identity control remain separate from the
 still-required new application build pair and package-producer qualification.
 
+### Native serial Store-component integration
+
+The selected MSIX SDK's ordinary package task does **not** forward
+`CreatePackageMakeAppxParameters`. The upload-component task does. A bounded
+native `Build` qualification produces the original unsigned upload component
+with `/np`, and native MakeAppx inspection accepts that component. Source
+inspection of the newer stable MSIX targets finds the same primary-task limit;
+that inspection is not permission to import or redistribute that SDK, and no
+dependency upgrade is adopted as a supposed fix.
+
+`Invoke-Build.ps1 -PrepareStoreSubmissionPackage` now explicitly requests the
+native upload component, serial MakeAppx packing and a fresh owned upload
+directory. Compilation/LTCG/MSBuild concurrency remains unchanged. Native
+`-getProperty:AppxUploadPackageOutput -getResultOutputFile:...` reports the SDK's
+actual selected filename as a **single scalar**, not JSON or console scraping.
+The independent producer consumes only that exact existing ordinary MSIX below
+the owned drop, refusing absent, multiple, escaped or redirected selections.
+It neither falls back to an ordinary sibling package nor rewrites containers.
+The `.msixupload` wrapper and sideload/dependency material remain diagnostics,
+not the selected components passed to the existing native bundle producer.
+
+The maintained real-build test reaches RED when the new switch has no behaviour
+and the native selection report is absent. Native integration then exposes
+three distinct constraints: MSBuild opens its result file before targets run;
+property queries require an explicit `Build` target for post-build results;
+and `AppxUploadPackageDir` is independent of `AppxPackageDir`. Preserve those
+unsuccessful outputs rather than relabel them as passing. The test also exposes
+an initially incorrect validator-script path, corrected without changing the
+package expectation. These are bounded native integration controls using the
+existing ARM64 image held read-only, not repeated full builds. Release/output
+prerequisite refusals stop before tool execution. Manual CI requires the real
+Store-component test separately from its existing development-package checks.
+
+The corrected actual ARM64 test passes (GREEN): native MakeAppx 10.0.28000.2705
+unpacks the selected original upload MSIX, then the existing contract validates
+the exact Store/AppContainer manifest, unsigned framework-dependent payload and
+55 artwork dimensions. The original executable remains hash-identical under a
+read-only handle. CI's source check first fails for absent Store-test wiring and
+then passes after wiring; invalid Store prerequisites and existing development
+packaging refusals also pass. No desktop, installation or hosted run is used.
+
+Microsoft documents
+[post-build versus evaluation-only property queries](https://learn.microsoft.com/en-us/visualstudio/msbuild/evaluate-items-and-properties)
+and [unsigned Store packaging](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/ci-for-winui3#build-an-x86-and-x64-bundle-for-the-microsoft-store).
+The selected native MakeAppx help and native MSIX target source define the exact
+`/np` forwarding used here. A new complete independent application pair is still
+required; neither this integration nor the scoped NOICF proof accepts an earlier
+failed pair, relaxes the comparison or establishes release approval.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):
