@@ -63,6 +63,14 @@ $same=& $test -FirstBundlePath $first -SecondBundlePath $first -WorkingDirectory
 if (-not $same.ComparisonSatisfied -or -not $same.PayloadsByteIdentical -or -not $same.ContainersByteIdentical -or $same.ObservedVariances.Count -ne 0) {throw 'Identical original containers were not accepted truthfully.'}
 $different=& $test -FirstBundlePath $first -SecondBundlePath $second -WorkingDirectory (Join-Path $fixture identity-only)
 if (-not $different.ComparisonSatisfied -or $different.PayloadsByteIdentical -or $different.ContainersByteIdentical -or $different.ObservedVariances.Count -ne 3) {throw 'Qualified native WinMD/package variance was concealed or refused.'}
+if($different.Policy -cne 'jpg-spinner-package-payload-comparison-v2'){throw 'Native comparison did not identify the current approved policy.'}
+foreach($variance in $different.ObservedVariances){
+    $map=$variance.BlockMapComparison
+    if($map.Policy -cne 'jpg-spinner-blockmap-qualified-variance-v2' -or $map.FileOrderVarianceObserved -isnot [bool] -or
+        $map.FirstFileOrder.Count -eq 0 -or $map.FirstFileOrder.Count -ne $map.SecondFileOrder.Count){throw 'Native comparison omitted its whole-File order evidence.'}
+    $orderChanged=-not [Linq.Enumerable]::SequenceEqual[string]([string[]]$map.FirstFileOrder,[string[]]$map.SecondFileOrder,[StringComparer]::Ordinal)
+    if($orderChanged -ne $map.FileOrderVarianceObserved){throw 'Native comparison concealed actual File order variance.'}
+}
 foreach ($control in @('changed','extra','omit')) {
     $invalid=New-NativeFixtureBundle ($control+'-package') $secondMetadata $control
     $output=Join-Path $fixture ($control+'-comparison')

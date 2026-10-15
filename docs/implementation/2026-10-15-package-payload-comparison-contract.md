@@ -1,6 +1,6 @@
 # Approved package-payload comparison contract — 2026-10-15
 
-Status: **approved for bounded qualification, not release-qualified**.
+Status: **closed comparison qualified on retained native originals; not release-qualified**.
 This explicitly reduces the former complete-payload byte-equality guarantee.
 Unequal payloads do not become reproducible; every other release gate remains.
 
@@ -12,6 +12,11 @@ compressed `Block/@Size` on the same changed WinMD blocks: the retained real pai
 changes from 5,169 to 5,170 compressed bytes. Uncompressed `File/@Size` and
 `LfhSize` remain strict. The [native alternative failed preservation](2026-10-15-native-winmd-merger-qualification.md)
 and remains rejected, not adopted.
+
+On 2026-10-16 the owner additionally approved bounded qualification of whole
+block-map `File` sibling permutations. The controls and retained-original replay
+below pass, so that precise extension is adopted as policy v2. It does not permit
+block reordering, XML normalization or changes to any additional bytes.
 
 1. Build the same signature-verified clean commit independently twice. Preserve
    every original container, exact raw payload manifest and toolchain/provenance
@@ -31,7 +36,11 @@ and remains rejected, not adopted.
    content hashes change. Native package validation binds each block map to its
    actual compressed container. Keep file name, uncompressed length, local-header
    size, block count/order, unrelated files/blocks and all other values strict.
-   A size change on an unchanged-hash block or other XML change is a refusal.
+   Complete `File` elements may change sibling order, indexed by exact filename.
+   Keep each original document-envelope gap in its sibling slot and every
+   original per-file byte strict except the qualified scalar values above.
+   Duplicate/missing/extra names, reordered blocks, redistributed whitespace,
+   changed quoting/attribute order and every other XML change are refusals.
 5. Compare read-only: no artifact patching, rewriting, filtering, omission or
    repacking. Preserve both raw manifests and hashes. A comparison-specific
    representation is evidence only, never a substitute shipping artifact.
@@ -411,7 +420,7 @@ preservation. Its binding keeps certification/release approval pending and
 build execution unattested. This independently successful test does not waive
 the failed package comparison or prove hosted provenance.
 
-**Proposed, not approved:** permit only a permutation of complete `File`
+**Initial proposal, subsequently approved and qualified below:** permit only a permutation of complete `File`
 elements in a read-only comparison view, indexed by exact native filename.
 Keep the document envelope, every per-file byte and ordered block list strict
 except the already approved app WinMD fields/consequences. Reject duplicate,
@@ -432,7 +441,47 @@ Neither is a promise of deterministic producer ordering. Native
 could support another original-package producer, but that is a larger unqualified
 integration, not a justified shortcut. The broader reproducible-build community
 requires an explicit comparison/exclusion contract, not a retroactive success
-claim. The narrow whole-element-order amendment requires the owner's decision.
+claim. The owner subsequently approved the narrow whole-element-order
+qualification; the earlier refused report remains unchanged historical evidence.
+
+### Order-only qualification and adoption (2026-10-16)
+
+The native-writer test first reaches the intended whole-File-permutation RED
+against the prior predicate. XMLReader/IXmlLineInfo then locate original UTF-8
+File spans; comparison indexes those spans by exact filename without parsing a
+second XML grammar or serializing a document. The app's already-qualified
+identity/hash/size intervals remain the only per-file exceptions. Native UTF-8
+names and zero-byte self-closing File entries pass representative controls.
+
+A new negative control exposes that merely concatenating envelope gaps could
+conceal moving whitespace between sibling slots (RED). Keeping each gap in its
+original slot fixes that defect (GREEN). Duplicate/missing/extra names, ordinary
+file changes, ordered-block changes, quote/attribute-order changes, unrelated
+comments/XML, unchanged-hash compressed sizes and local-header/uncompressed-size
+changes all refuse. All fixture inputs retain their original hashes.
+
+Both **original** bundles from signed build source
+`d29b594df3f821a0771a47a420643bbde494f35f` are natively validated/unpacked again,
+then pass the new `jpg-spinner-package-payload-comparison-v2` predicate. The new
+report says `comparisonSatisfied=true`, `payloadsByteIdentical=false` and
+`containersByteIdentical=false`. Each architecture records one changed WinMD
+block and observed File-order variance, with both actual filename sequences.
+The exact original container hashes remain
+`3d83dbaf7ba8d9dac8fb4d9c92b6253cc0ada67b4e6af78eda1e041c8879d78f` and
+`edfdf7cbf113c15622c4f1625850184bcd463ffa2c6c9c9eab1d8ff91c4fcf6b`.
+
+New native-container controls preserve truthful identical-container acceptance,
+accept qualified variance and refuse changed/extra/omitted payload files or a
+malformed container without success publication. The owning native MakeAppx
+still refuses a well-formed false block hash with `APPX_E_BLOCK_HASH_INVALID`;
+native integrity is not replaced by this comparison. No shipping artifact was
+repacked, compression changed or full application build repeated. The original
+v1 failure is retained, not relabelled; this is a separate v2 evaluation of the
+same immutable built candidate, not a build of the changed comparison code.
+
+`jpg-spinner-blockmap-qualified-variance-v2` and the bundle report explicitly
+identify the current rule; no v1 alias/fallback is introduced. Final frozen-source
+verification/reviews, hosted provenance and all release gates remain separate.
 
 ## Authoritative and practice anchors
 

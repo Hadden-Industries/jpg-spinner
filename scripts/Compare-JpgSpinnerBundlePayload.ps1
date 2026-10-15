@@ -69,13 +69,20 @@ try {
         $firstPayload=Join-Path $builds[0].Inspection "payloads/$architecture"
         $secondPayload=Join-Path $builds[1].Inspection "payloads/$architecture"
         # The predicate independently qualifies actual WinMD bytes, then only
-        # their directly consequent block fields. It cannot waive EXE, PRI,
-        # dependency metadata, other XML, file length or header differences.
+        # their directly consequent block fields and permutation of complete
+        # File siblings. It cannot waive EXE, PRI, dependency metadata, envelope
+        # gaps, per-file literal bytes, ordered blocks or header differences.
         $blockMap=& (Join-Path $PSScriptRoot 'Test-JpgSpinnerBlockMapVariance.ps1') `
             -FirstBlockMapPath (Join-Path $firstPayload AppxBlockMap.xml) -SecondBlockMapPath (Join-Path $secondPayload AppxBlockMap.xml) `
             -FirstWinmdPath (Join-Path $firstPayload JpgSpinner.winmd) -SecondWinmdPath (Join-Path $secondPayload JpgSpinner.winmd)
         if (-not $blockMap.ByteIdentical -or -not $blockMap.WinmdIdentity.ByteIdentical) {
-            $variances.Add([pscustomobject]@{Architecture=$architecture;WinmdIdentity=$blockMap.WinmdIdentity;ChangedBlocks=$blockMap.ChangedBlocks})
+            $variances.Add([pscustomobject]@{
+                Architecture=$architecture;WinmdIdentity=$blockMap.WinmdIdentity;ChangedBlocks=$blockMap.ChangedBlocks
+                BlockMapComparison=[pscustomobject]@{
+                    Policy=$blockMap.Policy;FileOrderVarianceObserved=$blockMap.FileOrderVarianceObserved
+                    FirstFileOrder=$blockMap.FirstFileOrder;SecondFileOrder=$blockMap.SecondFileOrder
+                }
+            })
         }
     }
     foreach ($entry in $manifests[0].GetEnumerator()) {
@@ -86,7 +93,7 @@ try {
         }
     }
     $record=[pscustomobject]@{
-        schemaVersion=1;policy='jpg-spinner-package-payload-comparison-v1'
+        schemaVersion=1;policy='jpg-spinner-package-payload-comparison-v2'
         comparisonSatisfied=$true
         payloadsByteIdentical=($builds[0].PayloadManifestSha256 -ceq $builds[1].PayloadManifestSha256)
         containersByteIdentical=($builds[0].BundleSha256 -ceq $builds[1].BundleSha256)

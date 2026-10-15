@@ -9,8 +9,9 @@ owns full acceptance; nothing here replaces its thresholds.
 The owner approved bounded qualification of the
 [closed native metadata/block-map comparison amendment](implementation/2026-10-15-package-payload-comparison-contract.md).
 It reduces the former unconditional byte-equality guarantee; original bytes and
-raw identity results remain. Until native controls and independent-build
-integration pass, this gate remains unqualified. No other release gate changes.
+raw identity results remain. Native controls and the separately reported v2
+evaluation of the retained independent build pair now pass; final frozen-source,
+hosted and release-candidate qualification remain. No other release gate changes.
 
 At signed source `9e23722b30afaf827c1ac3df59aa682452ac8e82`, native synthetic
 container controls pass the approved identity-only policy and refuse unrelated
@@ -32,7 +33,7 @@ Bounded native packaging/LTCG controls remain investigation, not release proof.
 
 The protected manual Store workflow now has locally validated source composition
 and seven negative controls for role, ordering, digest and privilege boundaries.
-It remains fail-closed on the unsuccessful native comparison. The restored native
+Its source remains fail-closed on any unsuccessful native comparison. The restored native
 tools and current Go 1.27.2 pass the maintained SDK fixture, official SPDX schema
 and semantic verifier; actual hosted action/protection/attestation execution,
 exact successful clean-build binding and certification remain pending.
@@ -47,7 +48,15 @@ correctly refuses them and publishes no qualified bundle. The exact first-bundle
 Store-SBOM test passes with all 38 required component identities and official
 validation; hosted authentication, comparison acceptance, certification and
 release are separate, still pending. See the
-[recorded outcome and unapproved ordering proposal](implementation/2026-10-15-package-payload-comparison-contract.md#actual-integrated-pair-outcome-and-next-decision-2026-10-16).
+[historical failure and subsequent approved v2 qualification](implementation/2026-10-15-package-payload-comparison-contract.md#order-only-qualification-and-adoption-2026-10-16).
+
+The owner-approved whole-File-order extension now passes a separate native
+validation/comparison of those same originals. It records comparison satisfaction,
+both raw byte-identity results as false, exact original hashes, one qualified
+WinMD block and actual File-order variance per architecture. Native negative
+controls still refuse integrity, membership, per-file and envelope changes.
+Historical failure reports are unchanged; neither this result nor the SBOM is
+hosted attestation, final frozen-source review or release authorization.
 
 The [legacy outcome coverage map](legacy-cutover-coverage.md) links supported
 behaviors to maintained executable tests and names deliberately retired
@@ -64,7 +73,7 @@ surfaces. It is selection guidance, not pre-cutover execution/upgrade approval.
 | UI/accessibility/localization | Some real picker/layout evidence exists; final Narrator, high contrast, keyboard, scaling and locale acceptance remain | Accessibility owner |
 | Dedicated interactive workflow | Deployment-only, manual same-main CI input authentication, protected-environment admission and automated-only signed-result source wiring pass local contracts; live environment/runner setup and deliberate hosted execution remain pending | Windows qualification owner |
 | OS/device matrix | Minimum OS, approved long-path-disabled refusal lane and physical ARM64 remain | Windows qualification owner |
-| Independent build comparison | Two independent clean Release x86/x64/ARM64 builds at signed source `1cafa5b680f014d1c6808f2a309851f25b9e6201` produced valid bundles, but the then-required byte equality correctly refused nine paths: EXE, WinMD and block map per architecture. The Release PDB-path correction passes its probe. The approved closed metadata/block-map comparison still needs native controls and a new clean-build pair; EXE differences are not permitted. Preserve both original failures, raw manifests and actual byte-identity results; no reproducible output is claimed | Build maintainer |
+| Independent build comparison | Native v2 validation/comparison of both original independent Release x86/x64/ARM64 sets at signed source `d29b594df3f821a0771a47a420643bbde494f35f` passes the approved WinMD/consequential-block/whole-File-order policy. Executables agree; complete payload/container bytes do not. Raw originals and v1 failures remain. Final source verification/reviews, hosted execution and exact final release candidate remain; no full byte-reproducibility claim | Build maintainer |
 | SBOM | Native build-context composition retains 21 triplet-qualified ports and 17 resolved NuGet identities; real unsigned-bundle payload/membership and bounded Ajv 8.20.0 plus Workgroup validation pass. Release entry-point trust/digest refusals pass. Positive signed JPG Spinner integration, actual clean-build binding and final release-tool rights/security qualification remain; no compliant release SBOM | Supply-chain owner |
 | Package identity/update | Unsigned native packages/bundle exist; trusted 1.1.3.0 upgrade and all-architecture runtime qualification remain | Release owner |
 | Signing/WACK | Native selected-SDK signature checks accept a genuine Microsoft-signed dependency and refuse unsigned/tampered controls without trust changes; no final trusted signed JPG Spinner bundle/WACK approval claimed | Credentialed release owner |

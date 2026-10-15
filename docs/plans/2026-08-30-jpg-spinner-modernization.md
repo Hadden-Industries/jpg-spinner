@@ -1589,6 +1589,17 @@ git commit -m "build: preserve Store identity in the WinUI package"
 
 ## Task 17: Add continuous integration, security analysis, and supply-chain evidence
 
+**Order-only qualification checkpoint (2026-10-16):** The owner-approved
+whole-block-map-File permutation extension passes native-writer/literal-byte
+negative controls and a separate native validation/comparison of the retained
+independent build pair at signed source `d29b594df3f821a0771a47a420643bbde494f35f`.
+All executable pairs agree; actual payload/container byte identity remains false.
+The original v1 failure is preserved, not relabelled. Exact 38-component Store
+SBOM integration for the first original also passes. See the
+[current closed policy and qualification](../implementation/2026-10-15-package-payload-comparison-contract.md#order-only-qualification-and-adoption-2026-10-16).
+No full build was repeated. Final frozen-source assurance, hosted provenance,
+rights and other release gates remain distinct and incomplete.
+
 **Deployment-only interactive workflow source checkpoint (2026-10-15):**
 `New-InteractiveTestDrop.ps1` preserves the complete prebuilt app and presentation
 test-host outputs; a separate hosted main publisher authenticates their input

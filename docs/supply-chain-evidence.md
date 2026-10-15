@@ -12,7 +12,13 @@ file entries remain outside the approved comparison and correctly refuse
 qualification. Serial MakeAppx `/np` is present in the actual SDK command;
 mapping-file inputs agree. No qualified drop or complete-payload reproducibility
 is claimed. The [comparison checkpoint](implementation/2026-10-15-package-payload-comparison-contract.md#actual-integrated-pair-outcome-and-next-decision-2026-10-16)
-retains the exact result and a separate, unapproved order-only proposal.
+retains that historical result and the subsequently approved order-only policy.
+
+Under the owner-approved v2 extension, a separate native validation/comparison
+of the same original bundle pair now passes: only complete File sibling order
+and the already qualified WinMD fields/consequences differ. The new report keeps
+both raw byte-identity results false and records actual File orders. No source
+rebuild, shipping-package rewrite or historical-result replacement occurs.
 
 The completed first checkout supplies new native triplet exports and its actual
 resolved NuGet lock: 38 required component identities. The real Store-submission
