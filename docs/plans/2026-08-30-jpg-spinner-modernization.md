@@ -2105,6 +2105,29 @@ and [MSIX signing guidance](https://learn.microsoft.com/en-us/windows/msix/packa
 
 ### Step 17.5: Protected Store packaging workflow
 
+**Native cache and positive Store integration checkpoint (2026-10-15):**
+The bounded restore exposed a Windows extraction mismatch, not a reason to
+relax integrity. The authentic `go-mtree v0.7.0` archive contains a trailing-space
+fixture name that ordinary extraction normalizes. A minimized offline native
+Go control reproduces that refusal; literal-namespace extraction preserves the
+name and passes. The maintained
+[`Test-SbomModuleCacheNamespace.ps1`](../../scripts/tests/Test-SbomModuleCacheNamespace.ps1)
+locks down both cases. Prepare Windows caches through the literal namespace
+before extraction, not only verification; keep its glob-sensitive prefix out of
+compilation. Native Go remains the sole authentication/extraction/integrity
+implementation. No vendor patch, filename rewrite or checksum bypass is added.
+
+After preserving the malformed owned extraction and native re-extraction from
+the authenticated archive, the entire restored cache passes integrity and both
+copied source locks are unchanged. The real pre-certification bundle then passes
+`Test-StoreSubmissionSbom.ps1`: native generation, exact payload/38-component
+coverage, official schema/semantic validation, source preservation and complete
+five-file hash-bound publication. The retained earlier timeout is not relabelled.
+This closes the positive producer-integration gap only. Protected hosted
+composition, clean-build binding, strict payload reproducibility, final rights/
+security qualification, WACK and deliberate submission remain open; no signed
+distribution, Store certification or release acceptance is implied.
+
 **Release symbol-path checkpoint (2026-10-15):** Native inspection of the retained
 failed build pair identifies absolute clone-local PDB references in the EXEs
 and independent timestamp/MVID changes in the WinMDs. Release links now use the

@@ -79,6 +79,49 @@ Validation itself never installs tools or fetches remote schemas. Its owned
 child uses a 512 MiB V8 old-space limit, 1 GiB working-set refusal and 30-second
 deadline. Limit/tool/validator failures never become success.
 
+## Prepare the native Go module cache
+
+Stage unchanged copies of `eng/artifact-sbom/go.mod` and `go.sum` in an owned
+external provisioning directory. Use an explicit private module/build cache,
+the qualified Go executable, `GOTOOLCHAIN=local`, `GOWORK=off`, `GOENV=off`, empty
+`GOFLAGS` and `GOMAXPROCS=2` in the **provisioning child only**. Do not change the
+user's persistent environment or restore into the application payload.
+
+On Windows, use the absolute extended namespace for `GOMODCACHE` **during
+extraction as well as integrity verification**: `\\?\C:\...\module-cache`, or
+`\\?\UNC\server\share\...` for a qualified UNC destination. Use backslashes
+after the prefix. Microsoft's [namespace contract](https://learn.microsoft.com/windows/win32/fileio/naming-a-file)
+preserves literal filename spelling. Ordinary extraction can remove a trailing
+space from upstream test fixtures; adding the prefix only when verifying an
+already damaged extraction cannot repair it.
+
+In that bounded child, with the approved proxy/checksum database, run native
+`go -C <staged-lock-directory> mod download -json`, then `go ... mod verify`.
+Go owns [module authentication, extraction and cache integrity](https://go.dev/ref/mod#module-cache).
+Do not use `all` unnecessarily: for this Go-versioned module, the unqualified
+download selects its explicit requirements; `all` expands a substantially larger
+graph. Preserve diagnostics, observe child exit, enforce the existing operation
+deadlines and compare both staged locks with their unchanged source files.
+No missing dependency, changed checksum or timeout is success. Native `verify`
+checks downloaded members; it does not prove every dependency needed by a later
+build is present. The subsequent offline, read-only build remains required.
+
+Keep the literal prefix out of **compilation**: Go's embed glob handling treats
+its `?` as a pattern character. Compilation uses the ordinary absolute spelling
+of the same cache tree; the artifact producer already selects the literal
+spelling for integrity verification. Do not rename individual upstream files,
+rewrite hash records, disable integrity checks or modify vendor source. If an
+owned generated cache is malformed, preserve the failed evidence and quarantine
+the affected leaf before native extraction from its authenticated archive; never
+silently repair a shared or unowned cache.
+
+[`Test-SbomModuleCacheNamespace.ps1`](../scripts/tests/Test-SbomModuleCacheNamespace.ps1)
+requires an authentic cached `go-mtree v0.7.0` archive and a short owned Windows
+output root. With networking disabled, ordinary native extraction reproduces the
+integrity failure and literal native extraction preserves the trailing-space
+fixture and passes. It leaves both diagnostic cases for retention decisions.
+This bounded environment regression is not application qualification.
+
 ## Generate and qualify
 
 [`New-ArtifactSbom.ps1`](../scripts/New-ArtifactSbom.ps1) accepts already qualified
@@ -219,6 +262,25 @@ a minimal cached dependency in under one second, while full offline module-list
 inspection refuses missing cache entries. Neither result qualifies the complete
 SDK cache or resolves the retained full integration timeout; complete native
 dependency restoration/integrity remains required before another producer run.
+
+The subsequent bounded diagnosis established a separate extraction cause:
+the restored `go-mtree v0.7.0` directory lacked the archive's trailing-space
+filename. The minimal native ordinary/literal extraction control above passes.
+After quarantining only that owned malformed leaf and letting native Go extract
+the unchanged authenticated archive through the literal namespace, the complete
+restored cache passes `go mod verify`; source and staged locks are unchanged.
+The earlier timeout remains failed historical evidence, not a retroactive pass.
+
+The changed-condition real Store integration now passes
+[`Test-StoreSubmissionSbom.ps1`](../scripts/tests/Test-StoreSubmissionSbom.ps1)
+for the retained unsigned bundle SHA-256
+`020643305c8a902fbe12e2f9f14451886d7f2b6dac1c2a7b4a8b9f346dd8b9e3`
+and all 38 independent required component identities. Native SDK generation,
+exact payload/component checks, unchanged official SPDX schema/Ajv and Workgroup
+validation, input preservation, binding hashes and complete five-file publication
+pass. The binding keeps certification and release approval pending. This proves
+the submission-artifact producer, not clean-build provenance, byte reproducibility,
+protected hosted execution, WACK, Store certification or a signed release.
 
 [`Invoke-PackageReproducibility.ps1`](../scripts/Invoke-PackageReproducibility.ps1)
 owns two independent native Git clones of one exact signature-verified clean
