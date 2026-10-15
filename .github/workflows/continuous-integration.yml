@@ -35,6 +35,7 @@ jobs:
           ./scripts/tests/Test-ArtifactToolProcessLifecycle.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-WinmdBuildIdentityVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-JpgSpinnerBlockMapVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+          ./scripts/tests/Test-IndependentSourceBuildPair.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           # Isolate intentional negative-control native exit codes from the
           # caller's LASTEXITCODE; only this script's process result is a gate.
           pwsh -NoProfile -File ./scripts/Test-RepositoryPolicy.ps1

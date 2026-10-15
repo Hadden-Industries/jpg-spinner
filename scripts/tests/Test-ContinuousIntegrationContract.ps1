@@ -16,6 +16,12 @@ $jobs = Get-NodeProperty $yaml.Documents[0].RootNode 'jobs'
 foreach ($name in @('build','policy','asan','analysis','unsigned-package','interactive-inputs')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Missing required hosted job: $name" }
 }
+$hasSourcePairControl=$false
+foreach ($step in (Get-NodeProperty (Get-NodeProperty $jobs 'policy') 'steps').Children) {
+    $runKey=[YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
+    if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-IndependentSourceBuildPair.ps1',[StringComparison]::Ordinal)) {$hasSourcePairControl=$true}
+}
+if (-not $hasSourcePairControl) {throw 'Manual CI lacks the real independent-checkout lifecycle control.'}
 $build = Get-NodeProperty $jobs 'build'
 if ($build.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new('permissions'))) {throw 'Compiler jobs must inherit only the read-only workflow token.'}
 $strategy = Get-NodeProperty $build 'strategy'

@@ -46,34 +46,28 @@ if ($LASTEXITCODE -ne 0) {throw 'Independent build comparison source commit sign
 [void][IO.Directory]::CreateDirectory($working)
 $candidate=Join-Path $working evidence
 [void][IO.Directory]::CreateDirectory($candidate)
-# PowerShell may enumerate multiple Application matches when CommandType is
-# constrained. Match ordinary command resolution's first executable, not a
-# space-joined list of PATH candidates passed to ProcessStartInfo.FileName.
-$git=(Get-Command git -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $powershell=(Get-Process -Id $PID).Path
 Import-Module (Join-Path $PSScriptRoot 'ArtifactToolProcess.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'IndependentSourceBuildPair.psm1') -Force
+# Bind the existing native invoker into the callback's closure. The workspace
+# module owns only checkout lifecycle, not compilation or a second process API.
+$invokeNativeProcess=Get-Command Invoke-ArtifactToolProcess -Module ArtifactToolProcess -ErrorAction Stop
 $builds=[Collections.Generic.List[object]]::new()
-foreach ($name in @('first','second')) {
-    $clone=Join-Path $working $name
+$buildAction={
+    param($clone,$name)
     $evidence=Join-Path $candidate $name
     [void][IO.Directory]::CreateDirectory($evidence)
-    # --no-local prevents shared object stores/hardlinks or alternates. Each
-    # clone starts with no intermediates or installed native dependency tree.
-    Invoke-ArtifactToolProcess -Executable $git -WorkingDirectory $source -Arguments @('clone','--no-local','--no-hardlinks','--no-checkout','--',$source,$clone) -LogDirectory $evidence -LogName clone -TimeoutSeconds 120 | Out-Null
-    Invoke-ArtifactToolProcess -Executable $git -WorkingDirectory $clone -Arguments @('checkout','--detach',$SourceCommit) -LogDirectory $evidence -LogName checkout -TimeoutSeconds 120 | Out-Null
-    $actual=& $git -C $clone rev-parse --verify HEAD
-    if ($LASTEXITCODE -ne 0 -or $actual -cne $SourceCommit) {throw 'Independent checkout selected a different commit.'}
     $packages=[Collections.Generic.List[string]]::new()
     foreach ($architecture in @('x86','x64','ARM64')) {
         Write-Host "Independent build comparison: $name Release $architecture (two MSBuild workers, sequential)."
         $packageOutput=Join-Path $clone "artifacts/package-comparison-packages/$architecture"
-        Invoke-ArtifactToolProcess -Executable $powershell -WorkingDirectory $clone -Arguments @('-NoProfile','-File',(Join-Path $clone 'scripts/Invoke-Build.ps1'),
+        & $invokeNativeProcess -Executable $powershell -WorkingDirectory $clone -Arguments @('-NoProfile','-File',(Join-Path $clone 'scripts/Invoke-Build.ps1'),
             '-Configuration','Release','-Architecture',$architecture,'-MaximumBuildProcessCount','2',
             '-BuildEntryPoint','PackagedApplication','-UnsignedPackageOutputDirectory',$packageOutput) -LogDirectory $evidence -LogName "build-$architecture" -TimeoutSeconds 2400 | Out-Null
         $produced=@(Get-ChildItem -LiteralPath $packageOutput -File -Recurse -Filter 'JpgSpinner.App_*.msix')
         if ($produced.Count -ne 1) {throw 'Independent build did not emit exactly one architecture package.'}
         $packages.Add($produced[0].FullName)
-        Invoke-ArtifactToolProcess -Executable $powershell -WorkingDirectory $clone -Arguments @('-NoProfile','-File',(Join-Path $clone 'scripts/New-BuildProvenance.ps1'),
+        & $invokeNativeProcess -Executable $powershell -WorkingDirectory $clone -Arguments @('-NoProfile','-File',(Join-Path $clone 'scripts/New-BuildProvenance.ps1'),
             '-Configuration','Release','-Architecture',$architecture,'-RequireCleanSourceTree',
             '-OutputPath',(Join-Path $evidence "provenance-$architecture.json")) -LogDirectory $evidence -LogName "provenance-$architecture" -TimeoutSeconds 120 | Out-Null
     }
@@ -84,13 +78,18 @@ foreach ($name in @('first','second')) {
     & (Join-Path $clone 'scripts/New-MsixBundle.ps1') -PackagePaths $packages.ToArray() -OutputPath $bundle `
         -WorkingDirectory (Join-Path $clone artifacts/package-comparison-bundle-staging) *> (Join-Path $evidence bundle.log)
     $builds.Add(@{name=$name;unsignedBundleSha256=(Get-FileHash -LiteralPath $bundle).Hash.ToLowerInvariant()})
-}
+}.GetNewClosure()
+$workspacePair=Invoke-IndependentSourceBuildPair -SourceRepositoryRoot $source -SourceCommit $SourceCommit `
+    -WorkingDirectory (Join-Path $working builds) -LogDirectory (Join-Path $candidate checkout-logs) -BuildAction $buildAction
 $comparison=& (Join-Path $PSScriptRoot 'Compare-JpgSpinnerBundlePayload.ps1') -FirstBundlePath (Join-Path $candidate first/JpgSpinner.msixbundle) `
     -SecondBundlePath (Join-Path $candidate second/JpgSpinner.msixbundle) -WorkingDirectory (Join-Path $candidate comparison)
 $record=@{
     schemaVersion=1;sourceCommit=$SourceCommit;sourceSignatureVerified=$true
     comparisonSatisfied=$comparison.comparisonSatisfied;payloadsByteIdentical=$comparison.payloadsByteIdentical
     containersByteIdentical=$comparison.containersByteIdentical;comparisonReportRelativePath='comparison/package-payload-comparison.json'
+    # Record this actual environment input, not an assertion of path-insensitive
+    # output. Physical checkout trees are independent and retained separately.
+    buildEnvironment=@{canonicalSourceBuildPath=$workspacePair.Builds[0].BuildPath;pathIsControlled=$true;retainedCheckouts=$workspacePair.Builds}
     builds=$builds.ToArray();releaseApproval='pending'
 }
 [IO.File]::WriteAllText((Join-Path $candidate independent-package-build-comparison.json),($record | ConvertTo-Json -Depth 5)+"`n",[Text.UTF8Encoding]::new($false))

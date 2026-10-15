@@ -217,6 +217,62 @@ control. Its source-contract check first refuses missing wiring, then passes
 after the call is added. The prior complete application comparison remains
 failed. A new clean signed-source pair is still required before qualification.
 
+## Controlled build environment checkpoint — 2026-10-16
+
+The next complete pair at signed source
+`e02695a9d85d318364a4edcd963a164436d650f1` also builds all architectures, but
+still refuses executable differences. All three actual WinMD pairs pass the
+closed identity predicate. The rebuilt x64 image no longer contains its current
+clone-root string in ASCII/UTF-16; both x64 images have equal printable read-only
+string sets, but code/data/relocation bytes still differ. The optional-origin
+configuration corrected one varying input, not the whole application outcome.
+
+Microsoft's native `LINKREPRO`/`LINKREPROFULLPATHRSP` captures the retained x64
+inputs without a local command/PE parser. Compiler outputs are already up to date;
+the original-context incremental capture reproduces the original executable
+hash. Two direct consumptions of the unchanged vendor-generated response file
+produce the same executable hash as each other, including every section. Their
+hash differs from the original context, so this is not proof of arbitrary-path
+invariance or sole causation. Original containers, payload snapshots and source
+executable bytes stay unchanged. Missing capture-directory and SDK `mt.exe`
+setups are retained as setup failures; selecting the native evaluated SDK search
+path in the child fixes the latter without changing the host environment.
+
+The next implementation controls the absolute source path as a recorded build-
+environment input. [Reproducible Builds' environment definition](https://reproducible-builds.org/docs/perimeter/)
+explicitly includes the build directory; its
+[build-path guidance](https://reproducible-builds.org/docs/build-path/) discusses
+this option when paths affect outputs. This is not an extra byte exception:
+executables and every other closed-policy byte remain strict. Do not claim
+arbitrary-path reproducibility, retroactively accept a prior failed pair, patch
+binaries, use a path-mapping shim or discard metadata.
+
+`IndependentSourceBuildPair.psm1` owns the native Git/filesystem lifecycle, while
+the caller owns compilation. Each pass creates a genuinely independent
+`--no-local --no-hardlinks` checkout at one specified ordinary path, without prior
+intermediates. After its completed build/clean-source check, the entire checkout
+is retained separately by a checked same-volume native directory move. Only then
+can a new independent directory occupy the source path. No checkout, original
+artifact or user data is deleted or reused. A failed/dirty build or retention
+failure stops the pair and preserves diagnostics; no unrelated process is killed.
+
+Real native Git tests first exercise both independent passes at differing paths
+and reach RED on the required controlled-path observation. Selecting one path
+then passes fresh-intermediate/object-store, complete separate-retention,
+exact-commit, source-change and early-failure controls (GREEN). The test replaces
+only expensive compiler work, not clone/retention decisions. It also exercises
+the actual closure/native-invoker pattern: a forced private dependency reload
+initially hides the caller's command (setup failure), and reusing the current
+dependency instance fixes that loading defect. No private function extraction,
+test-only bypass or second process runner is introduced.
+
+The main producer records the actual source path and both retained checkout
+identities with its detailed comparison, preserving native source signature,
+clean-tree, architecture, provenance and all output-acceptance gates. The manual
+CI source contract first refuses missing lifecycle coverage, then passes its
+new call. A full application pair under this explicit environment remains
+required; the fast native lifecycle test is not that proof.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):
