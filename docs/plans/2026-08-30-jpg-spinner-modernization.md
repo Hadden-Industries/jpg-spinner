@@ -2028,6 +2028,30 @@ context, unknown class, wrong JSON type and altered tool definitions while
 preserving the original document. Small repository schemas may continue using
 `Test-Json`; this fixes the measured large SPDX validation path only.
 
+**Maintained build-context composition checkpoint (2026-10-15):**
+`New-JpgSpinnerBuildComponentEvidence.ps1` replaces the operator-only composition
+prototype with a maintained producer. It accepts exactly the three qualified
+native exporter snapshots and the actual application NuGet lock, preserves
+their bytes, reuses ordinal SHA-256 inventories for source/copy rechecks, and
+promotes one fresh complete component-evidence directory. It consumes NuGet's
+already resolved identities across every recorded target, including RID-only
+packages; it neither restores packages nor resolves/traverses dependency edges.
+Project references remain in the original lock, not the external package list.
+
+After a setup-only missing-argument error was repaired, the direct-only seam
+lost 13 transitive NuGet packages (observed behavioural RED). The corrected
+producer retains all 21 triplet-qualified native and 17 resolved NuGet identities
+(GREEN), including byte-exact original snapshots/lock. A synthetic RID-only
+case additionally requires its own distinct package. Malformed/duplicate/
+non-object JSON, inconsistent target content, missing architecture and missing
+transitive native metadata refuse publication. The real composed output and
+186-file unsigned development payload pass the native SDK, independent
+requirements/hashes/membership, unchanged official schema and Workgroup gate.
+The interrupted unbounded validation result remains failed, not retroactively
+successful; subsequent bounded validation of its unchanged candidate is separate
+evidence. [Operator guidance](../supply-chain-evidence.md) now documents both
+development and signed-release routes and their independent proof boundaries.
+
 **Native signature-verification checkpoint (2026-10-15):**
 `Resolve-MsixToolchain.ps1` evaluates the locked owning app targets for MakeAppx
 and selects its companion SignTool in that same SDK architecture directory,

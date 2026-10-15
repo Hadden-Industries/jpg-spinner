@@ -19,7 +19,7 @@ owns full acceptance; nothing here replaces its thresholds.
 | UI/accessibility/localization | Some real picker/layout evidence exists; final Narrator, high contrast, keyboard, scaling and locale acceptance remain | Accessibility owner |
 | OS/device matrix | Minimum OS, approved long-path-disabled refusal lane and physical ARM64 remain | Windows qualification owner |
 | Reproducibility | Payload manifest contract passes fixtures; two independent clean builds and exact manifests remain | Build maintainer |
-| SBOM | Approved Syft 1.54.1 public-SDK adapter and reusable artifact-evidence validator pass retained payload/hash/package/overlay controls and pinned official SPDX validators; native development-bundle extraction is qualified separately. Complete signed-bundle integration, architecture-specific dependency coverage and release-tool rights/security qualification remain; no compliant release SBOM | Supply-chain owner |
+| SBOM | Native build-context composition retains 21 triplet-qualified ports and 17 resolved NuGet identities; real unsigned-bundle payload/membership and bounded Ajv 8.20.0 plus Workgroup validation pass. Release entry-point trust/digest refusals pass. Positive signed JPG Spinner integration, actual clean-build binding and final release-tool rights/security qualification remain; no compliant release SBOM | Supply-chain owner |
 | Package identity/update | Unsigned native packages/bundle exist; trusted 1.1.3.0 upgrade and all-architecture runtime qualification remain | Release owner |
 | Signing/WACK | Native selected-SDK signature checks accept a genuine Microsoft-signed dependency and refuse unsigned/tampered controls without trust changes; no final trusted signed JPG Spinner bundle/WACK approval claimed | Credentialed release owner |
 | Licensing/source | Exact shipped dependency notices, GPL/Exiv2 compatibility, corresponding source and current Store terms need qualified legal review | Maintainer and qualified legal reviewer |
@@ -48,6 +48,13 @@ execution; public source checkpoints link the implementation/design contracts.
 Do not commit credentials, signing material, user photographs or generated
 packages. Do not claim an input observation proves execution. Do not delete a
 held reproducer or verifier workspace because a source commit was made.
+
+The approved SBOM scope distinguishes build-context components, exact signed
+artifact bytes and separately qualified deployment/runtime behaviour. See the
+[supply-chain evidence procedure](supply-chain-evidence.md) for maintained
+native producers, bounded validation, exact hash binding and remaining claims.
+Do not infer static-linker contribution or instrumented runtime coverage from
+installed package membership, or call input observations a build attestation.
 
 ## Release authorization
 
