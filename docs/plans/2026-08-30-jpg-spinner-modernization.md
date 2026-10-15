@@ -1758,6 +1758,18 @@ project reports from the preceding run remain separate retained evidence.
 
 ### Step 17.2: GREEN continuous integration matrix
 
+**Unsigned packaging source checkpoint (2026-10-15):** The manual-only
+`continuous-integration.yml` now defines an `unsigned-package` job depending on
+policy, all build configurations, ASan and native analysis. It sequentially uses
+the existing real package-build contract for Release x86/x64/ARM64, validates
+each unsigned package, records clean-source provenance, composes a native bundle
+and inspects its payloads. Its 14-day artifact contains the unsigned bundle,
+provenance and diagnostics, not signing credentials or a release-approval claim.
+The source-wiring test first failed for the absent job, then passed with native
+YamlDotNet/actionlint validation. Trigger mutation controls still reject push,
+PR, release, reusable-call, scheduled and mixed events. This does not dispatch
+CI, prove the hosted image/toolchain or claim hosted packaging succeeded.
+
 - [ ] On explicit manual qualification, restore qualified locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all headless Domain/JPEG/Storage/Batch/Presentation-contract tests on x86/x64, compile Release ARM64, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure. Do not run black-box UI Automation, Narrator, or Accessibility Insights on a GitHub-hosted service session. Do not register push, pull-request or scheduled triggers.
 - [ ] Define a required separate interactive Windows VM/self-hosted workflow or protected qualification job for black-box UI Automation and assistive-technology checks. It begins with `Test-InteractiveUiEnvironment.ps1`, never has pull-request secrets, and publishes signed test evidence; a hosted headless pass cannot substitute for this gate.
 - [ ] Use a separate package job for the unsigned x86/x64/ARM64 bundle. Package creation must not require Store credentials.

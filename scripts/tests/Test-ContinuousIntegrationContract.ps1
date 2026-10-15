@@ -13,7 +13,7 @@ $reader = [IO.File]::OpenText($workflow)
 try { $yaml.Load($reader) } finally { $reader.Dispose() }
 function Get-NodeProperty { param($Mapping,[string]$Name); return ,$Mapping.Children[[YamlDotNet.RepresentationModel.YamlScalarNode]::new($Name)] }
 $jobs = Get-NodeProperty $yaml.Documents[0].RootNode 'jobs'
-foreach ($name in @('build','policy','asan','analysis')) {
+foreach ($name in @('build','policy','asan','analysis','unsigned-package')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Missing required hosted job: $name" }
 }
 $build = Get-NodeProperty $jobs 'build'
@@ -53,4 +53,25 @@ foreach ($step in $steps.Children) {
 }
 if (-not ($hasBuild -and $hasHeadlessTests -and $hasProvenance)) { throw 'Build, native headless tests or clean-source provenance wiring is absent.' }
 if (-not $hasShutdownRegression) { throw 'Bounded native presentation process-shutdown regression wiring is absent.' }
+$packageJob = Get-NodeProperty $jobs 'unsigned-package'
+$packageNeeds = Get-NodeProperty $packageJob 'needs'
+$neededJobs = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+foreach ($dependency in $packageNeeds.Children) { [void]$neededJobs.Add($dependency.Value) }
+if (-not $neededJobs.SetEquals([string[]]@('policy','build','asan','analysis'))) {
+    throw 'Unsigned packaging must wait for every automated qualification job.'
+}
+$packageSteps = Get-NodeProperty $packageJob 'steps'
+$hasNativePackageBuild=$false; $hasNativeBundle=$false; $hasBundleInspection=$false
+foreach ($step in $packageSteps.Children) {
+    $key = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
+    if (-not $step.Children.ContainsKey($key)) { continue }
+    $command = $step.Children[$key].Value
+    if ($command.Contains('scripts/tests/Test-PackageBuildContract.ps1',[StringComparison]::Ordinal) -and
+        $command.Contains("@('x86','x64','ARM64')",[StringComparison]::Ordinal)) { $hasNativePackageBuild=$true }
+    if ($command.Contains('scripts/New-MsixBundle.ps1',[StringComparison]::Ordinal)) { $hasNativeBundle=$true }
+    if ($command.Contains('scripts/Expand-JpgSpinnerBundle.ps1',[StringComparison]::Ordinal)) { $hasBundleInspection=$true }
+}
+if (-not ($hasNativePackageBuild -and $hasNativeBundle -and $hasBundleInspection)) {
+    throw 'Unsigned packaging lacks the real architecture producer, native bundle or payload inspection.'
+}
 Write-Output 'PASS: native-validated CI source wiring and exact build/test architecture matrix; hosted execution remains unqualified.'

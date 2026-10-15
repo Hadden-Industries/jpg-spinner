@@ -97,6 +97,48 @@ jobs:
             artifacts/build-logs/
             artifacts/TestResults/
             artifacts/provenance/
+  unsigned-package:
+    # A development/qualification drop only. Signing, trust changes, WACK and
+    # Store submission belong to the separate protected release route.
+    needs: [policy, build, asan, analysis]
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Produce and inspect the three unsigned architecture packages
+        run: |
+          $packages = [Collections.Generic.List[string]]::new()
+          # Each native producer uses two MSBuild processes. Keep architecture
+          # production sequential within this runner; no signing inputs exist.
+          foreach ($architecture in @('x86','x64','ARM64')) {
+            $output = Join-Path $PWD "artifacts/packages/$architecture"
+            ./scripts/tests/Test-PackageBuildContract.ps1 -Configuration Release -Architecture $architecture -OutputDirectory $output
+            $produced = @(Get-ChildItem -LiteralPath $output -File -Recurse -Filter 'JpgSpinner.App_*.msix')
+            if ($produced.Count -ne 1) { throw 'Expected exactly one native application package.' }
+            ./scripts/tests/Test-UnsignedMsixPackage.ps1 -PackagePath $produced[0].FullName -Architecture $architecture -ExtractionDirectory "artifacts/package-inspection/$architecture"
+            $packages.Add($produced[0].FullName)
+            New-Item -ItemType Directory -Path artifacts/provenance -Force | Out-Null
+            ./scripts/New-BuildProvenance.ps1 -Configuration Release -Architecture $architecture -RequireCleanSourceTree -OutputPath "artifacts/provenance/package-$architecture.json"
+          }
+          New-Item -ItemType Directory -Path artifacts/unsigned-drop -Force | Out-Null
+          $bundle = Join-Path $PWD 'artifacts/unsigned-drop/JpgSpinner.msixbundle'
+          ./scripts/New-MsixBundle.ps1 -PackagePaths $packages.ToArray() -OutputPath $bundle -WorkingDirectory artifacts/bundle-staging
+          ./scripts/Expand-JpgSpinnerBundle.ps1 -BundlePath $bundle -InspectionDirectory artifacts/bundle-inspection
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: unsigned-bundle-and-provenance
+          retention-days: 14
+          # Do not upload dependency caches, credentials or a claim of release
+          # approval. Failed/partial drops remain diagnostic artifacts only.
+          path: |
+            artifacts/unsigned-drop/
+            artifacts/provenance/
+            artifacts/bundle-inspection/inventories/
+            artifacts/bundle-inspection/diagnostics/
+            artifacts/build-logs/
   asan:
     runs-on: windows-2025-vs2026
     timeout-minutes: 90
