@@ -64,6 +64,26 @@ rights/security, accessibility, devices/upgrades, private credential revocation,
 legacy cutover, deliberate submission and observed rollout remain separate.
 No release, trust-store change, push or workflow dispatch is authorized here.
 
+## WinMD-only source checkpoint
+
+`Test-WinmdBuildIdentityVariance.ps1` now uses the platform PE/metadata readers
+and byte-interval comparison without changing either input. This narrow app
+inspection is bounded to 16 MiB and the actual SDK's single-MVID GUID-heap layout;
+larger, edit-and-continue or ambiguous identity layouts refuse qualification.
+
+The native PE/metadata writer supplies independent fixtures. Identical data
+passes the original strict seam; changing only build identities first produces
+behavioural RED. The native-located implementation then passes identity-only,
+timestamp-only and MVID-only cases, reports real values/raw hashes and preserves
+both originals. A same-length type-name change, missing MVID and malformed image
+are refused. This does not test every malformed metadata encoding.
+
+The retained identical-input SDK merger replay and the WinMD pairs from both
+original clean builds in arm64/x64/x86 pass the narrow comparison, explicitly
+with `ByteIdentical=false`. The old EXEs are not accepted by this WinMD helper;
+their PDB-path differences remain outside the policy. No new application build,
+block-map or complete-package acceptance is claimed by this source checkpoint.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):
