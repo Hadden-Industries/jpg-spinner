@@ -84,6 +84,75 @@ with `ByteIdentical=false`. The old EXEs are not accepted by this WinMD helper;
 their PDB-path differences remain outside the policy. No new application build,
 block-map or complete-package acceptance is claimed by this source checkpoint.
 
+## Block-map predicate source checkpoint
+
+`Test-JpgSpinnerBlockMapVariance.ps1` is a read-only comparison predicate for
+already native-validated snapshots, not original-container validation. The
+platform XML reader owns syntax, namespace and attribute selection; its line
+coordinates locate the selected native SDK literal UTF-8 attribute values.
+All intervening original bytes, including unrelated XML formatting/comments,
+remain strict. No tree or artifact is rewritten. Unqualified lexical forms,
+noncanonical native scalar values, missing app entries and DTDs refuse; input
+inspection is bounded to 1 MiB. This is not a general XML comparison library.
+
+Native-writer fixture comparison first reaches RED under strict byte equality,
+then accepts the approved hash/compressed-size changes, including a size digit-
+count change. It refuses size changes on unchanged-hash blocks, another file's
+hash, local-header size and an unrelated comment, and proves original fixture
+preservation. A PowerShell-only span-method dispatch error was setup failure,
+not behavioural RED; the supported ordinal string API fixes that invocation.
+The shared native WinMD builder supplies inputs, not expected decisions.
+
+These synthetic XML cases alone do not establish container hash or compression
+validation; that obligation belongs to the native-container route below.
+
+## Native-container comparison source checkpoint
+
+`Compare-JpgSpinnerBundlePayload.ps1` now calls the existing owning-SDK
+`Expand-JpgSpinnerBundle.ps1` for both original containers, with MakeAppx
+validation enabled. Both inputs remain read-shared only throughout inspection.
+It retains complete canonical payload inventories, checks exact ordinal path
+membership, and applies the two predicates only to the six closed architecture
+paths. No dependency WinMD, executable, PRI or unrelated file is excluded.
+All other file lengths/hashes remain strict. A refusal retains diagnostics but
+publishes no success comparison report.
+
+The platform PE/metadata writer plus actual MakeAppx pack/bundle operations
+supply newly generated synthetic fixture containers from copies of a retained
+development payload. Identical originals first pass; the identity-only pair
+then fails the original strict manifest comparison (behavioural RED). The
+approved closed comparison accepts that pair with three actual identity/block
+variances and both byte-identity flags false (GREEN). Native generated compressed
+WinMD blocks change from 467 to 464 bytes in this fixture. Changed ordinary data,
+extra/omitted files and a malformed original container are refused without
+publishing success. The test checks original source/control container hashes.
+These are package-comparison controls, not application activation or independent
+clean-build qualification. No shipping input was repacked or changed.
+
+The detailed `package-payload-comparison.json` reports separate acceptance,
+payload-byte identity and container-byte identity, complete raw hashes and
+actual identity/block fields. Inventory and inspection references are report-
+relative so candidate promotion does not leave stale staging paths. A replay
+against the retained native fixture pair verifies those references and truthful
+flags after that representation change.
+
+The original retained two-build pair is also replayed through the native route
+and still refuses unrelated executable block-map differences without success
+promotion. The amendment does not retroactively qualify that failed run.
+
+`Invoke-IndependentPackageBuildComparison.ps1` replaces the obsolete entry
+point without an alias. It retains signature-verified clean source selection,
+two independent clones, sequential three-architecture Release builds and two
+MSBuild workers. It reuses the established bounded artifact-process runner and
+invokes the native-container comparison once after both bundles exist, avoiding
+duplicate extraction. Its `independent-package-build-comparison.json` links the
+detailed report without converting accepted variance into byte equality.
+Cheap wrong-source/existing/nested-output refusal controls pass before builds.
+
+New independent clean application builds and the remaining Store workflow
+integration are still required; this source checkpoint does not complete Task
+17 or any certification, legal, device, release or hosted-execution gate.
+
 ## Authoritative and practice anchors
 
 - [PE/COFF format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#coff-file-header-object-and-image):

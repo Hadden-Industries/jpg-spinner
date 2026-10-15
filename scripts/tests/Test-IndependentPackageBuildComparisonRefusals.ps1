@@ -5,8 +5,8 @@ param([Parameter(Mandatory)][string]$OwnedOutputRoot)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$producer=Join-Path $root 'scripts/Invoke-PackageReproducibility.ps1'
-$fixture=Join-Path $OwnedOutputRoot ('reproducibility-refusals-'+[Guid]::NewGuid().ToString('N'))
+$producer=Join-Path $root 'scripts/Invoke-IndependentPackageBuildComparison.ps1'
+$fixture=Join-Path $OwnedOutputRoot ('independent-build-comparison-refusals-'+[Guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($fixture)
 $working=Join-Path $fixture work
 $output=Join-Path $fixture output

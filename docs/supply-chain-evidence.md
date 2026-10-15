@@ -314,13 +314,16 @@ pass. The binding keeps certification and release approval pending. This proves
 the submission-artifact producer, not clean-build provenance, byte reproducibility,
 protected hosted execution, WACK, Store certification or a signed release.
 
-[`Invoke-PackageReproducibility.ps1`](../scripts/Invoke-PackageReproducibility.ps1)
+[`Invoke-IndependentPackageBuildComparison.ps1`](../scripts/Invoke-IndependentPackageBuildComparison.ps1)
 owns two independent native Git clones of one exact signature-verified clean
 commit. It sequentially builds Release x86/x64/ARM64 with two MSBuild workers,
 retains each actual architecture/toolchain provenance record, bundles/unpacks
-with the owning SDK and compares canonical full payload manifests. It records
-container hashes separately; different container hashes cannot become a
-byte-identical-container claim. Working/output directories must be fresh,
+with the owning SDK and compares complete payload inventories under the
+[approved closed identity-variance contract](implementation/2026-10-15-package-payload-comparison-contract.md).
+Its `independent-package-build-comparison.json` links the detailed native-container
+comparison report and retains separate comparison-satisfied, payload-byte-identity
+and container-byte-identity results. A permitted WinMD variance cannot become a
+byte-identical-payload claim. Working/output directories must be fresh,
 disjoint and outside the source checkout. Failed native logs and partial work
 remain diagnostic, not published qualification. The first complete real run at
 signed source `1cafa5b680f014d1c6808f2a309851f25b9e6201` built all three
