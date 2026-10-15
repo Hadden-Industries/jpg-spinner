@@ -97,3 +97,9 @@ reviewed change to the release contract would require new evidence/authority;
 neither follows from approval to qualify this rejected candidate. Continue
 independent Store-SBOM and remaining source work without presenting it as an
 unblocked release.
+
+Subsequent decision on 2026-10-15: the owner explicitly approved bounded
+qualification of the [closed metadata/block-map comparison contract](2026-10-15-package-payload-comparison-contract.md),
+including compressed-size consequences on the same changed WinMD blocks. That
+changes the later acceptance contract, not this rejected qualification result.
+No shipping artifact or native merger changes; full byte equality is not claimed.

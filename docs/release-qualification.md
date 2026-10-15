@@ -6,6 +6,12 @@ build, installed package and Store submission are different outcomes. The
 [approved plan](plans/2026-08-30-jpg-spinner-modernization.md)
 owns full acceptance; nothing here replaces its thresholds.
 
+The owner approved bounded qualification of the
+[closed native metadata/block-map comparison amendment](implementation/2026-10-15-package-payload-comparison-contract.md).
+It reduces the former unconditional byte-equality guarantee; original bytes and
+raw identity results remain. Until native controls and independent-build
+integration pass, this gate remains unqualified. No other release gate changes.
+
 ## Gate register
 
 | Gate | Current evidence boundary / remaining proof | Accountable role |
@@ -19,7 +25,7 @@ owns full acceptance; nothing here replaces its thresholds.
 | UI/accessibility/localization | Some real picker/layout evidence exists; final Narrator, high contrast, keyboard, scaling and locale acceptance remain | Accessibility owner |
 | Dedicated interactive workflow | Deployment-only, manual same-main CI input authentication, protected-environment admission and automated-only signed-result source wiring pass local contracts; live environment/runner setup and deliberate hosted execution remain pending | Windows qualification owner |
 | OS/device matrix | Minimum OS, approved long-path-disabled refusal lane and physical ARM64 remain | Windows qualification owner |
-| Reproducibility | Two independent clean Release x86/x64/ARM64 builds at signed source `1cafa5b680f014d1c6808f2a309851f25b9e6201` produced valid bundles, but equality correctly refused nine paths: executable, WinMD and block map in each architecture. Retained native inspection identifies clone-local PDB references and WinMD timestamp/MVID differences. A documented Release PDB-path correction passes the native probe and negative control; application/metadata and final equal-payload qualification remain open. Both bundles/manifests/logs are retained; no output promoted | Build maintainer |
+| Independent build comparison | Two independent clean Release x86/x64/ARM64 builds at signed source `1cafa5b680f014d1c6808f2a309851f25b9e6201` produced valid bundles, but the then-required byte equality correctly refused nine paths: EXE, WinMD and block map per architecture. The Release PDB-path correction passes its probe. The approved closed metadata/block-map comparison still needs native controls and a new clean-build pair; EXE differences are not permitted. Preserve both original failures, raw manifests and actual byte-identity results; no reproducible output is claimed | Build maintainer |
 | SBOM | Native build-context composition retains 21 triplet-qualified ports and 17 resolved NuGet identities; real unsigned-bundle payload/membership and bounded Ajv 8.20.0 plus Workgroup validation pass. Release entry-point trust/digest refusals pass. Positive signed JPG Spinner integration, actual clean-build binding and final release-tool rights/security qualification remain; no compliant release SBOM | Supply-chain owner |
 | Package identity/update | Unsigned native packages/bundle exist; trusted 1.1.3.0 upgrade and all-architecture runtime qualification remain | Release owner |
 | Signing/WACK | Native selected-SDK signature checks accept a genuine Microsoft-signed dependency and refuse unsigned/tampered controls without trust changes; no final trusted signed JPG Spinner bundle/WACK approval claimed | Credentialed release owner |

@@ -2105,6 +2105,17 @@ and [MSIX signing guidance](https://learn.microsoft.com/en-us/windows/msix/packa
 
 ### Step 17.5: Protected Store packaging workflow
 
+**Approved comparison-contract amendment (2026-10-15):** The owner approved
+bounded qualification of the closed
+[native metadata/block-map variance contract](../implementation/2026-10-15-package-payload-comparison-contract.md),
+including separately approved compressed `Block/@Size` consequences on the same
+changed WinMD blocks. After qualification this supersedes unconditional full-
+payload equality for acceptance, not the recorded raw-byte identity result.
+Keep every shipping WinMD, original artifact and hash; prohibit binary rewriting,
+custom parsers, omission, unrelated variance and full byte-reproducibility claims.
+Historical failures below retain their original meaning. Entry point/report
+names must describe independent build comparison, not promise reproducibility.
+
 **Native cache and positive Store integration checkpoint (2026-10-15):**
 The bounded restore exposed a Windows extraction mismatch, not a reason to
 relax integrity. The authentic `go-mtree v0.7.0` archive contains a trailing-space
@@ -2187,7 +2198,7 @@ used to manufacture success.
 
 - [ ] Trigger Store packaging only by explicit `workflow_dispatch` into a protected environment. A signed release tag may identify the reviewed source, but must not itself start a workflow.
 - [ ] Write `New-PayloadManifest.ps1` test-first. Given an unpacked package tree, it emits a path-ordinal, UTF-8 manifest of normalized relative path, byte length, and SHA-256 and rejects reparse points, duplicate normalized paths, or files outside the root. A one-byte fixture mutation must produce an observed RED mismatch before the final comparison is accepted.
-- [ ] Rebuild twice from separate clean directories with immutable inputs, verify the source commit, recursively unpack both unsigned bundles, and require identical payload manifests. Record each container hash separately. Claim byte-identical unsigned MSIX/MSIXBUNDLE output only if the two independent container hashes also match under the locked toolchain; payload reproducibility is the mandatory contract.
+- [ ] Rebuild twice from separate clean directories with immutable inputs, verify the source commit, natively validate/unpack both unsigned bundles, and satisfy the approved closed package-payload comparison contract. Retain both raw manifests, actual complete-payload byte-identity result and each container hash separately. Claim byte-identical payloads or containers only when their respective independent raw comparisons actually match; an exception-qualified result is not that claim.
 - [ ] For Store submission, generate and validate a separately labelled submission-artifact SBOM for the exact reproducible unsigned bundle, and authenticate container/provenance/evidence through native platform attestation. For signed sideload distribution, sign the exact qualified container from protected secret material and retain mandatory native signed-bundle verification before SBOM extraction. Do not introduce signing material or trust changes merely to prepare a Store submission. Retain WACK and the applicable source, runner, toolchain, payload-manifest and exact container provenance; never conflate a pre-certification submission artifact with Store-delivered signed bytes.
 - [ ] Do not submit or stage rollout automatically. Publishing remains a deliberate Partner Center operation after qualification evidence is reviewed.
 
@@ -2364,7 +2375,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 ### Step 20.2: Clean-clone automated qualification
 
 - [ ] From a fresh clone with no global vcpkg integration or warm build output, restore locked inputs and run repository/documentation policy.
-- [ ] Build Debug and Release x86/x64 and Release ARM64 twice from independent clean roots. Recursively unpack each unsigned bundle and require identical normalized payload manifests. Record both unsigned container hashes; require byte identity only if the locked packaging toolchain actually demonstrates it.
+- [ ] Build Debug and Release x86/x64 and Release ARM64 twice from independent clean roots. Natively validate/unpack each unsigned bundle and satisfy the approved closed metadata/block-map comparison contract. Retain complete raw manifests and actual byte-identity results; record both container hashes without calling an allowed-variance result full byte reproducibility.
 - [ ] Execute all headless tests on x86/x64; execute the transform, transaction, recovery, batch, and packaged-app smoke suites on physical ARM64. Execute black-box UI Automation and assistive-technology checks in the separately qualified interactive Windows environment.
 - [ ] Run x64 AddressSanitizer, MSVC `/analyze`, CodeQL `security-extended`, and a minimum 24-hour aggregate fuzz campaign with the reviewed corpus.
 - [ ] Require no compiler warning, sanitizer finding, leak, static-analysis error, CodeQL high-severity alert, fuzz crash/hang, or flaky retry.
@@ -2390,7 +2401,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 - [ ] Repeat the full manual accessibility checklist on current Windows 10 22H2 ESU and maintained Windows 11 24H2 and 25H2 systems, plus Windows 11 26H1 hardware where available. Record that 26H1 is a supported new-device hardware cohort rather than an assumed in-place update path for existing 24H2/25H2 systems.
 - [ ] Review every screen and error in en-US, en-GB, and ru; run pseudo-localization for expansion and bidirectional layout defects.
 - [ ] Install 1.1.3.0, update to 2.0.0.0 for x86/x64 and native ARM64 paths, then verify identity, launch, processing, recovery, uninstall, and no orphan staging artifacts.
-- [ ] In the protected Store-submission workflow, reproduce the qualified unpacked payload manifest, record the exact unsigned container hash, and generate/validate the external SPDX 3.0.1 submission-artifact SBOM with authenticated provenance. Require Windows App Certification Kit, bundle manifest validation, malware scanning and Store ingestion qualification for the applicable exact candidate. Microsoft supplies the Store signature after certification; record separately any acquired Store-signed artifact and its native trust/hash proof. A separately requested signed sideload route must still sign/verify its exact container before release-SBOM extraction. No path waives device/upgrade qualification or grants automatic submission.
+- [ ] In the protected Store-submission workflow, satisfy the approved closed package comparison, retain both complete raw payload manifests and exact unsigned container hashes, and generate/validate the external SPDX 3.0.1 submission-artifact SBOM for the exact selected bundle with authenticated provenance. Require Windows App Certification Kit, bundle manifest validation, malware scanning and Store ingestion qualification for the applicable exact candidate. Microsoft supplies the Store signature after certification; record separately any acquired Store-signed artifact and its native trust/hash proof. A separately requested signed sideload route must still sign/verify its exact container before release-SBOM extraction. No path waives device/upgrade qualification or grants automatic submission.
 
 ### Step 20.6: Privacy and integrity go/no-go
 
@@ -2438,7 +2449,7 @@ Implementation is complete only when:
 - AppContainer, Store identity, x86/x64 update continuity, and ARM64 operation are verified;
 - resource limits, metadata policy, accessibility, localization, privacy, security, and supply-chain gates pass;
 - encoded-file and TurboJPEG intermediate-memory limits remain distinct; Extended XMP follows the tested preservation/refusal policy; public WinRT metadata is PascalCase and complete;
-- hosted headless and interactive UI qualification lanes both pass; exact toolchain provenance and reproducible unpacked-payload manifests are archived;
+- hosted headless and interactive UI qualification lanes both pass; exact toolchain provenance, complete raw payload manifests, actual byte-identity results and qualified closed-comparison evidence are archived;
 - every post-task artifact-hygiene pass is recorded, the pre-existing obsolete-run backlog is eliminated, and no unexplained build, test, fuzz, package, or dependency cache remains;
 - final documentation describes the exact shipped behavior;
 - rollout evidence meets the staged health and zero-integrity-incident gates.

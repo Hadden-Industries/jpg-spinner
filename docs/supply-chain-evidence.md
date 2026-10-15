@@ -242,6 +242,15 @@ workflow's local contract tests neither run UI actions nor satisfy those gates.
 
 ## Approved Store-only distinction
 
+The subsequent owner-approved
+[closed package-payload comparison contract](implementation/2026-10-15-package-payload-comparison-contract.md)
+is a bounded-qualification amendment to the earlier unconditional equality gate.
+Only native WinMD timestamp/MVID and directly consequent block hash/compressed-
+size differences can qualify. Keep original bytes, metadata, raw hashes and
+native package validation. The strict equality helper is unchanged. Historical
+failures below are not retroactive passes; a permitted-variance comparison is
+not complete-payload byte reproducibility.
+
 The 2026-10-15 approval separates the unsigned Store-submission artifact from
 signed sideload distribution. [Microsoft supplies the Store signature](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-package-requirements#code-signing-for-microsoft-store-submissions)
 after certification. The protected Store route must authenticate its exact
