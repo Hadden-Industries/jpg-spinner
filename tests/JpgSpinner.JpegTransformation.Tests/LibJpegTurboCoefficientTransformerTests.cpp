@@ -8,6 +8,7 @@
 #include <jpg_spinner/domain/JpegTransformPlanner.h>
 #include <algorithm>
 #include <array>
+#include <vector>
 #include <stop_token>
 
 using namespace jpg_spinner::domain;
@@ -24,8 +25,9 @@ TEST_CASE("An inconsistent planned output cannot publish transformed bytes", "[j
                                  OutputScanOrganization::PreserveSource,
                                  {{16}, {16}},
                                  {{0}, {0}}};
-    std::array<std::byte, 65536> output{};
-    output.fill(std::byte{0x5a});
+    // Retain the fixture capacity without consuming 64 KiB of test stack.
+    std::vector<std::byte> output(65536);
+    std::ranges::fill(output, std::byte{0x5a});
     const auto result = LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output);
     REQUIRE(result.errorIfPresent() != nullptr);
     CHECK(result.errorIfPresent()->code == ImageProcessingErrorCode::OutputValidationFailed);
@@ -58,7 +60,7 @@ TEST_CASE("Coefficient transforms preserve the MCU restart interval", "[jpeg][tr
         return 0U;
     };
     REQUIRE(interval(source) == 2);
-    std::array<std::byte, 65536> output{};
+    std::vector<std::byte> output(65536);
     const auto result = LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output);
     REQUIRE(result.valueIfPresent() != nullptr);
     CHECK(interval(std::span(output).first(*result.valueIfPresent())) == 2);
@@ -89,8 +91,8 @@ TEST_CASE("Codec failures never publish a partial destination", "[jpeg][transfor
         source.erase(source.begin() + static_cast<std::ptrdiff_t>(entropy.offsetBytes),
                      source.begin() + static_cast<std::ptrdiff_t>(entropy.offsetBytes + entropy.lengthBytes));
         REQUIRE(JpegSegmentScanner::scan(source).valueIfPresent() != nullptr);
-        std::array<std::byte, 65536> output{};
-        output.fill(std::byte{0x5a});
+        std::vector<std::byte> output(65536);
+        std::ranges::fill(output, std::byte{0x5a});
         const auto result = LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output);
         REQUIRE(result.errorIfPresent() != nullptr);
         CHECK(result.errorIfPresent()->code == ImageProcessingErrorCode::CoefficientTransformationFailed);
@@ -132,7 +134,7 @@ TEST_CASE("Every spatial operation preserves the independently derived coefficie
                                              {{static_cast<std::uint64_t>(tjMCUWidth[subsampling])},
                                               {static_cast<std::uint64_t>(tjMCUHeight[subsampling])}},
                                              {{0}, {0}}};
-                std::array<std::byte, 65536> output{};
+                std::vector<std::byte> output(65536);
                 const auto result = LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output);
                 REQUIRE(result.valueIfPresent() != nullptr);
                 const auto actual = readCoefficients(std::span(output).first(*result.valueIfPresent()));
@@ -197,7 +199,7 @@ TEST_CASE("Output scan organization is explicit while entropy coding is preserve
                                              requested,
                                              {{16}, {16}},
                                              {{0}, {0}}};
-                std::array<std::byte, 65536> output{};
+                std::vector<std::byte> output(65536);
                 const auto transformed =
                     LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output);
                 REQUIRE(transformed.valueIfPresent() != nullptr);
@@ -224,7 +226,7 @@ TEST_CASE("Partial MCU policy rejects perfect rotation and permits explicit trim
     {
         const JpegTransformPlan plan{LosslessTransform::Rotate90Clockwise,   {{31}, {19}}, {{16}, {31}}, edgePolicy,
                                      OutputScanOrganization::PreserveSource, {{16}, {16}}, {{0}, {3}}};
-        std::array<std::byte, 65536> output{};
+        std::vector<std::byte> output(65536);
         const auto result = LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output);
         if (edgePolicy == EdgeHandlingPolicy::RequirePerfectCoefficientTransform)
         {
@@ -263,7 +265,7 @@ TEST_CASE("Every edge policy matches the domain plan on partial horizontal and v
                           ImageProcessingErrorCode::PerfectCoefficientTransformUnavailable);
                     continue; // The planner itself prohibits dispatch of an impossible perfect transform.
                 }
-                std::array<std::byte, 65536> output{};
+                std::vector<std::byte> output(65536);
                 const auto result =
                     LibJpegTurboCoefficientTransformer::transformCoefficients(source, *plan.valueIfPresent(), output);
                 REQUIRE(result.valueIfPresent() != nullptr);
@@ -294,7 +296,7 @@ TEST_CASE("Marker ownership stays outside TurboJPEG", "[jpeg][transform][markers
                                  OutputScanOrganization::PreserveSource,
                                  {{16}, {16}},
                                  {{0}, {0}}};
-    std::array<std::byte, 65536> output{};
+    std::vector<std::byte> output(65536);
     const auto result = LibJpegTurboCoefficientTransformer::transformCoefficients(source, plan, output);
     REQUIRE(result.valueIfPresent() != nullptr);
     const auto scan = JpegSegmentScanner::scan(std::span(output).first(*result.valueIfPresent()));
@@ -313,7 +315,7 @@ TEST_CASE("Coefficient adapter preserves an identity transform without copying m
                                                         EdgeHandlingPolicy::RequirePerfectCoefficientTransform,
                                                         OutputScanOrganization::PreserveSource});
     REQUIRE(plan.valueIfPresent() != nullptr);
-    std::array<std::byte, 65536> output{};
+    std::vector<std::byte> output(65536);
     const auto result =
         LibJpegTurboCoefficientTransformer::transformCoefficients(source, *plan.valueIfPresent(), output);
     REQUIRE(result.valueIfPresent() != nullptr);
@@ -329,7 +331,7 @@ TEST_CASE("Coefficient adapter rejects oversized input before JPEG parsing", "[j
     // Deliberately not JPEG: the size rejection must win over codec parsing.
     const std::array<std::byte, 5> source{};
     std::array<std::byte, 32> output{};
-    output.fill(std::byte{0x5a});
+    std::ranges::fill(output, std::byte{0x5a});
     const JpegResourceLimits limits{4, 268'435'456, 32 * 1024 * 1024, 100};
     const JpegTransformPlan plan{LosslessTransform::None,
                                  {{8}, {8}},
@@ -350,7 +352,7 @@ TEST_CASE("Cancelled coefficient work leaves the output sink unchanged", "[jpeg]
     REQUIRE(cancellation.request_stop());
     const std::array<std::byte, 2> source{};
     std::array<std::byte, 32> output{};
-    output.fill(std::byte{0x5a});
+    std::ranges::fill(output, std::byte{0x5a});
     const JpegTransformPlan plan{LosslessTransform::None,
                                  {{8}, {8}},
                                  {{8}, {8}},

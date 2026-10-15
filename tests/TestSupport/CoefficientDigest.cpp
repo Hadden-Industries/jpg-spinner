@@ -86,6 +86,12 @@ namespace jpg_spinner::test_support
             stream.bufferedByteCount = 0;
         }
 
+        // BCryptCreateHash establishes this handle only on success. Express
+        // that interprocedural contract in Microsoft's SAL rather than hiding
+        // a diagnostic at the later BCryptFinishHash consumer.
+        // https://learn.microsoft.com/cpp/code-quality/annotating-function-behavior
+        _Success_(return)
+        _At_(stream.hash, _Post_notnull_)
         bool initializeSha256Stream(
             Sha256Stream& stream,
             std::array<char, JMSG_LENGTH_MAX>& failureMessage) noexcept
@@ -146,6 +152,9 @@ namespace jpg_spinner::test_support
             return true;
         }
 
+        // Flushing changes only buffered bytes/count, never hash ownership.
+        // Preserve the live-handle contract across this mutable-reference seam.
+        _At_(stream.hash, _Pre_notnull_ _Post_notnull_)
         bool flushSha256Stream(
             Sha256Stream& stream,
             std::array<char, JMSG_LENGTH_MAX>& failureMessage) noexcept
@@ -167,6 +176,7 @@ namespace jpg_spinner::test_support
             return true;
         }
 
+        _At_(stream.hash, _Pre_notnull_ _Post_notnull_)
         bool appendHashBytes(
             Sha256Stream& stream,
             const unsigned char* bytes,

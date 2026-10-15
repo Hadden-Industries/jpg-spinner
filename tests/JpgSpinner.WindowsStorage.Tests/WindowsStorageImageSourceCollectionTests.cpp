@@ -392,9 +392,17 @@ TEST_CASE("Discovery reads no image bytes and stops at an observed cancellation 
     {
         nativeReadFailure = error.code();
     }
-    REQUIRE(nativeReadFailure.has_value());
-    REQUIRE(
-        (*nativeReadFailure == E_ACCESSDENIED || *nativeReadFailure == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)));
+    // The analyzer does not model the native exception/catch observation or
+    // Catch2's fatal assertion. An explicit failing branch both preserves the
+    // runtime oracle and makes the optional's control-flow precondition clear.
+    if (!nativeReadFailure.has_value())
+    {
+        FAIL_CHECK("Native Storage read unexpectedly succeeded under the conflicting writer lock.");
+        return;
+    }
+    const auto observedNativeReadFailure = nativeReadFailure.value();
+    REQUIRE((observedNativeReadFailure == E_ACCESSDENIED ||
+             observedNativeReadFailure == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)));
     const auto deniedRead = discovered.valueIfPresent()->candidates.front().source->capture(1024);
     REQUIRE(deniedRead.errorIfPresent() != nullptr);
     // Windows Storage may report E_ACCESSDENIED for a conflicting writer, as
@@ -402,9 +410,9 @@ TEST_CASE("Discovery reads no image bytes and stops at an observed cancellation 
     // Preserve its observation rather than inventing a more precise diagnosis.
     REQUIRE(
         std::get<jpg_spinner::domain::WindowsHResult>(deniedRead.errorIfPresent()->nativeErrorProjection).signedValue ==
-        nativeReadFailure->value);
+        observedNativeReadFailure.value);
     REQUIRE(deniedRead.errorIfPresent()->code ==
-            (*nativeReadFailure == E_ACCESSDENIED
+            (observedNativeReadFailure == E_ACCESSDENIED
                  ? jpg_spinner::domain::ImageProcessingErrorCode::SourceAccessDenied
                  : jpg_spinner::domain::ImageProcessingErrorCode::SourceSharingViolation));
     std::stop_source cancellation;

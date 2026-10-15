@@ -1690,6 +1690,48 @@ compiler is 19.51.36260.0 and linker 14.51.36260.0 under selected directory
 14.51.36231. Their hashes, not that directory name alone, identify this local
 observation; release qualification must bind its own exact tools and artifacts.
 
+**Incremental CI/analysis source checkpoint (2026-10-15):** The first three
+workflows now declare the exact five-configuration build matrix, headless-only
+x86/x64 execution, ARM64 compile-only status, clean-source provenance, x64 JPEG
+ASan, native MSVC analysis, manual-build CodeQL and bounded nightly fuzzing.
+Native YAML/action validation and the exact matrix/source-wiring contract pass;
+hosted execution is not claimed. Protected packaging/interactive workflows,
+nightly corpus minimization, the default five-workflow policy integration and
+full Task 17 assurance remain open. Dependency caches exclude packages/signing
+material and include architecture, configuration, toolset, baseline and locks.
+
+`Invoke-StaticAnalysis.ps1` uses public native `RunCodeAnalysis` and
+`CodeAnalysisTreatWarningsAsErrors`: compiler `/WX` alone did not fail the real
+C6011 result-ingestion control. Positive fresh-report and actual C6011 failure
+controls pass on the current driver. Dependency-header exclusions use the
+documented `CAExcludePath` environment input, scoped to the actual NuGet root
+and installed vcpkg tree; inherited exclusions are replaced and restored.
+No private MSBuild property or warning suppression is used.
+
+The first-party rebuild exposed a missing interprocedural BCrypt handle
+contract, oversized test-stack buffers and a Catch2 optional-flow diagnostic.
+SAL now documents the real handle lifetime; heap-backed buffers preserve the
+same capacities and expectations; an explicit failing branch preserves the
+native read-refusal oracle and establishes the optional precondition. Native
+incremental analysis now passes after those repairs, and the focused runtime
+digest regression passes 86 assertions. This is development feedback using
+native invalidation, not a fresh final whole-tree rebuild. Default/CI analysis
+still uses `Rebuild`; final candidate assurance retains that obligation. Existing
+dependency LNK4099 missing-PDB warnings remain visible and separately recorded.
+
+The affected x64 Release headless run completed every test report without
+assertion failures but exposed a Presentation process-exit hang. A fixed-seed,
+single recovery-observer case reproduced it twice within a 15-second owned-host
+budget. Targeted instrumentation localized the wait to native `ShutdownQueue`
+during static destruction, after the event loop and XAML close returned. The
+fixture now releases its lazily created dispatcher from Catch2's native
+`testRunEnded` callback, while the runtime is still operational. The same
+single-case regression and full headless Presentation suite then exited zero;
+all temporary instrumentation was removed. CI runs the bounded regression on
+its actual x64 Release host before the ordinary suites. This repairs test-host
+lifetime, not a desktop/application shutdown claim. Other unchanged headless
+project reports from the preceding run remain separate retained evidence.
+
 ### Step 17.1: RED on immutable CI policy
 
 - [ ] Extend repository policy to parse workflow YAML and reject mutable action tags, `windows-latest`, prerelease tools, unbounded permissions, missing timeouts, artifact retention over 30 days, and any secret passed to pull-request builds.

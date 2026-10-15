@@ -80,7 +80,8 @@ TEST_CASE("The isolated test-package manifest conforms to its native Windows con
           "[presentation][package-fixture]")
 {
     jpg_spinner::test_support::ensurePresentationTestApartment();
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -95,7 +96,8 @@ TEST_CASE("The isolated test-package manifest conforms to its native Windows con
 TEST_CASE("A native packaged worker qualifies source-token lifetime and ungranted path denial",
           "[presentation][packaged-runtime][source-access-controller]")
 {
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -107,7 +109,8 @@ TEST_CASE("A native packaged worker qualifies source-token lifetime and ungrante
 TEST_CASE("A native packaged worker qualifies real picked-folder discovery",
           "[presentation][packaged-runtime][source-access-picker-controller][operator-assisted][ui-automation]")
 {
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());

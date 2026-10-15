@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <vector>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -15,7 +16,8 @@ namespace jpg_spinner::test_support
 inline winrt::Windows::Data::Xml::Dom::XmlDocument loadPresentationSourceContract(
     const std::filesystem::path &relativePath)
 {
-    std::array<wchar_t, 32768> executable{};
+    // Keep the full Windows path capacity off the test thread's stack.
+    std::vector<wchar_t> executable(32768);
     const auto length = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
     if (length == 0 || length >= executable.size())
         throw std::runtime_error("Cannot locate the declared source-contract fixture.");

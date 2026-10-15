@@ -11,7 +11,7 @@ owns full acceptance; nothing here replaces its thresholds.
 | Gate | Current evidence boundary / remaining proof | Accountable role |
 | --- | --- | --- |
 | Locked builds | Local native x86/x64/ARM64 package checkpoints exist; final exact clean-source and hosted matrix remain | Build maintainer |
-| Tests and static analysis | Focused TDD evidence retained; current native analysis C6387 qualification pending; final suites/CodeQL/ASan remain | Engineering owner |
+| Tests and static analysis | Native incremental analysis and retained x64 headless suites pass; a reproduced exit-time dispatcher hang is repaired with a bounded regression; final clean-candidate analysis/CodeQL/ASan remain | Engineering owner |
 | Parser fuzzing | Bounded development runs do not establish required final aggregate duration or corpus minimization | Engineering owner |
 | Metadata/preservation | Retained synthetic cases do not replace final dependency revision qualification | Image-processing owner |
 | Storage/recovery | Retained identity/backup/journal/refusal cases; final supported-provider and interruption matrix remain | Storage owner |

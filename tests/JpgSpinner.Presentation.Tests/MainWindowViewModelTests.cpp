@@ -10,8 +10,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/catch_translate_exception.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
 #include <chrono>
 #include <future>
+#include <memory>
 #include <initializer_list>
 #include <stop_token>
 #include <string_view>
@@ -266,14 +269,39 @@ class PresentationDispatcher final
     std::jthread thread_;
 };
 
-PresentationDispatcher &presentationDispatcher()
+std::unique_ptr<PresentationDispatcher> &presentationDispatcherInstance()
 {
-    // Like the app's UI thread, one XAML/dispatcher lifetime spans the host.
-    // Individual tests create fresh models and capabilities, not another XAML
-    // framework after shutting down the process's previous main STA.
-    static PresentationDispatcher dispatcher;
+    static std::unique_ptr<PresentationDispatcher> dispatcher;
     return dispatcher;
 }
+
+PresentationDispatcher &presentationDispatcher()
+{
+    // Like the app's UI thread, one XAML/dispatcher lifetime spans the run.
+    // Individual tests create fresh models, not a second XAML framework after
+    // the process's previous main STA has shut down.
+    auto &dispatcher = presentationDispatcherInstance();
+    if (!dispatcher)
+        dispatcher = std::make_unique<PresentationDispatcher>();
+    return *dispatcher;
+}
+
+class PresentationDispatcherRunLifetime final : public Catch::EventListenerBase
+{
+  public:
+    using Catch::EventListenerBase::EventListenerBase;
+
+    void testRunEnded(const Catch::TestRunStats &) override
+    {
+        // Native queue shutdown drains framework work and waits for deferrals.
+        // Finish it while the runtime is operational, not under CRT static
+        // destruction: that exit-time wait deadlocks the real headless host.
+        // A run without view-model tests must not activate XAML just to stop it.
+        // https://learn.microsoft.com/windows/apps/develop/dispatcherqueue#run-down
+        presentationDispatcherInstance().reset();
+    }
+};
+CATCH_REGISTER_LISTENER(PresentationDispatcherRunLifetime)
 
 /// Writes independently specified encoded input to an exclusively owned fixture.
 /// The returned bytes support an exact no-write assertion after native analysis.

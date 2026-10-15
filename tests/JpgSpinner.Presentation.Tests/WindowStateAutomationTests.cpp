@@ -248,7 +248,8 @@ TEST_CASE("The minimum viewport keeps source and policy controls reachable throu
           "[presentation][automation][reachability][ui-automation]")
 {
     REQUIRE(AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2));
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -338,7 +339,8 @@ TEST_CASE("The real source picker exposes an owned native automation provider",
 {
     // Characterize the actual OS provider before relying on a dialog locator.
     // Log only control types/automation IDs, never directory items or values.
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -382,7 +384,8 @@ TEST_CASE("The isolated shell starts with only source selection available",
     // executes only after a declared lane passes actual desktop qualification.
     // Headless runs exclude this tag; direct native calls still fail the lane
     // guard before copying files, registration or desktop activation.
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -432,7 +435,8 @@ TEST_CASE("The isolated shell starts with only source selection available",
 TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local log byte unchanged",
           "[presentation][automation][diagnostic-export][native-picker][ui-automation]")
 {
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -505,7 +509,8 @@ TEST_CASE("A real save-picker grant exports exact sanitized diagnostics and comp
                                                                   L"jpg-spinner-diagnostic-save-tests"};
     const auto destination = directory.directoryPath() / L"diagnostics.jsonl";
     REQUIRE_FALSE(std::filesystem::exists(destination));
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -613,7 +618,8 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
         file.close();
         REQUIRE(file.good());
     }
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -737,7 +743,8 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
         file.close();
         REQUIRE(file.good());
     }
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
@@ -902,7 +909,8 @@ TEST_CASE("The shell preserves a usable minimum size and adaptive policy layout"
     // This contract mixes HWND and UIA measurements. Require physical-pixel
     // semantics before resizing, even when only this test tag is selected.
     REQUIRE(AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2));
-    std::array<wchar_t, 32768> executablePath{};
+    // Preserve long-path coverage without a 64 KiB stack allocation.
+    std::vector<wchar_t> executablePath(32768);
     const auto length = GetModuleFileNameW(nullptr, executablePath.data(), static_cast<DWORD>(executablePath.size()));
     REQUIRE(length != 0);
     REQUIRE(length < executablePath.size());
