@@ -113,6 +113,9 @@ manual-only, and this guidance does not dispatch a workflow.
 
 ## Prebuilt interactive inputs
 
+For the Store-only distribution distinction and independent native builds, see
+[the approved Store route below](#approved-store-only-distinction).
+
 The x64 Release CI producer stages only its existing application and presentation
 test-host directories with [`New-InteractiveTestDrop.ps1`](../scripts/New-InteractiveTestDrop.ps1).
 It copies every ordinary native output file, preserves assets/dependencies and
@@ -170,3 +173,28 @@ execution claim; a cryptographic attestation alone cannot prove an honest runner
 Actual dispatch/deployment, Narrator/high-contrast/scaling/keyboard and
 operator-assisted picker acceptance remain independent pending gates. The
 workflow's local contract tests neither run UI actions nor satisfy those gates.
+
+## Approved Store-only distinction
+
+The 2026-10-15 approval separates the unsigned Store-submission artifact from
+signed sideload distribution. [Microsoft supplies the Store signature](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-package-requirements#code-signing-for-microsoft-store-submissions)
+after certification. The protected Store route must authenticate its exact
+reproducible submission bundle and separately labelled SBOM/provenance; it must
+not claim a trusted installed or Store-delivered package. That maintained route
+is still being implemented. `Invoke-Sbom.ps1` remains the signed-distribution
+entry point described above, not an unsigned Store switch. Neither route waives
+WACK, upgrade/device/accessibility, legal, deliberate submission or rollout gates.
+
+[`Invoke-PackageReproducibility.ps1`](../scripts/Invoke-PackageReproducibility.ps1)
+owns two independent native Git clones of one exact signature-verified clean
+commit. It sequentially builds Release x86/x64/ARM64 with two MSBuild workers,
+retains each actual architecture/toolchain provenance record, bundles/unpacks
+with the owning SDK and compares canonical full payload manifests. It records
+container hashes separately; different container hashes cannot become a
+byte-identical-container claim. Working/output directories must be fresh,
+disjoint and outside the source checkout. Failed native logs and partial work
+remain diagnostic, not published qualification. The first real independent-build
+run remains pending at this source checkpoint; no result is inferred from the
+cheap refusal controls. Use an explicitly allocated workspace with adequate
+disk headroom, and recycle released clones only after retaining their required
+results and provenance.
