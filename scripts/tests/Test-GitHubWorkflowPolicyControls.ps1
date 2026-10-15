@@ -21,11 +21,11 @@ finally { Pop-Location }
 $cases = @(
     @{Name='mutable-action';Before='3d3c42e5aac5ba805825da76410c181273ba90b1';After='v7';Diagnostic='approved immutable action'},
     @{Name='moving-runner';Before='windows-2025-vs2026';After='windows-latest';Diagnostic='approved runner'},
-    @{Name='privileged-pr';Before='on: pull_request';After='on: pull_request_target';Diagnostic='pull_request_target'},
+    @{Name='privileged-pr';Before='on: workflow_dispatch';After='on: pull_request_target';Diagnostic='pull_request_target'},
     @{Name='workflow-write';Before='contents: read';After='contents: write';Diagnostic='workflow permissions'},
     @{Name='unbounded-job';Before='    timeout-minutes: 15';After='';Diagnostic='job timeout'},
     @{Name='uncancelled';Before='cancel-in-progress: true';After='cancel-in-progress: false';Diagnostic='concurrency cancellation'},
-    @{Name='pr-secret';Before="Write-Output 'Static fixture only; never executed by its validator.'";After='Write-Output ''${{ secrets.TOKEN }}''';Diagnostic='pull-request secret'},
+    @{Name='pr-secret';Before='on: workflow_dispatch';After="on: [workflow_dispatch, pull_request]`nenv:`n  NEVER_EXECUTED: " + '''${{ secrets.TOKEN }}''';Diagnostic='manual workflow_dispatch'},
     @{Name='retention';Before="      - run: Write-Output 'Static fixture only; never executed by its validator.'";After="      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2`n        with:`n          path: report.txt`n          retention-days: 31";Diagnostic='artifact retention'},
     @{Name='missing-version-comment';Before='# v7.0.1';After='# selected action';Diagnostic='action version comment'}
 )

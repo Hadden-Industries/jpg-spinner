@@ -85,6 +85,19 @@ and a bounded dedicated session; do not run them as headless service tests.
 Two MSBuild workers is a conservative default, not a measured performance optimum.
 Build concurrency can be chosen explicitly for available memory.
 
+Remote workflows are **manual-only**: pushes, pull requests and schedules do not
+start CI. Once these workflows are present on the default branch, use GitHub
+Actions **Run workflow** (select the candidate ref), or an explicit CLI call:
+
+```powershell
+gh workflow run continuous-integration.yml --ref main
+gh workflow run codeql.yml --ref main
+gh workflow run scanner-fuzz.yml --ref main
+```
+
+These are operator commands, not automatic release authorization. See GitHub's
+[manual workflow guidance](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+
 See [architecture](docs/architecture.md), [privacy](docs/privacy.md),
 [security reporting](SECURITY.md) and [third-party qualification](THIRD_PARTY_NOTICES.md).
 

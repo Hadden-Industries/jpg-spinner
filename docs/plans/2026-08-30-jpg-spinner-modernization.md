@@ -1421,7 +1421,7 @@ continue subsequent safe source work while retaining final release obligations.
 
 ### Step 15.3: RED on programmatic accessibility
 
-- [ ] Run headless accessibility-contract tests for resource coverage, WinMD metadata, automation IDs, names/help-text declarations, and view-model state before launching a window. These tests belong on every pull request.
+- [ ] Run headless accessibility-contract tests for resource coverage, WinMD metadata, automation IDs, names/help-text declarations, and view-model state before launching a window. Run locally during development and through explicit manual qualification; pull requests must not automatically start remote CI.
 - [ ] Use black-box UI Automation to require name, control type, enabled state, focusability, value/range semantics, and help text for every interactive control.
 - [ ] Require focus order to follow the visual workflow and focus restoration after picker/dialog dismissal.
 - [ ] Require analysis/progress/result changes to announce through a restrained live region without repeating the full table.
@@ -1658,7 +1658,7 @@ MIT, and their selected entry points use the hosted runner's Node 24 runtime.
 - Create: `tests/TestData/SbomContractFixture/expected-contract.json`
 - Create: `.github/workflows/continuous-integration.yml`
 - Create: `.github/workflows/codeql.yml`
-- Create: `.github/workflows/nightly-fuzz.yml`
+- Create: `.github/workflows/scanner-fuzz.yml`
 - Create: `.github/workflows/store-package.yml`
 - Create: `.github/dependabot.yml`
 - Modify: `scripts/Test-RepositoryPolicy.ps1`
@@ -1693,12 +1693,22 @@ observation; release qualification must bind its own exact tools and artifacts.
 **Incremental CI/analysis source checkpoint (2026-10-15):** The first three
 workflows now declare the exact five-configuration build matrix, headless-only
 x86/x64 execution, ARM64 compile-only status, clean-source provenance, x64 JPEG
-ASan, native MSVC analysis, manual-build CodeQL and bounded nightly fuzzing.
+ASan, native MSVC analysis, manual-build CodeQL and bounded scanner fuzzing.
 Native YAML/action validation and the exact matrix/source-wiring contract pass;
 hosted execution is not claimed. Protected packaging/interactive workflows,
-nightly corpus minimization, the default five-workflow policy integration and
+scanner corpus minimization, the default five-workflow policy integration and
 full Task 17 assurance remain open. Dependency caches exclude packages/signing
 material and include architecture, configuration, toolset, baseline and locks.
+
+**Remote execution policy amendment (user decision, 2026-10-15):** Every remote
+workflow is manual-only through `workflow_dispatch`, including build/test,
+CodeQL, scanner fuzzing and future protected package/interactive qualification.
+No push, pull-request, schedule, release event, reusable-workflow call or chained
+workflow event may start a remote run. A deliberate operator may select a ref
+and dispatch qualification before release; no automatic run is a release gate.
+The native YAML-based repository policy enforces this for every workflow. This
+decision supersedes earlier automatic-trigger instructions and does not waive
+any test, analysis, preservation, accessibility or package acceptance criteria.
 
 `Invoke-StaticAnalysis.ps1` uses public native `RunCodeAnalysis` and
 `CodeAnalysisTreatWarningsAsErrors`: compiler `/WX` alone did not fail the real
@@ -1741,14 +1751,14 @@ project reports from the preceding run remain separate retained evidence.
   - `actions/cache` v6.1.0 at `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`;
   - `actions/upload-artifact` v7.0.2 at `cf430e030ddbb5b0abf93d22962f4752f3646cd9`;
   - `github/codeql-action` v4.38.3 at `24c54180a607b1449ed407dd24f251e4e9147c8d`.
-- [ ] Require `windows-2025-vs2026`, least-privilege workflow permissions, job timeouts, and concurrency cancellation for superseded pull requests.
+- [ ] Require `windows-2025-vs2026`, least-privilege workflow permissions, job timeouts, and concurrency cancellation for superseded manually dispatched runs.
 - [ ] Require every build/package job to capture runner `ImageVersion`, OS build, exact `VCToolsVersion`, full `cl.exe`/`link.exe` versions and paths, Windows SDK/MakeAppx versions, NuGet lock hashes, vcpkg baseline, action commits, and source commit. The runner label is selection policy, not immutable provenance.
 - [ ] Implement `Test-BuildProvenance.ps1` before workflow provenance emission. Give it an empty or deliberately incomplete JSON record and observe RED diagnostics for every missing field; then make the workflow emit one versioned, schema-checked record whose executable/file paths are normalized without leaking the developer profile path.
 - [ ] Run policy; expected RED names the absent workflows and the absent SBOM script/tool pin.
 
 ### Step 17.2: GREEN continuous integration matrix
 
-- [ ] On every pull request, restore qualified locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all headless Domain/JPEG/Storage/Batch/Presentation-contract tests on x86/x64, compile Release ARM64, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure. Do not schedule black-box UI Automation, Narrator, or Accessibility Insights on a GitHub-hosted service session.
+- [ ] On explicit manual qualification, restore qualified locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all headless Domain/JPEG/Storage/Batch/Presentation-contract tests on x86/x64, compile Release ARM64, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure. Do not run black-box UI Automation, Narrator, or Accessibility Insights on a GitHub-hosted service session. Do not register push, pull-request or scheduled triggers.
 - [ ] Define a required separate interactive Windows VM/self-hosted workflow or protected qualification job for black-box UI Automation and assistive-technology checks. It begins with `Test-InteractiveUiEnvironment.ps1`, never has pull-request secrets, and publishes signed test evidence; a hosted headless pass cannot substitute for this gate.
 - [ ] Use a separate package job for the unsigned x86/x64/ARM64 bundle. Package creation must not require Store credentials.
 - [ ] Cache only content-addressed dependency/build inputs whose key includes vcpkg baseline, manifest hash, architecture, toolset, and configuration. Never cache signing material or staged packages.
@@ -1757,7 +1767,7 @@ project reports from the preceding run remain separate retained evidence.
 ### Step 17.3: GREEN CodeQL and fuzz workflows
 
 - [ ] CodeQL runs C++ analysis on a clean x64 build with `security-extended`; no high-severity result may remain open at release.
-- [ ] Nightly fuzz runs the scanner target under AddressSanitizer for a bounded duration, minimizes new corpus inputs, uploads only non-user corpus/reproducers, and fails on crash, timeout, leak, or memory-limit violation.
+- [ ] Manually dispatched fuzz qualification runs the scanner target under AddressSanitizer for a bounded duration, minimizes new corpus inputs, uploads only non-user corpus/reproducers, and fails on crash, timeout, leak, or memory-limit violation. It has no scheduled trigger.
 - [ ] A pull request adding a fuzzer reproducer first adds a named deterministic regression test that fails without the fix.
 
 ### Step 17.4: Pin SBOM generation and dependency updates
@@ -1781,7 +1791,7 @@ project reports from the preceding run remain separate retained evidence.
 
 ### Step 17.6: Verify and commit
 
-- [ ] Validate every workflow locally with a YAML parser and repository policy; open a test pull request and require every hosted headless job green. Separately exercise the interactive workflow in its qualified environment and require its environment check plus UI suite green.
+- [ ] Validate every workflow locally with a YAML parser and repository policy, including rejection of automatic/mixed triggers; explicitly dispatch qualification for the selected candidate and require every hosted headless job green. Opening a pull request or pushing must not start a run. Separately dispatch the interactive workflow in its qualified environment and require its environment check plus UI suite green.
 - [ ] Run `Test-BuildProvenance.ps1` against every job's record, `Test-SbomToolContract.ps1` against the pinned executable, and the two-clean-build payload-manifest comparison before accepting the workflow commit.
 - [ ] Commit:
 

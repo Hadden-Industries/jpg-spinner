@@ -32,7 +32,7 @@ function Get-WorkflowScalar {
 }
 if ($WorkflowPaths.Count -eq 0) {
     $workflowDirectory = Join-Path $repositoryRoot '.github/workflows'
-    foreach ($required in @('continuous-integration.yml','codeql.yml','nightly-fuzz.yml','store-package.yml','interactive-qualification.yml')) {
+    foreach ($required in @('continuous-integration.yml','codeql.yml','scanner-fuzz.yml','store-package.yml','interactive-qualification.yml')) {
         if (-not (Test-Path -LiteralPath (Join-Path $workflowDirectory $required) -PathType Leaf)) { throw "Required workflow is absent: $required" }
     }
     $WorkflowPaths = @(Get-ChildItem -LiteralPath $workflowDirectory -File | Where-Object Extension -In @('.yml','.yaml') | Select-Object -ExpandProperty FullName)
@@ -64,18 +64,12 @@ foreach ($path in $WorkflowPaths) {
         default { throw 'Unsupported workflow trigger representation.' }
     }
     if ('pull_request_target' -cin $events) { throw 'Privileged pull_request_target execution is forbidden.' }
-    $hasPullRequest = 'pull_request' -cin $events
-    if ($hasPullRequest) {
-        $nodeCount = 0
-        foreach ($node in $yaml.Documents[0].AllNodes) {
-            if (++$nodeCount -gt 10000) { throw 'Workflow exceeds the native-node policy limit.' }
-            # Conservative project rule: no secrets token inside an expression,
-            # including bare/dynamic access. actionlint owns expression syntax;
-            # this token restriction is not another expression parser.
-            if ($node -is [YamlDotNet.RepresentationModel.YamlScalarNode] -and $node.Value -match '(?is)\$\{\{[^}]*\bsecrets\b') {
-                throw 'Workflow policy forbids a pull-request secret expression.'
-            }
-        }
+    # Explicit user policy: only a deliberate UI/CLI/API workflow_dispatch may
+    # consume remote runners. Reject mixed triggers and reusable workflow_call
+    # entry points too; neither a push nor another workflow may start these jobs.
+    # Native YAML nodes above preserve all GitHub-supported trigger forms.
+    if (@($events).Count -ne 1 -or @($events)[0] -cne 'workflow_dispatch') {
+        throw 'Remote execution requires only manual workflow_dispatch; automatic or mixed workflow triggers are forbidden.'
     }
     # The native parser exposes comments as events. Use those events to check
     # version annotations, rather than interpreting YAML comments ourselves.
@@ -99,7 +93,7 @@ foreach ($path in $WorkflowPaths) {
         $isInteractive = $runner -is [YamlDotNet.RepresentationModel.YamlSequenceNode] -and
             ((@($runner.Children | ForEach-Object Value) -join ',') -ceq 'self-hosted,Windows,X64,jpg-spinner-interactive')
         if ((Get-WorkflowScalar $runner) -cne 'windows-2025-vs2026' -and -not $isInteractive) { throw 'Job must select an approved runner.' }
-        if ($isInteractive -and ($hasPullRequest -or $null -eq (Get-WorkflowProperty $job 'environment'))) { throw 'Interactive runner requires a protected non-PR qualification job.' }
+        if ($isInteractive -and $null -eq (Get-WorkflowProperty $job 'environment')) { throw 'Interactive runner requires a protected manual qualification job.' }
         $timeoutText = Get-WorkflowScalar (Get-WorkflowProperty $job 'timeout-minutes')
         $timeout = 0
         if (-not [int]::TryParse($timeoutText,[ref]$timeout) -or $timeout -lt 1 -or $timeout -gt 180) { throw 'Require a bounded literal job timeout between 1 and 180 minutes.' }

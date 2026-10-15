@@ -1,8 +1,6 @@
 name: Continuous integration
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -23,7 +21,8 @@ jobs:
         run: |
           $tools = Join-Path $env:RUNNER_TEMP 'jpg-spinner-workflow-tools'
           ./scripts/tests/Test-WorkflowVerificationToolContract.ps1 -ToolsDirectory $tools
-          ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools -WorkflowPaths @('.github/workflows/continuous-integration.yml', '.github/workflows/codeql.yml', '.github/workflows/nightly-fuzz.yml')
+          ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools -WorkflowPaths @('.github/workflows/continuous-integration.yml', '.github/workflows/codeql.yml', '.github/workflows/scanner-fuzz.yml')
+          ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
           ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
           ./scripts/tests/Test-BuildProvenanceControls.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
           # Isolate intentional negative-control native exit codes from the
