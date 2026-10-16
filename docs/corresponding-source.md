@@ -84,6 +84,78 @@ that every port asset was acquired. Binary-cache restoration likewise does not
 establish source acquisition. Final reconstruction must expose missing sources,
 not silently rely on the engineer's existing installed tree or cache.
 
+### Selected native-input preservation checkpoint (2026-10-17)
+
+Bounded offline preservation at signed application commit
+`5998e30173be0e4f8a42e39c42be83abc0a94c05` retains eight original upstream
+archives (84,338,600 bytes), 12 complete selected port trees (66 ordinary files),
+28 original installed SPDX documents and 11 baseline/version metadata files.
+The observed target installations are x86, x64 and ARM64 static-md; the four
+host-helper ports were inspected in the x64 installation. Historical sanitizer
+results are not a freshly observed fourth installation.
+
+| Upstream input | Original archive bytes | Retained SHA-256 |
+| --- | ---: | --- |
+| Adobe XMP Toolkit SDK 2025.03 | 23,171,605 | `7e9f4b0d62979e1a7d44e16febfe2c6ab337ceccdaf1dad092666ac14b2fdcd5` |
+| Exiv2 0.28.9 | 47,189,810 | `700b76b97695b2fab4ef8c79619c68ae57d09e0c130724791cafbd39e0eb4aef` |
+| Expat 2.8.5 | 8,474,242 | `fd022c541a189bd5bee042a22188351b31e39b9389c2525fa98c28bd05c9ef21` |
+| inih r62 | 22,145 | `9c15fa751bb8093d042dae1b9f125eb45198c32c6704cd5481ccde460d4f8151` |
+| libjpeg-turbo 3.2.0 | 2,537,858 | `980dd81f425082aa6d7c9e47fef27554ce7a9ffc8e2f6e863b97d263c5c50858` |
+| libspng 0.7.4 | 159,230 | `47ec02be6c0a6323044600a9221b049f63e1953faf816903e7383d4dc4234487` |
+| zlib 1.3.2 | 1,566,911 | `b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1` |
+| Catch2 3.16.0, test input only | 1,216,799 | `0957cae5821b17ce07f0833aaa52b5137643a8382203221f363a8303c109af34` |
+
+These are frozen-input identities, not a new latest-version assessment. Native
+Git 2.56.0.windows.2 and PowerShell 7.6.7 performed the qualification without a
+build, download, installation, network-dependent restore or application change.
+Each upstream archive matches the selected port's native SHA-512; independent
+readback also checks its retained length and SHA-256. All three installed target
+metadata sets agree on the observed source and complete port-file bytes. Adobe
+and Exiv2 retain both overlay patches apiece, not manually patched build trees.
+The additional host-port trees are `vcpkg-cmake` 2025-08-07,
+`vcpkg-cmake-config` 2026-07-21, `vcpkg-cmake-get-vars` 2025-05-29 and
+`vcpkg-tool-meson` 1.9.0#10. The Meson helper port is not the separately acquired
+Meson/Python tool distribution; that acquisition closure remains separate.
+
+The registry baseline is commit
+`c748cb44f2a435fcf015c35225c9d5545fe0021c`. Version-selected port identities
+are **Git trees**, not registry commits. Native `git archive` and the platform
+ZIP reader preserve each selected tree; native membership, mode and Git-blob
+checks reject missing/export-transformed bytes, and original SPDX port-file
+SHA-256 checks agree. The retained baseline/version archive has exact native
+blob readback and uniquely records each selected registry tree. No custom
+archive parser, JSON grammar, dependency resolver or source-rewriting shim was
+added. Microsoft's [vcpkg SPDX documentation](https://learn.microsoft.com/en-us/vcpkg/reference/software-bill-of-materials)
+explicitly describes source-resource inference as heuristic: this observation
+does not prove complete source/build-tool closure or binary contribution.
+
+The actual preservation predicates refuse a missing upstream archive, changed
+archive digest, omitted overlay patch and changed overlay patch. These are
+bounded preservation controls, not product-code TDD or the full delivery-refusal
+matrix below. Two earlier setup failures remain recorded: an absent sanitizer
+installation and PowerShell single-item array unrolling. Their corrections
+narrow the observed installation scope and fix orchestration, respectively;
+neither suppresses an upstream integrity failure.
+
+External evidence belongs to active modernization execution
+`352c2077-8e60-441f-ac25-4b13a115a082`, resource inventory
+`16a41a2cfe2f4aaf80ebe1ed0d80a46f`. Its raw
+`native-source-preservation.json`, native transcripts and
+`native-source-readback.json` preserve commands, per-port/tree identities,
+original digests, outcomes and limitations. The readback report SHA-256 is
+`5a4b493da32f9912f19f6d30b813e920a482c6b66b151c19aad77b8e6e0328e4`.
+Adobe and Exiv2 source archives exceed the native evidence store's 16 MiB
+per-payload promotion bound: retain their original operator-evidence copies for
+the source-assembly/reconstruction consumer, with ownership and reassessment in
+that inventory. A report or digest is not a replacement for those required
+bytes. Do not split, recompress or delete them merely to fit transport limits.
+
+This checkpoint does **not** qualify complete Corresponding Source, archive
+extraction/buildability of all upstream sources, independent reconstruction,
+NuGet/tool acquisition closure, final binary binding, recipient availability,
+rights clearance or release. Application-source freeze still follows accepted
+Task 19 cutover; all reconstruction and delivery steps below remain required.
+
 ## Reconstruction and delivery
 
 1. Finish accepted cutover and freeze the release candidate. The legacy tree is
