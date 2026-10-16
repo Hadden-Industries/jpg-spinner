@@ -1,0 +1,46 @@
+JPG Spinner - retained licence and notice inputs
+
+This development candidate is not cleared for public distribution. These files
+preserve selected licence and notice inputs; they do not replace the exact
+corresponding source, dependency terms review or release approval.
+
+The application's GNU General Public License version 3 is in LICENSE.txt.
+Third-party terms remain in the original files under Licenses. They are not
+relicensed by the application licence. Original vendor text, byte order marks
+and line endings are preserved rather than replaced by short licence labels.
+
+This software is based in part on the work of the Independent JPEG Group.
+
+Licenses/native contains the retained copyright assets for the resolved
+adobe-xmp-core, exiv2, expat, inih, libjpeg-turbo, libspng and zlib build inputs,
+plus libjpeg-turbo's complete upstream README.ijg. These are conservative
+build-context notices, not proof that every installed library contributes code
+to the executable. Catch2 is test-only and is not included in this application
+notice set.
+
+Licenses/Microsoft.Windows.ImplementationLibrary.LICENSE.txt and Licenses/nuget
+contain the exact retained notice inputs from the resolved Microsoft package
+graph. C++/WinRT and WIL supply generated/header inputs; the Windows App Runtime
+is a separate framework dependency. Resolved WebView2, AI/ML and SDK/build-tool
+notices are retained conservatively, not as a claim that their entire packages
+are redistributed here or that the app implements those features. Identical
+notice payloads shared by multiple Windows App SDK packages are stored once.
+
+Microsoft.Windows.SDK.BuildTools 10.0.28000.2705 supplies an external terms URL,
+https://aka.ms/WinSDKLicenseURL, rather than an embedded licence file. Its exact
+applicable terms remain unresolved; another Microsoft package's licence does
+not resolve them. Final binary contribution, complete notice sufficiency,
+GPL/Exiv2 compatibility, corresponding-source delivery and current Store terms
+still require qualification before any release. No source offer is made by
+this development index, and no process/linkage boundary is treated as an
+exemption from licence obligations.
+
+Resolved versions, immutable locks, native notice provenance and release gates:
+https://github.com/Hadden-Industries/jpg-spinner
+https://github.com/Hadden-Industries/jpg-spinner/blob/main/THIRD_PARTY_NOTICES.md
+https://github.com/Hadden-Industries/jpg-spinner/blob/main/docs/licenses/native/README.md
+https://github.com/Hadden-Industries/jpg-spinner/blob/main/docs/licenses/nuget/README.md
+https://github.com/Hadden-Industries/jpg-spinner/blob/main/docs/release-qualification.md
+
+Those moving source links provide project context, not an immutable release
+source archive or evidence that a local development candidate was published.

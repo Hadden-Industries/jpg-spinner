@@ -29,8 +29,11 @@ The [retained native notice inventory](docs/licenses/native/README.md) now
 includes the exact installed copyright files for seven native build-context
 ports, plus the test-only Catch2 notice and libjpeg-turbo's upstream IJG README.
 This preserves notice text; it does not prove every installed library contributes
-to the application, package those notices into an MSIX, deliver corresponding
-source, or complete final binary/terms comparison. Transitive libspng and zlib
+to the application, deliver corresponding source, or complete final binary/terms
+comparison. The application now includes the eight non-test native notice assets
+through native C++ deployment-content items; an actual unsigned Debug x64 MSIX
+passes SDK unpacking and exact-byte checks. Other final architecture/release
+candidates still need that qualification. Transitive libspng and zlib
 are retained conservatively as resolved inputs, not asserted runtime features.
 Adobe's combined notice includes the RSA Data Security, Inc. MD5 Message-Digest
 Algorithm notice; the committed overlay patches remain separately inspectable.
@@ -51,8 +54,12 @@ current lock identities using native NuGet metadata and signature checks, with
 14 distinct packaged notice files retained once per exact content (including
 the existing WIL license). SDK BuildTools supplies only an external terms URL;
 its exact applicable terms remain unresolved. These preserved inputs are not a
-complete exact-payload notice inventory, legal clearance, MSIX inclusion proof
-or an assertion that every resolved package is an application runtime feature.
+complete exact-payload notice inventory, legal clearance or an assertion that
+every resolved package is an application runtime feature. The application also
+includes the 14 distinct retained Microsoft notice assets conservatively, with
+a [packaged index](src/JpgSpinner.App/LicenseNotices.txt) explaining their roles
+and outstanding obligations. Native Debug x64 unpacking preserves their bytes;
+this is not final release or all-architecture inclusion proof.
 
 ## Engineering tools
 

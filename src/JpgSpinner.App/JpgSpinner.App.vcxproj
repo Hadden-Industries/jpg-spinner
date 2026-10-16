@@ -143,6 +143,38 @@
     <None Include="Assets\README.md" />
   </ItemGroup>
   <ItemGroup>
+    <!-- C++'s owning ContentFilesProjectOutputGroup selects DeploymentContent
+         and AssignTargetPath consumes Link. Keep original vendor files as the
+         sole byte source; no post-build concatenation or package rewriting.
+         https://learn.microsoft.com/visualstudio/msbuild/common-msbuild-item-metadata
+         This conservative build-input set is not a runtime contribution or
+         legal-clearance claim; LicenseNotices.txt states the remaining gates. -->
+    <None Include="..\..\LICENSE"><DeploymentContent>true</DeploymentContent><Link>LICENSE.txt</Link></None>
+    <None Include="LicenseNotices.txt"><DeploymentContent>true</DeploymentContent></None>
+    <None Include="..\..\docs\licenses\native\adobe-xmp-core.copyright.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\adobe-xmp-core.copyright.txt</Link></None>
+    <None Include="..\..\docs\licenses\native\exiv2.copyright.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\exiv2.copyright.txt</Link></None>
+    <None Include="..\..\docs\licenses\native\expat.copyright.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\expat.copyright.txt</Link></None>
+    <None Include="..\..\docs\licenses\native\inih.copyright.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\inih.copyright.txt</Link></None>
+    <None Include="..\..\docs\licenses\native\libjpeg-turbo.copyright.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\libjpeg-turbo.copyright.txt</Link></None>
+    <None Include="..\..\docs\licenses\native\libjpeg-turbo.README.ijg.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\libjpeg-turbo.README.ijg.txt</Link></None>
+    <None Include="..\..\docs\licenses\native\libspng.copyright.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\libspng.copyright.txt</Link></None>
+    <None Include="..\..\docs\licenses\native\zlib.copyright.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\native\zlib.copyright.txt</Link></None>
+    <None Include="..\..\docs\licenses\Microsoft.Windows.ImplementationLibrary.LICENSE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\Microsoft.Windows.ImplementationLibrary.LICENSE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Web.WebView2.LICENSE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Web.WebView2.LICENSE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Web.WebView2.NOTICE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Web.WebView2.NOTICE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Windows.AI.MachineLearning.LICENSE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Windows.AI.MachineLearning.LICENSE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Windows.AI.MachineLearning.ThirdPartyNotices.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Windows.AI.MachineLearning.ThirdPartyNotices.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Windows.CppWinRT.LICENSE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Windows.CppWinRT.LICENSE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Windows.ImplementationLibrary.ThirdPartyNotices.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Windows.ImplementationLibrary.ThirdPartyNotices.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Windows.SDK.BuildTools.MSIX.LICENSE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Windows.SDK.BuildTools.MSIX.LICENSE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.Windows.SDK.BuildTools.MSIX.NOTICE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.Windows.SDK.BuildTools.MSIX.NOTICE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.WindowsAppSDK.LICENSE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.WindowsAppSDK.LICENSE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.WindowsAppSDK.NOTICE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.WindowsAppSDK.NOTICE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.WindowsAppSDK.ML.LICENSE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.WindowsAppSDK.ML.LICENSE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.WindowsAppSDK.WinUI.NOTICE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.WindowsAppSDK.WinUI.NOTICE.txt</Link></None>
+    <None Include="..\..\docs\licenses\nuget\Microsoft.WindowsAppSDK.WinUI.Tools.NOTICE.txt"><DeploymentContent>true</DeploymentContent><Link>Licenses\nuget\Microsoft.WindowsAppSDK.WinUI.Tools.NOTICE.txt</Link></None>
+  </ItemGroup>
+  <ItemGroup>
     <!-- Versions are centrally owned and locked; these items mirror Microsoft's packaged C++/WinRT template graph. -->
     <PackageReference Include="Microsoft.WindowsAppSDK" />
     <PackageReference Include="Microsoft.Windows.CppWinRT" />

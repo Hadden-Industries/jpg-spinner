@@ -2345,6 +2345,37 @@ remains intact; no locked dependency, archive or trust configuration changed.
 Exact final-payload contribution, source delivery, external SDK terms, qualified
 legal review and complete Task 18 acceptance remain open.
 
+**Native package-notice checkpoint (2026-10-16):** The application project now
+uses the owning C++ `None` / `DeploymentContent` / `Link` metadata contract to
+include the application GPL text, a qualification index, eight non-test native
+notice assets and fourteen distinct Microsoft notice assets. No post-build
+concatenator, custom MSIX writer, package rewriting or additional dependency is
+introduced. The independent expected set excludes Catch2, development README
+inventories and engineering-tool notices. Conservative build-input inclusion
+does not assert that every resolved component contributes runtime code.
+
+Research used Microsoft's [item metadata contract](https://learn.microsoft.com/visualstudio/msbuild/common-msbuild-item-metadata),
+[single-project MSIX guidance](https://learn.microsoft.com/windows/apps/windows-app-sdk/single-project-msix)
+and [MakeAppx reader](https://learn.microsoft.com/windows/msix/package/create-app-package-with-makeappx-tool),
+plus the actual selected v180 `ContentFilesProjectOutputGroup` /
+`AssignTargetPath` targets. An initial output-group probe unexpectedly built a
+project reference and was cancelled; the bounded qualification explicitly uses
+`BuildProjectReferences=false` and does not claim to compile those references.
+The subsequent deliberate normal package build did compile the real graph.
+
+The new contract first failed against the pre-change native content group for
+the absent `LICENSE.txt`. Native output-group qualification then passed all 24
+assets. A real unsigned Debug x64 build and native SDK unpacking pass the exact
+notice hashes, existing manifest/framework/unsigned-payload checks and artwork
+contract. Maintained controls reject a missing application licence, duplicate
+destination, wrong IJG source, test-only notice, and missing/edited unpacked IJG
+notice. `Test-UnsignedMsixPackage.ps1` now enforces notice preservation for every
+subsequent architecture/Store package qualification. Final Release matrix,
+binary contribution, corresponding source, external SDK terms and qualified
+legal review remain open. Neither this focused build nor its functional checks
+replace the retained failed full verification's compiler-service quiescence
+obligation, and no hosted workflow, installation or desktop interaction ran.
+
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
 - [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.

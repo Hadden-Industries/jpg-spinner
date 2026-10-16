@@ -55,4 +55,7 @@ foreach ($file in Get-ChildItem -LiteralPath $extraction -File -Recurse) {
     }
 }
 & (Join-Path $PSScriptRoot 'Test-PackageArtwork.ps1') -AssetsDirectory (Join-Path $extraction 'Assets')
-Write-Output "PASS: native $Architecture MSIX reader, exact Store/AppContainer manifest, framework, unsigned payload and artwork."
+# Verify the bytes the SDK actually packaged; an evaluated project item alone
+# does not establish that its linked target survives native packaging.
+& (Join-Path $PSScriptRoot 'Test-PackageNoticeContent.ps1') -PackageDirectory $extraction
+Write-Output "PASS: native $Architecture MSIX reader, exact Store/AppContainer manifest, framework, unsigned payload, artwork and retained notice bytes."
