@@ -1571,7 +1571,16 @@ submission or complete Task 16 acceptance is claimed by this source checkpoint.
 
 ### Step 16.3: RED/GREEN the upgrade path
 
-- [ ] In an isolated Windows test user or disposable VM, install a trusted 1.1.3.0 package, launch it, create representative local settings and user-selected sample folders, then install signed 2.0.0.0 as an update.
+**Published-baseline correction (2026-10-17):** Read-only Windows inspection of
+the owner's normal Store installation identifies application 1.1.2.0 x64,
+bundle 2015.616.2316.3521 and a 1.1.2.0 resource package, each Store / Ok.
+The [baseline observation](../implementation/2026-10-17-published-store-baseline.md)
+records exact identity and evidence boundaries. The former 1.1.3.0 target was
+an unverified source-tree assumption, not proof of a published package. The
+main/bundle distinction now needs explicit update/restore qualification; no
+package version, signature, migration or isolation requirement is waived.
+
+- [ ] In an isolated Windows test user or disposable VM, install the trusted published 1.1.2.0 baseline with its actual bundle/resource registrations (and qualify any additional supported published variant discovered later), launch it, create representative local settings and user-selected sample folders, then install trusted signed 2.0.0.0 as an update. Qualify bundle ordering/restore separately; do not infer it from main-package version ordering or change bundle numbering without qualification.
 - [ ] Before migration support, require the smoke test to fail if identity changes, the old package is uninstalled rather than upgraded, activation fails, or local-state inspection is not deterministic.
 - [ ] Add only the local-state migration actually required. Do not add legacy API shims; ignore obsolete state safely when no current behavior consumes it.
 - [ ] Prove launch, folder picker, copy output, backup replacement, recovery, uninstall, and no orphan stage after update.
@@ -2526,7 +2535,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 
 - [ ] Repeat the full manual accessibility checklist on current Windows 10 22H2 ESU and maintained Windows 11 24H2 and 25H2 systems, plus Windows 11 26H1 hardware where available. Record that 26H1 is a supported new-device hardware cohort rather than an assumed in-place update path for existing 24H2/25H2 systems.
 - [ ] Review every screen and error in en-US, en-GB, and ru; run pseudo-localization for expansion and bidirectional layout defects.
-- [ ] Install 1.1.3.0, update to 2.0.0.0 for x86/x64 and native ARM64 paths, then verify identity, launch, processing, recovery, uninstall, and no orphan staging artifacts.
+- [ ] Install the trusted published baseline (observed x64 main 1.1.2.0, bundle 2015.616.2316.3521), update to 2.0.0.0 for x86/x64 and native ARM64 paths, then verify identity, bundle ordering/restore, launch, processing, recovery, uninstall, and no orphan staging artifacts. Record the actual compatible legacy architecture in each lane; this does not assert an ARM64 legacy package exists.
 - [ ] In the protected Store-submission workflow, satisfy the approved closed package comparison, retain both complete raw payload manifests and exact unsigned container hashes, and generate/validate the external SPDX 3.0.1 submission-artifact SBOM for the exact selected bundle with authenticated provenance. Require Windows App Certification Kit, bundle manifest validation, malware scanning and Store ingestion qualification for the applicable exact candidate. Microsoft supplies the Store signature after certification; record separately any acquired Store-signed artifact and its native trust/hash proof. A separately requested signed sideload route must still sign/verify its exact container before release-SBOM extraction. No path waives device/upgrade qualification or grants automatic submission.
 
 ### Step 20.6: Privacy and integrity go/no-go
@@ -2543,7 +2552,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 - [ ] Archive the exact source commit, dependency locks, runner `ImageVersion`, exact `VCToolsVersion` and compiler/linker paths/versions, SDK/MakeAppx versions, payload manifests, unsigned/signed package hashes, SBOMs, provenance, test/analysis/fuzz reports, WACK output, interactive accessibility evidence, performance baseline, legal approval record, and upgrade evidence.
 - [ ] Submit the existing Store product as version 2.0.0.0; never create a second product identity.
 - [ ] Release to 5%. Observe at least 48 hours and 200 active-device health samples; if volume is lower, observe seven days.
-- [ ] Advance to 25% only when no file-integrity incident exists, no new crash/hang signature affects 0.1% or more observed devices, and the affected-device rate is no more than 0.1 percentage point above the 1.1.3.0 baseline.
+- [ ] Advance to 25% only when no file-integrity incident exists, no new crash/hang signature affects 0.1% or more observed devices, and the affected-device rate is no more than 0.1 percentage point above the actually published legacy baseline (observed application 1.1.2.0). Retain actual cohort/version evidence; baseline installation does not supply historical health measurements.
 - [ ] Observe 25% for at least 72 hours and 500 active-device samples, or seven days at lower volume, before 100%.
 - [ ] Pause immediately for any source/backup/recovery integrity report regardless of aggregate health rate. Diagnose through Partner Center health plus opt-in exported local diagnostics; do not add telemetry as a rollout remedy.
 

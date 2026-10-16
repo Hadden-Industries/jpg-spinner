@@ -45,7 +45,7 @@ The selected option follows the [single-project MSIX guidance](https://learn.mic
 - Correctly normalize all eight Exif orientation states with lossless JPEG DCT-coefficient transformations when the source coding process supports them.
 - Preserve image fidelity and non-derived metadata unless a field must change to describe the transformed image truthfully.
 - Make destructive output impossible without an explicit replacement choice and a verified backup.
-- Preserve the existing Store identity and support update installation from 1.1.3.0 to 2.0.0.0.
+- Preserve the existing Store identity and support update installation from the actually published legacy baseline to 2.0.0.0. The [native Store observation](../implementation/2026-10-17-published-store-baseline.md) confirms application 1.1.2.0 and distinct bundle 2015.616.2316.3521; the earlier 1.1.3.0 assumption was not a verified published baseline. Qualify additional supported published variants if discovered.
 - Support x86, x64, and ARM64 on Windows 10 version 22H2 build 19045 or later.
 - Keep file processing inside AppContainer and request access only through user-selected files or folders.
 - Provide deterministic, cancellable batch processing with honest progress and per-file results.
@@ -89,7 +89,7 @@ Versions below are the latest stable releases verified on 2026-08-30. Experiment
 | Metadata library | Exiv2 0.28.9 with XMP support | Current supported metadata implementation with 2026 security fixes; see [Exiv2 releases](https://github.com/Exiv2/exiv2/releases) and [Exiv2 security advisories](https://github.com/Exiv2/exiv2/security) |
 | Native tests | Catch2 3.16.0 | Current vcpkg test-framework version at the pinned baseline |
 | vcpkg baseline | `c748cb44f2a435fcf015c35225c9d5545fe0021c` | Immutable registry state refreshed on 2026-10-03 before Task 6; historical logs preserve earlier qualification versions |
-| Package version | 2.0.0.0 | Major product migration while remaining a greater four-part MSIX version than 1.1.3.0 |
+| Package version | 2.0.0.0 | Major product migration; greater main-package version than the observed 1.1.2.0, not proof of bundle ordering or upgrade success |
 | Minimum Windows version | 10.0.19045.0 | Windows 10 22H2 plus maintained Windows 11 versions; no technical dependency on an older build |
 | Target and tested maximum | 10.0.28000.0 | Current SDK contract and manifest `MaxVersionTested` |
 | Architectures | x86, x64, ARM64 | x86/x64 retain upgrade compatibility; ARM64 replaces obsolete ARM32 |
@@ -677,7 +677,7 @@ The following values are immutable during migration:
 
 The new manifest increments the version to 2.0.0.0, declares AppContainer, targets build 28000, and sets minimum build 19045. Package display metadata may evolve, but identity and publisher cannot. Microsoft confirms that a packaged desktop application with the same Store identity can update the installed listing; see the [Windows application developer FAQ](https://learn.microsoft.com/en-us/windows/apps/get-started/windows-developer-faq).
 
-Before Store submission, testing must install a signed 1.1.3.0 package, create representative app-local state and source folders, then install 2.0.0.0 as an update. It must prove package identity continuity, launch, user-selected file access, local-state migration or benign non-use, uninstall behavior, and no orphaned staging files.
+Before Store submission, testing must install the trusted actually published legacy baseline (observed main 1.1.2.0, bundle 2015.616.2316.3521), create representative app-local state and source folders, then install trusted signed 2.0.0.0 as an update. It must prove package identity continuity, bundle ordering/restore behaviour, launch, user-selected file access, local-state migration or benign non-use, uninstall behavior, and no orphaned staging files. The main-package comparison alone does not establish bundle upgrade compatibility; forced downgrade or uninstall/reinstall is not the required update path.
 
 The manual platform matrix covers current Windows 10 22H2 ESU, maintained Windows 11 24H2 and 25H2 systems, and Windows 11 26H1 hardware where available. The 26H1 entry is a supported new-device hardware cohort, not an assumed in-place upgrade path for existing 24H2 or 25H2 systems.
 
@@ -694,7 +694,7 @@ JPG Spinner 2.0 is releasable only when all conditions hold:
 - Fault injection at every transaction transition and qualified storage-provider boundary proves recoverability from observable hashes without claiming undocumented power-fail atomicity or physical-media durability.
 - A changed source is never replaced using stale analysis.
 - x86 and x64 tests pass; x86, x64, and ARM64 packages build; physical ARM64 smoke and transform suites pass.
-- The new package upgrades an installed 1.1.3.0 package without changing Store identity.
+- The new package upgrades the trusted published legacy installation, including its actual bundle/resource registrations, without changing Store identity. Native identification of the installed 1.1.2.0 baseline is not an upgrade pass.
 - Keyboard, Narrator, high contrast, and text-scaling checks pass in all supported locales.
 - No Application Insights reference, embedded key, C++/CX syntax, UWP XAML dependency, copied JPEG implementation, private `transupp` API, legacy adapter, or shim remains.
 - CI actions and dependencies are immutable and current against the implementation-date stable release audit.

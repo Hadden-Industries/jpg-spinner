@@ -41,7 +41,10 @@ Read the named cases in the linked files when selecting a bounded regression.
 
 For the selected immutable pre-cutover candidate, retain full test-selection
 results, native binlogs, JUnit reports, ASan, static analysis, package/manifest
-validation and the trusted 1.1.3.0 upgrade smoke before deletion. Record the
+validation and the trusted published-baseline upgrade smoke before deletion.
+The [installed Store observation](implementation/2026-10-17-published-store-baseline.md)
+identifies main version 1.1.2.0 and distinct bundle version 2015.616.2316.3521;
+neither identity matching nor baseline installation is an upgrade pass. Record the
 operator, command, architecture, environment and raw report locator; do not turn
 this mapping into a blanket passed checklist. The
 [release register](release-qualification.md) records the outstanding device,
