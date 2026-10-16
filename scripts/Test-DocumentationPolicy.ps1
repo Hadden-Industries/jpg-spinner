@@ -11,6 +11,7 @@ $requirements = [ordered]@{
     'docs/architecture.md'=@('## Modules','## Transaction invariants','## Security boundary','## Guarantee limits')
     'docs/privacy.md'=@('## Local processing','## Diagnostic records','## Retention','## Export')
     'docs/release-qualification.md'=@('## Gate register','## Evidence identity','## Release authorization')
+    'docs/corresponding-source.md'=@('## Scope and authority','## Release binding','## Source closure','## Reconstruction and delivery')
     'THIRD_PARTY_NOTICES.md'=@('## Qualification status','## Native components','## Windows packages','## Engineering tools')
 }
 $failures = [Collections.Generic.List[string]]::new()

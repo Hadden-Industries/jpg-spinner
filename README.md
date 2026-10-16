@@ -106,3 +106,6 @@ See [architecture](docs/architecture.md), [privacy](docs/privacy.md),
 The repository carries the [GNU GPL version 3 license](LICENSE). Distribution
 also requires the exact applicable third-party notices and corresponding source;
 the existence of this README does not constitute legal or Store approval.
+The [corresponding-source procedure](docs/corresponding-source.md) identifies
+source/patch/build inputs, exact binary binding and independent reconstruction
+needed before a source delivery can be qualified.

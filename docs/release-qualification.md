@@ -93,6 +93,11 @@ Task 20. Never invent health observations for an unreleased application.
 
 ## Evidence identity
 
+The [corresponding-source procedure](corresponding-source.md) now defines native
+source/patch/registry preparation, binary binding, independent reconstruction
+and recipient delivery checks. Maintained structural negative controls pass;
+they do not qualify an assembled source artifact or discharge legal obligations.
+
 Archive source commit and clean-tree proof, NuGet/vcpkg locks, runner ImageVersion,
 actual selected executable paths/versions/hashes, SDK, provenance, unpacked payload
 manifests, unsigned/signed container hashes, SBOM and validation reports, tests,

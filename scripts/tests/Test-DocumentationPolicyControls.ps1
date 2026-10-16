@@ -7,15 +7,34 @@ $ErrorActionPreference='Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $fixture = Join-Path $OwnedOutputRoot ('documentation-contract-'+[Guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'docs'))
-foreach ($path in @('README.md','SECURITY.md','THIRD_PARTY_NOTICES.md','docs/architecture.md','docs/privacy.md','docs/release-qualification.md')) {
+foreach ($path in @('README.md','SECURITY.md','THIRD_PARTY_NOTICES.md','docs/architecture.md','docs/privacy.md','docs/release-qualification.md','docs/corresponding-source.md')) {
     Copy-Item -LiteralPath (Join-Path $root $path) -Destination (Join-Path $fixture $path)
 }
+$sourceDeliveryPath = Join-Path $fixture 'docs/corresponding-source.md'
 $dependencyNotices = Join-Path $root 'docs/licenses'
 if (Test-Path -LiteralPath $dependencyNotices -PathType Container) {
     Copy-Item -LiteralPath $dependencyNotices -Destination (Join-Path $fixture 'docs/licenses') -Recurse
 }
 $policy = Join-Path $root 'scripts/Test-DocumentationPolicy.ps1'
 & $policy -RepositoryRoot $fixture
+# An application-source URL or a binary SDK export alone cannot describe the
+# dependency sources, patches and reconstruction required at distribution.
+$heldSourceDeliveryPath = "$sourceDeliveryPath.held"
+Move-Item -LiteralPath $sourceDeliveryPath -Destination $heldSourceDeliveryPath
+$message=$null
+try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('Missing required document: docs/corresponding-source.md',[StringComparison]::Ordinal)) {
+    throw 'Missing-corresponding-source-procedure control did not reach its precise refusal.'
+}
+Move-Item -LiteralPath $heldSourceDeliveryPath -Destination $sourceDeliveryPath
+$sourceDelivery = Get-Content -LiteralPath $sourceDeliveryPath -Raw
+[IO.File]::WriteAllText($sourceDeliveryPath,$sourceDelivery.Replace('## Reconstruction and delivery','## Unrelated section',[StringComparison]::Ordinal))
+$message=$null
+try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('Missing required section ## Reconstruction and delivery in docs/corresponding-source.md',[StringComparison]::Ordinal)) {
+    throw 'Missing-source-reconstruction-section control did not reach its precise refusal.'
+}
+[IO.File]::WriteAllText($sourceDeliveryPath,$sourceDelivery)
 # NuGet licensing is package-specific; an existing native-port inventory must
 # not silently stand in for the resolved Microsoft package notices.
 $webViewNotice = Join-Path $fixture 'docs/licenses/nuget/Microsoft.Web.WebView2.LICENSE.txt'
@@ -79,4 +98,4 @@ try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message
 if ($null -eq $message -or -not $message.Contains('Missing required section ## Export in docs/privacy.md',[StringComparison]::Ordinal)) {
     throw 'Missing-section control did not reach its precise structural refusal.'
 }
-Write-Output 'PASS: documentation copy; missing/edited native and NuGet notices, missing document and missing section refusals.'
+Write-Output 'PASS: documentation copy; missing source procedure/reconstruction section, missing/edited native and NuGet notices, missing document and missing section refusals.'
