@@ -2419,6 +2419,17 @@ helper-lifetime obligations remain open.
 - [ ] Include libjpeg-turbo’s applicable BSD-style and IJG notices verbatim from its packaged copyright files, not from memory.
 - [ ] Ensure test-only dependencies are not falsely described as runtime components.
 
+**Non-Go release-tool inventory checkpoint (2026-10-17):** The
+[native follow-up](../implementation/2026-10-16-native-release-tool-notice-qualification.md#native-non-go-input-inventory-2026-10-17)
+uses the already qualified Go 1.27.2 loader offline, without compilation or a
+second parser/classifier. It identifies 48 packages with non-Go/embedded fields,
+including 14 external packages from nine modules and two embedded assets.
+Original Go runtime/patent and selected vendored terms are byte-preserved.
+This narrows assembly, protobuf-data and Syft/NVD-data review; it is not actual
+linker contribution, complete notice coverage, legal clearance or final tool
+adoption. Shared qualified runtime/module inputs remain intact; released fresh
+loader scratch is removed after independent evidence readback.
+
 ### Step 18.4: Revoke the historical instrumentation credential
 
 - [ ] Remove the beta Application Insights package, initialization, key, telemetry calls, configuration artifacts, and package lock entry from all surviving new-project files; the quarantined old tree is deleted in Task 19 rather than modified.

@@ -124,3 +124,64 @@ Then qualify exact original terms and distribution obligations, including any
 source delivery, with the accountable rights reviewer. Do not treat collector
 success, an SPDX label, this document or a signed source commit as that approval.
 The [release register](../release-qualification.md) remains not qualified.
+
+## Native non-Go input inventory (2026-10-17)
+
+At signed source `ff14e258181d54e78469040f62166d11f3e489cd`, an offline native
+`go list -deps -mod=readonly -p=2 -f <native-template> .` inspection of the same
+unchanged `eng/artifact-sbom` module narrows the collector's non-Go blind spot.
+Go's [documented Package fields and template renderer](https://pkg.go.dev/cmd/go#hdr-List_packages_or_modules)
+own target selection and report generation; no custom import graph, JSON stream
+parser, license classifier or application dependency was introduced.
+
+The explicit retained Go 1.27.2 executable was used, not the unrelated system
+Go 1.27.0 found during read-only discovery. Native environment output confirms
+`windows/amd64`, `CGO_ENABLED=0`, the existing qualified module cache and a fresh
+owned loader cache. `GOPROXY=off`, `GOSUMDB=off`, `GOTOOLCHAIN=local`, `GOWORK=off`
+and `GOENV=off` prevent network resolution/toolchain switching; loading uses
+read-only module mode, two native processes and a 90-second process deadline.
+No compiler, linker, generator, package installation, app launch or CI ran.
+Both original module-file hashes above remained unchanged.
+
+The native report selects 48 packages with assembly, native-source/header or
+embedded-file fields: 34 standard-library packages and 14 external packages
+from nine modules. Forty-four packages have assembly fields; two have embedded
+files. These are package-loader input declarations, **not linker-contribution
+proof**: a header listed by the loader need not be compiled in this target.
+
+| External input owner | Selected non-Go/embedded material |
+| --- | --- |
+| `github.com/klauspost/compress` v1.20.1 | Assembly in cpuinfo, huff0, zstd/xxhash, zstd and s2 |
+| `github.com/pierrec/lz4/v4` v4.1.26 | lz4block assembly |
+| `github.com/cespare/xxhash/v2` v2.3.0 | Assembly |
+| `golang.org/x/crypto` v0.57.0 | poly1305 and chacha20poly1305 assembly |
+| `golang.org/x/sys` v0.48.0 | CPU assembly |
+| `github.com/minio/minlz` v1.0.1 | Assembly |
+| `github.com/envoyproxy/protoc-gen-validate` v1.3.3 | `validate.h` declaration |
+| `google.golang.org/protobuf` v1.36.12 | Embedded `editions_defaults.binpb` |
+| `github.com/anchore/syft` v1.54.1 | Embedded `dictionary/data/cpe-index.json` |
+
+Upstream [protobuf source](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.12/internal/editiondefaults/defaults.go)
+declares its embedded binary. Syft's [tagged generation guidance](https://github.com/anchore/syft/blob/v1.54.1/syft/pkg/cataloger/internal/cpegenerate/README.md)
+identifies the CPE dictionary's NVD origin and offline generation. Preserve and
+assess those data origins and their applicable rights separately; the enclosing
+module's license label alone is not a complete data-rights decision. No NVD
+request or index regeneration was performed.
+
+Original Go runtime `LICENSE`, `PATENTS`, and its vendored x/crypto and x/sys
+licenses were copied without re-encoding and independently hash-matched.
+The three license copies have SHA-256
+`911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad`;
+the original patent grant has
+`96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc`.
+These are release-tool inputs, not notices falsely assigned to the image app.
+
+External inventory `cf6934efd4d64567928ad00892f5635b`, execution
+`352c2077-8e60-441f-ac25-4b13a115a082`, retains the wrapper, native target/output
+streams and original copied terms. Retain the earlier collector's warnings and
+dual-license counterevidence. This inspection does not establish complete
+standard-library/embedded-data notice coverage, rights clearance, final binary
+contribution or maintained collector adoption. The Task 18 owner must assess
+the identified original files/data and repeat target-specific inventory when
+the native runtime, dependency graph or target changes. Release the fresh loader
+cache after evidence preservation; do not remove the shared qualified inputs.
