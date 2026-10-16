@@ -71,6 +71,11 @@
     <IntDir>$(MSBuildThisFileDirectory)..\..\artifacts\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
     <!-- Local and CI builds produce unsigned packages; signing belongs to the release pipeline. -->
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <!-- Bundle and application versions are independent. Keep this authored,
+         fixed bundle epoch above the published 2015.616.2316.3521 bundle while
+         the application manifest remains 2.0.0.0. The owning MSIX targets and
+         standalone bundler consume this same property; never use clock defaults. -->
+    <AppxBundleManifestVersion>2026.2.0.0</AppxBundleManifestVersion>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <!-- Actual coordinator use pulls Exiv2's existing config-path/version objects

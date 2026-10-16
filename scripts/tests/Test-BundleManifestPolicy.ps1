@@ -22,7 +22,13 @@ Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'BundleManifestPolic
 '@
 $declarations = @(Get-JpgSpinnerBundlePackageDeclaration -BundleManifest $bundle)
 if ($declarations.Count -ne 3 -or $declarations[1].FileName -cne 'x64.msix') { throw 'Accepted declaration set changed.' }
-Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $bundle -PackageManifest $package -Architecture x64 -DeclaredVersion 2.0.0.0
+Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $bundle -PackageManifest $package -Architecture x64 -DeclaredVersion 2.0.0.0 -ExpectedBundleVersion 2.0.0.0
+# The native bundle Identity and each inner Package declaration have distinct
+# Version attributes. A fixed outer epoch must not force application versions
+# to impersonate the legacy bundle's date-based numbering scheme.
+$distinctBundleVersion = [xml]$bundle.CloneNode($true)
+$distinctBundleVersion.Bundle.Identity.SetAttribute('Version','2026.2.0.0')
+Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $distinctBundleVersion -PackageManifest $package -Architecture x64 -DeclaredVersion 2.0.0.0 -ExpectedBundleVersion 2026.2.0.0
 function Assert-Refusal([scriptblock]$Action, [string]$Diagnostic) {
     $message = $null
     try { & $Action | Out-Null } catch { $message = $_.Exception.Message }
@@ -53,10 +59,19 @@ foreach ($attribute in @('Name','Publisher','Version','ProcessorArchitecture')) 
     $candidate = [xml]$package.CloneNode($true)
     $candidate.Package.Identity.SetAttribute($attribute,'Different')
     Assert-Refusal {
-        Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $bundle -PackageManifest $candidate -Architecture x64 -DeclaredVersion 2.0.0.0
+        Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $bundle -PackageManifest $candidate -Architecture x64 -DeclaredVersion 2.0.0.0 -ExpectedBundleVersion 2.0.0.0
     } 'differs'
 }
 Assert-Refusal {
-    Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $bundle -PackageManifest $package -Architecture x64 -DeclaredVersion 2.0.0.1
+    Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $bundle -PackageManifest $package -Architecture x64 -DeclaredVersion 2.0.0.1 -ExpectedBundleVersion 2.0.0.0
 } 'differs'
-Write-Output 'PASS: bundle policy refuses ambiguous declarations, path/architecture aliases and package identity disagreement.'
+# Independence is not permission to accept an unapproved outer version. A
+# downgrade and an unexpected higher version both fail the exact contract.
+foreach ($unexpectedVersion in @('2015.616.2316.3521','2.0.0.0','2026.2.0.1')) {
+    $candidate = [xml]$distinctBundleVersion.CloneNode($true)
+    $candidate.Bundle.Identity.SetAttribute('Version',$unexpectedVersion)
+    Assert-Refusal {
+        Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $candidate -PackageManifest $package -Architecture x64 -DeclaredVersion 2.0.0.0 -ExpectedBundleVersion 2026.2.0.0
+    } 'expected bundle version'
+}
+Write-Output 'PASS: independent bundle/application versions; exact outer version, declarations and package identities remain enforced.'

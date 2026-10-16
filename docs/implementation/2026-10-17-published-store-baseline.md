@@ -54,8 +54,10 @@ infer update continuity solely from `2.0.0.0 > 1.1.2.0`.
 Microsoft's [Calculator versioning repair](https://github.com/microsoft/calculator/pull/586)
 records a reset-related problem after lowering its bundle version; this is
 relevant prior evidence to investigate, not proof that this exact JPG Spinner
-update fails. Bundle ordering/restore behaviour and the actual signed update
-remain unqualified. Do not use a forced downgrade, change product identity,
+update fails. The subsequent [native independent-version correction](2026-10-17-independent-bundle-version.md)
+qualifies construction and inspection of bundle `2026.2.0.0` containing
+application `2.0.0.0`. Bundle ordering/restore behaviour and the actual signed
+update remain unqualified. Do not use a forced downgrade, change product identity,
 uninstall/reinstall, discard the registered bundle or rewrite package bytes to
 make the upgrade test appear successful.
 

@@ -46,7 +46,8 @@ function Assert-JpgSpinnerBundlePackageIdentity {
         [Parameter(Mandatory)][Xml.XmlDocument]$BundleManifest,
         [Parameter(Mandatory)][Xml.XmlDocument]$PackageManifest,
         [Parameter(Mandatory)][string]$Architecture,
-        [Parameter(Mandatory)][string]$DeclaredVersion
+        [Parameter(Mandatory)][string]$DeclaredVersion,
+        [Parameter(Mandatory)][string]$ExpectedBundleVersion
     )
     $bundleNamespaces = [Xml.XmlNamespaceManager]::new($BundleManifest.NameTable)
     $bundleNamespaces.AddNamespace('b','http://schemas.microsoft.com/appx/2013/bundle')
@@ -55,7 +56,14 @@ function Assert-JpgSpinnerBundlePackageIdentity {
     $bundleIdentities = $BundleManifest.SelectNodes('/b:Bundle/b:Identity',$bundleNamespaces)
     $packageIdentities = $PackageManifest.SelectNodes('/p:Package/p:Identity',$packageNamespaces)
     if ($bundleIdentities.Count -ne 1 -or $packageIdentities.Count -ne 1) { throw 'Bundle/package identity is absent or ambiguous.' }
-    foreach ($attribute in @('Name','Publisher','Version')) {
+    # Bundle Identity.Version is independent of each contained Package.Version.
+    # Enforce the authored outer version separately, rather than rejecting a
+    # native bundle merely because its application uses another version epoch.
+    # https://learn.microsoft.com/uwp/schemas/bundlemanifestschema/element-identity
+    if ($bundleIdentities[0].GetAttribute('Version') -cne $ExpectedBundleVersion) {
+        throw 'Bundle identity differs from the expected bundle version.'
+    }
+    foreach ($attribute in @('Name','Publisher')) {
         if ($bundleIdentities[0].GetAttribute($attribute) -cne $packageIdentities[0].GetAttribute($attribute)) {
             throw "Bundle/package identity differs: $attribute"
         }

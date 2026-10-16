@@ -37,15 +37,13 @@ Import-Module (Join-Path $PSScriptRoot 'BundleManifestPolicy.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'PackageManifestPolicy.psm1') -Force
 $association = [Xml.XmlDocument]::new()
 $association.Load((Join-Path $repositoryRoot 'src/JpgSpinner.App/Package.StoreAssociation.xml'))
-$toolchain = & (Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1') -RepositoryRoot $repositoryRoot
+$toolchain = & (Join-Path $PSScriptRoot 'Resolve-MsixToolchain.ps1')
 # Share read only for the entire operation: native readers can open the exact
 # container, while concurrent Windows writers/deleters cannot replace it.
 $bundleHandle = [IO.File]::OpenRead($bundle)
 Push-Location -LiteralPath $repositoryRoot
 try {
-    $makeAppx = & $toolchain.msBuildExecutablePath (Join-Path $repositoryRoot 'src/JpgSpinner.App/JpgSpinner.App.vcxproj') `
-        -nologo -noAutoResponse -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true '-getProperty:MakeAppxExeFullPath'
-    if ($LASTEXITCODE -ne 0 -or -not [IO.File]::Exists($makeAppx)) { throw 'The owning MSIX targets did not select MakeAppx.' }
+    $makeAppx = $toolchain.MakeAppxExecutablePath
     $diagnostics = Join-Path $inspection 'diagnostics'
     [void][IO.Directory]::CreateDirectory($diagnostics)
     # Preserve native output without mixing diagnostic prose into the script's
@@ -77,7 +75,8 @@ try {
         $packageManifest.Load((Join-Path $payload 'AppxManifest.xml'))
         Assert-JpgSpinnerPackageManifest -Manifest $packageManifest -StoreAssociation $association
         Assert-JpgSpinnerBundlePackageIdentity -BundleManifest $bundleManifest -PackageManifest $packageManifest `
-            -Architecture $declaration.Architecture -DeclaredVersion $declaration.Version
+            -Architecture $declaration.Architecture -DeclaredVersion $declaration.Version `
+            -ExpectedBundleVersion $toolchain.AppxBundleManifestVersion
     }
 }
 finally { Pop-Location; $bundleHandle.Dispose() }

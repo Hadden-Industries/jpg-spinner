@@ -89,7 +89,8 @@ Versions below are the latest stable releases verified on 2026-08-30. Experiment
 | Metadata library | Exiv2 0.28.9 with XMP support | Current supported metadata implementation with 2026 security fixes; see [Exiv2 releases](https://github.com/Exiv2/exiv2/releases) and [Exiv2 security advisories](https://github.com/Exiv2/exiv2/security) |
 | Native tests | Catch2 3.16.0 | Current vcpkg test-framework version at the pinned baseline |
 | vcpkg baseline | `c748cb44f2a435fcf015c35225c9d5545fe0021c` | Immutable registry state refreshed on 2026-10-03 before Task 6; historical logs preserve earlier qualification versions |
-| Package version | 2.0.0.0 | Major product migration; greater main-package version than the observed 1.1.2.0, not proof of bundle ordering or upgrade success |
+| Application package version | 2.0.0.0 | Major product migration; greater main-package version than the observed 1.1.2.0, not proof of bundle ordering or upgrade success |
+| Bundle manifest version | 2026.2.0.0 | Fixed owning-project `AppxBundleManifestVersion`, independent of application version and above the published 2015.616.2316.3521 bundle. [Native packaging/inspection qualification](../implementation/2026-10-17-independent-bundle-version.md) passes; trusted update/restore remains pending |
 | Minimum Windows version | 10.0.19045.0 | Windows 10 22H2 plus maintained Windows 11 versions; no technical dependency on an older build |
 | Target and tested maximum | 10.0.28000.0 | Current SDK contract and manifest `MaxVersionTested` |
 | Architectures | x86, x64, ARM64 | x86/x64 retain upgrade compatibility; ARM64 replaces obsolete ARM32 |

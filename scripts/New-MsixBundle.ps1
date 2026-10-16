@@ -35,16 +35,10 @@ foreach ($package in $canonicalPackages) {
     if (-not $packageNames.Add([IO.Path]::GetFileName($package))) { throw 'Bundle staging requires distinct package file names.' }
 }
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$toolchain = & (Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1') -RepositoryRoot $repositoryRoot
+$toolchain = & (Join-Path $PSScriptRoot 'Resolve-MsixToolchain.ps1')
 Push-Location -LiteralPath $repositoryRoot
 try {
-    # Resolve the actual executable selected by the locked owning MSIX targets,
-    # not another SDK or PATH candidate. This evaluation performs no build.
-    $makeAppxPath = & $toolchain.msBuildExecutablePath (Join-Path $repositoryRoot 'src/JpgSpinner.App/JpgSpinner.App.vcxproj') `
-        -nologo -noAutoResponse -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true '-getProperty:MakeAppxExeFullPath'
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $makeAppxPath -PathType Leaf)) {
-        throw 'The owning MSIX targets did not select a native MakeAppx executable.'
-    }
+    $makeAppxPath = $toolchain.MakeAppxExecutablePath
     [void][IO.Directory]::CreateDirectory($canonicalWorkingDirectory)
     foreach ($package in $canonicalPackages) {
         Copy-Item -LiteralPath $package -Destination (Join-Path $canonicalWorkingDirectory ([IO.Path]::GetFileName($package))) -ErrorAction Stop
@@ -53,7 +47,7 @@ try {
     # prevents the tool's implicit wall-clock bundle version. MakeAppx owns
     # package identity/architecture compatibility, not a parallel ZIP parser.
     # https://learn.microsoft.com/windows/msix/package/create-app-package-with-makeappx-tool
-    & $makeAppxPath bundle /d $canonicalWorkingDirectory /p $canonicalOutput /bv 2.0.0.0 /no
+    & $makeAppxPath bundle /d $canonicalWorkingDirectory /p $canonicalOutput /bv $toolchain.AppxBundleManifestVersion /no
     if ($LASTEXITCODE -ne 0) { throw 'Native MakeAppx refused the architecture package set.' }
     if (-not [IO.File]::Exists($canonicalOutput) -or (Get-Item -LiteralPath $canonicalOutput).Length -eq 0) {
         throw 'Native MakeAppx did not emit a nonempty MSIX bundle.'

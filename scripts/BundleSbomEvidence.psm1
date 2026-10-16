@@ -96,6 +96,9 @@ function New-JpgSpinnerBundleSbomEvidence {
         $manifest=[Xml.XmlDocument]::new()
         $manifest.Load((Join-Path $inspection 'bundle/AppxMetadata/AppxBundleManifest.xml'))
         $name=$manifest.DocumentElement.Identity.Name
+        # This artifact is the outer bundle, whose version is independent of
+        # contained application versions. Bind the actual native value; never
+        # substitute an application version or rewrite the generated SPDX JSON.
         $version=$manifest.DocumentElement.Identity.Version
         $candidate=Join-Path $working 'bundle-sbom-evidence'
         [void][IO.Directory]::CreateDirectory($candidate)

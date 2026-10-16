@@ -1513,7 +1513,8 @@ The repaired prerequisite now permits an actual unsigned ARM64 Release package;
 native MakeAppx extraction, the existing manifest/framework/artwork policy and
 architecture checks pass for all three independently produced Release packages.
 `New-MsixBundle.ps1` composes only those selected packages with the owning SDK's
-MakeAppx, semantic validation enabled, `/no`, and explicit `/bv 2.0.0.0`.
+MakeAppx, semantic validation enabled, `/no`, and initially explicit `/bv 2.0.0.0`
+(historical checkpoint; superseded by the qualified independent bundle version below).
 The positive contract reached the unimplemented producer (RED), then built and
 unbundled a real x86/x64/ARM64 container (GREEN). The native reader verifies
 the exact Store identity, publisher and version, and architecture membership.
@@ -1527,6 +1528,16 @@ hash-matched to retained x64-drop counterparts and recycled; the unique ARM64
 VCLibs package, actual app packages/bundles, symbols and raw failures remain.
 No signed package, trusted upgrade, physical ARM64 runtime, WACK, Store
 submission or complete Task 16 acceptance is claimed by this source checkpoint.
+
+On 2026-10-17, the [native independent-version qualification](../implementation/2026-10-17-independent-bundle-version.md)
+corrects the invalid outer/inner version-equality invariant. The authored native
+`AppxBundleManifestVersion` is fixed at `2026.2.0.0`, above the installed legacy
+bundle, while all application manifests remain `2.0.0.0`. The native producer
+and inspector share owning-target evaluation; exact outer version, inner
+declarations, identity and architecture constraints remain enforced. Retained
+RED/GREEN and actual three-architecture bundle/unpack/refusal controls pass.
+This qualifies container construction/inspection only; actual trusted update,
+restore behaviour, final clean builds/comparison and exact final SBOM remain.
 
 **Files:**
 
