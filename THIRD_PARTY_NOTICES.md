@@ -31,9 +31,10 @@ ports, plus the test-only Catch2 notice and libjpeg-turbo's upstream IJG README.
 This preserves notice text; it does not prove every installed library contributes
 to the application, deliver corresponding source, or complete final binary/terms
 comparison. The application now includes the eight non-test native notice assets
-through native C++ deployment-content items; an actual unsigned Debug x64 MSIX
-passes SDK unpacking and exact-byte checks. Other final architecture/release
-candidates still need that qualification. Transitive libspng and zlib
+through native C++ deployment-content items. Actual unsigned Debug x64 and
+Release x86/x64/ARM64 MSIX packages pass SDK unpacking and exact-byte checks at
+source `a086ec2dee7e0e226edc7158c8eccb771cdee57d`. This is development inclusion
+proof, not final release-candidate qualification. Transitive libspng and zlib
 are retained conservatively as resolved inputs, not asserted runtime features.
 Adobe's combined notice includes the RSA Data Security, Inc. MD5 Message-Digest
 Algorithm notice; the committed overlay patches remain separately inspectable.
@@ -58,8 +59,9 @@ complete exact-payload notice inventory, legal clearance or an assertion that
 every resolved package is an application runtime feature. The application also
 includes the 14 distinct retained Microsoft notice assets conservatively, with
 a [packaged index](src/JpgSpinner.App/LicenseNotices.txt) explaining their roles
-and outstanding obligations. Native Debug x64 unpacking preserves their bytes;
-this is not final release or all-architecture inclusion proof.
+and outstanding obligations. Native Debug x64 and Release x86/x64/ARM64
+unpacking preserve their bytes at the source checkpoint above. This is not
+final frozen-candidate, independent-build, legal or release proof.
 
 ## Engineering tools
 

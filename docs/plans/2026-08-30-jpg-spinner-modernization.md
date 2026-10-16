@@ -2376,6 +2376,22 @@ legal review remain open. Neither this focused build nor its functional checks
 replace the retained failed full verification's compiler-service quiescence
 obligation, and no hosted workflow, installation or desktop interaction ran.
 
+**Release notice-inclusion matrix (2026-10-16):** At signed source
+`a086ec2dee7e0e226edc7158c8eccb771cdee57d`, the normal locked packaged-application
+entry point also completes Release x86, x64 and ARM64 sequentially. Each actual
+unsigned MSIX passes native MakeAppx unpacking, exact manifest/architecture/
+framework checks, all 55 artwork checks and all 24 notice path/byte checks.
+Basename-only release PDB-reference checks pass for all three executables.
+Native promotion record `27e75f22f87240b195f7e0dcecd33c6f` retains the three
+original MSIX hashes and bytes independently of spent packaging/extraction
+copies; original build binlogs and qualification streams remain external.
+These were normal architecture package builds, not the two independent clean
+build sets, final Store submission components, signed install/upgrade tests,
+physical ARM64 execution or full-system completion. No assertion in these
+package checks was skipped or weakened, no CI was dispatched, and normal build concurrency stays
+unchanged. Final frozen-candidate, contribution, source/terms/legal and compiler
+helper-lifetime obligations remain open.
+
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
 - [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
