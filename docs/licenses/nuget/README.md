@@ -19,7 +19,7 @@ framework dependencies and self-contained redistributables have different roles.
 | Microsoft.Windows.AI.MachineLearning | 2.1.74 | [license.txt](Microsoft.Windows.AI.MachineLearning.LICENSE.txt), [ThirdPartyNotices.txt](Microsoft.Windows.AI.MachineLearning.ThirdPartyNotices.txt) |
 | Microsoft.Windows.CppWinRT | 3.0.260818.1 | [LICENSE](Microsoft.Windows.CppWinRT.LICENSE.txt) |
 | Microsoft.Windows.ImplementationLibrary | 1.0.260126.7 | [LICENSE](../Microsoft.Windows.ImplementationLibrary.LICENSE.txt), [ThirdPartyNotices.txt](Microsoft.Windows.ImplementationLibrary.ThirdPartyNotices.txt) |
-| Microsoft.Windows.SDK.BuildTools | 10.0.28000.2705 | [External SDK terms URL; unresolved](https://aka.ms/WinSDKLicenseURL) |
+| Microsoft.Windows.SDK.BuildTools | 10.0.28000.2705 | [External SDK terms snapshot obtained; applicability unresolved](https://aka.ms/WinSDKLicenseURL) |
 | Microsoft.Windows.SDK.BuildTools.MSIX | 1.7.251221100 | [NOTICE.txt](Microsoft.Windows.SDK.BuildTools.MSIX.NOTICE.txt), [sdk_license.txt](Microsoft.Windows.SDK.BuildTools.MSIX.LICENSE.txt) |
 | Microsoft.WindowsAppSDK | 2.5.1 | [license.txt](Microsoft.WindowsAppSDK.LICENSE.txt), [NOTICE.txt](Microsoft.WindowsAppSDK.NOTICE.txt) |
 | Microsoft.WindowsAppSDK.AI | 2.5.5 | [license.txt](Microsoft.WindowsAppSDK.LICENSE.txt) |
@@ -45,8 +45,24 @@ WIL's existing notice is reused and now checked by the same hash policy.
 SDK BuildTools 10.0.28000.2705 has no packaged license/notice file or modern
 license element; its nuspec supplies only the external SDK terms URL. Its bytes
 must not inherit another package's license merely because Microsoft publishes
-both. Obtaining and legally reviewing the exact applicable external terms
-remains open. This inventory deliberately has no fabricated license file.
+both. This inventory deliberately has no fabricated license file.
+
+On 16 October 2026 native HTTPS retrieval of that exact declared URL returned
+HTTP 200 and redirected to Microsoft's
+[original RTF](https://download.microsoft.com/download/0/F/F/0FF2B061-47DD-4F55-89B6-FD1D8C44F14D/sdk_license.rtf).
+The original is 246,945 bytes with SHA-256
+`dd07eb178e00c6bba4148457fc00ff77cd4887eb521d504186fe59c9ec8bbe62`.
+Windows RichTextBox's native RTF reader identifies it as Windows 10 SDK terms,
+EULA ID `WIN10SDK.RTM.AUG_2018_en-US`; no custom RTF parser or text replacement
+was used. The original bytes are retained externally under reproduction-input
+inventory `cb4d88ac3718453e8a7f9529c779d30f`, owning execution
+`352c2077-8e60-441f-ac25-4b13a115a082`. Fetching or reading this document does
+not establish its applicability to every 2026 SDK component, accept an agreement,
+establish GPL compatibility or authorize redistributing SDK tools. The qualified
+rights reviewer must settle exact applicability, additional component terms and
+any redistribution requirements before this gate can close. The selected
+package's declared URL, observed final URL and snapshot identity are separate
+facts; a later changed redirect must not overwrite this historical observation.
 
 ## Native method and evidence boundary
 

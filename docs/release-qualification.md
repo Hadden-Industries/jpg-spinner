@@ -93,6 +93,18 @@ Task 20. Never invent health observations for an unreleased application.
 
 ## Evidence identity
 
+At source checkpoint `db669828941ce99a1e8582f9463c978fddaa88e7` on 2026-10-16,
+`Invoke-TestSuite.ps1 -Project HeadlessAll -Configuration Release -Architecture x64`
+completed against the existing Release executables: 378 JUnit test-case elements
+across five suites, with no failure, error or skipped elements. All five raw
+reports and the command stream are retained under external inventory
+`0e3dfdc53a4649ad99eda39e3be5c104`, execution
+`352c2077-8e60-441f-ac25-4b13a115a082`. No compiler, deployment or desktop session
+ran. This is not a fresh build or final-candidate/full-verification acceptance.
+The [SDK terms inventory](licenses/nuget/README.md) separately records retrieval
+of the declared external RTF, preserving its 2018 EULA identity and leaving exact
+applicability and qualified legal review unresolved.
+
 The [corresponding-source procedure](corresponding-source.md) now defines native
 source/patch/registry preparation, binary binding, independent reconstruction
 and recipient delivery checks. Maintained structural negative controls pass;
