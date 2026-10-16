@@ -46,7 +46,13 @@ Use each exact package's license/redistribution terms and compare which framewor
 runtime or build-only files actually ship. Do not label all Microsoft packages
 MIT or describe SDK build tooling as application runtime. WIL's reviewed MIT
 notice is retained in [docs/licenses](docs/licenses/Microsoft.Windows.ImplementationLibrary.LICENSE.txt).
-The remaining complete exact-payload notice inventory is pending.
+The [resolved NuGet notice inputs](docs/licenses/nuget/README.md) cover all 17
+current lock identities using native NuGet metadata and signature checks, with
+14 distinct packaged notice files retained once per exact content (including
+the existing WIL license). SDK BuildTools supplies only an external terms URL;
+its exact applicable terms remain unresolved. These preserved inputs are not a
+complete exact-payload notice inventory, legal clearance, MSIX inclusion proof
+or an assertion that every resolved package is an application runtime feature.
 
 ## Engineering tools
 

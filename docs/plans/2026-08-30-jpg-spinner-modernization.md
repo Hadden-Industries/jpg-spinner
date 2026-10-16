@@ -2323,6 +2323,28 @@ Microsoft/NuGet and engineering-tool transitive notices, exact final package
 inclusion/contribution, source delivery, qualified legal review and credential
 revocation remain open. No build, hosted CI or desktop control is implied.
 
+**NuGet notice-input preservation checkpoint (2026-10-16):** Native
+NuGet.Packaging 7.10.0.40 inspection binds all 17 resolved
+application lock identities to their original cached package content hashes;
+native signature-integrity checks and `dotnet nuget verify --all` pass. The
+[NuGet input inventory](../licenses/nuget/README.md) distinguishes 14 unique
+notice payloads, reuses WIL's existing exact license, and leaves SDK BuildTools'
+external-only terms unresolved. No license classifier or resolver was added.
+
+The missing-NuGet-notice control observed meaningful RED against the previous
+native-only policy. The new candidate extends the shared checksum contract and
+owned-copy controls to Microsoft notice inputs. Explicit native Copy-Item
+operations now preserve the thirteen new notice files without decoding or
+re-encoding them. All 23 retained notice hashes pass, including vendor BOMs,
+endings and final-newline absence. The valid owned copy and missing/edited
+native/NuGet notice, missing-document and missing-section controls pass.
+Repository policy also passes. The earlier overly complex formatter refusal
+remains historical; no guard configuration or exception was required for the
+owner-authorized literal copy commands. Prior native-notice checkpoint 904bb238
+remains intact; no locked dependency, archive or trust configuration changed.
+Exact final-payload contribution, source delivery, external SDK terms, qualified
+legal review and complete Task 18 acceptance remain open.
+
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
 - [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.

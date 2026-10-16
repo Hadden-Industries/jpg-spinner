@@ -1,4 +1,4 @@
-<# Exercise document structure and retained native-notice integrity on an owned
+<# Exercise document structure and retained dependency-notice integrity on an owned
    copy. Hash controls detect lost/edited notices, not legal completeness. #>
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OwnedOutputRoot)
@@ -10,13 +10,35 @@ $fixture = Join-Path $OwnedOutputRoot ('documentation-contract-'+[Guid]::NewGuid
 foreach ($path in @('README.md','SECURITY.md','THIRD_PARTY_NOTICES.md','docs/architecture.md','docs/privacy.md','docs/release-qualification.md')) {
     Copy-Item -LiteralPath (Join-Path $root $path) -Destination (Join-Path $fixture $path)
 }
-$nativeNotices = Join-Path $root 'docs/licenses/native'
-if (Test-Path -LiteralPath $nativeNotices -PathType Container) {
-    [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'docs/licenses'))
-    Copy-Item -LiteralPath $nativeNotices -Destination (Join-Path $fixture 'docs/licenses/native') -Recurse
+$dependencyNotices = Join-Path $root 'docs/licenses'
+if (Test-Path -LiteralPath $dependencyNotices -PathType Container) {
+    Copy-Item -LiteralPath $dependencyNotices -Destination (Join-Path $fixture 'docs/licenses') -Recurse
 }
 $policy = Join-Path $root 'scripts/Test-DocumentationPolicy.ps1'
 & $policy -RepositoryRoot $fixture
+# NuGet licensing is package-specific; an existing native-port inventory must
+# not silently stand in for the resolved Microsoft package notices.
+$webViewNotice = Join-Path $fixture 'docs/licenses/nuget/Microsoft.Web.WebView2.LICENSE.txt'
+$heldWebViewNotice = "$webViewNotice.held"
+if (Test-Path -LiteralPath $webViewNotice -PathType Leaf) {
+    Move-Item -LiteralPath $webViewNotice -Destination $heldWebViewNotice
+}
+$message=$null
+try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('Missing required dependency notice: docs/licenses/nuget/Microsoft.Web.WebView2.LICENSE.txt',[StringComparison]::Ordinal)) {
+    throw 'Missing-NuGet-notice control did not reach its precise refusal.'
+}
+Move-Item -LiteralPath $heldWebViewNotice -Destination $webViewNotice
+# A present Microsoft package notice must also remain complete; this control
+# exercises the same public boundary without interpreting proprietary terms.
+$webViewNoticeBytes=[IO.File]::ReadAllBytes($webViewNotice)
+[IO.File]::WriteAllText($webViewNotice,'A package name is not its license text.')
+$message=$null
+try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('Dependency notice bytes differ: docs/licenses/nuget/Microsoft.Web.WebView2.LICENSE.txt',[StringComparison]::Ordinal)) {
+    throw 'Edited-NuGet-notice control did not reach its precise refusal.'
+}
+[IO.File]::WriteAllBytes($webViewNotice,$webViewNoticeBytes)
 # The native package's actual notice, rather than a shortened SPDX label, must
 # remain available. A missing-file fixture also detects an ineffective policy.
 $jpegNotice = Join-Path $fixture 'docs/licenses/native/libjpeg-turbo.copyright.txt'
@@ -26,7 +48,7 @@ if (Test-Path -LiteralPath $jpegNotice -PathType Leaf) {
 }
 $message=$null
 try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
-if ($null -eq $message -or -not $message.Contains('Missing required native notice: docs/licenses/native/libjpeg-turbo.copyright.txt',[StringComparison]::Ordinal)) {
+if ($null -eq $message -or -not $message.Contains('Missing required dependency notice: docs/licenses/native/libjpeg-turbo.copyright.txt',[StringComparison]::Ordinal)) {
     throw 'Missing-native-notice control did not reach its precise refusal.'
 }
 Move-Item -LiteralPath $heldJpegNotice -Destination $jpegNotice
@@ -36,7 +58,7 @@ $jpegNoticeBytes = [IO.File]::ReadAllBytes($jpegNotice)
 [IO.File]::WriteAllText($jpegNotice,'Short SPDX label is not the packaged notice.')
 $message=$null
 try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
-if ($null -eq $message -or -not $message.Contains('Native notice bytes differ: docs/licenses/native/libjpeg-turbo.copyright.txt',[StringComparison]::Ordinal)) {
+if ($null -eq $message -or -not $message.Contains('Dependency notice bytes differ: docs/licenses/native/libjpeg-turbo.copyright.txt',[StringComparison]::Ordinal)) {
     throw 'Edited-native-notice control did not reach its precise refusal.'
 }
 [IO.File]::WriteAllBytes($jpegNotice,$jpegNoticeBytes)
@@ -57,4 +79,4 @@ try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message
 if ($null -eq $message -or -not $message.Contains('Missing required section ## Export in docs/privacy.md',[StringComparison]::Ordinal)) {
     throw 'Missing-section control did not reach its precise structural refusal.'
 }
-Write-Output 'PASS: documentation copy; missing/edited native notice, missing document and missing section refusals.'
+Write-Output 'PASS: documentation copy; missing/edited native and NuGet notices, missing document and missing section refusals.'

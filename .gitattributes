@@ -6,6 +6,8 @@
 # Native installed notices are retained byte-for-byte, including upstream CRLF.
 # They are vendor assets, not first-party prose to normalize during checkout.
 docs/licenses/native/*.copyright.txt -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab
+# NuGet notice payloads likewise preserve vendor BOMs, endings and whitespace.
+docs/licenses/nuget/*.txt -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab
 
 # Unified patches retain upstream context verbatim: the context prefix before
 # a tab and blank context lines are patch syntax, not first-party indentation.

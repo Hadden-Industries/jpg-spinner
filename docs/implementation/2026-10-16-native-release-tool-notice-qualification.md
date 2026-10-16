@@ -2,12 +2,13 @@
 
 ## Decision and scope
 
-Status on 2026-10-16: bounded native collection is demonstrated; complete input
-coverage, maintained integration and rights clearance are **not qualified**.
+Status on 2026-10-16: bounded native collection and Windows Go-module report
+coverage are demonstrated; non-Go input coverage, maintained integration and
+rights clearance are **not qualified**.
 This advances [Task 18](../plans/2026-08-30-jpg-spinner-modernization.md#task-18-document-the-shipped-system-and-remove-secret-bearing-telemetry),
 not application runtime dependencies or release approval. The source baseline is
-signed commit `904bb2385a3f1b4e6e39833eea7e5697be0756eb`. Existing NuGet
-notice drafts remain separate and unqualified.
+signed commit `904bb2385a3f1b4e6e39833eea7e5697be0756eb`. NuGet notice
+preservation is a separate input inventory, not qualification of this tool.
 
 The desired outcome is a reproducible collection of original notices for the
 [native SBOM producer](../../eng/artifact-sbom/go.mod), without inventing a
@@ -81,10 +82,18 @@ The classifier label must not silently select a license, erase the alternative
 or be presented as a GPL-only rights conclusion.
 
 Native warnings identify non-Go and assembly inputs; these require separate
-review. Independent comparison with Go's actual contributing-module inventory
-was refused by the command guard before execution. Coverage is therefore
-unknown, not passing. No guard exception, substitute execution route, custom
-parser or output-rewriting shim was used.
+review. The initial composed dependency-comparison command was refused by the
+command guard before execution; that failed attempt remains historical. The
+owner subsequently requested simpler explicit commands and authorized running
+them. The maintained bounded process runner completed native `go list -deps`
+with the same module template, offline cache and read-only module inputs.
+PowerShell's native line reader and CSV reader compared the saved output:
+all 160 distinct external contributing module identities have entries among
+the 179 native license-report rows, with no uncovered module and nonempty-input
+checks. This covers the selected Windows Go graph, not every source file, other
+build targets, embedded assets or the collector's non-Go dependency blind spots.
+No guard exception/configuration change, custom parser or output-rewriting shim
+was required. Module membership is not legal clearance or final tool adoption.
 
 ## Evidence and remaining work
 
@@ -109,8 +118,8 @@ Evidence and required inputs were not removed, and no reclaimed-capacity claim
 is made. The Task 18 owner reassesses the retained group after coverage and
 non-Go/dual-license review, not at an arbitrary future date.
 
-Before maintained integration, finish the independent contributing-module
-comparison and resolve non-Go/embedded/standard-library input obligations.
+Before maintained integration, resolve non-Go/embedded/standard-library input
+obligations and repeat the module comparison for any newly selected build target.
 Then qualify exact original terms and distribution obligations, including any
 source delivery, with the accountable rights reviewer. Do not treat collector
 success, an SPDX label, this document or a signed source commit as that approval.
