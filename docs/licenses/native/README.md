@@ -23,7 +23,7 @@ proof or an approved release package inventory.
 | libjpeg-turbo 3.2.0#1 | [3.2.0](https://github.com/libjpeg-turbo/libjpeg-turbo/tree/3.2.0) | [Packaged license summary and BSD notice](libjpeg-turbo.copyright.txt) |
 | libspng 0.7.4#1 | [v0.7.4](https://github.com/randy408/libspng/tree/v0.7.4) | [Combined packaged notice](libspng.copyright.txt) |
 | zlib 1.3.2#2 | [v1.3.2](https://github.com/madler/zlib/tree/v1.3.2) | [Packaged notice](zlib.copyright.txt) |
-| Catch2 3.16.0; tests only | [v3.16.0](https://github.com/catchorg/Catch2/tree/v3.16.0) | [BSL-1.0 notice](catch2.copyright.txt) |
+| Catch2 3.16.1; tests only | [v3.16.1](https://github.com/catchorg/Catch2/tree/v3.16.1) | [BSL-1.0 notice](catch2.copyright.txt) |
 
 The registry baseline is the committed `builtin-baseline` in
 [vcpkg.json](../../../vcpkg.json). Port revisions are packaging revisions, not

@@ -934,8 +934,8 @@ try {
         -Force
 
     # vcpkg's configuration file and the manifest's embedded `configuration`
-    # field are equivalent package-authority surfaces. Only the two approved
-    # native metadata overlay ports may supersede the immutable baseline.
+    # field are equivalent package-authority surfaces. Only the closed three-
+    # port set (metadata plus the qualified Catch2 patch) may override baseline.
     $vcpkgManifestPath = Join-Path $temporaryRoot 'vcpkg.json'
     $validOverlayManifestText = [System.IO.File]::ReadAllText($vcpkgManifestPath)
     foreach ($invalidOverlayPaths in @(
@@ -943,6 +943,10 @@ try {
         @{ value = 'vcpkg-ports/exiv2' },
         @{ value = @{} },
         @{ value = @() },
+        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2') },
+        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'VCPKG-PORTS/catch2') },
+        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 42) },
+        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2', 'unapproved') },
         @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/adobe-xmp-core') },
         @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/exiv2') },
         @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'unapproved') },

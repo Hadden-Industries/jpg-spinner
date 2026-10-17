@@ -707,8 +707,8 @@ function Test-VcpkgResolutionAuthorityConfiguration {
     # vcpkg accepts the same resolution configuration beside the manifest or
     # embedded in it. A declared default registry can replace the builtin one,
     # while registries and overlays can supersede selected ports or triplets.
-    # The baseline remains authoritative except for the two explicitly approved
-    # native metadata ports. Exact paths prevent an overlay-directory expansion
+    # The baseline remains authoritative except for the two approved metadata
+    # ports and qualified Catch2 patch. Exact paths prevent directory expansion
     # from silently replacing unrelated dependencies.
     if ($Configuration.Contains('default-registry')) {
         Add-PolicyFailure -Message (
@@ -732,7 +732,7 @@ function Test-VcpkgResolutionAuthorityConfiguration {
         }
     }
 
-    $approvedOverlayPorts = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2')
+    $approvedOverlayPorts = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2')
     $overlayPorts = $Configuration['overlay-ports']
     $hasExactApprovedPorts = $overlayPorts -is [System.Collections.IList] -and
         $overlayPorts.Count -eq $approvedOverlayPorts.Count
@@ -747,7 +747,7 @@ function Test-VcpkgResolutionAuthorityConfiguration {
     if (-not $hasExactApprovedPorts) {
         Add-PolicyFailure -Message (
             "$SourceDescription must not declare 'overlay-ports' outside the exact approved " +
-            'JSON array [vcpkg-ports/adobe-xmp-core, vcpkg-ports/exiv2]; both ports are required.'
+            'JSON array [vcpkg-ports/adobe-xmp-core, vcpkg-ports/exiv2, vcpkg-ports/catch2]; all three ports are required.'
         )
     }
 }
@@ -2039,7 +2039,7 @@ function Test-VcpkgManifest {
             -SourceDescription 'vcpkg.json embedded configuration'
     }
     elseif (-not (Test-Path -LiteralPath (Get-RepositoryPath -RelativePath 'vcpkg-configuration.json'))) {
-        Add-PolicyFailure -Message 'vcpkg configuration must select both approved metadata overlay ports.'
+        Add-PolicyFailure -Message 'vcpkg configuration must select the exact approved metadata and Catch2 overlay ports.'
     }
     if ($manifest.Contains('vcpkg-configuration')) {
         Add-PolicyFailure -Message (
@@ -2054,7 +2054,7 @@ function Test-VcpkgManifest {
     $expectedVersions = [ordered]@{
         'libjpeg-turbo' = '3.2.0#1'
         'exiv2' = '0.28.9#1'
-        'catch2' = '3.16.0'
+        'catch2' = '3.16.1'
     }
 
     $dependencies = @($manifest.dependencies)

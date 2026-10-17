@@ -21,7 +21,7 @@ foreach ($requiredEvidenceLabel in @(
     'Windows SDK 10.0.28000.0',
     'libjpeg-turbo 3.2.0#1',
     'Exiv2 0.28.9#1+xmp',
-    'Catch2 3.16.0'
+    'Catch2 3.16.1'
 )) {
     if ($successReport.IndexOf($requiredEvidenceLabel, [System.StringComparison]::Ordinal) -lt 0) {
         throw "Repository-policy success report omits verified evidence '$requiredEvidenceLabel'."

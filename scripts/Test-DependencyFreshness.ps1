@@ -330,9 +330,10 @@ $upstreamGitHubRepositories = @{
 
 # Overlay ports take precedence over registry version selection. Their local
 # packaging revision is not an official registry revision with the same number.
-# Recognize only the approved pair; repository policy validates the full build
+# Recognize only the approved closed set; repository policy validates the full build
 # configuration, while this read-only check verifies the selected version source.
 $usesMetadataOverlays = $false
+$usesCatch2Overlay = $false
 $configurationProperty = $vcpkgManifest.PSObject.Properties['configuration']
 $resolutionConfiguration = if ($null -ne $configurationProperty) { $configurationProperty.Value } else { $null }
 $standaloneConfigurationPath = Join-Path $resolvedRepositoryRoot 'vcpkg-configuration.json'
@@ -348,12 +349,15 @@ if ($null -ne $resolutionConfiguration) {
     $overlayProperty = $resolutionConfiguration.PSObject.Properties['overlay-ports']
     if ($null -ne $overlayProperty) {
         $paths = $overlayProperty.Value
-        if ($paths -isnot [array] -or $paths.Count -ne 2 -or
+        if ($paths -isnot [array] -or $paths.Count -ne 3 -or
+            $paths[0] -isnot [string] -or $paths[1] -isnot [string] -or $paths[2] -isnot [string] -or
             $paths[0] -cne 'vcpkg-ports/adobe-xmp-core' -or
-            $paths[1] -cne 'vcpkg-ports/exiv2') {
-            throw 'Dependency freshness supports only the approved metadata overlay paths.'
+            $paths[1] -cne 'vcpkg-ports/exiv2' -or
+            $paths[2] -cne 'vcpkg-ports/catch2') {
+            throw 'Dependency freshness supports only the exact approved metadata and Catch2 overlay paths.'
         }
         $usesMetadataOverlays = $true
+        $usesCatch2Overlay = $true
     }
 }
 
@@ -384,6 +388,13 @@ if ($usesMetadataOverlays) {
     [void]$approvedPackageAuthorities.Add('approved local metadata overlays and upstream Adobe XMP Toolkit')
 }
 
+if ($usesCatch2Overlay) {
+    $localCatchManifest = Read-JsonFile `
+        -Path (Join-Path $resolvedRepositoryRoot 'vcpkg-ports/catch2/vcpkg.json') `
+        -Description 'local Catch2 overlay manifest' -RequiredRootValueKind Object
+    [void]$approvedPackageAuthorities.Add('approved local Catch2 overlay and upstream GitHub')
+}
+
 foreach ($override in $vcpkgOverrides) {
     $dependencyName = [string]$override.name
     $pinnedVersion = [string]$override.version
@@ -392,6 +403,20 @@ foreach ($override in $vcpkgOverrides) {
     }
 
     $isLocalExivOverlay = $usesMetadataOverlays -and $dependencyName -ceq 'exiv2'
+    $isLocalCatchOverlay = $usesCatch2Overlay -and $dependencyName -ceq 'catch2'
+    if ($isLocalCatchOverlay) {
+        # Do not coerce JSON values into matching strings. An overlay's local
+        # revision is a separate authority, not a revision of Microsoft's port.
+        $catchPortRevision = $localCatchManifest.PSObject.Properties['port-version']
+        if ($localCatchManifest.name -isnot [string] -or
+            $localCatchManifest.name -cne 'catch2' -or
+            $localCatchManifest.'version-semver' -isnot [string] -or
+            $pinnedVersion -cne $localCatchManifest.'version-semver' -or
+            ($null -ne $catchPortRevision -and
+                ($catchPortRevision.Value -isnot [long] -or $catchPortRevision.Value -ne 0))) {
+            throw 'The local catch2 overlay does not match the exact root override.'
+        }
+    }
     if ($isLocalExivOverlay) {
         if ($localExivManifest.name -cne 'exiv2' -or
             $pinnedVersion -cne "$($localExivManifest.version)#$($localExivManifest.'port-version')") {
@@ -456,11 +481,13 @@ foreach ($override in $vcpkgOverrides) {
     if ($isLocalExivOverlay) {
         $registryVersions = @($registryVersions | ForEach-Object { ($_ -split '#')[0] })
     }
-    Assert-PinnedVersionExistsInAuthority `
-        -DependencyName $dependencyName `
-        -PinnedVersion $pinnedVersion `
-        -AuthorityVersions $registryVersions `
-        -Authority 'official vcpkg registry'
+    if (-not $isLocalCatchOverlay) {
+        Assert-PinnedVersionExistsInAuthority `
+            -DependencyName $dependencyName `
+            -PinnedVersion $pinnedVersion `
+            -AuthorityVersions $registryVersions `
+            -Authority 'official vcpkg registry'
+    }
     $newestRegistryVersion = Get-NewestStableVersion `
         -Candidates $registryVersions `
         -Description "official vcpkg registry metadata for $dependencyName"
@@ -489,8 +516,22 @@ foreach ($override in $vcpkgOverrides) {
             -Candidates $stableReleaseTags `
             -Description "upstream GitHub releases for $dependencyName"
         $pinnedVersionRecord = ConvertTo-StableVersionRecord -CandidateVersion $pinnedVersion
+        if ($isLocalCatchOverlay) {
+            # Overlay precedence is native vcpkg behavior. Verify the actual
+            # selected upstream release instead of pretending the registry has
+            # published it; retain registry-lag information independently.
+            Assert-PinnedVersionExistsInAuthority -DependencyName $dependencyName `
+                -PinnedVersion $pinnedVersion -AuthorityVersions $stableReleaseTags `
+                -Authority 'upstream GitHub'
+            if ((Compare-StableVersion -Left $pinnedVersionRecord -Right $newestRegistryVersion) -gt 0) {
+                [void]$releaseChannelNotices.Add(
+                    "${dependencyName}: $pinnedVersion resolves through the approved local Catch2 overlay; " +
+                    "official vcpkg registry latest is $($newestRegistryVersion.normalizedVersion)."
+                )
+            }
+        }
         if ((Compare-StableVersion -Left $newestGitHubVersion -Right $pinnedVersionRecord) -gt 0) {
-            if ($isLocalExivOverlay -or
+            if ($isLocalExivOverlay -or $isLocalCatchOverlay -or
                 (Compare-StableVersion -Left $newestRegistryVersion -Right $newestGitHubVersion) -ge 0) {
                 Add-AvailableUpdate `
                     -DependencyName $dependencyName `

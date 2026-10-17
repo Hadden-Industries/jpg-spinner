@@ -36,7 +36,9 @@ function Write-JsonFixture {
         [object]$Value
     )
 
-    Write-Utf8TextFile -Path $Path -Content ($Value | ConvertTo-Json -Depth 20)
+    # -InputObject preserves singleton arrays; pipeline enumeration would turn
+    # one release into an object and test the wrong JSON root contract.
+    Write-Utf8TextFile -Path $Path -Content (ConvertTo-Json -InputObject $Value -Depth 20)
 }
 
 function Invoke-FreshnessCheck {
@@ -210,9 +212,19 @@ try {
     # agrees with the root pin. Upstream releases must still be monitored.
     $overlayManifest = $originalVcpkgManifestContent | ConvertFrom-Json -AsHashtable
     $overlayManifest.configuration = @{ 'overlay-ports' = @(
-        'vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2'
+        'vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2'
     ) }
     $overlayManifest.overrides[1].version = '0.28.8#1'
+    $overlayManifest.overrides[2].version = '3.16.1'
+    $localCatchManifestPath = Join-Path $fixtureRepositoryRoot 'vcpkg-ports/catch2/vcpkg.json'
+    Write-JsonFixture -Path $localCatchManifestPath -Value @{
+        name = 'catch2'; 'version-semver' = '3.16.1'; license = 'BSL-1.0'
+    }
+    $catchReleasesPath = Join-Path $metadataSnapshotDirectory 'github/catch2.releases.json'
+    $originalCatchReleases = [IO.File]::ReadAllText($catchReleasesPath)
+    Write-JsonFixture -Path $catchReleasesPath -Value @(
+        @{ tag_name = 'v3.16.1'; draft = $false; prerelease = $false }
+    )
     $localExivManifestPath = Join-Path $fixtureRepositoryRoot 'vcpkg-ports/exiv2/vcpkg.json'
     Write-JsonFixture -Path $localExivManifestPath -Value @{
         name = 'exiv2'; version = '0.28.8'; 'port-version' = 1
@@ -230,6 +242,53 @@ try {
     if ($overlayResult.exitCode -ne 0) {
         throw "The approved local port revision should pass independently of registry revisions.`n$($overlayResult.output)"
     }
+    if ($overlayResult.output -notmatch 'approved local Catch2 overlay') {
+        throw "Catch2 registry lag must name the actual approved resolution authority.`n$($overlayResult.output)"
+    }
+    # Approval selects one native overlay, not arbitrary future versions,
+    # malformed JSON or mismatching local identities. No registry assertion may
+    # falsely claim that 3.16.1 is available in this 3.16.0 registry fixture.
+    foreach ($invalidCatchManifest in @(
+        @{ name = 'another-package'; 'version-semver' = '3.16.1' },
+        @{ name = @('catch2'); 'version-semver' = '3.16.1' },
+        @{ name = 'catch2'; 'version-semver' = '3.16.0' },
+        @{ name = 'catch2'; 'version-semver' = 3161 },
+        @{ name = 'catch2'; 'version-semver' = '3.16.1'; 'port-version' = 1 }
+    )) {
+        Write-JsonFixture -Path $localCatchManifestPath -Value $invalidCatchManifest
+        $invalidCatchResult = Invoke-FreshnessCheck
+        if ($invalidCatchResult.exitCode -eq 0 -or
+            $invalidCatchResult.output -notmatch 'local catch2 overlay does not match') {
+            throw "A mismatching Catch2 overlay was not refused precisely.`n$($invalidCatchResult.output)"
+        }
+    }
+    Write-JsonFixture -Path $localCatchManifestPath -Value @{
+        name = 'catch2'; 'version-semver' = '3.16.1'; license = 'BSL-1.0'
+    }
+    Assert-RejectedMetadataRoot -Path $localCatchManifestPath -InvalidJson '[]' `
+        -ExpectedDiagnostic 'root must be a JSON object'
+    Assert-RejectedMetadataRoot -Path $localCatchManifestPath `
+        -InvalidJson '{"name":"catch2","version-semver":"3.16.0","version-semver":"3.16.1"}' `
+        -ExpectedDiagnostic "Duplicate property 'version-semver'"
+    Write-JsonFixture -Path $catchReleasesPath -Value @(
+        @{ tag_name = 'v3.16.0'; draft = $false; prerelease = $false }
+    )
+    $unpublishedCatchResult = Invoke-FreshnessCheck
+    if ($unpublishedCatchResult.exitCode -eq 0 -or
+        $unpublishedCatchResult.output -notmatch 'upstream GitHub.*does not contain that exact version') {
+        throw "An unpublished Catch2 overlay version was not refused.`n$($unpublishedCatchResult.output)"
+    }
+    Write-JsonFixture -Path $catchReleasesPath -Value @(
+        @{ tag_name = 'v3.16.1'; draft = $false; prerelease = $false },
+        @{ tag_name = 'v3.16.2'; draft = $false; prerelease = $false }
+    )
+    $newerCatchResult = Invoke-FreshnessCheck
+    if ($newerCatchResult.exitCode -eq 0 -or $newerCatchResult.output -notmatch 'catch2: pinned 3\.16\.1') {
+        throw "A newer stable Catch2 release was not actionable through its approved overlay.`n$($newerCatchResult.output)"
+    }
+    Write-JsonFixture -Path $catchReleasesPath -Value @(
+        @{ tag_name = 'v3.16.1'; draft = $false; prerelease = $false }
+    )
     $standaloneConfigurationPath = Join-Path $fixtureRepositoryRoot 'vcpkg-configuration.json'
     Write-JsonFixture -Path $standaloneConfigurationPath -Value $overlayManifest.configuration
     $standaloneManifest = $overlayManifest.Clone()
@@ -259,6 +318,7 @@ try {
     if ($adobeUpdateResult.exitCode -eq 0 -or $adobeUpdateResult.output -notmatch 'adobe-xmp-core: pinned 2025\.03') {
         throw "A newer Adobe SDK release was not reported.`n$($adobeUpdateResult.output)"
     }
+    [IO.File]::WriteAllText($catchReleasesPath, $originalCatchReleases)
     Write-Utf8TextFile -Path $manifestPaths[0] -Content $originalVcpkgManifestContent.TrimEnd()
 
     # NuGet's flat-container index is the package authority for an exact

@@ -105,7 +105,11 @@ results are not a freshly observed fourth installation.
 | zlib 1.3.2 | 1,566,911 | `b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1` |
 | Catch2 3.16.0, test input only | 1,216,799 | `0957cae5821b17ce07f0833aaa52b5137643a8382203221f363a8303c109af34` |
 
-These are frozen-input identities, not a new latest-version assessment. Native
+These are frozen-input identities, not a new latest-version assessment. The
+subsequent [Catch2 3.16.1 qualification](implementation/2026-10-17-catch2-native-overlay.md)
+separately retains its new original archive, exact port/patch and Microsoft
+recipe license; this table remains the historical 3.16.0 observation. Do not
+reuse it as current test-distribution source closure. Native
 Git 2.56.0.windows.2 and PowerShell 7.6.7 performed the qualification without a
 build, download, installation, network-dependent restore or application change.
 Each upstream archive matches the selected port's native SHA-512; independent

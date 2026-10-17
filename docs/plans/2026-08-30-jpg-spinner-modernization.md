@@ -6,7 +6,15 @@
 
 **Architecture:** A single-project packaged MSIX presentation shell composes four native modules: domain policy, JPEG transformation, AppContainer storage transactions, and batch orchestration. Dependencies point inward toward immutable value types and capability contracts. The old application remains only as a temporary behavioral reference and is deleted at the verified cutover; no legacy code is wrapped.
 
-**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.5.1; Microsoft.Windows.CppWinRT 3.0.260818.1; Microsoft.Windows.ImplementationLibrary 1.0.260126.7; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.9 with XMP; Catch2 3.16.0; Syft SDK 1.54.1 and SPDX Workgroup Tools 2.0.7; vcpkg manifest mode at baseline `c748cb44f2a435fcf015c35225c9d5545fe0021c`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
+**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.5.1; Microsoft.Windows.CppWinRT 3.0.260818.1; Microsoft.Windows.ImplementationLibrary 1.0.260126.7; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.9 with XMP; Catch2 3.16.1 through the qualified native overlay; Syft SDK 1.54.1 and SPDX Workgroup Tools 2.0.7; vcpkg manifest mode at baseline `c748cb44f2a435fcf015c35225c9d5545fe0021c`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
+
+**Approved 2026-10-17 amendment:** the closed native overlay set adds only
+`vcpkg-ports/catch2`, for upstream Catch2 3.16.1 while Microsoft's registry still
+publishes 3.16.0. The [bounded qualification](../implementation/2026-10-17-catch2-native-overlay.md)
+owns source/license/hash, native identity, refusal and build/test evidence.
+Catch2 remains test-only; no library fork, compatibility wrapper, registry
+replacement or change to release/hosted gates is approved. Historical 3.16.0
+evidence remains historical, not proof for the new dependency.
 
 **Design specification:** `docs/specs/2026-08-30-jpg-spinner-modernization-design.md`
 
@@ -181,7 +189,7 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
 
 ### Step 1.2: Pin the native dependency graph
 
-- [x] Add this exact manifest:
+- [x] Add this exact manifest (updated by the approved metadata and Catch2 overlay amendments):
 
 ```json
 {
@@ -189,6 +197,9 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
   "name": "jpg-spinner",
   "version-string": "2.0.0",
   "builtin-baseline": "c748cb44f2a435fcf015c35225c9d5545fe0021c",
+  "configuration": {
+    "overlay-ports": ["vcpkg-ports/adobe-xmp-core", "vcpkg-ports/exiv2", "vcpkg-ports/catch2"]
+  },
   "dependencies": [
     {
       "name": "libjpeg-turbo",
@@ -206,8 +217,8 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
   ],
   "overrides": [
     {"name": "libjpeg-turbo", "version": "3.2.0#1"},
-    {"name": "exiv2", "version": "0.28.9"},
-    {"name": "catch2", "version": "3.16.0"}
+    {"name": "exiv2", "version": "0.28.9#1"},
+    {"name": "catch2", "version": "3.16.1"}
   ]
 }
 ```
@@ -2422,7 +2433,7 @@ unchanged. Final frozen-candidate, contribution, source/terms/legal and compiler
 helper-lifetime obligations remain open.
 
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
-- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.0 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
+- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.1 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
 - [ ] Prepare the exact corresponding source, patches, dependency locks, and reproducible build instructions for the distributed binary. Follow the [corresponding-source preparation procedure](../corresponding-source.md), which distinguishes an application Git archive from the complete dependency/source delivery set. Its missing-document and missing-reconstruction-section controls observed meaningful RED and now pass with the documentation policy. Actual artifact assembly, independent reconstruction, recipient availability and qualified legal review remain open. Do not assume that static versus dynamic linkage or a separate process removes license obligations, and do not introduce a loader/process boundary merely as a licensing shim.
   - [x] Preserve and independently read back the selected native-input subset offline: eight original upstream archives, 12 complete selected port trees, all four overlay patches, 28 original installed SPDX documents and 11 native baseline/version metadata files. The [2026-10-17 checkpoint](../corresponding-source.md#selected-native-input-preservation-checkpoint-2026-10-17) binds exact source/tree/digest identities and four actual refusal controls. This does not close corresponding-source assembly, actual build-tool/NuGet acquisition closure, independent reconstruction, recipient access, rights review or final candidate binding; retain the two archives exceeding native evidence transport limits for their named consumers.
@@ -2649,7 +2660,7 @@ Implementation is complete only when:
 - [TurboJPEG 3.2.0 `TJPARAM_MAXMEMORY` implementation (1,048,576 bytes per unit)](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/src/turbojpeg.c)
 - [Exiv2 releases](https://github.com/Exiv2/exiv2/releases)
 - [Exiv2 maintainer statement on Extended XMP limitations](https://dev.exiv2.org/boards/3/topics/3124)
-- [Catch2 3.16.0 release](https://github.com/catchorg/Catch2/releases/tag/v3.16.0)
+- [Catch2 3.16.1 release](https://github.com/catchorg/Catch2/releases/tag/v3.16.1)
 - [CIPA camera and imaging standards](https://www.cipa.jp/e/std/std-sec.html)
 - [ITU-T T.81 JPEG specification](https://www.itu.int/ITU-T/recommendations/rec.aspx?lang=en&rec=2633)
 - [Adobe XMP specifications](https://developer.adobe.com/xmp/docs/xmp-specifications/)
