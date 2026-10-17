@@ -66,6 +66,11 @@ wil::com_ptr<IUIAutomationElement> findControl(IUIAutomation2 *automation, IUIAu
     return control;
 }
 
+// This predicate is shared with post-picker checks below. A verified HWND can
+// exist while XAML loading/startup recovery still disables the picker button.
+wil::com_ptr<IUIAutomationElement> waitForEnabledControl(IUIAutomation2 *automation, IUIAutomationElement *window,
+                                                         const wchar_t *identifier);
+
 /// Opens the production picker and admits only an enabled popup owned by the
 /// verified product HWND. A missing broker relationship fails qualification;
 /// never search unrelated desktop dialogs by title or guessed process identity.
@@ -80,7 +85,7 @@ wil::com_ptr<IUIAutomationElement> openOwnedStoragePicker(IUIAutomation2 *automa
     // GetWindow's general no-relationship result can be null. Neither that
     // result nor the owner itself admits a separate dialog as an input target.
     REQUIRE((existingPopup == nullptr || existingPopup == owner));
-    const auto sourcePicker = findControl(automation, window, pickerButtonIdentifier);
+    const auto sourcePicker = waitForEnabledControl(automation, window, pickerButtonIdentifier);
     REQUIRE(sourcePicker);
     wil::com_ptr<IUIAutomationInvokePattern> invoke;
     THROW_IF_FAILED(sourcePicker->GetCurrentPatternAs(UIA_InvokePatternId, IID_PPV_ARGS(invoke.put())));
@@ -405,6 +410,10 @@ TEST_CASE("The isolated shell starts with only source selection available",
         REQUIRE(GetTokenInformation(token.get(), TokenIsAppContainer, &isAppContainer, sizeof(isAppContainer),
                                     &returnedLength));
         CHECK(isAppContainer == 1); // Effective product trust, not merely manifest spelling.
+        // Window creation precedes XAML loading and asynchronous startup
+        // recovery. Assert initial content only once the real selection gate
+        // is usable; keep every accessibility/default-state assertion intact.
+        REQUIRE(waitForEnabledControl(automation, window, L"SourceFolderPicker"));
         const auto heading = findControl(automation, window, L"SourceSelectionRegion");
         REQUIRE(heading);
         BOOL isOffscreen{};
@@ -484,10 +493,18 @@ TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local
         REQUIRE(cancel);
         invokeControl(cancel.get());
         REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
-        // Characterize native focus restoration before adding app focus code.
-        // A declaration cannot substitute for the actual post-picker peer state.
+        // Re-enabling the owner is not proof that WinUI has completed its
+        // asynchronous focus notifications. Await the real focused peer, not
+        // an arbitrary delay or a test-side SetFocus that would hide a defect.
         BOOL restoredFocus{};
-        THROW_IF_FAILED(exportButton->get_CurrentHasKeyboardFocus(&restoredFocus));
+        const auto focusDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+        do
+        {
+            THROW_IF_FAILED(exportButton->get_CurrentHasKeyboardFocus(&restoredFocus));
+            if (restoredFocus)
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds{20});
+        } while (std::chrono::steady_clock::now() < focusDeadline);
         CHECK(restoredFocus);
         CHECK(physicalFolder.GetFilesAsync().get().Size() == files.Size());
         for (const auto &[file, bytes] : before)

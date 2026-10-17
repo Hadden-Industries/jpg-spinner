@@ -307,10 +307,13 @@ Windows::Foundation::IAsyncAction MainWindow::recoverStartupAsync()
         const auto local = Windows::Storage::ApplicationData::Current().LocalFolder();
         const auto store = co_await local.CreateFolderAsync(L"ImageTransactionJournals",
                                                             Windows::Storage::CreationCollisionOption::OpenIfExists);
-        const auto cache = Windows::Storage::AccessCache::StorageApplicationPermissions::FutureAccessList();
         co_await resume_background();
         {
             auto apartment = wil::RoInitialize(RO_INIT_MULTITHREADED);
+            // Acquire the native access-list object in the apartment that
+            // enumerates/restores its capabilities, without requiring an
+            // instance acquired on the XAML UI thread to be agile.
+            const auto cache = Windows::Storage::AccessCache::StorageApplicationPermissions::FutureAccessList();
             result.emplace(jpg_spinner::presentation::recoverStartupTransactions(store, cache, cancellation));
             try
             {
@@ -671,7 +674,7 @@ fire_and_forget MainWindow::RestoreRecoverySource_Click(Windows::Foundation::IIn
     pickerActive_ = false;
     notifyShellState();
 }
-fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspectable const &,
+fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspectable const &sender,
                                                     Microsoft::UI::Xaml::RoutedEventArgs const &)
 {
     auto lifetime = get_strong();
@@ -679,6 +682,12 @@ fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspec
         co_return;
     const auto queue = DispatcherQueue();
     const auto log = diagnosticLog_; // Capture the owned logger on the UI thread.
+    // Disabling the invoking control moves WinUI focus away from it. Capture
+    // its input modality before publishing the busy state; re-enabling alone
+    // does not restore keyboard/screen-reader continuity after the native picker.
+    const auto exportInitiator = sender.try_as<Microsoft::UI::Xaml::Controls::Control>();
+    const auto initiatingFocusState =
+        exportInitiator ? exportInitiator.FocusState() : Microsoft::UI::Xaml::FocusState::Unfocused;
     bool exportFailed{};
     pickerActive_ = true;
     notifyShellState();
@@ -724,6 +733,13 @@ fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspec
         diagnosticLogError_ = true;
     pickerActive_ = false;
     notifyShellState();
+    // Focus only the still-loaded, enabled initiator of this interaction, and
+    // never pass Unfocused to Focus (the WinUI contract forbids it). Native
+    // Focus may set only logical focus when another app owns the foreground;
+    // deliberately do not activate a window or steal global desktop focus.
+    if (!closeAdmission_.closeRequested() && exportInitiator && exportInitiator.IsLoaded() &&
+        exportInitiator.IsEnabled() && initiatingFocusState != Microsoft::UI::Xaml::FocusState::Unfocused)
+        (void)exportInitiator.Focus(initiatingFocusState);
 }
 fire_and_forget MainWindow::ReturnToSourceSelection_Click(Windows::Foundation::IInspectable const &,
                                                           Microsoft::UI::Xaml::RoutedEventArgs const &)

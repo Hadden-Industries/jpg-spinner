@@ -7,6 +7,28 @@
 #include <winrt/Windows.Security.Cryptography.h>
 #include <wil/resource.h>
 #include <bit>
+#include <memory>
+#include <optional>
+
+namespace
+{
+using StartupRecoveryResult = jpg_spinner::domain::ImageProcessingResult<
+    jpg_spinner::storage::ImageFileTransactionRecoverySummary>;
+
+// Match the shipping shell's background transition and explicit WinRT MTA
+// lifetime, not just the already initialized console test thread. The coroutine
+// owns its result storage across suspension; the caller awaits completion
+// before observing it. Do not retain a reference to a caller's stack frame.
+winrt::Windows::Foundation::IAsyncAction recoverStartupOnBackgroundAsync(
+    winrt::Windows::Storage::StorageFolder journalStore,
+    winrt::Windows::Storage::AccessCache::IStorageItemAccessList accessList,
+    std::shared_ptr<std::optional<StartupRecoveryResult>> result)
+{
+    co_await winrt::resume_background();
+    const auto apartment = wil::RoInitialize(RO_INIT_MULTITHREADED);
+    result->emplace(jpg_spinner::presentation::recoverStartupTransactions(journalStore, accessList));
+}
+} // namespace
 
 TEST_CASE("Startup composition rejects an absent native access cache", "[presentation][startup-recovery]")
 {
@@ -32,6 +54,24 @@ TEST_CASE("Startup restores an actual native cache grant and reconciles its jour
         ApplicationData::Current().LocalFolder().CreateFolderAsync(winrt::to_hstring(transactionIdentity)).get();
     const auto cleanup = wil::scope_exit([&] { root.DeleteAsync().get(); }); // Only this UUID-owned fixture.
     const auto store = root.CreateFolderAsync(L"journals").get();
+    const auto cache = AccessCache::StorageApplicationPermissions::FutureAccessList();
+    REQUIRE(cache.Entries().Size() == 0); // Fresh test-package cache, never the user's app cache.
+    const auto recoveryResult = std::make_shared<std::optional<StartupRecoveryResult>>();
+    recoverStartupOnBackgroundAsync(store, cache, recoveryResult).get();
+    const auto &emptyStoreRecovery = *recoveryResult;
+    REQUIRE(emptyStoreRecovery);
+    if (const auto error = emptyStoreRecovery->errorIfPresent())
+    {
+        // Structured native identity only: never log private paths or exception
+        // messages when the real restricted startup boundary refuses access.
+        INFO("Empty-store recovery error code=" << static_cast<int>(error->code));
+        const auto nativeError = std::get_if<domain::WindowsHResult>(&error->nativeErrorProjection);
+        INFO("Empty-store recovery HRESULT present=" << (nativeError != nullptr)
+                                                       << "; value=" << (nativeError ? nativeError->signedValue : 0));
+        FAIL("A fresh application-owned journal store must admit source selection.");
+    }
+    REQUIRE(emptyStoreRecovery->valueIfPresent());
+    CHECK(emptyStoreRecovery->valueIfPresent()->recoveredTransactions.empty());
     const auto journalFolder = store.CreateFolderAsync(winrt::to_hstring(transactionIdentity)).get();
     const auto source = root.CreateFileAsync(L"original.jpg").get();
     const auto output =
@@ -55,8 +95,6 @@ TEST_CASE("Startup restores an actual native cache grant and reconciles its jour
                      std::wstring{stage.Path()}, storageItemIdentityText(inspectItem(stage, false).identity),
                      stageRevision.valueIfPresent()->encodedLengthBytes, stageRevision.valueIfPresent()->encodedSha256,
                      L"", L"", std::wstring{output.Path()} + L"\\original.jpg"});
-    const auto cache = AccessCache::StorageApplicationPermissions::FutureAccessList();
-    REQUIRE(cache.Entries().Size() == 0); // Fresh test-package cache, never the user's app cache.
     const auto missingGrant = presentation::recoverStartupTransactions(store, cache);
     REQUIRE(missingGrant.errorIfPresent());
     CHECK(missingGrant.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);

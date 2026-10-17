@@ -985,6 +985,15 @@ git commit -m "feat: model the image-processing experience precisely"
 
 ## Task 13: Implement the WinUI 3 shell and folder-review workflow
 
+Development repair (2026-10-17): the
+[native picker/startup checkpoint](../implementation/2026-10-17-native-picker-focus-continuity.md)
+retains RED/GREEN for diagnostic-export focus and initial source selection.
+Acquire the native access list inside its consuming MTA, preserve the
+initiator's WinUI focus modality after the picker, and synchronize tests on the
+real enabled-control gate. All six automated native UI cases pass as development
+regressions; that does not replace the separately foreground-qualified final
+acceptance driver or the outstanding accessibility/localization matrix.
+
 Development checkpoint (2026-10-14): Task 13's source checkpoint is committed as
 `2b169b45787421019bd23dd3603666c7c22cbd4a`; the task remains active and
 incomplete under execution `21e2eb0a-48a5-4f37-a7df-e1f113a30d98`. The authorized
