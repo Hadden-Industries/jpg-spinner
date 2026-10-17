@@ -96,3 +96,32 @@ isolated trusted legacy-to-modern update, bundle ordering/restore, local-state
 preservation, launch, uninstall, final clean-build comparison, exact final SBOM,
 WACK and release/legal approval gates remain unchanged. Do not use forced
 downgrade, uninstall/reinstall or identity changes to substitute for them.
+
+## Exact retained-bundle SBOM development qualification
+
+The later native run at signed producer source
+`d7c8c564e42698288a92e4206b0e60379111df64` successfully generates and validates
+the Store-submission SBOM for the exact retained unsigned bundle above. This
+does not reinterpret the earlier negative controls or historical bundle SBOMs.
+
+Its artifact version is `2026.2.0.0`; the contained application version remains
+`2.0.0.0`. Native integration rechecks actual payload hashes/membership and all
+38 required component identities, then passes the unchanged official SPDX
+3.0.1 schema through Ajv 8.20.0 and the SPDX Workgroup Tools 2.0.7 semantic
+validator. The qualified Syft SDK producer runs with Go 1.27.2. No JSON rewriting
+or package-byte modification repairs a failing native output.
+
+The exact bundle SHA-256 remains
+`f28b688b5da3f83f7cbcf47ecb2b542f0e9a564bdcce8b7ba69c387b1ec6aa9c`;
+the resulting submission-binding SHA-256 is
+`14c50bfaab9a36469f0b610609a304379b12235a2cc6814fb310218ff4bb9d48`.
+Inventory `c18930a535b849b48e0717d0b71874e4` retains the native raw reports and
+five-file publication, independently preserved before recycling the spent
+work tree (286 files, 108,604,700 logical bytes; not a physical-space claim).
+
+This proves the exact retained development-container integration, not the
+subsequent UI repair's rebuilt payload, clean-build attestation, protected
+hosted provenance, signed upgrade, signing trust, WACK, certification, complete
+tool rights/security qualification or release approval. A final candidate must
+bind its own actual container and component inputs. Signed sideload checks and
+all other release gates remain unchanged.

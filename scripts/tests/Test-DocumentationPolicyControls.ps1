@@ -5,9 +5,18 @@ param([Parameter(Mandatory)][string]$OwnedOutputRoot)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+# Use Git's actual matcher, including its directory-negation semantics. A local
+# untracked draft can satisfy the document policy yet disappear from a commit.
+& git -C $root check-ignore --no-index --quiet -- 'docs/releases/2.0.0.md'
+$documentationIgnoreExit = $LASTEXITCODE
+if ($documentationIgnoreExit -ne 1) { throw 'Release-note source must be visible to native Git selection.' }
+& git -C $root check-ignore --no-index --quiet -- 'docs/releases/qualification-fixture.msixbundle'
+$packageIgnoreExit = $LASTEXITCODE
+if ($packageIgnoreExit -ne 0) { throw 'Generated release packages must remain ignored; no package fixture is created.' }
 $fixture = Join-Path $OwnedOutputRoot ('documentation-contract-'+[Guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'docs'))
-foreach ($path in @('README.md','SECURITY.md','THIRD_PARTY_NOTICES.md','docs/architecture.md','docs/privacy.md','docs/release-qualification.md','docs/corresponding-source.md')) {
+foreach ($path in @('README.md','SECURITY.md','THIRD_PARTY_NOTICES.md','docs/architecture.md','docs/privacy.md','docs/release-qualification.md','docs/corresponding-source.md','docs/releases/2.0.0.md')) {
+    [void][IO.Directory]::CreateDirectory((Split-Path -Parent (Join-Path $fixture $path)))
     Copy-Item -LiteralPath (Join-Path $root $path) -Destination (Join-Path $fixture $path)
 }
 $sourceDeliveryPath = Join-Path $fixture 'docs/corresponding-source.md'
@@ -17,6 +26,27 @@ if (Test-Path -LiteralPath $dependencyNotices -PathType Container) {
 }
 $policy = Join-Path $root 'scripts/Test-DocumentationPolicy.ps1'
 & $policy -RepositoryRoot $fixture
+# Task 20's release notes are a maintained draft until all release gates pass.
+# Exercise the real policy boundary, not just the existence of another document.
+$releaseNotesPath = Join-Path $fixture 'docs/releases/2.0.0.md'
+$heldReleaseNotesPath = "$releaseNotesPath.held"
+Move-Item -LiteralPath $releaseNotesPath -Destination $heldReleaseNotesPath
+$message=$null
+try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('Missing required document: docs/releases/2.0.0.md',[StringComparison]::Ordinal)) {
+    throw 'Missing-release-notes control did not reach its precise refusal.'
+}
+Move-Item -LiteralPath $heldReleaseNotesPath -Destination $releaseNotesPath
+$releaseNotes = Get-Content -LiteralPath $releaseNotesPath -Raw
+# A release-note file without its qualification boundary must not satisfy the
+# structural contract merely because the remaining feature prose is present.
+[IO.File]::WriteAllText($releaseNotesPath,$releaseNotes.Replace('## Qualification status','## Unrelated section',[StringComparison]::Ordinal))
+$message=$null
+try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message }
+if ($null -eq $message -or -not $message.Contains('Missing required section ## Qualification status in docs/releases/2.0.0.md',[StringComparison]::Ordinal)) {
+    throw 'Missing-release-qualification-section control did not reach its precise refusal.'
+}
+[IO.File]::WriteAllText($releaseNotesPath,$releaseNotes)
 # An application-source URL or a binary SDK export alone cannot describe the
 # dependency sources, patches and reconstruction required at distribution.
 $heldSourceDeliveryPath = "$sourceDeliveryPath.held"
@@ -98,4 +128,4 @@ try { & $policy -RepositoryRoot $fixture } catch { $message=$_.Exception.Message
 if ($null -eq $message -or -not $message.Contains('Missing required section ## Export in docs/privacy.md',[StringComparison]::Ordinal)) {
     throw 'Missing-section control did not reach its precise structural refusal.'
 }
-Write-Output 'PASS: documentation copy; missing source procedure/reconstruction section, missing/edited native and NuGet notices, missing document and missing section refusals.'
+Write-Output 'PASS: documentation copy; missing release notes/qualification section, source procedure/reconstruction section, missing/edited native and NuGet notices, missing document and missing section refusals.'

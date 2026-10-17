@@ -2581,6 +2581,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 ### Step 20.7: Release evidence and staged Store rollout
 
 - [ ] Write `docs/releases/2.0.0.md` with supported systems, safe defaults, precise format limitations, user-visible changes, retired behavior, privacy statement, and backup/recovery guidance.
+  - [x] Prepare the explicitly unreleased [draft](../releases/2.0.0.md), with native policy/owned-copy refusal controls for a missing document and qualification-status section. Final shipped wording and release approval remain open; this does not close the parent gate.
 - [ ] Archive the exact source commit, dependency locks, runner `ImageVersion`, exact `VCToolsVersion` and compiler/linker paths/versions, SDK/MakeAppx versions, payload manifests, unsigned/signed package hashes, SBOMs, provenance, test/analysis/fuzz reports, WACK output, interactive accessibility evidence, performance baseline, legal approval record, and upgrade evidence.
 - [ ] Submit the existing Store product as version 2.0.0.0; never create a second product identity.
 - [ ] Release to 5%. Observe at least 48 hours and 200 active-device health samples; if volume is lower, observe seven days.

@@ -15,6 +15,12 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+# Release-note Markdown is maintained source, not a generated release payload.
+# Reopen only this directory and its immediate Markdown files; packages and
+# other generated contents remain ignored by the scoped wildcard.
+!/docs/releases/
+/docs/releases/*
+!/docs/releases/*.md
 x64/
 x86/
 build/
