@@ -63,18 +63,18 @@ not a handwritten JSON serializer.
 
 Actual local checks on Windows, Visual Studio 2026 / MSVC 14.51.36231:
 
-| Check | Observed outcome |
-| --- | --- |
-| Bundled vcpkg dry run, isolated manifest and exact overlay | Exit 0; resolves `catch2:x64-windows-static-md@3.16.1` from the owned overlay |
-| Native isolated Debug/Release library build and post-build validation | Exit 0; SHA-512 verified; original layout patch applies; no `catch.hpp` installed |
-| `scripts/tests/Test-DependencyFreshnessContract.ps1` | Exit 0; existing controls plus local identity/version/type/revision disagreement, non-object root, duplicate member, unpublished release and newer actionable stable release |
-| `scripts/tests/Test-RepositoryPolicyNegativeControls.ps1` | Exit 0; exact three-path list, missing Catch2, wrong case/type and extra overlay refusals, plus all existing controls |
-| `scripts/tests/Test-RepositoryPolicyReporting.ps1` | Exit 0; reports parsed Catch2 3.16.1 |
-| Live `scripts/Test-DependencyFreshness.ps1` | Exit 0; no actionable update; explicitly identifies approved local Catch2 authority and registry 3.16.0 lag |
-| `scripts/Invoke-Build.ps1 -Architecture x64 -Configuration Release` | Exit 0; actual modern application/test solution, locked restore and release PE-reference check |
-| Built Domain host `--libidentify` | Native output reports Catch2 3.16.1 |
-| `scripts/Invoke-TestSuite.ps1 -Architecture x64 -Configuration Release -Project HeadlessAll` | Exit 0; 378 testcase elements across five reports; 864,683 reported assertions; zero failures/errors |
-| `scripts/Invoke-StaticAnalysis.ps1 -BuildTarget Build -OutputDirectory <fresh owned output>` | Exit 0; native incremental analysis, not a fresh whole-tree rebuild |
+| Check                                                                                        | Observed outcome                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundled vcpkg dry run, isolated manifest and exact overlay                                   | Exit 0; resolves `catch2:x64-windows-static-md@3.16.1` from the owned overlay                                                                                                |
+| Native isolated Debug/Release library build and post-build validation                        | Exit 0; SHA-512 verified; original layout patch applies; no `catch.hpp` installed                                                                                            |
+| `scripts/tests/Test-DependencyFreshnessContract.ps1`                                         | Exit 0; existing controls plus local identity/version/type/revision disagreement, non-object root, duplicate member, unpublished release and newer actionable stable release |
+| `scripts/tests/Test-RepositoryPolicyNegativeControls.ps1`                                    | Exit 0; exact three-path list, missing Catch2, wrong case/type and extra overlay refusals, plus all existing controls                                                        |
+| `scripts/tests/Test-RepositoryPolicyReporting.ps1`                                           | Exit 0; reports parsed Catch2 3.16.1                                                                                                                                         |
+| Live `scripts/Test-DependencyFreshness.ps1`                                                  | Exit 0; no actionable update; explicitly identifies approved local Catch2 authority and registry 3.16.0 lag                                                                  |
+| `scripts/Invoke-Build.ps1 -Architecture x64 -Configuration Release`                          | Exit 0; actual modern application/test solution, locked restore and release PE-reference check                                                                               |
+| Built Domain host `--libidentify`                                                            | Native output reports Catch2 3.16.1                                                                                                                                          |
+| `scripts/Invoke-TestSuite.ps1 -Architecture x64 -Configuration Release -Project HeadlessAll` | Exit 0; 378 testcase elements across five reports; 864,683 reported assertions; zero failures/errors                                                                         |
+| `scripts/Invoke-StaticAnalysis.ps1 -BuildTarget Build -OutputDirectory <fresh owned output>` | Exit 0; native incremental analysis, not a fresh whole-tree rebuild                                                                                                          |
 
 Catch2's JUnit `tests` attribute counts assertions in these reports. The 378
 case count comes from native XML `testcase` elements, not that attribute.
@@ -107,3 +107,57 @@ all three calls returned 0 and fresh path checks confirmed source absence.
 They contained 1,397 files and 517,995,278 logical bytes. This is recoverable
 disposal, not a claim of physical disk-space reclamation. The repository's
 active dependency installation and shared vcpkg caches were not deleted.
+
+## Signed-source architecture follow-up
+
+At signed source `e6c17b62658bb7197a220deee3e3982a0dd2e04c`, the native Release
+solution builds also pass for x86 and ARM64, one architecture at a time with
+the existing two-worker bounds. These are ordinary builds, not independent
+clean-source reproducibility qualification. The x86 `HeadlessAll` runtime run
+passes all five suites: 378 testcase elements, 864,683 reported assertions and
+zero failures/errors. Its native `--libidentify` reports Catch2 3.16.1.
+ARM64 is a cross-build only; no native ARM64 runtime result is claimed.
+
+One bounded invocation of the unchanged interactive acceptance driver returns
+78 immediately: Windows reports the current session as locked or its lock state
+unknown. No product test executes, no desktop input is sent, and no temporary
+`JpgSpinner.UI.*` package remains registered. No screen-saver setting is changed.
+This is unavailable acceptance qualification, not a passing UI test, product
+failure or accepted skip. No unchanged retry follows.
+
+Commands, original binary logs, native result JSON and all five x86 JUnit
+reports are retained in external group `44548dd99be246c6b99d389786613213` for
+the same execution. That group contains retained evidence only; it creates no
+additional isolated dependency installation or disposable checkout. The actual
+ARM64 device, supported-OS, trusted-upgrade, full accessibility and release gates
+remain required. In particular, neither these tests nor the installed legacy
+Store baseline supplies a trusted modern update package for the pre-deletion
+upgrade gate; the legacy tree remains quarantined, not silently removed.
+
+## Resumed automated acceptance, 2026-10-24
+
+The official stable-dependency freshness entry point reports no actionable
+updates through the approved package authorities. This is a fresh upstream
+observation, not a new dependency build or release approval.
+
+The previously unavailable desktop lane now passes its native qualification.
+Against the existing signed-source Release x64 candidate, the maintained
+interactive driver runs `[automation]~[operator-assisted]`: six actual testcase
+elements, 178 reported assertions, zero failures/errors/skips, in 10.329 seconds.
+The presentation test executable SHA-256 is
+`9eb51da1d9de61267e38b640d2e9e7ba0a6ce3998b7f8ce225a4949ff268df25`.
+This is the automated UI acceptance entry point, not a substitute for the two
+operator-assisted picker scenarios, Narrator, contrast/scaling, physical ARM64,
+the supported-OS matrix, or a trusted signed upgrade.
+
+The operator driver captures the native screen-saver active flag, temporarily
+disables it without updating the persistent user profile, and restores the
+captured active value of 1 in `finally`, with native readback. Secure and timeout
+settings are not changed. Fresh package enumeration finds no remaining
+`JpgSpinner.UI.*` registration. Original preflight/acceptance logs, JUnit output,
+the bounded operator driver and the freshness report are retained under external
+verification-result group `b70f634d955345ee838ae8f64e56c9db`, execution
+`1f8e9d2c-38ef-4f91-a9d3-d114332d547e`.
+
+The earlier exit-78 result remains historical counterevidence. The new run does
+not relabel it, repeat a full suite for bookkeeping, or qualify a release.

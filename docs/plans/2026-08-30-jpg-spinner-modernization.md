@@ -26,6 +26,13 @@ evidence remains historical, not proof for the new dependency.
 
 ## Mandatory execution protocol
 
+**Approved continuation constraints, 2026-10-24:** consolidate changes before
+Codex Review Agent review and use narrowly scoped follow-ups. Do not perform
+security or external reviews. Run full verification only for the final
+candidate; retain focused RED/GREEN feedback while editing. Do not repeat tests
+solely to satisfy HISEW bookkeeping. These execution restrictions do not waive
+unmet release, device, accessibility, signing, legal or Store gates.
+
 1. Work on one unchecked step at a time. Do not start a later production behavior while an earlier focused test is red.
 2. For every behavior step, write one focused test first and run it.
 3. Confirm RED is caused by the missing behavior, not compilation damage, a misspelled test selector, or a broken fixture.
@@ -45,7 +52,7 @@ evidence remains historical, not proof for the new dependency.
 - Keep the current task's RED/GREEN logs, binary logs, JUnit results, packages, and generated sources only until their salient evidence has been recorded and the coherent task commit succeeds. After the commit, remove obsolete run directories rather than accumulating numbered or timestamped copies.
 - Retain a dependency cache such as `vcpkg_installed/` across adjacent tasks only when the next task will reuse that exact locked graph and the retained size is reported. Remove it when the graph changes, the next task does not need it, or the milestone is handed off. Every removed cache must be reproducible from committed lock/configuration files.
 - Preserve tracked files and reviewed release evidence, including `artifacts/release/**/*.spdx.json`. Never use an indiscriminate `git clean -fdx`, wildcard recursive deletion, or a cleanup rooted at the repository itself.
-- Before each recursive removal, resolve the literal absolute target, prove it is a descendant of the repository and one of the inventoried ignored/generated roots, then remove that exact target with PowerShell `Remove-Item -LiteralPath`. Re-run `git status --short --ignored` afterward to prove no source, lock file, fixture, or required evidence was lost.
+- Before accumulating new temporary groups, use HISEW's configured storage discovery and native resource allocation with a bounded byte budget and named consumer. Preserve required raw evidence through its existing promotion/preservation machinery; declare only genuinely reconstructible prefixes as such. Use the native resource disposition, preparation, disposal and readback operations after producers settle and consumers release the source. Do not substitute custom archive/deletion scripts, recursive forced removal, or age/ignore rules for the supported lifecycle. A blocked or uncertain operation retains its original record for scoped reconciliation, not an unbounded retry. Re-run `git status --short --ignored` after actual disposal to confirm that source, locks, fixtures and required evidence remain intact.
 - Record the removed paths, approximate reclaimed size, and any intentionally retained large cache in the implementation log or task handoff. A retained cache requires the exact next task and locked dependency graph that will consume it; “potentially useful later” is not sufficient. The expected steady state between tasks is no obsolete test-run directory and no unexplained large ignored directory.
 
 ### Cross-cutting prohibitions
@@ -172,11 +179,11 @@ The file lists under each task are authoritative and refine this compact tree.
 ### Step 1.1: Write the repository policy check before configuration
 
 - [x] Add a dependency-free PowerShell verifier that parses JSON and XML rather than searching text. Require
-  PowerShell 7.6 on .NET 10 and route every repository-controlled JSON consumer through one strict
-  `System.Text.Json` boundary with `AllowDuplicateProperties=false` before PowerShell's last-member-wins conversion.
-  Distinguish file absence from a successfully parsed JSON `null`, and validate each raw root kind before conversion:
-  objects for `.vsconfig`, the toolchain lock, the vcpkg manifest, and any present standalone vcpkg configuration;
-  arrays only where an authority's published schema requires one.
+      PowerShell 7.6 on .NET 10 and route every repository-controlled JSON consumer through one strict
+      `System.Text.Json` boundary with `AllowDuplicateProperties=false` before PowerShell's last-member-wins conversion.
+      Distinguish file absence from a successfully parsed JSON `null`, and validate each raw root kind before conversion:
+      objects for `.vsconfig`, the toolchain lock, the vcpkg manifest, and any present standalone vcpkg configuration;
+      arrays only where an authority's published schema requires one.
 - [x] Make Task 1 assert: toolset v145 plus an exact 14.51.x `VCToolsVersion`, C++20, Windows 10.0.19045.0 minimum, Windows 10.0.28000.0 target, x86/x64/ARM64, an isolated credential-free nuget.org v3 source policy, the pinned vcpkg baseline, libjpeg-turbo 3.2.0, Exiv2 0.28.9 with XMP, and Catch2 3.16.0. Task 2 extends the same verifier with App SDK 2.5.1, C++/WinRT 3.0.260818.1, and SDK BuildTools 10.0.28000.2705 only after real project references and locked restore evidence exist.
 - [x] Make Task 1 reject preview/experimental labels, floating native versions, `/std:c++latest`, ARM32, and every alternate vcpkg resolution authority: explicit default/additional registries, port/triplet overlays, and both current and legacy embedded configuration fields. Task 2 adds production/test Windows App SDK bootstrapper and auto-initializer boundary checks after those project graphs exist; it must reject their use in `JpgSpinner.App` and permit them only in an explicitly unpackaged test executable that consumes Windows App SDK runtime types.
 - [x] Run it before creating the configuration:
@@ -193,33 +200,33 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "jpg-spinner",
-  "version-string": "2.0.0",
-  "builtin-baseline": "c748cb44f2a435fcf015c35225c9d5545fe0021c",
-  "configuration": {
-    "overlay-ports": ["vcpkg-ports/adobe-xmp-core", "vcpkg-ports/exiv2", "vcpkg-ports/catch2"]
-  },
-  "dependencies": [
-    {
-      "name": "libjpeg-turbo",
-      "default-features": false
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "jpg-spinner",
+    "version-string": "2.0.0",
+    "builtin-baseline": "c748cb44f2a435fcf015c35225c9d5545fe0021c",
+    "configuration": {
+        "overlay-ports": ["vcpkg-ports/adobe-xmp-core", "vcpkg-ports/exiv2", "vcpkg-ports/catch2"]
     },
-    {
-      "name": "exiv2",
-      "default-features": false,
-      "features": ["xmp"]
-    },
-    {
-      "name": "catch2",
-      "default-features": false
-    }
-  ],
-  "overrides": [
-    {"name": "libjpeg-turbo", "version": "3.2.0#1"},
-    {"name": "exiv2", "version": "0.28.9#1"},
-    {"name": "catch2", "version": "3.16.1"}
-  ]
+    "dependencies": [
+        {
+            "name": "libjpeg-turbo",
+            "default-features": false
+        },
+        {
+            "name": "exiv2",
+            "default-features": false,
+            "features": ["xmp"]
+        },
+        {
+            "name": "catch2",
+            "default-features": false
+        }
+    ],
+    "overrides": [
+        { "name": "libjpeg-turbo", "version": "3.2.0#1" },
+        { "name": "exiv2", "version": "0.28.9#1" },
+        { "name": "catch2", "version": "3.16.1" }
+    ]
 }
 ```
 
@@ -504,17 +511,17 @@ git commit -m "feat: define lossless orientation transform semantics"
 ### Step 4.3: RED/GREEN every resource and semantic rejection
 
 - [ ] Add one focused failing test, then minimum implementation, for each condition:
-  - encoded length at and one byte beyond 512 MiB through the numeric resource-policy function, plus scanner integration with a smaller injected immutable test limit;
-  - metadata aggregate at and one byte beyond 32 MiB through the numeric resource-policy function, plus scanner integration with a smaller injected immutable test limit;
-  - pixel count at and one pixel beyond 268,435,456;
-  - progressive scan count at 100 and 101;
-  - ICC chunks with duplicate, missing, zero, or out-of-range sequence numbers or inconsistent total counts; accept APP2 marker reordering and reconstruct logical order by the authoritative 1-based sequence number, matching the locked libjpeg-turbo 3.2 public ICC reader;
-  - extended-XMP uppercase GUID syntax plus complete, missing, duplicate, overlapping, wrong-GUID, wrong-full-length, and out-of-range chunk envelopes; accept APP1 marker reordering and reconstruct logical order by the Adobe-defined chunk offset. The scanner does not parse RDF; Task 6 extracts `xmpNote:HasExtendedXMP` through Exiv2 and correlates it with this structural inventory;
-  - MPF detection;
-  - APP11 JUMBF detection, C2PA 2.4 manifest-store detection, and distinction from non-C2PA JUMBF; external C2PA XMP references are interpreted through Exiv2 in Task 6;
-  - exact EOI termination and a checked range containing every appended byte, including zero-valued bytes; semantic interpretation of Motion Photo/container XMP belongs to Task 6;
-  - 8-bit and 12-bit lossy precision plus rejection of lossless predictive, hierarchical, invalid-precision, unknown SOF, and unsupported component organizations;
-  - duplicate SOF, missing SOI, missing EOI, impossible length, and offset overflow.
+    - encoded length at and one byte beyond 512 MiB through the numeric resource-policy function, plus scanner integration with a smaller injected immutable test limit;
+    - metadata aggregate at and one byte beyond 32 MiB through the numeric resource-policy function, plus scanner integration with a smaller injected immutable test limit;
+    - pixel count at and one pixel beyond 268,435,456;
+    - progressive scan count at 100 and 101;
+    - ICC chunks with duplicate, missing, zero, or out-of-range sequence numbers or inconsistent total counts; accept APP2 marker reordering and reconstruct logical order by the authoritative 1-based sequence number, matching the locked libjpeg-turbo 3.2 public ICC reader;
+    - extended-XMP uppercase GUID syntax plus complete, missing, duplicate, overlapping, wrong-GUID, wrong-full-length, and out-of-range chunk envelopes; accept APP1 marker reordering and reconstruct logical order by the Adobe-defined chunk offset. The scanner does not parse RDF; Task 6 extracts `xmpNote:HasExtendedXMP` through Exiv2 and correlates it with this structural inventory;
+    - MPF detection;
+    - APP11 JUMBF detection, C2PA 2.4 manifest-store detection, and distinction from non-C2PA JUMBF; external C2PA XMP references are interpreted through Exiv2 in Task 6;
+    - exact EOI termination and a checked range containing every appended byte, including zero-valued bytes; semantic interpretation of Motion Photo/container XMP belongs to Task 6;
+    - 8-bit and 12-bit lossy precision plus rejection of lossless predictive, hierarchical, invalid-precision, unknown SOF, and unsupported component organizations;
+    - duplicate SOF, missing SOI, missing EOI, impossible length, and offset overflow.
 - [ ] Keep `MultiPictureJpegNotSupported` distinct from corruption.
 - [ ] Return `ContentCredentialsWouldBeInvalidated` for C2PA and `UnsupportedJumbfMetadata` for other JUMBF; neither marker class may reach transformation or generic unknown-marker preservation.
 - [ ] Expose every byte after the first EOI through the immutable inventory, without interpreting marker-shaped bytes in appended assets. Scan success is structural evidence, not permission to transform. Task 6 owns the rejection decision through the existing Exiv2 boundary, avoiding a second XML parser.
@@ -851,9 +858,9 @@ git commit -m "feat: commit validated transformations as corrected copies"
 - [ ] Reject backward transitions and unknown future schema versions.
 - [ ] After publishing and re-reading the `VerifiedBackupCreated` generation, invoke `MoveAndReplaceAsync`; no code path may request replacement from an earlier state.
 - [ ] Implement exact hash recovery:
-  - original equals captured source: commit did not occur; remove only a verified owned stage;
-  - original equals transformed output: record committed and retain backup;
-  - original missing, unknown, or ambiguous: retain all artifacts and return `RecoveryConflict`.
+    - original equals captured source: commit did not occur; remove only a verified owned stage;
+    - original equals transformed output: record committed and retain backup;
+    - original missing, unknown, or ambiguous: retain all artifacts and return `RecoveryConflict`.
 - [ ] Explain the preservation proof for every branch.
 - [ ] Expose recovery only through `ImageFileTransactionEngine::recoverIncompleteTransactions`; keep journal parsing and state transitions internal.
 - [ ] Treat `MoveAndReplaceAsync` completion as an observation, not a power-fail atomicity guarantee. On restart, infer whether replacement occurred from the original, stage, output, backup, and journal hashes. Do not substitute `ReplaceFileW` unless a separate AppContainer prototype and this same fault suite prove a materially stronger supported contract.
@@ -1081,26 +1088,26 @@ tests and native alternative probes remain retained counterevidence.
 This follows [Microsoft's long-path prerequisites](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation)
 and uses [RegGetValueW's native type restriction](https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-reggetvaluew).
 
-| Check | Observed result and boundary |
-| --- | --- |
-| Real-storage headless review | Two new integration cases passed 60 assertions through actual selected-folder composition, coordinator, native dispatcher and view model: owned exclusion explanations, unsupported/normalized row accounting, exact 7/0 trim disclosure, backup destination and explicit consent, with no fresh transaction or source mutation. No picker or rendered UI claim. |
-| Updated headless presentation | Both x64/x86 pass 2,695 assertions after the formatted hybrid picker harness builds under dev23. Package-only workers, UIA and assistive-technology cases are excluded. These focused development reports are not canonical full verification. |
-| Native source-access worker | The consolidated AppContainer worker passes 48 assertions in three cases: real app-local adapter analysis, exact unchanged source bytes, native FutureAccessList lifetime and denial of existing ungranted paths. The final real external picker control passes 22 worker assertions plus three controller assertions, including exact abc capture, actual escaping-link rejection and ungranted parent/sibling denial after the child grant. No shipping test hook, custom parser or broader capability. |
-| AppContainer UIA component evidence | The latest five-case non-operator selection passed four cases/116 of 117 assertions. Its new OS-provider case revealed a numeric AutomationId collision with a list item. The locator now uses native CreateAndCondition for SDK ID plus required button type; the focused repair passes 19 assertions. Original failed reports are retained. Product trust, safe initial state, layout and minimum-height reachability remain qualified; this is not Narrator acceptance. |
-| Real-picker acceptance | Real AppContainer folder-review/cancel passes 55 assertions; trim/backup policy and consent passes 66, including exact 7/0 loss, wrapped backup display and complete minimum-height reachability. A genuine SourceAccessDenied failure first exposed the path-based metadata-open defect; the shared native handle repair fixes it without capability expansion or fallback. Start was never invoked and source bytes stayed unchanged. Earlier incomplete attempts remain historical evidence. Screen-saver active=1, secure=0, timeout=600 was restored after every applied suppression, and the desktop was released to the user. |
-| Manifest policy and native consumer | Authored/generated manifest identity, Desktop family, trust, empty capabilities and effective initialization checks pass. Wrong identity/trust, conflicting entry point, additional family/capabilities and file association negative controls pass. The copied Store association is byte-identical to the historical association. Native Appx manifest-reader RED/GREEN is retained separately from XML policy. |
-| Native test selection | A comma-alternative negative control failed first: trailing exclusions did not constrain an earlier Catch2 filter. The ordinary native host now checks Catch2's own parsed selection and tag identities, refusing an unsafe headless/worker selection before any case executes. Positive/negative non-executing `--list-tests` controls pass on both architectures; no replacement test-spec grammar. |
-| MSVC static analysis | Prepared-candidate scoped `/analyze` reports six C28182 diagnostics at WIL `resource.h:4462`. A locked-compiler reproducer independently diagnoses the aggregate-initialization false positive: a minimal braced initializer warns, equivalent parentheses do not, and both skip construction on deterministic allocation failure. The real WIL event-watcher returns `E_OUTOFMEMORY` without a null dereference; an eager-construction negative control fails as expected. This follows [C++ new-expression semantics](https://eel.is/c++draft/expr.new#22) and matches [WIL issue 610](https://github.com/microsoft/wil/issues/610). Original diagnostics remain visible: no clean-analysis claim, warning suppression or vendor patch. |
-| Native picker provider and mixed-input harness | Owned broker HWND and focus are verified; real keyboard folder entry supplies the grant, then UIA drives analysis/cancellation/consent. The two mixed-input cases now pass as recorded above. The final provider locator qualifies 19 assertions using native ID/type conditions: Microsoft does not guarantee AutomationId uniqueness across a subtree. ValuePattern typed-input attempts remain failed diagnostic evidence, not a supported driver. No private picker notification, synthetic capability grant or production test hook. |
-| x64/x86 headless presentation | Refreshed after test-host DPI manifest integration: 2,634 assertions per architecture passed. UI Automation and assistive-technology tests were explicitly excluded. This is development verification, not final full acceptance. |
-| Affected storage/batch regression | All 13,136 x64 storage assertions and 324 x64 batch assertions passed; focused x86 discovery regression also passed. Unchanged Domain/JPEG suites were not redundantly rerun. |
-| Live initial state and safe defaults | 56 assertions passed on the approved local desktop. |
-| Real-picker keyboard review and cancellation | 30 assertions passed: one eligible synthetic image, retained review/source after picker cancellation, clean shutdown and unchanged source bytes. |
-| Minimum size and adaptive policy layout | Current DPI-qualified x64 run passes 24 assertions, including physical width preconditions, minimum dimensions and narrow/wider reflow. Minimum-height scrolling/reachability is not implied. Earlier failures remain preserved but did not establish the intended effective viewport in a DPI-virtualized test host. |
-| Minimum-height reachability | A separate contract failed first on the absent native viewport. Native scrolling now brings all five source/policy controls fully into view at 360×480 effective pixels; actions remain outside that scroller and ListView height is bounded by its native viewport. Post-change layout/defaults and real-picker keyboard/cancellation regressions also pass. |
-| Visual-state host and test environment | Native UserControl content root remains the selected composition. A new native DPI precondition failed first; merging a PMv2 test-host manifest made it pass. Both architecture builds pass. A bounded layout wait alone failed before the DPI repair; do not claim it fixed the underlying coordinate mismatch. |
-| Native foreground qualification | Immediate positive activation and the unactivated 30-second refusal passed previously. Current waiting-branch qualification also passes after ordinary Computer Use activation of the owned probe. |
-| Headless visual-state source contract | Positive declarations, equivalent XML numeric spelling, and wrong-host/wrong-width negative controls pass without compilation or desktop access; this is not XAML compiler or rendered-layout acceptance. |
+| Check                                          | Observed result and boundary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Real-storage headless review                   | Two new integration cases passed 60 assertions through actual selected-folder composition, coordinator, native dispatcher and view model: owned exclusion explanations, unsupported/normalized row accounting, exact 7/0 trim disclosure, backup destination and explicit consent, with no fresh transaction or source mutation. No picker or rendered UI claim.                                                                                                                                                                                                                                                                                                                                                                          |
+| Updated headless presentation                  | Both x64/x86 pass 2,695 assertions after the formatted hybrid picker harness builds under dev23. Package-only workers, UIA and assistive-technology cases are excluded. These focused development reports are not canonical full verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Native source-access worker                    | The consolidated AppContainer worker passes 48 assertions in three cases: real app-local adapter analysis, exact unchanged source bytes, native FutureAccessList lifetime and denial of existing ungranted paths. The final real external picker control passes 22 worker assertions plus three controller assertions, including exact abc capture, actual escaping-link rejection and ungranted parent/sibling denial after the child grant. No shipping test hook, custom parser or broader capability.                                                                                                                                                                                                                                 |
+| AppContainer UIA component evidence            | The latest five-case non-operator selection passed four cases/116 of 117 assertions. Its new OS-provider case revealed a numeric AutomationId collision with a list item. The locator now uses native CreateAndCondition for SDK ID plus required button type; the focused repair passes 19 assertions. Original failed reports are retained. Product trust, safe initial state, layout and minimum-height reachability remain qualified; this is not Narrator acceptance.                                                                                                                                                                                                                                                                |
+| Real-picker acceptance                         | Real AppContainer folder-review/cancel passes 55 assertions; trim/backup policy and consent passes 66, including exact 7/0 loss, wrapped backup display and complete minimum-height reachability. A genuine SourceAccessDenied failure first exposed the path-based metadata-open defect; the shared native handle repair fixes it without capability expansion or fallback. Start was never invoked and source bytes stayed unchanged. Earlier incomplete attempts remain historical evidence. Screen-saver active=1, secure=0, timeout=600 was restored after every applied suppression, and the desktop was released to the user.                                                                                                      |
+| Manifest policy and native consumer            | Authored/generated manifest identity, Desktop family, trust, empty capabilities and effective initialization checks pass. Wrong identity/trust, conflicting entry point, additional family/capabilities and file association negative controls pass. The copied Store association is byte-identical to the historical association. Native Appx manifest-reader RED/GREEN is retained separately from XML policy.                                                                                                                                                                                                                                                                                                                          |
+| Native test selection                          | A comma-alternative negative control failed first: trailing exclusions did not constrain an earlier Catch2 filter. The ordinary native host now checks Catch2's own parsed selection and tag identities, refusing an unsafe headless/worker selection before any case executes. Positive/negative non-executing `--list-tests` controls pass on both architectures; no replacement test-spec grammar.                                                                                                                                                                                                                                                                                                                                     |
+| MSVC static analysis                           | Prepared-candidate scoped `/analyze` reports six C28182 diagnostics at WIL `resource.h:4462`. A locked-compiler reproducer independently diagnoses the aggregate-initialization false positive: a minimal braced initializer warns, equivalent parentheses do not, and both skip construction on deterministic allocation failure. The real WIL event-watcher returns `E_OUTOFMEMORY` without a null dereference; an eager-construction negative control fails as expected. This follows [C++ new-expression semantics](https://eel.is/c++draft/expr.new#22) and matches [WIL issue 610](https://github.com/microsoft/wil/issues/610). Original diagnostics remain visible: no clean-analysis claim, warning suppression or vendor patch. |
+| Native picker provider and mixed-input harness | Owned broker HWND and focus are verified; real keyboard folder entry supplies the grant, then UIA drives analysis/cancellation/consent. The two mixed-input cases now pass as recorded above. The final provider locator qualifies 19 assertions using native ID/type conditions: Microsoft does not guarantee AutomationId uniqueness across a subtree. ValuePattern typed-input attempts remain failed diagnostic evidence, not a supported driver. No private picker notification, synthetic capability grant or production test hook.                                                                                                                                                                                                 |
+| x64/x86 headless presentation                  | Refreshed after test-host DPI manifest integration: 2,634 assertions per architecture passed. UI Automation and assistive-technology tests were explicitly excluded. This is development verification, not final full acceptance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Affected storage/batch regression              | All 13,136 x64 storage assertions and 324 x64 batch assertions passed; focused x86 discovery regression also passed. Unchanged Domain/JPEG suites were not redundantly rerun.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Live initial state and safe defaults           | 56 assertions passed on the approved local desktop.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Real-picker keyboard review and cancellation   | 30 assertions passed: one eligible synthetic image, retained review/source after picker cancellation, clean shutdown and unchanged source bytes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Minimum size and adaptive policy layout        | Current DPI-qualified x64 run passes 24 assertions, including physical width preconditions, minimum dimensions and narrow/wider reflow. Minimum-height scrolling/reachability is not implied. Earlier failures remain preserved but did not establish the intended effective viewport in a DPI-virtualized test host.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Minimum-height reachability                    | A separate contract failed first on the absent native viewport. Native scrolling now brings all five source/policy controls fully into view at 360×480 effective pixels; actions remain outside that scroller and ListView height is bounded by its native viewport. Post-change layout/defaults and real-picker keyboard/cancellation regressions also pass.                                                                                                                                                                                                                                                                                                                                                                             |
+| Visual-state host and test environment         | Native UserControl content root remains the selected composition. A new native DPI precondition failed first; merging a PMv2 test-host manifest made it pass. Both architecture builds pass. A bounded layout wait alone failed before the DPI repair; do not claim it fixed the underlying coordinate mismatch.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Native foreground qualification                | Immediate positive activation and the unactivated 30-second refusal passed previously. Current waiting-branch qualification also passes after ordinary Computer Use activation of the owned probe.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Headless visual-state source contract          | Positive declarations, equivalent XML numeric spelling, and wrong-host/wrong-width negative controls pass without compilation or desktop access; this is not XAML compiler or rendered-layout acceptance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 The location-specific `E_INVALIDARG` from a synthetic source under
 `%LOCALAPPDATA%/Temp` remains counterevidence. Moving only the owned fixture to
@@ -1831,10 +1838,10 @@ project reports from the preceding run remain separate retained evidence.
 - [ ] Extend repository policy to parse workflow YAML and reject mutable action tags, `windows-latest`, prerelease tools, unbounded permissions, missing timeouts, artifact retention over 30 days, and any secret passed to pull-request builds.
 - [ ] Require `scripts/Invoke-Sbom.ps1` to consume the qualified `eng/artifact-sbom` adapter, readonly Go module graph and `eng/sbom-tools.json` pins for Syft SDK 1.54.1, SPDX Workgroup Tools 2.0.7 and the official SPDX 3.0.1 schema. Reject moving release URLs, mismatched validator digests, module replacements and `Microsoft.Sbom.Targets`, whose NuGet `Pack` integration does not describe an MSIX release drop.
 - [ ] Require these reviewed action commits with a version comment:
-  - `actions/checkout` v7.0.1 at `3d3c42e5aac5ba805825da76410c181273ba90b1`;
-  - `actions/cache` v6.1.0 at `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`;
-  - `actions/upload-artifact` v7.0.2 at `cf430e030ddbb5b0abf93d22962f4752f3646cd9`;
-  - `github/codeql-action` v4.38.3 at `24c54180a607b1449ed407dd24f251e4e9147c8d`.
+    - `actions/checkout` v7.0.1 at `3d3c42e5aac5ba805825da76410c181273ba90b1`;
+    - `actions/cache` v6.1.0 at `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`;
+    - `actions/upload-artifact` v7.0.2 at `cf430e030ddbb5b0abf93d22962f4752f3646cd9`;
+    - `github/codeql-action` v4.38.3 at `24c54180a607b1449ed407dd24f251e4e9147c8d`.
 - [ ] Require `windows-2025-vs2026`, least-privilege workflow permissions, job timeouts, and concurrency cancellation for superseded manually dispatched runs.
 - [ ] Require every build/package job to capture runner `ImageVersion`, OS build, exact `VCToolsVersion`, full `cl.exe`/`link.exe` versions and paths, Windows SDK/MakeAppx versions, NuGet lock hashes, vcpkg baseline, action commits, and source commit. The runner label is selection policy, not immutable provenance.
 - [ ] Implement `Test-BuildProvenance.ps1` before workflow provenance emission. Give it an empty or deliberately incomplete JSON record and observe RED diagnostics for every missing field; then make the workflow emit one versioned, schema-checked record whose executable/file paths are normalized without leaking the developer profile path.
@@ -2319,16 +2326,16 @@ these source edits. Those steps remain mandatory below.
 ### Step 18.1: RED on documentation and privacy truth
 
 - [ ] Before writing documents, create a policy check that requires:
-  - supported Windows versions and architectures;
-  - default create-copy behavior and exact output/backup roots;
-  - perfect-transform default and explicit trimming disclosure;
-  - metadata preservation/removal/rejection rules;
-  - resource limits and unsupported JPEG forms;
-  - local-only processing, no network telemetry, diagnostic-log schema, and export behavior;
-  - tested recoverability behavior, backup retention, and explicit limits of flush/replacement guarantees;
-  - build/test/package commands;
-  - vulnerability reporting and supported release policy;
-  - dependency names, versions, licenses, source links, and required notices.
+    - supported Windows versions and architectures;
+    - default create-copy behavior and exact output/backup roots;
+    - perfect-transform default and explicit trimming disclosure;
+    - metadata preservation/removal/rejection rules;
+    - resource limits and unsupported JPEG forms;
+    - local-only processing, no network telemetry, diagnostic-log schema, and export behavior;
+    - tested recoverability behavior, backup retention, and explicit limits of flush/replacement guarantees;
+    - build/test/package commands;
+    - vulnerability reporting and supported release policy;
+    - dependency names, versions, licenses, source links, and required notices.
 - [ ] During the parallel-build phase, reject the obsolete Application Insights package ID and exact instrumentation-key value everywhere except the explicitly quarantined `JPG Spinner/` reference tree. Task 19 tightens this to the entire working tree after deletion.
 - [ ] Run it; expected RED is missing documentation or any telemetry reference copied into the new tree.
 
@@ -2436,7 +2443,7 @@ helper-lifetime obligations remain open.
 - [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.1 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
 - [ ] Prepare the exact corresponding source, patches, dependency locks, and reproducible build instructions for the distributed binary. Follow the [corresponding-source preparation procedure](../corresponding-source.md), which distinguishes an application Git archive from the complete dependency/source delivery set. Its missing-document and missing-reconstruction-section controls observed meaningful RED and now pass with the documentation policy. Actual artifact assembly, independent reconstruction, recipient availability and qualified legal review remain open. Do not assume that static versus dynamic linkage or a separate process removes license obligations, and do not introduce a loader/process boundary merely as a licensing shim.
-  - [x] Preserve and independently read back the selected native-input subset offline: eight original upstream archives, 12 complete selected port trees, all four overlay patches, 28 original installed SPDX documents and 11 native baseline/version metadata files. The [2026-10-17 checkpoint](../corresponding-source.md#selected-native-input-preservation-checkpoint-2026-10-17) binds exact source/tree/digest identities and four actual refusal controls. This does not close corresponding-source assembly, actual build-tool/NuGet acquisition closure, independent reconstruction, recipient access, rights review or final candidate binding; retain the two archives exceeding native evidence transport limits for their named consumers.
+    - [x] Preserve and independently read back the selected native-input subset offline: eight original upstream archives, 12 complete selected port trees, all four overlay patches, 28 original installed SPDX documents and 11 native baseline/version metadata files. The [2026-10-17 checkpoint](../corresponding-source.md#selected-native-input-preservation-checkpoint-2026-10-17) binds exact source/tree/digest identities and four actual refusal controls. This does not close corresponding-source assembly, actual build-tool/NuGet acquisition closure, independent reconstruction, recipient access, rights review or final candidate binding; retain the two archives exceeding native evidence transport limits for their named consumers.
 - [ ] Include libjpeg-turbo’s applicable BSD-style and IJG notices verbatim from its packaged copyright files, not from memory.
 - [ ] Ensure test-only dependencies are not falsely described as runtime components.
 
@@ -2487,14 +2494,14 @@ are not marked passed and the quarantined legacy tree remains untouched.
 ### Step 19.1: RED on the legacy-free repository policy
 
 - [ ] Extend policy before deletion to reject:
-  - `JPG Spinner.sln` or the old source directory;
-  - `packages.config`;
-  - `ApplicationInsights`, the historical key, or telemetry initialization;
-  - `jpeg-9a`, copied `jpeglib.h`, `transupp.c`, `transupp.h`, or private libjpeg headers;
-  - `Windows::UI::Xaml`, `Platform::String`, C++/CX `ref class`, or caret handles in first-party code;
-  - `Microsoft.Toolkit`, compatibility, legacy-adapter, facade, bridge, or shim project/type names;
-  - ARM32 configurations and Windows SDK targets below 19045;
-  - obsolete documentation paths.
+    - `JPG Spinner.sln` or the old source directory;
+    - `packages.config`;
+    - `ApplicationInsights`, the historical key, or telemetry initialization;
+    - `jpeg-9a`, copied `jpeglib.h`, `transupp.c`, `transupp.h`, or private libjpeg headers;
+    - `Windows::UI::Xaml`, `Platform::String`, C++/CX `ref class`, or caret handles in first-party code;
+    - `Microsoft.Toolkit`, compatibility, legacy-adapter, facade, bridge, or shim project/type names;
+    - ARM32 configurations and Windows SDK targets below 19045;
+    - obsolete documentation paths.
 - [ ] Run it; expected RED enumerates the legacy tree and only the legacy tree.
 
 ### Step 19.2: Prove behavioral coverage before deletion
@@ -2592,7 +2599,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 ### Step 20.7: Release evidence and staged Store rollout
 
 - [ ] Write `docs/releases/2.0.0.md` with supported systems, safe defaults, precise format limitations, user-visible changes, retired behavior, privacy statement, and backup/recovery guidance.
-  - [x] Prepare the explicitly unreleased [draft](../releases/2.0.0.md), with native policy/owned-copy refusal controls for a missing document and qualification-status section. Final shipped wording and release approval remain open; this does not close the parent gate.
+    - [x] Prepare the explicitly unreleased [draft](../releases/2.0.0.md), with native policy/owned-copy refusal controls for a missing document and qualification-status section. Final shipped wording and release approval remain open; this does not close the parent gate.
 - [ ] Archive the exact source commit, dependency locks, runner `ImageVersion`, exact `VCToolsVersion` and compiler/linker paths/versions, SDK/MakeAppx versions, payload manifests, unsigned/signed package hashes, SBOMs, provenance, test/analysis/fuzz reports, WACK output, interactive accessibility evidence, performance baseline, legal approval record, and upgrade evidence.
 - [ ] Submit the existing Store product as version 2.0.0.0; never create a second product identity.
 - [ ] Release to 5%. Observe at least 48 hours and 200 active-device health samples; if volume is lower, observe seven days.
