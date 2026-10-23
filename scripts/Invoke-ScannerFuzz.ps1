@@ -1,5 +1,6 @@
 <# Run the instrumented scanner, then retain a native coverage-preserving corpus.
-   Each invocation owns a fresh UUID directory. Historical corpus/reproducers
+   Each invocation owns a fresh directory, either a generated UUID or an empty
+   caller reservation. Historical corpus/reproducers
    remain untouched; libFuzzer owns feature selection, not a custom minimizer. #>
 [CmdletBinding()]
 param(
@@ -7,14 +8,36 @@ param(
     [string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot),
     # An explicit synthetic corpus supports retained-reproducer qualification
     # without mutating it. Empty selects the earlier task-owned development corpus.
-    [string]$AdditionalCorpusDirectory = ''
+    [string]$AdditionalCorpusDirectory = '',
+    # A workflow caller may reserve an empty working group before production.
+    # The caller owns evidence promotion and disposal; this driver never cleans
+    # shared roots or discovers a run by comparing sibling directory names.
+    [string]$RunDirectory = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot)
-$toolchain = & (Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1') -RepositoryRoot $repositoryRoot
 $fuzzDirectory = Join-Path $repositoryRoot 'artifacts/fuzz/scanner'
-$runDirectory = Join-Path $fuzzDirectory ([guid]::NewGuid().ToString('N'))
+if ([string]::IsNullOrEmpty($RunDirectory)) {
+    $runDirectory = Join-Path $fuzzDirectory ([guid]::NewGuid().ToString('N'))
+} else {
+    if (-not [IO.Path]::IsPathFullyQualified($RunDirectory) -or
+        -not [IO.Directory]::Exists($RunDirectory)) {
+        throw 'RunDirectory must identify an existing absolute, empty, caller-owned directory.'
+    }
+    $runDirectory = [IO.Path]::GetFullPath($RunDirectory)
+    # Refuse redirected ancestors as well as a redirected leaf. No test result
+    # should be written through a junction into unrelated/user-owned material.
+    for ($directory = [IO.DirectoryInfo]::new($runDirectory); $null -ne $directory; $directory = $directory.Parent) {
+        if (($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw 'RunDirectory and its ancestors must not be redirected.'
+        }
+    }
+    if (@([IO.Directory]::EnumerateFileSystemEntries($runDirectory)).Count -ne 0) {
+        throw 'RunDirectory must be empty; existing evidence must not be overwritten.'
+    }
+}
+$toolchain = & (Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1') -RepositoryRoot $repositoryRoot
 $corpusDirectory = Join-Path $runDirectory 'corpus'
 $minimizedDirectory = Join-Path $runDirectory 'minimized'
 [void][IO.Directory]::CreateDirectory($corpusDirectory)
@@ -33,7 +56,8 @@ if (Test-Path -LiteralPath $priorCorpus) {
         throw 'Previous synthetic corpus root must not be a reparse point.'
     }
     foreach ($entry in Get-ChildItem -LiteralPath $priorCorpus -Force) {
-        if ($entry.PSIsContainer -or ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or $entry.Length -gt 1048576) {
+        if ($entry.PSIsContainer -or
+            ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or $entry.Length -gt 1048576) {
             throw 'Previous synthetic corpus must contain only ordinary files of at most 1 MiB.'
         }
         [IO.File]::Copy($entry.FullName, (Join-Path $corpusDirectory $entry.Name), $false)
@@ -82,7 +106,9 @@ function Invoke-FuzzTarget {
         [void]$stdoutCopy.GetAwaiter().GetResult()
         [void]$stderrCopy.GetAwaiter().GetResult()
         if (-not $exited) { throw "Fuzz $Phase exceeded its $TimeoutSeconds-second process budget." }
-        if ($process.ExitCode -ne 0) { throw "Fuzz $Phase failed with native exit $($process.ExitCode); retain $runDirectory." }
+        if ($process.ExitCode -ne 0) {
+            throw "Fuzz $Phase failed with native exit $($process.ExitCode); retain $runDirectory."
+        }
     }
     finally { $process.Dispose(); $stdout.Dispose(); $stderr.Dispose() }
 }
@@ -95,25 +121,37 @@ foreach ($projectName in @('JpgSpinner.FuzzToolchain.Smoke', 'JpgSpinner.JpegSeg
         -p:Configuration=Fuzz -p:Platform=x64 -p:VcpkgConfiguration=Release -verbosity:minimal
     if ($LASTEXITCODE -ne 0) { throw "Fuzz build failed: $projectName ($LASTEXITCODE)" }
 }
-Invoke-FuzzTarget -ProjectName 'JpgSpinner.FuzzToolchain.Smoke' -Arguments @('-runs=100', '-seed=20260930') -TimeoutSeconds 30 -Phase 'smoke'
+Invoke-FuzzTarget -ProjectName 'JpgSpinner.FuzzToolchain.Smoke' `
+    -Arguments @('-runs=100', '-seed=20260930') -TimeoutSeconds 30 -Phase 'smoke'
 
 $scanner = 'JpgSpinner.JpegSegmentScanner.Fuzz'
-$limits = @('-timeout=10', '-rss_limit_mb=2048', '-max_len=1048576', '-seed=20260930', "-artifact_prefix=$runDirectory/")
-Invoke-FuzzTarget -ProjectName $scanner -Arguments (@($corpusDirectory, "-max_total_time=$DurationSeconds") + $limits) -TimeoutSeconds ($DurationSeconds + 30) -Phase 'fuzz'
+$limits = @(
+    '-timeout=10', '-rss_limit_mb=2048', '-max_len=1048576', '-seed=20260930', "-artifact_prefix=$runDirectory/"
+)
+Invoke-FuzzTarget -ProjectName $scanner `
+    -Arguments (@($corpusDirectory, "-max_total_time=$DurationSeconds") + $limits) `
+    -TimeoutSeconds ($DurationSeconds + 30) -Phase 'fuzz'
 
 # Merge can recover from crashing inputs internally. Replay the full corpus
 # first so a crashing/timeout/ASan input cannot be silently filtered as a pass.
-Invoke-FuzzTarget -ProjectName $scanner -Arguments (@($corpusDirectory, '-runs=0') + $limits) -TimeoutSeconds 60 -Phase 'replay'
+Invoke-FuzzTarget -ProjectName $scanner -Arguments (@($corpusDirectory, '-runs=0') + $limits) `
+    -TimeoutSeconds 60 -Phase 'replay'
 [void][IO.Directory]::CreateDirectory($minimizedDirectory)
-Invoke-FuzzTarget -ProjectName $scanner -Arguments (@('-merge=1', $minimizedDirectory, $corpusDirectory, "-merge_control_file=$runDirectory/merge.control") + $limits) -TimeoutSeconds 60 -Phase 'merge'
+Invoke-FuzzTarget -ProjectName $scanner `
+    -Arguments (@('-merge=1', $minimizedDirectory, $corpusDirectory,
+        "-merge_control_file=$runDirectory/merge.control") + $limits) -TimeoutSeconds 60 -Phase 'merge'
 $minimizedBeforeAudit = @(Get-ChildItem -LiteralPath $minimizedDirectory -File | ForEach-Object Name | Sort-Object)
 if ($minimizedBeforeAudit.Count -eq 0) { throw 'Native corpus merge did not retain any coverage-bearing input.' }
 
 # Native merge itself is the coverage oracle. Feeding the full corpus into the
 # already-minimized corpus must add no files; do not scrape feature-count prose.
-Invoke-FuzzTarget -ProjectName $scanner -Arguments (@('-merge=1', $minimizedDirectory, $corpusDirectory, "-merge_control_file=$runDirectory/merge-audit.control") + $limits) -TimeoutSeconds 60 -Phase 'merge-audit'
+Invoke-FuzzTarget -ProjectName $scanner `
+    -Arguments (@('-merge=1', $minimizedDirectory, $corpusDirectory,
+        "-merge_control_file=$runDirectory/merge-audit.control") + $limits) -TimeoutSeconds 60 -Phase 'merge-audit'
 $minimizedAfterAudit = @(Get-ChildItem -LiteralPath $minimizedDirectory -File | ForEach-Object Name | Sort-Object)
 if (@(Compare-Object $minimizedBeforeAudit $minimizedAfterAudit).Count -ne 0) {
     throw 'Native merge audit found additional coverage; the proposed minimized corpus is not qualified.'
 }
-Write-Output "PASS: bounded native scanner fuzzing, replay, corpus merge and coverage audit; retained run $runDirectory."
+Write-Output (
+    "PASS: bounded native scanner fuzzing, replay, corpus merge and coverage audit; retained run $runDirectory."
+)

@@ -155,4 +155,41 @@ foreach ($step in $publisherSteps.Children) {
     }
 }
 if (-not ($hasDownload -and $hasInputValidation -and $hasInputAttestation -and $hasPublication)) {throw 'Prebuilt interactive inputs require native validation and platform attestation before publication.'}
+# The regression driver now owns its exact output reservation. Keep that
+# reservation under the same upload root as the later fuzz run, so a failed
+# regression cannot lose its native streams/corpus when RUNNER_TEMP disappears.
+# This checks the repository's chosen command binding, not PowerShell grammar.
+$scannerWorkflow = Join-Path $root '.github/workflows/scanner-fuzz.yml'
+$scannerYaml = [YamlDotNet.RepresentationModel.YamlStream]::new()
+$reader = [IO.File]::OpenText($scannerWorkflow)
+try { $scannerYaml.Load($reader) } finally { $reader.Dispose() }
+$scannerJob = Get-NodeProperty (Get-NodeProperty $scannerYaml.Documents[0].RootNode 'jobs') 'scanner'
+$hasPreservedRegression = $false
+$hasScannerUpload = $false
+foreach ($step in (Get-NodeProperty $scannerJob 'steps').Children) {
+    $runKey = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
+    if ($step.Children.ContainsKey($runKey) -and
+        $step.Children[$runKey].Value.Contains('scripts/tests/Test-ScannerCorpusMinimization.ps1',
+            [StringComparison]::Ordinal)) {
+        $expectedCommand = './scripts/tests/Test-ScannerCorpusMinimization.ps1 -OwnedOutputRoot ' +
+            '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/fuzz/scanner/regression'')'
+        if ($step.Children[$runKey].Value -cne $expectedCommand) {
+            throw 'Scanner regression must reserve its output beneath the uploaded scanner artifact root.'
+        }
+        $hasPreservedRegression = $true
+    }
+    $usesKey = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('uses')
+    if ($step.Children.ContainsKey($usesKey) -and
+        $step.Children[$usesKey].Value.StartsWith('actions/upload-artifact@', [StringComparison]::Ordinal)) {
+        $arguments = Get-NodeProperty $step 'with'
+        if ((Get-NodeProperty $arguments 'path').Value -cne 'artifacts/fuzz/scanner/' -or
+            (Get-NodeProperty $step 'if').Value -cne 'always()') {
+            throw 'Scanner artifact upload must preserve the complete regression/fuzz root even after failure.'
+        }
+        $hasScannerUpload = $true
+    }
+}
+if (-not ($hasPreservedRegression -and $hasScannerUpload)) {
+    throw 'Scanner regression and its unconditional artifact upload must both be present.'
+}
 Write-Output 'PASS: native-validated CI source wiring and exact build/test architecture matrix; hosted execution remains unqualified.'

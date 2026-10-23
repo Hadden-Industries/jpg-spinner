@@ -2492,6 +2492,20 @@ records retired surfaces. Test existence, development runs and final candidate
 acceptance remain separate. The pre-deletion full-system/upgrade gates below
 are not marked passed and the quarantined legacy tree remains untouched.
 
+**Approved sequencing amendment (2026-10-24):** legacy-source retirement and
+trusted Store-upgrade qualification are separate checkpoints. After every other
+pre-cutover technical check passes, remove the exact tracked legacy solution and
+tree in an auditable commit, retaining the signed Git baseline and leaving the
+installed Store app unchanged. Only the actual trusted same-identity upgrade
+smoke moves to Task 20's pre-public-release gate. It requires a Microsoft-signed
+candidate obtained through a deliberately authorized package flight. Microsoft
+documents that [unsigned packages cannot share a signed package's identity](https://learn.microsoft.com/windows/msix/package/unsigned-package)
+and that [package flights support selected testers of an existing published app](https://learn.microsoft.com/windows/apps/publish/package-flights).
+This amendment grants no submission, flight, installation, certificate/trust
+change or public-rollout authority; it waives no other technical, device,
+accessibility, legal or review requirement. An installed baseline or matching
+manifest is not an upgrade result.
+
 **Files:**
 
 - Delete: `JPG Spinner.sln`
@@ -2517,7 +2531,7 @@ are not marked passed and the quarantined legacy tree remains untouched.
 
 - [ ] Build a coverage matrix mapping every supported legacy user outcome to a new executable test: folder selection, direct/recursive traversal, eight orientations, perfect/trim behavior, sequential/progressive choice, copy output, backed replacement, localization, cancellation, and result reporting.
 - [ ] Explicitly mark retired behavior with rationale: custom Application Insights, obsolete settings flyouts, ARM32, silent/ambiguous destructive paths, copied codec internals, and unsupported MPO mutation.
-- [ ] Run every automated test, sanitizer suite, static analysis, manifest validation, and package upgrade smoke before deleting any legacy file.
+- [ ] Run every automated test, sanitizer suite, static analysis and manifest validation before deleting any legacy file. Qualify the actual trusted same-identity Store upgrade at Task 20's pre-public-release gate under the approved sequencing amendment above; do not report it passed before execution.
 - [ ] Save binary logs and JUnit results as the pre-cutover evidence set.
 
 ### Step 19.3: Delete rather than wrap

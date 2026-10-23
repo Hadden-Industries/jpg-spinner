@@ -1,29 +1,31 @@
 name: Scanner fuzzing
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 permissions:
-  contents: read
+    contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 defaults:
-  run:
-    shell: pwsh
+    run:
+        shell: pwsh
 jobs:
-  scanner:
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Native corpus minimization regression with redundant synthetic inputs
-        run: ./scripts/tests/Test-ScannerCorpusMinimization.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-      - name: Bounded ASan scanner fuzzing with native corpus minimization
-        run: ./scripts/Invoke-ScannerFuzz.ps1 -DurationSeconds 1800
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: synthetic-scanner-corpus-and-reproducers
-          retention-days: 14
-          path: artifacts/fuzz/scanner/
+    scanner:
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Native corpus minimization regression with redundant synthetic inputs
+              # Preserve this step's native failure diagnostics with the later fuzz
+              # output even when its failure prevents that later step from running.
+              run: ./scripts/tests/Test-ScannerCorpusMinimization.ps1 -OwnedOutputRoot (Join-Path $env:GITHUB_WORKSPACE 'artifacts/fuzz/scanner/regression')
+            - name: Bounded ASan scanner fuzzing with native corpus minimization
+              run: ./scripts/Invoke-ScannerFuzz.ps1 -DurationSeconds 1800
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: synthetic-scanner-corpus-and-reproducers
+                  retention-days: 14
+                  path: artifacts/fuzz/scanner/
