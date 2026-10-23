@@ -55,18 +55,18 @@ Use the actual resolved graph and build evidence, rather than assuming every
 installed package contributes code or that only direct dependencies matter.
 The following are preparation boundaries, not automatic legal classifications.
 
-| Input | Maintained authority | Material to retain and assess |
-| --- | --- | --- |
-| Application and generated interfaces | [modern solution](../JpgSpinner.sln), [application project](../src/JpgSpinner.App/JpgSpinner.App.vcxproj), source and tests | Preferred source, IDL/XAML/resources, original asset sources, generation/build/package/test scripts and applicable notices |
-| Native dependency selection | [manifest](../vcpkg.json), [triplets](../vcpkg-triplets), actual native resolved exports | Exact resolved port versions/features for each target, registry source at the selected baseline and version-selected port trees, upstream archives and notices |
-| Native modifications | [Exiv2 overlay](../vcpkg-ports/exiv2), [Adobe overlay](../vcpkg-ports/adobe-xmp-core) | Complete overlay build files, all named patches, original source archives and native patch-application/build results |
-| NuGet inputs | [central versions](../Directory.Packages.props), [application lock](../src/JpgSpinner.App/packages.lock.json), [NuGet configuration](../NuGet.config) | Original resolved package identities/integrity evidence; distinguish generated/header source, redistributed/framework components and build-only tooling, with applicable source/terms decisions |
-| Compiler and SDK | [toolchain lock](../eng/toolchain-lock.json), [component requirements](../.vsconfig), root build policy | Actual selected tool/SDK identities, public acquisition prerequisites, configuration and build instructions; no unreviewed redistribution of proprietary tools |
-| Release tooling | [SBOM tool pins](../eng/sbom-tools.json), [Go module](../eng/artifact-sbom/go.mod), [Go checksums](../eng/artifact-sbom/go.sum), [SPDX validator lock](../eng/spdx-validation/package-lock.json) | Separate release-tool source/terms and exact tool inputs where required; do not mislabel these as application runtime components |
+| Input                                | Maintained authority                                                                                                                                                                             | Material to retain and assess                                                                                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Application and generated interfaces | [modern solution](../JpgSpinner.sln), [application project](../src/JpgSpinner.App/JpgSpinner.App.vcxproj), source and tests                                                                      | Preferred source, IDL/XAML/resources, original asset sources, generation/build/package/test scripts and applicable notices                                                                      |
+| Native dependency selection          | [manifest](../vcpkg.json), [triplets](../vcpkg-triplets), actual native resolved exports                                                                                                         | Exact resolved port versions/features for each target, registry source at the selected baseline and version-selected port trees, upstream archives and notices                                  |
+| Native modifications                 | [Exiv2 overlay](../vcpkg-ports/exiv2), [Adobe overlay](../vcpkg-ports/adobe-xmp-core)                                                                                                            | Complete overlay build files, all named patches, original source archives and native patch-application/build results                                                                            |
+| NuGet inputs                         | [central versions](../Directory.Packages.props), [application lock](../src/JpgSpinner.App/packages.lock.json), [NuGet configuration](../NuGet.config)                                            | Original resolved package identities/integrity evidence; distinguish generated/header source, redistributed/framework components and build-only tooling, with applicable source/terms decisions |
+| Compiler and SDK                     | [toolchain lock](../eng/toolchain-lock.json), [component requirements](../.vsconfig), root build policy                                                                                          | Actual selected tool/SDK identities, public acquisition prerequisites, configuration and build instructions; no unreviewed redistribution of proprietary tools                                  |
+| Release tooling                      | [SBOM tool pins](../eng/sbom-tools.json), [Go module](../eng/artifact-sbom/go.mod), [Go checksums](../eng/artifact-sbom/go.sum), [SPDX validator lock](../eng/spdx-validation/package-lock.json) | Separate release-tool source/terms and exact tool inputs where required; do not mislabel these as application runtime components                                                                |
 
 For the native graph, preserve the selected baseline's registry and version
 metadata as well as the source archives. A baseline alone does not contain
-upstream source. The Exiv2 overlay's two patches and Adobe overlay's two patches
+upstream source. The Exiv2 overlay's two patches and Adobe overlay's three patches
 are build inputs, not optional commentary; retain their original bytes and let
 the existing vcpkg port execute them. Do not replace them with manually edited
 build trees. Preserve source for actual transitive inputs, including Expat,
@@ -94,16 +94,16 @@ The observed target installations are x86, x64 and ARM64 static-md; the four
 host-helper ports were inspected in the x64 installation. Historical sanitizer
 results are not a freshly observed fourth installation.
 
-| Upstream input | Original archive bytes | Retained SHA-256 |
-| --- | ---: | --- |
-| Adobe XMP Toolkit SDK 2025.03 | 23,171,605 | `7e9f4b0d62979e1a7d44e16febfe2c6ab337ceccdaf1dad092666ac14b2fdcd5` |
-| Exiv2 0.28.9 | 47,189,810 | `700b76b97695b2fab4ef8c79619c68ae57d09e0c130724791cafbd39e0eb4aef` |
-| Expat 2.8.5 | 8,474,242 | `fd022c541a189bd5bee042a22188351b31e39b9389c2525fa98c28bd05c9ef21` |
-| inih r62 | 22,145 | `9c15fa751bb8093d042dae1b9f125eb45198c32c6704cd5481ccde460d4f8151` |
-| libjpeg-turbo 3.2.0 | 2,537,858 | `980dd81f425082aa6d7c9e47fef27554ce7a9ffc8e2f6e863b97d263c5c50858` |
-| libspng 0.7.4 | 159,230 | `47ec02be6c0a6323044600a9221b049f63e1953faf816903e7383d4dc4234487` |
-| zlib 1.3.2 | 1,566,911 | `b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1` |
-| Catch2 3.16.0, test input only | 1,216,799 | `0957cae5821b17ce07f0833aaa52b5137643a8382203221f363a8303c109af34` |
+| Upstream input                 | Original archive bytes | Retained SHA-256                                                   |
+| ------------------------------ | ---------------------: | ------------------------------------------------------------------ |
+| Adobe XMP Toolkit SDK 2025.03  |             23,171,605 | `7e9f4b0d62979e1a7d44e16febfe2c6ab337ceccdaf1dad092666ac14b2fdcd5` |
+| Exiv2 0.28.9                   |             47,189,810 | `700b76b97695b2fab4ef8c79619c68ae57d09e0c130724791cafbd39e0eb4aef` |
+| Expat 2.8.5                    |              8,474,242 | `fd022c541a189bd5bee042a22188351b31e39b9389c2525fa98c28bd05c9ef21` |
+| inih r62                       |                 22,145 | `9c15fa751bb8093d042dae1b9f125eb45198c32c6704cd5481ccde460d4f8151` |
+| libjpeg-turbo 3.2.0            |              2,537,858 | `980dd81f425082aa6d7c9e47fef27554ce7a9ffc8e2f6e863b97d263c5c50858` |
+| libspng 0.7.4                  |                159,230 | `47ec02be6c0a6323044600a9221b049f63e1953faf816903e7383d4dc4234487` |
+| zlib 1.3.2                     |              1,566,911 | `b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1` |
+| Catch2 3.16.0, test input only |              1,216,799 | `0957cae5821b17ce07f0833aaa52b5137643a8382203221f363a8303c109af34` |
 
 These are frozen-input identities, not a new latest-version assessment. The
 subsequent [Catch2 3.16.1 qualification](implementation/2026-10-17-catch2-native-overlay.md)

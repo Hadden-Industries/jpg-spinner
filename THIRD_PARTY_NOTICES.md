@@ -13,12 +13,12 @@ the outstanding legal and supply-chain gates.
 
 This software is based in part on the work of the Independent JPEG Group.
 
-| Component | Reviewed version / role | Upstream terms to retain |
-| --- | --- | --- |
-| [libjpeg-turbo](https://github.com/libjpeg-turbo/libjpeg-turbo/tree/3.2.0) | 3.2.0, port revision 1; image runtime | Actual packaged BSD-style and IJG notices, not a shortened SPDX label |
-| [Exiv2](https://github.com/Exiv2/exiv2/tree/v0.28.9) | 0.28.9, port revision 1; metadata runtime | Selected GPL-2.0-or-later terms; qualify combination under repository GPL-3.0 |
-| [Adobe XMP Toolkit SDK](https://github.com/adobe/XMP-Toolkit-SDK/tree/v2025.03) | v2025.03; qualified external XMP backend | Exact upstream notices and local overlay patches |
-| [Catch2](https://github.com/catchorg/Catch2/tree/v3.16.1) | 3.16.1; tests only | BSL-1.0; not an application runtime dependency |
+| Component                                                                       | Reviewed version / role                                                                      | Upstream terms to retain                                                      |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [libjpeg-turbo](https://github.com/libjpeg-turbo/libjpeg-turbo/tree/3.2.0)      | 3.2.0, port revision 1; image runtime                                                        | Actual packaged BSD-style and IJG notices, not a shortened SPDX label         |
+| [Exiv2](https://github.com/Exiv2/exiv2/tree/v0.28.9)                            | 0.28.9, port revision 1; metadata runtime                                                    | Selected GPL-2.0-or-later terms; qualify combination under repository GPL-3.0 |
+| [Adobe XMP Toolkit SDK](https://github.com/adobe/XMP-Toolkit-SDK/tree/v2025.03) | v2025.03, port revision 2; external XMP backend with self-contained static debug information | Exact upstream notices and local overlay patches                              |
+| [Catch2](https://github.com/catchorg/Catch2/tree/v3.16.1)                       | 3.16.1; tests only                                                                           | BSL-1.0; not an application runtime dependency                                |
 
 The actual transitive native closure is determined by resolved vcpkg installation
 metadata and shipped payloads, not this list of direct names alone. Retain every

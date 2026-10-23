@@ -1,261 +1,271 @@
 name: Continuous integration
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 permissions:
-  contents: read
+    contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 defaults:
-  run:
-    shell: pwsh
+    run:
+        shell: pwsh
 jobs:
-  policy:
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Native workflow and source contracts
-        run: |
-          $tools = Join-Path $env:RUNNER_TEMP 'jpg-spinner-workflow-tools'
-          ./scripts/tests/Test-WorkflowVerificationToolContract.ps1 -ToolsDirectory $tools
-          ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools
-          ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-WorkflowAttestationPermissions.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
-          ./scripts/tests/Test-InteractiveTestDrop.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-ProtectedWorkflowAdmission.ps1
-          ./scripts/tests/Test-InteractiveTestEvidence.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-InteractiveWorkflowContract.ps1 -ToolsDirectory $tools
-          ./scripts/tests/Test-StoreWorkflowControls.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-BuildProvenanceControls.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-ReleaseSbomBindingContract.ps1
-          ./scripts/tests/Test-StoreSubmissionBindingContract.ps1
-          ./scripts/tests/Test-ArtifactToolProcessLifecycle.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-WinmdBuildIdentityVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-JpgSpinnerBlockMapVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-IndependentSourceBuildPair.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-SourceCommitSignatureTrust.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-          # Isolate intentional negative-control native exit codes from the
-          # caller's LASTEXITCODE; only this script's process result is a gate.
-          pwsh -NoProfile -File ./scripts/Test-RepositoryPolicy.ps1
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  build:
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        include:
-          - architecture: x86
-            configuration: Debug
-          - architecture: x86
-            configuration: Release
-          - architecture: x64
-            configuration: Debug
-          - architecture: x64
-            configuration: Release
-          - architecture: ARM64
-            configuration: Release
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Resolve native cache identity
-        id: native-inputs
-        run: |
-          Import-Module ./scripts/JsonObjectMemberValidation.psm1
-          $manifest = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content ./vcpkg.json -Raw) -SourceDescription 'vcpkg manifest' -RequiredRootValueKind Object -AsHashtable
-          $toolchain = ./scripts/Resolve-MSBuildToolchain.ps1
-          "baseline=$($manifest['builtin-baseline'])" >> $env:GITHUB_OUTPUT
-          "toolset=$($toolchain.vcToolsVersion)" >> $env:GITHUB_OUTPUT
-          $binaryCache = Join-Path $env:RUNNER_TEMP 'jpg-spinner-vcpkg-cache'
-          "VCPKG_DEFAULT_BINARY_CACHE=$binaryCache" >> $env:GITHUB_ENV
-          New-Item -ItemType Directory -Path $binaryCache -Force | Out-Null
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          # vcpkg validates native ABI-addressed archives; never cache staged
-          # packages, signing material, installed trees or test results.
-          path: |
-            ~/.nuget/packages
-            ${{ runner.temp }}/jpg-spinner-vcpkg-cache
-          key: dependencies-${{ runner.os }}-${{ matrix.architecture }}-${{ matrix.configuration }}-${{ steps.native-inputs.outputs.toolset }}-${{ steps.native-inputs.outputs.baseline }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-triplets/**', 'vcpkg-ports/**', 'eng/toolchain-lock.json', 'Directory.Packages.props', '**/packages.lock.json') }}
-      - name: Build the selected architecture
-        run: |
-          ./scripts/Invoke-Build.ps1 -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}' -MaximumBuildProcessCount 2
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Check bounded native host shutdown
-        if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
-        run: |
-          ./scripts/tests/Test-PresentationHostShutdown.ps1 -Scenario RecoveryDiagnostic -OutputDirectory 'artifacts/TestResults/x64/Release/PresentationShutdown'
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Check release PE symbol references and negative controls
-        if: matrix.configuration == 'Release'
-        run: |
-          # PEReader can inspect every target architecture without executing it.
-          $platform = if ('${{ matrix.architecture }}' -eq 'x86') { 'Win32' } else { '${{ matrix.architecture }}' }
-          ./scripts/tests/Test-PeProgramDatabaseReference.ps1 -PortableImagePath "artifacts/bin/$platform/Release/JpgSpinner.App/JpgSpinner.exe" -OwnedOutputRoot $env:RUNNER_TEMP
-      - name: Run native headless tests
-        if: matrix.architecture != 'ARM64'
-        run: |
-          ./scripts/Invoke-TestSuite.ps1 -Project HeadlessAll -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}'
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Record selected inputs and actual runner
-        run: |
-          New-Item -ItemType Directory -Path artifacts/provenance -Force | Out-Null
-          ./scripts/New-BuildProvenance.ps1 -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}' -RequireCleanSourceTree -OutputPath 'artifacts/provenance/build.json'
-      - name: Prepare deployment-only interactive test inputs
-        if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
-        run: |
-          ./scripts/New-InteractiveTestDrop.ps1 -BinaryDirectory artifacts/bin/x64/Release -SourceCommit '${{ github.sha }}' -OutputDirectory artifacts/interactive-inputs -WorkingDirectory artifacts/interactive-input-staging
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
-        with:
-          name: unsigned-interactive-inputs
-          retention-days: 14
-          if-no-files-found: error
-          path: artifacts/interactive-inputs/
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: build-${{ matrix.architecture }}-${{ matrix.configuration }}
-          retention-days: 14
-          path: |
-            artifacts/build-logs/
-            artifacts/TestResults/
-            artifacts/provenance/
-  interactive-inputs:
-    # Keep OIDC/signing permission out of all compiler and desktop processes.
-    # This stage signs an input inventory, not a claim that UI acceptance ran.
-    needs: [policy, build, asan, analysis]
-    if: github.ref == 'refs/heads/main'
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      actions: read
-      id-token: write
-      attestations: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: unsigned-interactive-inputs
-          path: artifacts/interactive-inputs
-          digest-mismatch: error
-      - name: Verify complete prebuilt inputs
-        run: |
-          ./scripts/Test-InteractiveTestDrop.ps1 -DropDirectory artifacts/interactive-inputs -ExpectedSourceCommit '${{ github.sha }}' -WorkingDirectory artifacts/interactive-input-validation
-      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-path: artifacts/interactive-inputs/build-context.json
-          predicate-type: https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1
-          predicate-path: artifacts/interactive-inputs/build-context.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: interactive-test-drop
-          retention-days: 14
-          if-no-files-found: error
-          path: artifacts/interactive-inputs/
-  unsigned-package:
-    # A development/qualification drop only. Signing, trust changes, WACK and
-    # Store submission belong to the separate protected release route.
-    needs: [policy, build, asan, analysis]
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 180
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Produce and inspect the three unsigned architecture packages
-        run: |
-          $packages = [Collections.Generic.List[string]]::new()
-          # Each native producer uses two MSBuild processes. Keep architecture
-          # production sequential within this runner; no signing inputs exist.
-          foreach ($architecture in @('x86','x64','ARM64')) {
-            $output = Join-Path $PWD "artifacts/packages/$architecture"
-            ./scripts/tests/Test-PackageBuildContract.ps1 -Configuration Release -Architecture $architecture -OutputDirectory $output
-            $produced = @(Get-ChildItem -LiteralPath $output -File -Recurse -Filter 'JpgSpinner.App_*.msix')
-            if ($produced.Count -ne 1) { throw 'Expected exactly one native application package.' }
-            ./scripts/tests/Test-UnsignedMsixPackage.ps1 -PackagePath $produced[0].FullName -Architecture $architecture -ExtractionDirectory "artifacts/package-inspection/$architecture"
-            $packages.Add($produced[0].FullName)
-            New-Item -ItemType Directory -Path artifacts/provenance -Force | Out-Null
-            ./scripts/New-BuildProvenance.ps1 -Configuration Release -Architecture $architecture -RequireCleanSourceTree -OutputPath "artifacts/provenance/package-$architecture.json"
-          }
-          New-Item -ItemType Directory -Path artifacts/unsigned-drop -Force | Out-Null
-          $bundle = Join-Path $PWD 'artifacts/unsigned-drop/JpgSpinner.msixbundle'
-          ./scripts/New-MsixBundle.ps1 -PackagePaths $packages.ToArray() -OutputPath $bundle -WorkingDirectory artifacts/bundle-staging
-          ./scripts/Expand-JpgSpinnerBundle.ps1 -BundlePath $bundle -InspectionDirectory artifacts/bundle-inspection
-          # Qualification creates only owned synthetic copies. These controls
-          # do not repack the shipping bundle or claim independent-build proof.
-          ./scripts/tests/Test-JpgSpinnerBundlePayloadComparison.ps1 -BundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
-          # The producer above appends x86, x64, ARM64 in that explicit order.
-          # This real x64 package supplies the native single-WinMD-block case.
-          ./scripts/tests/Test-NativePackageBlockIntegrity.ps1 -PackagePath $packages[1] -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-WinrtErrorSourceLocationPolicy.ps1 -WinrtProjectionDirectory (Join-Path $PWD 'src/JpgSpinner.App/Generated Files') -OwnedOutputRoot $env:RUNNER_TEMP
-          # Reuse the completed x64 build, but prepare and natively validate a
-          # fresh Store component through the real serial-packaging entry point.
-          # This is not a Store submission or an independent-build claim.
-          ./scripts/tests/Test-StoreSubmissionPackageBuild.ps1 -Architecture x64 -WorkingDirectory (Join-Path $env:RUNNER_TEMP 'store-component-build')
-          # These real-container controls must preserve the distinct signed
-          # distribution and pre-certification Store-submission boundaries.
-          ./scripts/tests/Test-ReleaseSbomRefusalControls.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
-          ./scripts/tests/Test-StoreSubmissionSbomRefusals.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: unsigned-bundle-and-provenance
-          retention-days: 14
-          # Do not upload dependency caches, credentials or a claim of release
-          # approval. Failed/partial drops remain diagnostic artifacts only.
-          path: |
-            artifacts/unsigned-drop/
-            artifacts/provenance/
-            artifacts/bundle-inspection/inventories/
-            artifacts/bundle-inspection/diagnostics/
-            artifacts/build-logs/
-  asan:
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Restore the locked native project graph
-        run: |
-          ./scripts/Invoke-Build.ps1 -Configuration Release -Architecture x64 -MaximumBuildProcessCount 2
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Run instrumented JPEG suites
-        run: ./scripts/Invoke-JpegSanitizerTests.ps1 -TestSpecification '[jpeg]'
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: jpeg-asan-evidence
-          retention-days: 14
-          path: artifacts/build-logs/
-  analysis:
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: MSVC native code analysis
-        run: |
-          ./scripts/tests/Test-StaticAnalysisWarningControl.ps1 -OutputDirectory artifacts/analysis-warning-control
-          ./scripts/Invoke-StaticAnalysis.ps1 -OutputDirectory artifacts/analysis
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: msvc-analysis-evidence
-          retention-days: 14
-          path: |
-            artifacts/analysis/
-            artifacts/analysis-warning-control/
-            artifacts/obj/**/*.nativecodeanalysis.xml
+    policy:
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Native workflow and source contracts
+              run: |
+                  $tools = Join-Path $env:RUNNER_TEMP 'jpg-spinner-workflow-tools'
+                  ./scripts/tests/Test-WorkflowVerificationToolContract.ps1 -ToolsDirectory $tools
+                  ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools
+                  ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-WorkflowAttestationPermissions.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
+                  ./scripts/tests/Test-InteractiveTestDrop.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-ProtectedWorkflowAdmission.ps1
+                  ./scripts/tests/Test-InteractiveTestEvidence.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-InteractiveWorkflowContract.ps1 -ToolsDirectory $tools
+                  ./scripts/tests/Test-StoreWorkflowControls.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-BuildProvenanceControls.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-ReleaseSbomBindingContract.ps1
+                  ./scripts/tests/Test-StoreSubmissionBindingContract.ps1
+                  ./scripts/tests/Test-ArtifactToolProcessLifecycle.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-WinmdBuildIdentityVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-JpgSpinnerBlockMapVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-IndependentSourceBuildPair.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-SourceCommitSignatureTrust.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  # Isolate intentional negative-control native exit codes from the
+                  # caller's LASTEXITCODE; only this script's process result is a gate.
+                  pwsh -NoProfile -File ./scripts/Test-RepositoryPolicy.ps1
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    build:
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 90
+        strategy:
+            fail-fast: false
+            max-parallel: 4
+            matrix:
+                include:
+                    - architecture: x86
+                      configuration: Debug
+                    - architecture: x86
+                      configuration: Release
+                    - architecture: x64
+                      configuration: Debug
+                    - architecture: x64
+                      configuration: Release
+                    - architecture: ARM64
+                      configuration: Release
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Resolve native cache identity
+              id: native-inputs
+              run: |
+                  Import-Module ./scripts/JsonObjectMemberValidation.psm1
+                  $manifest = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content ./vcpkg.json -Raw) -SourceDescription 'vcpkg manifest' -RequiredRootValueKind Object -AsHashtable
+                  $toolchain = ./scripts/Resolve-MSBuildToolchain.ps1
+                  "baseline=$($manifest['builtin-baseline'])" >> $env:GITHUB_OUTPUT
+                  "toolset=$($toolchain.vcToolsVersion)" >> $env:GITHUB_OUTPUT
+                  $binaryCache = Join-Path $env:RUNNER_TEMP 'jpg-spinner-vcpkg-cache'
+                  "VCPKG_DEFAULT_BINARY_CACHE=$binaryCache" >> $env:GITHUB_ENV
+                  New-Item -ItemType Directory -Path $binaryCache -Force | Out-Null
+            - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+              with:
+                  # vcpkg validates native ABI-addressed archives; never cache staged
+                  # packages, signing material, installed trees or test results.
+                  path: |
+                      ~/.nuget/packages
+                      ${{ runner.temp }}/jpg-spinner-vcpkg-cache
+                  key: dependencies-${{ runner.os }}-${{ matrix.architecture }}-${{ matrix.configuration }}-${{ steps.native-inputs.outputs.toolset }}-${{ steps.native-inputs.outputs.baseline }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-triplets/**', 'vcpkg-ports/**', 'eng/toolchain-lock.json', 'Directory.Packages.props', '**/packages.lock.json') }}
+            - name: Build the selected architecture
+              run: |
+                  ./scripts/Invoke-Build.ps1 -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}' -MaximumBuildProcessCount 2
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - name: Check bounded native host shutdown
+              if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
+              run: |
+                  ./scripts/tests/Test-PresentationHostShutdown.ps1 -Scenario RecoveryDiagnostic -OutputDirectory 'artifacts/TestResults/x64/Release/PresentationShutdown'
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - name: Check release PE symbol references and negative controls
+              if: matrix.configuration == 'Release'
+              run: |
+                  # PEReader can inspect every target architecture without executing it.
+                  $platform = if ('${{ matrix.architecture }}' -eq 'x86') { 'Win32' } else { '${{ matrix.architecture }}' }
+                  ./scripts/tests/Test-PeProgramDatabaseReference.ps1 -PortableImagePath "artifacts/bin/$platform/Release/JpgSpinner.App/JpgSpinner.exe" -OwnedOutputRoot $env:RUNNER_TEMP
+            - name: Link the installed Adobe static package with complete debug information
+              run: |
+                  # Use the existing per-platform manifest-install contract, also used
+                  # by Test-VcpkgExportEvidence. Pass its actual package prefix explicitly;
+                  # the consumer must not find another SDK in a global search path.
+                  $architecture = '${{ matrix.architecture }}'
+                  $triplet = "$($architecture.ToLowerInvariant())-windows-static-md"
+                  $prefix = Join-Path $PWD "vcpkg_installed/$triplet/$triplet"
+                  ./scripts/tests/Test-AdobeXmpStaticDebugInformation.ps1 -Architecture $architecture -Configuration '${{ matrix.configuration }}' -InstalledDependencyPrefix $prefix -OutputDirectory (Join-Path $env:RUNNER_TEMP 'adobe-static-debug-information')
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - name: Run native headless tests
+              if: matrix.architecture != 'ARM64'
+              run: |
+                  ./scripts/Invoke-TestSuite.ps1 -Project HeadlessAll -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}'
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - name: Record selected inputs and actual runner
+              run: |
+                  New-Item -ItemType Directory -Path artifacts/provenance -Force | Out-Null
+                  ./scripts/New-BuildProvenance.ps1 -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}' -RequireCleanSourceTree -OutputPath 'artifacts/provenance/build.json'
+            - name: Prepare deployment-only interactive test inputs
+              if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
+              run: |
+                  ./scripts/New-InteractiveTestDrop.ps1 -BinaryDirectory artifacts/bin/x64/Release -SourceCommit '${{ github.sha }}' -OutputDirectory artifacts/interactive-inputs -WorkingDirectory artifacts/interactive-input-staging
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
+              with:
+                  name: unsigned-interactive-inputs
+                  retention-days: 14
+                  if-no-files-found: error
+                  path: artifacts/interactive-inputs/
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: build-${{ matrix.architecture }}-${{ matrix.configuration }}
+                  retention-days: 14
+                  path: |
+                      artifacts/build-logs/
+                      artifacts/TestResults/
+                      artifacts/provenance/
+    interactive-inputs:
+        # Keep OIDC/signing permission out of all compiler and desktop processes.
+        # This stage signs an input inventory, not a claim that UI acceptance ran.
+        needs: [policy, build, asan, analysis]
+        if: github.ref == 'refs/heads/main'
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 15
+        permissions:
+            contents: read
+            actions: read
+            id-token: write
+            attestations: write
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+              with:
+                  name: unsigned-interactive-inputs
+                  path: artifacts/interactive-inputs
+                  digest-mismatch: error
+            - name: Verify complete prebuilt inputs
+              run: |
+                  ./scripts/Test-InteractiveTestDrop.ps1 -DropDirectory artifacts/interactive-inputs -ExpectedSourceCommit '${{ github.sha }}' -WorkingDirectory artifacts/interactive-input-validation
+            - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+              with:
+                  subject-path: artifacts/interactive-inputs/build-context.json
+                  predicate-type: https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1
+                  predicate-path: artifacts/interactive-inputs/build-context.json
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: interactive-test-drop
+                  retention-days: 14
+                  if-no-files-found: error
+                  path: artifacts/interactive-inputs/
+    unsigned-package:
+        # A development/qualification drop only. Signing, trust changes, WACK and
+        # Store submission belong to the separate protected release route.
+        needs: [policy, build, asan, analysis]
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 180
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Produce and inspect the three unsigned architecture packages
+              run: |
+                  $packages = [Collections.Generic.List[string]]::new()
+                  # Each native producer uses two MSBuild processes. Keep architecture
+                  # production sequential within this runner; no signing inputs exist.
+                  foreach ($architecture in @('x86','x64','ARM64')) {
+                    $output = Join-Path $PWD "artifacts/packages/$architecture"
+                    ./scripts/tests/Test-PackageBuildContract.ps1 -Configuration Release -Architecture $architecture -OutputDirectory $output
+                    $produced = @(Get-ChildItem -LiteralPath $output -File -Recurse -Filter 'JpgSpinner.App_*.msix')
+                    if ($produced.Count -ne 1) { throw 'Expected exactly one native application package.' }
+                    ./scripts/tests/Test-UnsignedMsixPackage.ps1 -PackagePath $produced[0].FullName -Architecture $architecture -ExtractionDirectory "artifacts/package-inspection/$architecture"
+                    $packages.Add($produced[0].FullName)
+                    New-Item -ItemType Directory -Path artifacts/provenance -Force | Out-Null
+                    ./scripts/New-BuildProvenance.ps1 -Configuration Release -Architecture $architecture -RequireCleanSourceTree -OutputPath "artifacts/provenance/package-$architecture.json"
+                  }
+                  New-Item -ItemType Directory -Path artifacts/unsigned-drop -Force | Out-Null
+                  $bundle = Join-Path $PWD 'artifacts/unsigned-drop/JpgSpinner.msixbundle'
+                  ./scripts/New-MsixBundle.ps1 -PackagePaths $packages.ToArray() -OutputPath $bundle -WorkingDirectory artifacts/bundle-staging
+                  ./scripts/Expand-JpgSpinnerBundle.ps1 -BundlePath $bundle -InspectionDirectory artifacts/bundle-inspection
+                  # Qualification creates only owned synthetic copies. These controls
+                  # do not repack the shipping bundle or claim independent-build proof.
+                  ./scripts/tests/Test-JpgSpinnerBundlePayloadComparison.ps1 -BundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
+                  # The producer above appends x86, x64, ARM64 in that explicit order.
+                  # This real x64 package supplies the native single-WinMD-block case.
+                  ./scripts/tests/Test-NativePackageBlockIntegrity.ps1 -PackagePath $packages[1] -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-WinrtErrorSourceLocationPolicy.ps1 -WinrtProjectionDirectory (Join-Path $PWD 'src/JpgSpinner.App/Generated Files') -OwnedOutputRoot $env:RUNNER_TEMP
+                  # Reuse the completed x64 build, but prepare and natively validate a
+                  # fresh Store component through the real serial-packaging entry point.
+                  # This is not a Store submission or an independent-build claim.
+                  ./scripts/tests/Test-StoreSubmissionPackageBuild.ps1 -Architecture x64 -WorkingDirectory (Join-Path $env:RUNNER_TEMP 'store-component-build')
+                  # These real-container controls must preserve the distinct signed
+                  # distribution and pre-certification Store-submission boundaries.
+                  ./scripts/tests/Test-ReleaseSbomRefusalControls.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-StoreSubmissionSbomRefusals.ps1 -UnsignedBundlePath $bundle -OwnedOutputRoot $env:RUNNER_TEMP
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: unsigned-bundle-and-provenance
+                  retention-days: 14
+                  # Do not upload dependency caches, credentials or a claim of release
+                  # approval. Failed/partial drops remain diagnostic artifacts only.
+                  path: |
+                      artifacts/unsigned-drop/
+                      artifacts/provenance/
+                      artifacts/bundle-inspection/inventories/
+                      artifacts/bundle-inspection/diagnostics/
+                      artifacts/build-logs/
+    asan:
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 90
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Restore the locked native project graph
+              run: |
+                  ./scripts/Invoke-Build.ps1 -Configuration Release -Architecture x64 -MaximumBuildProcessCount 2
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - name: Run instrumented JPEG suites
+              run: ./scripts/Invoke-JpegSanitizerTests.ps1 -TestSpecification '[jpeg]'
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: jpeg-asan-evidence
+                  retention-days: 14
+                  path: artifacts/build-logs/
+    analysis:
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 90
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: MSVC native code analysis
+              run: |
+                  ./scripts/tests/Test-StaticAnalysisWarningControl.ps1 -OutputDirectory artifacts/analysis-warning-control
+                  ./scripts/Invoke-StaticAnalysis.ps1 -OutputDirectory artifacts/analysis
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: msvc-analysis-evidence
+                  retention-days: 14
+                  path: |
+                      artifacts/analysis/
+                      artifacts/analysis-warning-control/
+                      artifacts/obj/**/*.nativecodeanalysis.xml

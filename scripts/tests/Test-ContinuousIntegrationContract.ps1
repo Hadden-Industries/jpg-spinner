@@ -44,10 +44,22 @@ if (-not $actual.SetEquals([string[]]@('x86/Debug','x86/Release','x64/Debug','x6
 }
 $steps = Get-NodeProperty $build 'steps'
 $hasBuild=$false;$hasHeadlessTests=$false;$hasProvenance=$false;$hasShutdownRegression=$false
+$hasAdobeStaticDebugInformation=$false
 foreach ($step in $steps.Children) {
     $key = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
     if (-not $step.Children.ContainsKey($key)) { continue }
     $command = $step.Children[$key].Value
+    if ($command.Contains('scripts/tests/Test-AdobeXmpStaticDebugInformation.ps1',[StringComparison]::Ordinal)) {
+        # Exercise the installed package in every native matrix configuration,
+        # not merely one standalone developer probe or Release-only shortcut.
+        if ($step.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new('if')) -or
+            -not $command.Contains('-InstalledDependencyPrefix',[StringComparison]::Ordinal) -or
+            -not $command.Contains("matrix.architecture",[StringComparison]::Ordinal) -or
+            -not $command.Contains("matrix.configuration",[StringComparison]::Ordinal)) {
+            throw 'Installed Adobe debug-information regression must use every actual matrix configuration.'
+        }
+        $hasAdobeStaticDebugInformation=$true
+    }
     if ($command.Contains('scripts/tests/Test-PresentationHostShutdown.ps1 -Scenario RecoveryDiagnostic',[StringComparison]::Ordinal)) {
         $condition = (Get-NodeProperty $step 'if').Value
         if ($condition -cne "matrix.architecture == 'x64' && matrix.configuration == 'Release'") {
@@ -66,6 +78,7 @@ foreach ($step in $steps.Children) {
 }
 if (-not ($hasBuild -and $hasHeadlessTests -and $hasProvenance)) { throw 'Build, native headless tests or clean-source provenance wiring is absent.' }
 if (-not $hasShutdownRegression) { throw 'Bounded native presentation process-shutdown regression wiring is absent.' }
+if (-not $hasAdobeStaticDebugInformation) { throw 'Installed Adobe static-library debug-information regression wiring is absent.' }
 $packageJob = Get-NodeProperty $jobs 'unsigned-package'
 $packageNeeds = Get-NodeProperty $packageJob 'needs'
 $neededJobs = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)

@@ -18,6 +18,12 @@ target_link_libraries(XMPCoreStatic PRIVATE expat::expat)
 # CMake derives the archive machine type from the selected compiler; do not
 # retain the SDK's hard-coded /machine:x64 when building ARM64.
 set_target_properties(XMPCoreStatic PROPERTIES
+    # Static package consumers must retain the full compiler debug information
+    # without a private build-tree PDB. CMP0141 is NEW from our top-level 3.25
+    # minimum; CMake owns the corresponding MSVC /Z7 option for every config.
+    # https://cmake.org/cmake/help/latest/policy/CMP0141.html
+    # https://learn.microsoft.com/cpp/build/reference/z7-zi-zi-debug-information-format
+    MSVC_DEBUG_INFORMATION_FORMAT Embedded
     STATIC_LIBRARY_FLAGS ""
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
     EXPORT_NAME Core)

@@ -10,6 +10,14 @@ The [2.0 release-note draft](releases/2.0.0.md) is maintained as an unreleased
 communication artifact. Its existence does not authorize installation,
 distribution, cutover, certification or Store submission.
 
+The [2026-10-24 Adobe static-library packaging qualification](implementation/2026-10-24-adobe-static-debug-information.md)
+repairs missing compiler PDBs without dropping debug information or suppressing
+linker warnings. Native Debug/Release package and independent public-client
+links pass for x86/x64/ARM64; runtime initialization passes only on x86/x64.
+The product's restored x64 JPEG suite passes all 165 testcase elements against
+the revised recipe. This focused evidence does not qualify the final application
+matrix, ARM64 runtime, independent package pair, SBOM, signed upgrade or release.
+
 The owner approved bounded qualification of the
 [closed native metadata/block-map comparison amendment](implementation/2026-10-15-package-payload-comparison-contract.md).
 It reduces the former unconditional byte-equality guarantee; original bytes and

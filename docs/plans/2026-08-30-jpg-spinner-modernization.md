@@ -33,6 +33,15 @@ candidate; retain focused RED/GREEN feedback while editing. Do not repeat tests
 solely to satisfy HISEW bookkeeping. These execution restrictions do not waive
 unmet release, device, accessibility, signing, legal or Store gates.
 
+**Native packaging qualification, 2026-10-24:** Adobe XMP Toolkit remains at its
+immutable v2025.03 source; the local port advances to revision 2. CMake's native
+`MSVC_DEBUG_INFORMATION_FORMAT=Embedded` preserves static-object symbols without
+a build-private compiler PDB. A build-configuration-only patch removes the
+upstream hard-coded `/Zi` so it cannot conflict with that property. The retained
+independent public-client RED/GREEN and manual-only matrix regression qualify
+this packaging change without suppressing linker diagnostics, forking the parser,
+changing XMP semantics or claiming ARM64 runtime/release acceptance.
+
 1. Work on one unchecked step at a time. Do not start a later production behavior while an earlier focused test is red.
 2. For every behavior step, write one focused test first and run it.
 3. Confirm RED is caused by the missing behavior, not compilation damage, a misspelled test selector, or a broken fixture.
