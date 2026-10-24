@@ -2485,12 +2485,23 @@ git commit -m "docs: define support privacy and release contracts"
 
 ## Task 19: Cut over in one auditable change and delete the legacy implementation
 
+**Source-retirement candidate (2026-10-24):** the retained native pre-cutover
+matrix and the subsequently passing real picker cases are recorded in
+[the cutover evidence](../implementation/2026-10-24-cutover-preparation.md).
+The candidate deletes exactly 143 tracked legacy files, connects the maintained
+retirement gate to repository policy, replaces the obsolete exception test with
+native modern-project evaluation, and adds public-entry-point reintroduction
+controls. The modern solution already contains only maintained projects.
+GitHub alert reconciliation and Task 20's distribution/device/human gates remain
+open; source deletion is not a public release.
+
 **Coverage-mapping checkpoint (2026-10-16):**
 [`docs/legacy-cutover-coverage.md`](../legacy-cutover-coverage.md) now maps each
 supported user outcome to maintained executable test boundaries and explicitly
 records retired surfaces. Test existence, development runs and final candidate
-acceptance remain separate. The pre-deletion full-system/upgrade gates below
-are not marked passed and the quarantined legacy tree remains untouched.
+acceptance remain separate. At that checkpoint the pre-deletion full-system/
+upgrade gates below were not marked passed and the quarantined legacy tree
+remained untouched.
 
 **Approved sequencing amendment (2026-10-24):** legacy-source retirement and
 trusted Store-upgrade qualification are separate checkpoints. After every other
@@ -2525,20 +2536,25 @@ manifest is not an upgrade result.
     - `Microsoft.Toolkit`, compatibility, legacy-adapter, facade, bridge, or shim project/type names;
     - ARM32 configurations and Windows SDK targets below 19045;
     - obsolete documentation paths.
-- [ ] Run it; expected RED enumerates the legacy tree and only the legacy tree.
+    - [x] The maintained absence gate covers retired paths, dependency filenames
+          and explicit old-framework/telemetry source surfaces. Native C++20
+          compilation owns C++ language acceptance; MSBuild/toolchain checks own
+          architecture and SDK semantics. This does not claim a hand-written parser
+          can reject every possible equivalent spelling or identifier synonym.
+- [x] Run it; expected RED enumerates the legacy tree and only the legacy tree.
 
 ### Step 19.2: Prove behavioral coverage before deletion
 
-- [ ] Build a coverage matrix mapping every supported legacy user outcome to a new executable test: folder selection, direct/recursive traversal, eight orientations, perfect/trim behavior, sequential/progressive choice, copy output, backed replacement, localization, cancellation, and result reporting.
-- [ ] Explicitly mark retired behavior with rationale: custom Application Insights, obsolete settings flyouts, ARM32, silent/ambiguous destructive paths, copied codec internals, and unsupported MPO mutation.
+- [x] Build a coverage matrix mapping every supported legacy user outcome to a new executable test: folder selection, direct/recursive traversal, eight orientations, perfect/trim behavior, sequential/progressive choice, copy output, backed replacement, localization, cancellation, and result reporting.
+- [x] Explicitly mark retired behavior with rationale: custom Application Insights, obsolete settings flyouts, ARM32, silent/ambiguous destructive paths, copied codec internals, and unsupported MPO mutation.
 - [ ] Run every automated test, sanitizer suite, static analysis and manifest validation before deleting any legacy file. Qualify the actual trusted same-identity Store upgrade at Task 20's pre-public-release gate under the approved sequencing amendment above; do not report it passed before execution.
-- [ ] Save binary logs and JUnit results as the pre-cutover evidence set.
+- [x] Save binary logs and JUnit results as the pre-cutover evidence set.
 
 ### Step 19.3: Delete rather than wrap
 
-- [ ] Remove the exact legacy solution and directory after resolving them beneath the repository root. This deletion is recoverable from Git history.
-- [ ] Do not copy old implementation bodies into new modules. Only already reviewed assets/resources and behavior encoded by tests survive.
-- [ ] Remove stale solution references, filters, package locks, scripts, and documentation.
+- [x] Remove the exact legacy solution and directory after resolving them beneath the repository root. This deletion is recoverable from Git history.
+- [x] Do not copy old implementation bodies into new modules. Only already reviewed assets/resources and behavior encoded by tests survive.
+- [x] Remove stale solution references, filters, package locks, scripts, and documentation.
 
 ### Step 19.4: GREEN legacy absence and full system
 

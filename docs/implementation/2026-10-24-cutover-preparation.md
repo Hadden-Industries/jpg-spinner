@@ -1,8 +1,9 @@
 # Cutover preparation and candidate-bound verification
 
-Status: preparation checkpoint, **not source retirement or release approval**.
-The legacy tree and installed Store application remain unchanged. This record
-binds existing product verification to signed source
+Status: preparation evidence and subsequent **source-retirement candidate**;
+release approval remains separate. The original preparation checkpoint left
+the legacy tree unchanged; its later deletion is recorded below. The installed
+Store application remains unchanged. This record binds product verification to signed source
 `906de8542b744238e8792375b2a71b1375d623ca` and separately describes the subsequent
 test-tooling changes. It does not turn earlier evidence into proof of a later
 application candidate.
@@ -110,13 +111,13 @@ versions through the approved authorities; its original output is retained as
 clear the recorded picker input gap, not Task 20's device, accessibility, legal,
 certification, security or deliberately authorized distribution gates.
 
-## Maintained retirement policy: deliberate RED
+## Maintained retirement policy: pre-deletion RED
 
 `Test-RetiredImplementationAbsence.ps1` now checks the exact legacy root/solution,
 copied codec filenames and explicit retired framework/telemetry source strings.
-At the current checkout it fails on **only** `JPG Spinner.sln` and `JPG Spinner`.
-The policy is deliberately not wired into the parallel-tree baseline's passing
-repository gate yet; wiring belongs to the atomic cutover.
+At the preparation checkpoint it failed on **only** `JPG Spinner.sln` and
+`JPG Spinner`. It was deliberately not wired into the parallel-tree baseline's
+passing repository gate; that wiring belongs to the atomic cutover below.
 
 A valid synthetic source fixture and seven independent forbidden fixtures pass
 the maintained controls. The positive control includes a filename with spaces
@@ -132,7 +133,101 @@ This lexical retirement gate does not implement a C++ parser, ban every caret
 character, or claim to complete every Task 19 language/naming/documentation check.
 Microsoft explicitly documents the
 [/ZW and C++20 incompatibility](https://learn.microsoft.com/cpp/build/reference/zw-windows-runtime-compilation).
-The legacy coexistence opt-out remains necessary until the actual cutover.
+The legacy coexistence opt-out remained necessary until the actual cutover.
+
+## Source-retirement candidate
+
+Signed baseline `ed87e9907d13d3040f8335d6fca66aed778229fe` retains the complete
+pre-deletion tree and the passing picker evidence. The exact old source root
+and solution were resolved beneath the worktree; Git found no untracked or
+ignored descendants and no redirected member. The owner approved the exact
+one-time command-guard override for native `git.exe rm`. It removed 143 tracked
+files, including the old C++/CX application, copied IJG codec, `transupp`, obsolete
+XAML/assets, beta telemetry package configuration and legacy bundle artifacts.
+No implementation body was copied into the maintained projects.
+
+The maintained repository policy now calls `Test-RetiredImplementationAbsence.ps1`
+and no longer requires the deleted legacy project or tests its old opt-out.
+The existing native MSBuild evaluation still proves C++20 reaches the modern
+probe. Shared build selections and compiler/linker options are unchanged; only
+their obsolete coexistence comments are updated. `JpgSpinner.sln` already refers
+only to maintained projects, so no solution rewrite was required.
+
+Before implementation, the absence gate returned exit 1 for only the two old
+paths. The new public-entry-point fixture returned exit 1 because repository
+policy still required the deleted project. After integration and deletion, the
+real absence gate and the public-entry-point controls return exit 0. The latter
+first admits a complete modern fixture, then independently reintroduces the old
+solution and an empty old directory and requires both to be refused. Actual
+native MSBuild evaluation also returns exit 0.
+
+These raw results are retained as `task19-actual-legacy-red.log`,
+`task19-entrypoint-red.log`, `task19-actual-legacy-green.log`,
+`task19-entrypoint-green.log` and `task19-msbuild-scope-green.log` in the same
+external evidence group. The fixture runner accepts a preallocated working
+group, records each child-process result and leaves native promotion/disposal to
+the caller. It introduces no workflow-engine dependency into repository policy.
+
+The two new directories from the preceding broad-selection timeout were also
+removed through native HISEW after promotion of their exact manifest and
+synthetic JPEG. Both operations report `removed-confirmed`, actual mode
+`recycled`, with independent recovery records. The two older directories held
+for HISEW issues 197 and 187 remain intact. The installed Store app is unchanged.
+
+Source retirement is separate from GitHub CodeQL-category reconciliation,
+historical credential revocation, human accessibility, physical-device and
+trusted Store-upgrade qualification. No security review, external review,
+remote workflow, submission, signing or trust-store change is performed by this
+candidate.
+
+### Post-cutover technical checkpoint
+
+The x64 and x86 Release build commands return exit 0. The interrupted ARM64
+command's terminal receipt is unavailable; its complete original binlog remains.
+Read-only replay with the selected native MSBuild executable reports a successful
+build with 0 errors and **80 warnings**. Replay does not rebuild the solution.
+The warnings include MSB4121 for unselected fuzz-project mappings and LNK4099
+from the application's installed Adobe archive. The ARM64 installation still
+reports Adobe packaging revision 1; the maintained overlay is revision 2.
+Successful compilation is therefore not a warning-free qualification.
+
+The post-cutover x64 headless command returns exit 0. Its five original JUnit
+reports contain 378 testcase elements: Domain 38, JPEG Transformation 165,
+Windows Storage 98, Batch Processing 15 and Presentation 62. There are no
+failure, error or skipped elements. The full repository-policy negative-control
+command also returns exit 0, including the retirement reintroduction controls.
+Original streams are retained as `task19-final-build-x64.log`,
+`task19-final-build-x86.log`, `task19-final-build-arm64.log`,
+`task19-arm64-native-replay.log`, `task19-final-headless-x64.log` and
+`task19-final-policy-controls.log`.
+
+The rebuilt executable hashes differ from the earlier picker candidate. The
+final eight-case automation selection was enumerated but **not executed**:
+Windows refused temporary screen-saver suppression, the original state was
+restored, and Computer Use was subsequently stopped. Under the owner's current
+instruction, no further desktop test is attempted. The earlier two-case pass
+remains evidence for its recorded binaries, not a pass for these rebuilt images.
+`task19-final-automation.log` retains that preflight refusal.
+
+The ordinary Codex Review Agent found one stale reconstruction-procedure
+statement. It was corrected to the retained signed baseline and current
+retirement gate; a narrow follow-up found no residual issue. No security or
+external review ran. This is a logical source-retirement checkpoint, with
+warning remediation and final desktop acceptance still open, not Task 19's
+complete post-cutover GREEN or Task 20 release qualification.
+
+The policy fixtures' 69 raw child-result files and exact tested policy patch
+were independently promoted through HISEW. Native checkpoint
+`8c93ca0437614c3f8db253364c153c5a` verified all 70 selected originals. The copied
+source/generated working files occupy about 256 MiB. Native disposition then
+required preservation of their nested initialized Git fixtures; refinement
+checkpoint `1ecf1c1406304432aac8b569b2d1274a` retains that partition. The subsequent
+clone-preservation attempt has no confirmed completion receipt. Fresh native
+inspection reports an unresolved parent partition and two changed-membership
+observations. Preserve this group intact for native reconciliation; do not
+claim removal or retry through a private filesystem route. The owning
+coordinator reassesses when that native cleanup path is available, without
+rerunning passed product tests.
 
 ## Fuzz output ownership
 
@@ -229,8 +324,9 @@ consumer and use native HISEW disposal after this preparation checkpoint.
 ## Delivery limits
 
 No security or external review, remote CI dispatch, push, Store submission,
-package flight or trusted upgrade was performed. Task 19's actual deletion and
-post-cutover GREEN remain pending. Task 20's physical-device, minimum-OS, human
+package flight or trusted upgrade was performed. Task 19's source deletion is
+implemented above; final post-cutover warning remediation and desktop acceptance
+remain pending at this checkpoint. Task 20's physical-device, minimum-OS, human
 accessibility/localization, long-duration fuzzing, legal, certification and
 deliberately authorized distribution gates remain separate and unmet where no
 actual evidence exists.

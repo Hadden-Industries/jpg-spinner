@@ -5,8 +5,9 @@
 The 2.0 replacement is under development and is not a supported production release
 yet. Do not interpret a package build or a historical Store listing as current
 security maintenance. Supported production versions and dates must be explicitly
-recorded when a release is qualified. Historical 1.x code remains quarantined
-for migration comparison; it is not the modern security boundary.
+recorded when a release is qualified. Historical 1.x source is retired from the
+maintained tree and recoverable from the signed pre-cutover Git baseline; source
+retirement does not qualify a supported release.
 
 ## Private reporting
 

@@ -3,8 +3,7 @@
     These item definitions are evaluated after Microsoft.Cpp.props so they map
     to real CL and LINK task parameters instead of becoming inert properties.
     Every group honors the project-level modern-policy boundary established in
-    Directory.Build.props; the legacy C++/CX project disables that boundary
-    before its first MSBuild import because /ZW cannot consume /std:c++20.
+    Directory.Build.props. All maintained C++ projects participate.
     Effective command lines and x64 PE metadata are verified independently by
     scripts/Test-EffectiveBuildPolicy.ps1.
   -->

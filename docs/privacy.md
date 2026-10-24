@@ -1,6 +1,6 @@
 # Privacy in the modern application
 
-This describes the replacement source, not the quarantined historical app or
+This describes the maintained source, not the installed historical app or
 Windows/Microsoft Store diagnostics. Release traffic and capability checks remain
 explicit entries in the [qualification register](release-qualification.md).
 

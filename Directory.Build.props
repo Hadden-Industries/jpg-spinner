@@ -6,10 +6,9 @@
   -->
   <PropertyGroup>
     <!--
-      Modern projects participate by default. The still-shipping C++/CX
-      project sets this property to false in its Globals group, before
-      Microsoft.Cpp.Default.props imports this file, because /ZW cannot be
-      combined with the modern policy's /std:c++20 language mode.
+      All maintained C++ projects participate by default. Keep selection
+      properties and late item metadata on the same participation boundary;
+      effective-build checks verify the actual compiler/linker invocation.
     -->
     <JpgSpinnerModernCppBuildPolicyEnabled
       Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == ''">true</JpgSpinnerModernCppBuildPolicyEnabled>

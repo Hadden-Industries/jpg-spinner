@@ -1222,46 +1222,6 @@ function Test-BuildPolicyProbeProject {
     }
 }
 
-function Test-LegacyCppCxProjectBuildPolicyScope {
-    $relativeProjectPath = 'JPG Spinner/JPG Spinner.vcxproj'
-    $projectRootElement =
-        Read-MSBuildProjectRootElement -RelativePath $relativeProjectPath
-    if ($null -eq $projectRootElement) {
-        return
-    }
-
-    $policyParticipationProperty = Get-RequiredSingleRootMSBuildPropertyElement `
-        -ProjectRootElement $projectRootElement `
-        -PropertyName 'JpgSpinnerModernCppBuildPolicyEnabled' `
-        -Description 'JpgSpinnerModernCppBuildPolicyEnabled' `
-        -SourceDescription $relativeProjectPath
-    if ($null -eq $policyParticipationProperty) {
-        return
-    }
-
-    Assert-ExactValue `
-        -Actual $policyParticipationProperty.Value `
-        -Expected 'false' `
-        -Description 'legacy C++/CX modern build-policy participation'
-    if ([string]$policyParticipationProperty.Parent.Label -cne 'Globals') {
-        Add-PolicyFailure -Message (
-            "$relativeProjectPath must declare JpgSpinnerModernCppBuildPolicyEnabled " +
-            'in its Globals PropertyGroup.'
-        )
-    }
-
-    $firstImport = @($projectRootElement.Imports)[0]
-    if (
-        $null -eq $firstImport -or
-        $policyParticipationProperty.Location.Line -ge $firstImport.Location.Line
-    ) {
-        Add-PolicyFailure -Message (
-            "$relativeProjectPath must opt out of the modern C++ build policy before " +
-            'its first MSBuild import.'
-        )
-    }
-}
-
 function Get-RepositoryRelativePath {
     param(
         [Parameter(Mandatory)]
@@ -2258,7 +2218,6 @@ $requiredConfigurationFiles = @(
     'eng/toolchain-lock.json',
     'eng/BuildPolicyProbe/BuildPolicyProbe.vcxproj',
     'eng/BuildPolicyProbe/BuildPolicyProbe.cpp',
-    'JPG Spinner/JPG Spinner.vcxproj',
     'JpgSpinner.sln',
     'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj',
     'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj',
@@ -2283,7 +2242,15 @@ Test-ToolchainLock
 Test-DirectoryBuildProperties
 Test-DirectoryBuildTargets
 Test-BuildPolicyProbeProject
-Test-LegacyCppCxProjectBuildPolicyScope
+# The separate gate uses Git's literal inventory and native compilation for
+# language semantics. Keep its failure in the same report as every other policy
+# violation so a caller cannot accidentally qualify a surviving legacy tree.
+try {
+    & (Join-Path $PSScriptRoot 'Test-RetiredImplementationAbsence.ps1') -RepositoryRoot $repositoryRoot
+}
+catch {
+    Add-PolicyFailure -Message "Retired implementation policy: $($_.Exception.Message)"
+}
 Test-ModernSolutionArchitecture
 Test-NuGetConfiguration
 Test-EditorConfiguration

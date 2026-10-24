@@ -4,7 +4,12 @@ param(
     # continues to execute every existing negative control without filtering.
     [switch]$StorageTransactionReferenceControlsOnly,
     # Bound follow-up to the new real PNG inventory/decoder admission checks.
-    [switch]$PackageArtworkControlsOnly
+    [switch]$PackageArtworkControlsOnly,
+    # Exercise the public repository-policy entry point after source retirement.
+    [switch]$RetiredImplementationControlsOnly,
+    # A preallocated HISEW working group keeps raw fixture/results available
+    # for the caller's native evidence-promotion and disposal lifecycle.
+    [string]$FixtureRoot
 )
 
 Set-StrictMode -Version Latest
@@ -12,9 +17,15 @@ $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $repositoryPolicyPath = Join-Path $repositoryRoot 'scripts/Test-RepositoryPolicy.ps1'
-$temporaryRoot = Join-Path (
-    [System.IO.Path]::GetTempPath()
-) "jpg-spinner-repository-policy-$([guid]::NewGuid().ToString('N'))"
+$fixtureParent = [System.IO.Path]::GetTempPath()
+if ($FixtureRoot) {
+    $fixtureParent = [System.IO.Path]::GetFullPath($FixtureRoot)
+    if (-not (Test-Path -LiteralPath $fixtureParent -PathType Container)) {
+        throw 'FixtureRoot must be an existing, exclusively owned working directory.'
+    }
+}
+$temporaryRoot = Join-Path $fixtureParent "jpg-spinner-repository-policy-$([guid]::NewGuid().ToString('N'))"
+$script:policyInvocationCount = 0
 
 function Invoke-IsolatedRepositoryPolicy {
     $powerShellExecutablePath = (Get-Process -Id $PID).Path
@@ -23,8 +34,16 @@ function Invoke-IsolatedRepositoryPolicy {
         -File $repositoryPolicyPath `
         -RepositoryRoot $temporaryRoot 2>&1
 
+    $exitCode = $LASTEXITCODE
+    if ($FixtureRoot) {
+        $script:policyInvocationCount++
+        [IO.File]::WriteAllText(
+            "$temporaryRoot-$($script:policyInvocationCount).log",
+            "Exit: $exitCode`n$($output -join "`n")"
+        )
+    }
     return [pscustomobject]@{
-        exitCode = $LASTEXITCODE
+        exitCode = $exitCode
         output = $output -join "`n"
     }
 }
@@ -71,8 +90,7 @@ try {
         'README.md',
         'SECURITY.md',
         'THIRD_PARTY_NOTICES.md',
-        'JpgSpinner.sln',
-        'JPG Spinner/JPG Spinner.vcxproj'
+        'JpgSpinner.sln'
     )) {
         $destinationPath = Join-Path $temporaryRoot $relativeFilePath
         [void][System.IO.Directory]::CreateDirectory((Split-Path -Parent $destinationPath))
@@ -110,6 +128,21 @@ try {
         throw "The isolated valid configuration must pass before negative controls run.`n$($baselineResult.output)"
     }
 
+    # Test through the maintained entry point, not just the leaf checker: a
+    # disconnected retirement gate must not leave repository policy green.
+    $retiredSolutionPath = Join-Path $temporaryRoot 'JPG Spinner.sln'
+    [IO.File]::WriteAllText($retiredSolutionPath, '')
+    Assert-RejectedMutation -ExpectedDiagnostics 'Retired implementation remains: JPG Spinner.sln'
+    [IO.File]::Delete($retiredSolutionPath)
+    $retiredDirectoryPath = Join-Path $temporaryRoot 'JPG Spinner'
+    [void][IO.Directory]::CreateDirectory($retiredDirectoryPath)
+    Assert-RejectedMutation -ExpectedDiagnostics 'Retired implementation remains: JPG Spinner'
+    [IO.Directory]::Delete($retiredDirectoryPath)
+    if ($RetiredImplementationControlsOnly) {
+        Write-Output 'PASS: repository policy accepts modern source and rejects the retired solution and empty source directory.'
+        return
+    }
+
     # The owning fixture copied the real asset inventory and first passed full
     # policy. Mutate only fixture PNGs; never alter the checkout's brand assets.
     $fixtureAssets = Join-Path $temporaryRoot 'src/JpgSpinner.App/Assets'
@@ -123,7 +156,7 @@ try {
         [Microsoft.VisualBasic.FileIO.UICancelOption]::ThrowException)
     Add-Type -AssemblyName System.Drawing
     $wrongSizePath = Join-Path $fixtureAssets 'Square44x44Logo.scale-100.png'
-    $wrongSizeImage = [Drawing.Bitmap]::new(1,1)
+    $wrongSizeImage = [Drawing.Bitmap]::new(1, 1)
     try { $wrongSizeImage.Save($wrongSizePath, [Drawing.Imaging.ImageFormat]::Png) }
     finally { $wrongSizeImage.Dispose() }
     Assert-RejectedMutation -ExpectedDiagnostics 'incorrect decoded dimensions'
@@ -494,34 +527,8 @@ try {
     )
     [System.IO.File]::Delete($bootstrapperSourcePath)
 
-    # The legacy project must establish its exception before the root policy is
-    # imported. Flipping the project-owned switch recreates the reviewed
-    # /ZW-plus-/std:c++20 conflict even though the shared files remain intact.
-    $legacyCppCxProjectPath =
-        Join-Path $temporaryRoot 'JPG Spinner/JPG Spinner.vcxproj'
-    $legacyCppCxProjectDocument = [System.Xml.XmlDocument]::new()
-    $legacyCppCxProjectDocument.PreserveWhitespace = $true
-    $legacyCppCxProjectDocument.Load($legacyCppCxProjectPath)
-    $legacyPolicyParticipationNode = $legacyCppCxProjectDocument.SelectSingleNode(
-        '/*[local-name()="Project"]/*[local-name()="PropertyGroup"]/' +
-        '*[local-name()="JpgSpinnerModernCppBuildPolicyEnabled"]'
-    )
-    if ($null -eq $legacyPolicyParticipationNode) {
-        throw 'The valid legacy project fixture lacks its modern C++ policy participation property.'
-    }
-    $legacyPolicyParticipationNode.InnerText = 'true'
-    $legacyCppCxProjectDocument.Save($legacyCppCxProjectPath)
-    Assert-RejectedMutation -ExpectedDiagnostics (
-        "legacy C++/CX modern build-policy participation must be 'false'"
-    )
-    Copy-Item `
-        -LiteralPath (Join-Path $repositoryRoot 'JPG Spinner/JPG Spinner.vcxproj') `
-        -Destination $legacyCppCxProjectPath `
-        -Force
-
     # The default-on switch and the guarded selection group form one scope
-    # contract. Removing either condition would make the legacy opt-out inert
-    # for some or all of Directory.Build.props.
+    # contract. Keep its native MSBuild selection and item metadata aligned.
     $buildPropertiesPath = Join-Path $temporaryRoot 'Directory.Build.props'
     $buildPropertiesDocument = [System.Xml.XmlDocument]::new()
     $buildPropertiesDocument.PreserveWhitespace = $true
@@ -580,7 +587,7 @@ try {
 
     # Compiler/linker policy is late item metadata. Exercise every shared group
     # independently so a configuration- or architecture-specific group cannot
-    # leak into the legacy project behind an otherwise correct base guard.
+    # drift from the common participation boundary behind a correct base guard.
     $targetsPath = Join-Path $temporaryRoot 'Directory.Build.targets'
     $targetsDocument = [System.Xml.XmlDocument]::new()
     $targetsDocument.PreserveWhitespace = $true
@@ -1268,14 +1275,14 @@ try {
 
     Write-Output (
         'PASS: repository policy rejects weakened or duplicate build settings, unscoped modern C++ ' +
-        'policy, legacy C++/CX re-enablement, ambient VC-directory selection, non-object JSON roots, ' +
+        'policy, retired implementation reintroduction, ambient VC-directory selection, non-object JSON roots, ' +
         'executable triplet mutations, ' +
         'alternate vcpkg authorities, duplicate JSON members, root dependency-activation surfaces, ' +
         'disabled NuGet sources, and unreviewed dependency semantics.'
     )
 }
 finally {
-    if (Test-Path -LiteralPath $temporaryRoot) {
+    if (-not $FixtureRoot -and (Test-Path -LiteralPath $temporaryRoot)) {
         $resolvedTemporaryRoot = [System.IO.Path]::GetFullPath($temporaryRoot)
         $resolvedOperatingSystemTemporaryRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
         if (-not $resolvedTemporaryRoot.StartsWith(

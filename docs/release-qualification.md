@@ -104,7 +104,8 @@ records the source-bound native matrix, analysis, sanitizer and automated UI
 results without relabelling the timed-out operator-assisted picker attempt.
 The owner's sequencing amendment moves only the actual trusted same-identity
 Store upgrade to the pre-public-release gate. All other pre-cutover checks still
-apply; the legacy source and installed Store application remain unchanged.
+apply. That preparation checkpoint left the legacy source and installed Store
+application unchanged.
 
 The [resumed two-case picker acceptance](implementation/2026-10-24-cutover-preparation.md#resumed-picker-acceptance-2026-10-24)
 now passes on the same application/presentation source boundary: native exit 0,
@@ -116,6 +117,17 @@ state is restored and successful-run test registrations are gone. This clears
 that recorded pre-cutover picker gap, not human accessibility, native device,
 trusted upgrade or release qualification. Source retirement remains a separate
 auditable change.
+
+The Task 19 source-retirement candidate removes exactly 143 tracked files in
+`JPG Spinner.sln` and `JPG Spinner/`, including C++/CX, the copied IJG codec,
+obsolete XAML/assets and beta telemetry package configuration. The maintained
+repository policy now enforces their absence and has independent reintroduction
+controls through its public entry point. Signed baseline `ed87e990` preserves
+the deleted source; the installed Store app is unchanged. Post-cutover technical
+results are recorded with the
+[cutover evidence](implementation/2026-10-24-cutover-preparation.md). This deletion
+does not resolve GitHub analysis records, revoke the historical credential or
+qualify distribution.
 
 | Gate                                 | Current evidence boundary / remaining proof                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Accountable role                        |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |

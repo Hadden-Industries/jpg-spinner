@@ -6,10 +6,11 @@ photographs as a way to rotate them.
 
 ## Status
 
-Version 2.0 is under development, not release-qualified. The modern solution is
-`JpgSpinner.sln`; `JPG Spinner.sln` and `JPG Spinner/` are quarantined historical
-reference material pending an explicitly qualified cutover. Building a package
-does not establish Store acceptance or update continuity. See the
+Version 2.0 is under development, not release-qualified. The maintained solution
+is `JpgSpinner.sln`. The historical `JPG Spinner.sln` and `JPG Spinner/` source
+tree have been removed; their signed Git baseline remains recoverable from
+history. Building a package does not establish Store acceptance or update
+continuity. See the
 [qualification register](docs/release-qualification.md) and
 [approved plan](docs/plans/2026-08-30-jpg-spinner-modernization.md).
 

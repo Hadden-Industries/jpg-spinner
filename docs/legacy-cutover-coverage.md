@@ -1,10 +1,12 @@
 # Legacy cutover: outcome coverage and remaining proof
 
-Status: **coverage map, not cutover approval**. The modern implementation exists
-in parallel with the quarantined historical tree. Do not delete that tree until
-[Task 19's pre-cutover gates](plans/2026-08-30-jpg-spinner-modernization.md#task-19-cut-over-in-one-auditable-change-and-delete-the-legacy-implementation)
-have actual passing evidence. A test declaration is not an execution result;
-retained development runs do not qualify a different release candidate.
+Status: **source retired; release qualification remains open**. The maintained
+implementation is the modern solution. The exact historical solution/tree has
+been removed under
+[Task 19's approved sequencing](plans/2026-08-30-jpg-spinner-modernization.md#task-19-cut-over-in-one-auditable-change-and-delete-the-legacy-implementation).
+The signed baseline is retained in Git history. A test declaration is not an
+execution result; retained development runs do not qualify a different release
+candidate.
 
 ## Preserved user outcomes
 
@@ -34,7 +36,7 @@ Read the named cases in the linked files when selecting a bounded regression.
 | Obsolete settings flyouts and C++/CX/UWP XAML implementation                    | Native WinUI commands, policy controls and accessible review. Outcomes above survive; framework implementation and old UI shape do not.                                                                        |
 | ARM32                                                                           | The approved architecture set is x86, x64 and ARM64. Cross-compilation alone does not prove native ARM64 operation.                                                                                            |
 | Silent or ambiguous destructive correction                                      | Corrected copies by default; explicit backed replacement, exact trim consent and deterministic recovery. Unsupported/uncertain operations refuse.                                                              |
-| Vendored IJG 9a, copied codec internals and private transform helpers           | Maintained libjpeg-turbo public APIs behind the tested transform boundary. Delete the quarantined codec at cutover; do not retain a wrapper, fork or scanning exclusion.                                       |
+| Vendored IJG 9a, copied codec internals and private transform helpers           | Maintained libjpeg-turbo public APIs behind the tested transform boundary. The copied implementation is deleted; no wrapper, fork or scanning exclusion survives.                                              |
 | Unsupported MPO/MPF, signed/JUMBF or payload-bearing trailing-data mutation     | Explicit scanner/engine refusal; no flattening into an apparently preserved JPEG.                                                                                                                              |
 
 ## Candidate-bound cutover evidence
@@ -64,10 +66,11 @@ errors or skips, and unchanged synthetic source bytes. This clears that input
 lane gap without promoting the earlier timeout to success. The full cutover,
 post-deletion verification and release gates remain separate.
 
-Then tighten repository policy and prove its legacy-tree RED, delete the exact
-Git-tracked legacy solution/tree in one separate auditable commit, repair stale
-references, and obtain the post-cutover system GREEN. Preserve historical design
-descriptions as history, not runnable legacy paths. Deliberate post-cutover
+The maintained repository policy now invokes the retirement gate. Its retained
+pre-deletion RED names only the old solution and tree. The exact 143 tracked
+legacy files are removed; the modern solution already contained only maintained
+projects and needed no artificial solution rewrite. Historical design
+descriptions remain as history, not runnable legacy paths. Deliberate post-cutover
 CodeQL evidence must reconcile the five existing alerts and their original
 analysis category before claiming GitHub closure. Nothing here authorizes a
 remote run, alert dismissal, signing, installation, Store submission or release.

@@ -162,10 +162,12 @@ Task 19 cutover; all reconstruction and delivery steps below remain required.
 
 ## Reconstruction and delivery
 
-1. Finish accepted cutover and freeze the release candidate. The legacy tree is
-   still quarantined, not removed; do not publish its historical credential
-   references in a new source deliverable or silently filter a source archive
-   and call it an exact repository snapshot. Resolve that boundary in Task 19.
+1. Freeze the release candidate after the accepted source cutover. The legacy
+   solution/tree is removed and recoverable from signed baseline `ed87e990`;
+   verify the [maintained retirement gate](../scripts/Test-RetiredImplementationAbsence.ps1)
+   against the selected tree. Source retirement does not freeze or qualify a
+   distribution candidate. Do not silently filter an archive and call it an
+   exact repository snapshot; audit the final source-delivery inputs separately.
 2. Verify the approved signed commit with the existing
    [source-signature trust contract](../scripts/tests/Test-SourceCommitSignatureTrust.ps1).
    Preserve its exact source identity. Use native
