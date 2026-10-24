@@ -49,6 +49,16 @@ reduction in duration-based assurance, not a completed long campaign; malformed
 inputs, resource limits, deterministic regressions, sanitizers and storage/recovery
 requirements remain. Other outstanding gates and review restrictions are unchanged.
 
+The subsequent [native library-directory repair](implementation/2026-10-24-native-library-directory-selection.md)
+resolves the CS1668 producer boundary through Microsoft's early C++ property
+import hook, preserving ASan/libFuzzer path extensions and Spectre precedence.
+All five supported local build lanes report zero warnings/errors, all four
+x86/x64 Debug/Release headless lanes pass 378 cases each, the actual JPEG ASan
+run passes, and the bounded scanner regression/replay/minimization/audit passes.
+The normal JPEG test output is restored after ASan. This closes the recorded
+local warning issue; it does not qualify an independent clean-source package
+pair, exact final-bundle SBOM, device/desktop acceptance or release.
+
 The owner approved bounded qualification of the
 [closed native metadata/block-map comparison amendment](implementation/2026-10-15-package-payload-comparison-contract.md).
 It reduces the former unconditional byte-equality guarantee; original bytes and

@@ -1,0 +1,21 @@
+<Project>
+  <!-- Import after Microsoft.Cpp.props, before project-owned extensions. These
+       native projects use the selected MSVC runtime, Universal CRT and Windows
+       import libraries, without optional VS extension or NETFX native libraries.
+       Preserve the VC macro's Spectre/platform selection. Instrumented projects
+       may then append the ordinary native directory for ASan/libFuzzer.
+       No generic missing-path filter, hard-coded workstation path, environment
+       clearing or warning suppression is involved. Required paths fail closed
+       in Directory.Build.targets before native environment publication.
+       https://learn.microsoft.com/cpp/build/reference/vcpp-directories-property-page
+       https://learn.microsoft.com/visualstudio/msbuild/customize-cpp-builds -->
+  <PropertyGroup Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(Platform)' == 'Win32'">
+    <LibraryPath>$(VC_LibraryPath_VC_x86);$(UniversalCRT_LibraryPath_x86);$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\um\x86</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(Platform)' == 'x64'">
+    <LibraryPath>$(VC_LibraryPath_VC_x64);$(UniversalCRT_LibraryPath_x64);$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\um\x64</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true' and '$(Platform)' == 'ARM64'">
+    <LibraryPath>$(VC_LibraryPath_VC_ARM64);$(UniversalCRT_LibraryPath_ARM64);$(WindowsSdkDir)Lib\$(WindowsTargetPlatformVersion)\um\arm64</LibraryPath>
+  </PropertyGroup>
+</Project>

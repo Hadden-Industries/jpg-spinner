@@ -84,6 +84,19 @@ jobs:
                       ~/.nuget/packages
                       ${{ runner.temp }}/jpg-spinner-vcpkg-cache
                   key: dependencies-${{ runner.os }}-${{ matrix.architecture }}-${{ matrix.configuration }}-${{ steps.native-inputs.outputs.toolset }}-${{ steps.native-inputs.outputs.baseline }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg-triplets/**', 'vcpkg-ports/**', 'eng/toolchain-lock.json', 'Directory.Packages.props', '**/packages.lock.json') }}
+            - name: Qualify the selected native inline-task environment
+              run: |
+                  # The native C++ library selection must also be valid for the
+                  # original Roslyn tasks. Retain every raw stream under the
+                  # existing always-uploaded build-log root, including refusals.
+                  ./scripts/tests/Test-NativeInlineTaskEnvironment.ps1 -Architecture '${{ matrix.architecture }}' -Configuration '${{ matrix.configuration }}' -OutputDirectory 'artifacts/build-logs/${{ matrix.architecture }}/${{ matrix.configuration }}/NativeInlineTaskEnvironment'
+                  if ('${{ matrix.architecture }}' -eq 'x64') {
+                      ./scripts/tests/Test-NativeInlineTaskEnvironment.ps1 -Project JpgSpinner.JpegTransformation.Tests -EnableASAN -Configuration '${{ matrix.configuration }}' -OutputDirectory 'artifacts/build-logs/x64/${{ matrix.configuration }}/NativeAsanEnvironment'
+                      if ('${{ matrix.configuration }}' -eq 'Release') {
+                          ./scripts/tests/Test-NativeInlineTaskEnvironment.ps1 -Project JpgSpinner.FuzzToolchain.Smoke -Configuration Fuzz -OutputDirectory 'artifacts/build-logs/x64/Fuzz/NativeSmokeEnvironment'
+                          ./scripts/tests/Test-NativeInlineTaskEnvironment.ps1 -Project JpgSpinner.JpegSegmentScanner.Fuzz -Configuration Fuzz -OutputDirectory 'artifacts/build-logs/x64/Fuzz/NativeScannerEnvironment'
+                      }
+                  }
             - name: Build the selected architecture
               run: |
                   ./scripts/Invoke-Build.ps1 -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}' -MaximumBuildProcessCount 2

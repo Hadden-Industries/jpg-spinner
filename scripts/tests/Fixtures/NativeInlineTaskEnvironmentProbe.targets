@@ -1,0 +1,21 @@
+<Project>
+  <!-- Exercise the installed vcpkg Roslyn tasks after the owning C++ targets
+       establish LIB. No substitute compiler, task implementation or restore. -->
+  <Target Name="ProbeNativeInlineTaskEnvironment"
+          DependsOnTargets="SetBuildDefaultEnvironmentVariables">
+    <GetGlobalProperties>
+      <Output TaskParameter="GlobalPropertyNames" PropertyName="ProbeGlobalPropertyNames" />
+    </GetGlobalProperties>
+    <GetVcpkgEnvVars>
+      <Output TaskParameter="VcpkgEnvVars" PropertyName="ProbeVcpkgEnvironment" />
+    </GetVcpkgEnvVars>
+    <!-- Native item expansion owns semicolon/escape semantics. The test reads
+         one expanded directory per line instead of parsing LibraryPath text. -->
+    <ItemGroup>
+      <ProbeNativeLibraryDirectory Include="$(LibraryPath)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ProbeNativeLibraryInventoryPath)"
+                      Lines="@(ProbeNativeLibraryDirectory)" Overwrite="false" />
+    <Message Importance="High" Text="Native inline-task environment qualified: $(Platform) / $(Configuration)" />
+  </Target>
+</Project>

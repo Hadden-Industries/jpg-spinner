@@ -860,6 +860,7 @@ function Test-DirectoryBuildProperties {
         EnableNativePackageReferenceSupport = 'true'
         PreferredToolArchitecture = 'x64'
         UseEnv = 'false'
+        ForceImportAfterCppProps = '$(MSBuildThisFileDirectory)eng\NativeLibraryDirectories.props'
         SpectreMitigation = 'Spectre'
     }
     $vcToolsVersion = $null

@@ -1,4 +1,18 @@
 <Project>
+  <Target Name="JpgSpinnerValidateNativeLibraryDirectories"
+          BeforeTargets="SetBuildDefaultEnvironmentVariables"
+          Condition="'$(JpgSpinnerModernCppBuildPolicyEnabled)' == 'true'">
+    <!-- MSBuild owns list expansion/batching. A missing required installation
+         is a hard error, never an invitation to remove an input or fall back. -->
+    <ItemGroup>
+      <JpgSpinnerNativeLibraryDirectory Include="$(LibraryPath)" />
+    </ItemGroup>
+    <Error Condition="'@(JpgSpinnerNativeLibraryDirectory)' == ''"
+           Text="Required native library directory selection is empty." />
+    <Error Condition="!$([System.IO.Directory]::Exists('%(JpgSpinnerNativeLibraryDirectory.Identity)'))"
+           Text="Required native library directory is absent or not a directory: %(JpgSpinnerNativeLibraryDirectory.Identity)" />
+  </Target>
+
   <!--
     These item definitions are evaluated after Microsoft.Cpp.props so they map
     to real CL and LINK task parameters instead of becoming inert properties.

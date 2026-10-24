@@ -25,6 +25,12 @@
       INCLUDE, LIB, LIBPATH, and PATH values inherited from the calling shell.
     -->
     <UseEnv>false</UseEnv>
+    <!-- Native library macros become available in Microsoft.Cpp.props. Import
+         the shared base immediately afterward, before a project's ASan/Fuzz
+         extensions append their required libraries. This is Microsoft's C++
+         customization hook, not an installed SDK edit or a late reset.
+         https://learn.microsoft.com/visualstudio/msbuild/customize-cpp-builds -->
+    <ForceImportAfterCppProps>$(MSBuildThisFileDirectory)eng\NativeLibraryDirectories.props</ForceImportAfterCppProps>
     <!--
       Use MSBuild's structured property rather than a raw /Qspectre token. In
       addition to compiler instrumentation, this selects the installed,
