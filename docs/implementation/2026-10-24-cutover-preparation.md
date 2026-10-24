@@ -51,9 +51,64 @@ path.
 Screen-saver suppression was temporary and its original enabled state was
 restored and read back after both desktop attempts. Computer Use could display
 the picker but could not admit its separately hosted input target; the refused
-click sent no folder text. The two required picker-driven scenarios therefore
-remain unqualified. This checkpoint does not authorize legacy deletion while
-that pre-cutover acceptance gap remains.
+click sent no folder text. That attempt did not qualify either picker-driven
+scenario. The later, explicitly requested bounded retry below supplies their
+actual result; it does not relabel this timeout as a product pass.
+
+### Resumed picker acceptance, 2026-10-24
+
+The owner explicitly requested another Computer Use attempt. A fresh native
+selection enumerated exactly the two `[automation][operator-assisted]` cases;
+the broader `[operator-assisted]` selection also includes a separate packaged
+source-access controller and is not the same test boundary. The preceding
+broader attempt again reached its 300-second timeout and remains retained as
+unqualified input-lane evidence, not a product failure or a passing test.
+
+After resetting Computer Use, coordinate input into the separately hosted
+`PickerHost.exe` was still refused. The supported keyboard operation did reach
+the visibly focused Folder edit. Only each native fixture's synthetic source
+path was entered, followed by ordinary Enter operations to navigate and confirm
+that folder. Native UI Automation performed Analyze, review checks, picker
+cancellation and trim-consent assertions. Start was never invoked. No production
+folder hook, private picker notification or capability change was introduced.
+
+The exact two cases pass with process exit 0, two JUnit `testcase` elements and
+suite attributes `tests=124`, `failures=0`, `errors=0`, `skipped=0`. Catch2's suite
+counter here must not be described as 124 distinct test cases. Both source-byte
+preservation oracles pass. The operator-approved local desktop lane remains
+distinct from an isolated VM or human assistive-technology qualification.
+
+The application, presentation-test sources, shared build policy and dependency
+inputs are unchanged between signed source `906de854` and checkpoint `d9157fe9`.
+The actual exercised Release x64 binaries are identified independently:
+
+| Artifact                            | SHA-256                                                            |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `JpgSpinner.Presentation.Tests.exe` | `12e7247bcc9183b94c6f92167eba33694a4a4b1867bfaa4305d65b3aa7e25af5` |
+| `JpgSpinner.exe`                    | `2ba7db38d1131d9130fbac1e2c182bdd7e8df7a1186bc4d4e514a89d5a88daf5` |
+| Retained picker JUnit report        | `d8625e83b50e7a9b6322e2b96dfe3eec587eeccaef136512d4bb443f82c23fd1` |
+
+Original results are retained in the same external evidence group as
+`resume-focused-picker-acceptance.log` and
+`resume-focused-picker-acceptance.junit.xml`; the preceding timeout remains in
+`resume-picker-acceptance.log`. The copied operator driver selects only the two
+application-review cases and retains the original suppression/restoration
+contract. Native readback confirms screen-saver active=1, secure=0, timeout=300.
+Both successful-run UUID package registrations and synthetic working fixtures
+are removed by the native fixture lifecycle. An extra isolated app instance
+opened during activation recovery was closed; no owned app/test process remains.
+
+The earlier timed-out registration was separately removed using the owner's
+exact one-time command-guard approval. The installed Store baseline remains
+`HaddenIndustriesLtd.JPGSpinner` 1.1.2.0, Store / Ok. Its app identity, files and
+trust were not changed. The two previously blocked cleanup groups remain intact
+pending the native HISEW fixes tracked in issues 197 and 187.
+
+The stable-only dependency freshness check also reports no actionable newer
+versions through the approved authorities; its original output is retained as
+`resume-dependency-freshness.log`. No package pin changed. These focused results
+clear the recorded picker input gap, not Task 20's device, accessibility, legal,
+certification, security or deliberately authorized distribution gates.
 
 ## Maintained retirement policy: deliberate RED
 

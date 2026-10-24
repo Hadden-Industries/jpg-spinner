@@ -57,6 +57,13 @@ this mapping into a blanket passed checklist. The
 [release register](release-qualification.md) records the outstanding device,
 upgrade, accessibility, privacy, legal and credential-owner obligations.
 
+The [resumed picker acceptance](implementation/2026-10-24-cutover-preparation.md#resumed-picker-acceptance-2026-10-24)
+now supplies an actual passing result for both application-review scenarios on
+the retained native candidate: two JUnit cases, suite counter 124, no failures,
+errors or skips, and unchanged synthetic source bytes. This clears that input
+lane gap without promoting the earlier timeout to success. The full cutover,
+post-deletion verification and release gates remain separate.
+
 Then tighten repository policy and prove its legacy-tree RED, delete the exact
 Git-tracked legacy solution/tree in one separate auditable commit, repair stale
 references, and obtain the post-cutover system GREEN. Preserve historical design
