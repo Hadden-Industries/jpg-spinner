@@ -24,7 +24,7 @@ function Get-NativeWindowsSdkPrerequisites {
     param([string]$LogName)
     # -getProperty evaluates the real project without invoking build targets,
     # restore, compilation or the failing native environment-publication step.
-    $json = Invoke-ArtifactToolProcess @context -LogName $LogName -TimeoutSeconds 30 -Arguments @(
+    $json = Invoke-ArtifactToolProcess @context -LogName $LogName -Arguments @(
         (Join-Path $root 'src/JpgSpinner.Domain/JpgSpinner.Domain.vcxproj'),
         '-nologo', '-noAutoResponse', '-nodeReuse:false', '-maxCpuCount:1',
         '-p:Configuration=Release', '-p:Platform=x64',
@@ -70,7 +70,8 @@ if ($before.missingFiles.Count -gt 0) {
     if (-not [IO.File]::Exists($installer)) { throw 'The native Visual Studio Installer is absent.' }
     if (-not $PSCmdlet.ShouldProcess($toolchain.visualStudioInstallationPath, "Add only $($before.componentId) through Visual Studio Installer")) { return }
     # setup.exe does not accept --wait. PowerShell's documented -Wait observes
-    # the process tree. The workflow separately bounds this step to 15 minutes.
+    # the process tree. The workflow separately applies the canonical
+    # hostedPrerequisiteStep category from the qualification policy.
     # Native argument parsing receives one quoted installation path; no shell,
     # product update, forced close, extra workload or automatic restart is used.
     $arguments = 'modify --installPath "{0}" --channelId "{1}" --add "{2}" --quiet --norestart' -f `

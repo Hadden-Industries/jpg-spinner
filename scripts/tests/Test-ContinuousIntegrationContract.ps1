@@ -8,6 +8,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Import-Module (Join-Path $root 'scripts/QualificationPolicy.psm1')
+$hostedPrerequisiteMinutes = [string](Get-QualificationTimeout -Category hostedPrerequisiteStep -Unit Minutes)
+& (Join-Path $root 'scripts/Sync-QualificationPolicy.ps1') -ToolsDirectory $ToolsDirectory
 $workflow = $WorkflowPath
 if (-not (Test-Path -LiteralPath $workflow -PathType Leaf)) { throw 'The continuous integration workflow is absent.' }
 & (Join-Path $root 'scripts/Test-GitHubWorkflowPolicy.ps1') -ToolsDirectory $ToolsDirectory -WorkflowPaths @($workflow)
@@ -46,9 +49,9 @@ foreach ($name in @('build', 'asan', 'analysis', 'unsigned-package')) {
     $setupTimeout = Get-NodeProperty $setupStep 'timeout-minutes'
     if ($null -eq $setupRun -or
         $setupRun.Value -cne './scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk' -or
-        $null -eq $setupTimeout -or $setupTimeout.Value -cne '15' -or
+        $null -eq $setupTimeout -or $setupTimeout.Value -cne $hostedPrerequisiteMinutes -or
         $null -ne (Get-NodeProperty $setupStep 'if')) {
-        throw "Hosted SDK prerequisite must run unconditionally immediately after checkout with a 15-minute bound: $name"
+        throw "Hosted SDK prerequisite must run unconditionally immediately after checkout with its canonical $hostedPrerequisiteMinutes-minute bound: $name"
     }
 }
 $hasSourcePairControl = $false
@@ -95,7 +98,7 @@ foreach ($step in $steps.Children) {
         $runtimeTimeout = Get-NodeProperty $step 'timeout-minutes'
         if ($hasHostedRuntime -or -not $hasBuild -or $command -cne $expectedRuntimeCommand -or
             $null -eq $runtimeGuard -or $runtimeGuard.Value -cne "matrix.architecture != 'ARM64'" -or
-            $null -eq $runtimeTimeout -or $runtimeTimeout.Value -cne '10') {
+            $null -eq $runtimeTimeout -or $runtimeTimeout.Value -cne $hostedPrerequisiteMinutes) {
             throw 'Hosted runtime deployment requires one bounded native x86/x64 setup after compilation and before test-host execution.'
         }
         $hasHostedRuntime = $true
@@ -245,7 +248,7 @@ try { $scannerYaml.Load($reader) } finally { $reader.Dispose() }
 $scannerJob = Get-NodeProperty (Get-NodeProperty $scannerYaml.Documents[0].RootNode 'jobs') 'scanner'
 $scannerSdkStep = (Get-NodeProperty $scannerJob 'steps').Children[1]
 if ((Get-NodeProperty $scannerSdkStep 'run').Value -cne './scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/fuzz/scanner/windows-sdk' -or
-    (Get-NodeProperty $scannerSdkStep 'timeout-minutes').Value -cne '15' -or $null -ne (Get-NodeProperty $scannerSdkStep 'if')) {
+    (Get-NodeProperty $scannerSdkStep 'timeout-minutes').Value -cne $hostedPrerequisiteMinutes -or $null -ne (Get-NodeProperty $scannerSdkStep 'if')) {
     throw 'Scanner compiler prerequisites require unconditional bounded SDK setup immediately after checkout.'
 }
 $hasPreservedRegression = $false

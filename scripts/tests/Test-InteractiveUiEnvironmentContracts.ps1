@@ -11,6 +11,7 @@ This is environment qualification, not a product UI Automation assertion.
 param()
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $powerShellPath = (Get-Process -Id $PID).Path
@@ -48,7 +49,7 @@ foreach ($case in @(
         [void]$process.Start()
         $outputTask = $process.StandardOutput.ReadToEndAsync()
         $errorTask = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit(15000)) {
+        if (-not $process.WaitForExit((Get-QualificationTimeout -Category presentationShutdownProbe -Unit Milliseconds))) {
             $process.Kill($true)
             $process.WaitForExit()
             throw "$($case.name) did not refuse before its bounded deadline."

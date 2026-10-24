@@ -11,6 +11,12 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $tools = & (Join-Path $PSScriptRoot 'Install-WorkflowVerificationTools.ps1') -ToolsDirectory $ToolsDirectory
 Add-Type -Path $tools.yamlAssemblyPath
 Import-Module (Join-Path $PSScriptRoot 'JsonObjectMemberValidation.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1')
+$qualificationPolicy = Get-QualificationPolicy
+$maximumJobMinutes = Get-QualificationTimeout -Category hostedJobLimit -Unit Minutes
+$artifactPolicy = $qualificationPolicy.GetProperty('artifactPolicy')
+$artifactRetentionDays = [string]([int]$artifactPolicy.GetProperty('retentionDays').GetDecimal())
+$artifactCompressionLevel = [string]([int]$artifactPolicy.GetProperty('compressionLevel').GetDecimal())
 $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (
     Get-Content -LiteralPath (Join-Path $repositoryRoot 'eng/github-actions-lock.json') -Raw
 ) -SourceDescription 'Approved GitHub action pins' -RequiredRootValueKind Object -AsHashtable
@@ -96,7 +102,10 @@ foreach ($path in $WorkflowPaths) {
         if ($isInteractive -and $null -eq (Get-WorkflowProperty $job 'environment')) { throw 'Interactive runner requires a protected manual qualification job.' }
         $timeoutText = Get-WorkflowScalar (Get-WorkflowProperty $job 'timeout-minutes')
         $timeout = 0
-        if (-not [int]::TryParse($timeoutText, [ref]$timeout) -or $timeout -lt 1 -or $timeout -gt 180) { throw 'Require a bounded literal job timeout between 1 and 180 minutes.' }
+        # GitHub-hosted jobs have a six-hour execution ceiling. Serial release
+        # qualification may use it; missing, dynamic or larger bounds refuse.
+        # https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes
+        if (-not [int]::TryParse($timeoutText, [ref]$timeout) -or $timeout -lt 1 -or $timeout -gt $maximumJobMinutes) { throw "Require a bounded literal job timeout between 1 and $maximumJobMinutes minutes." }
         $jobPermissions = Get-WorkflowProperty $job 'permissions'
         $steps = Get-WorkflowProperty $job 'steps'
         if ($steps -isnot [YamlDotNet.RepresentationModel.YamlSequenceNode]) { throw 'Job must declare actual steps.' }
@@ -137,9 +146,9 @@ foreach ($path in $WorkflowPaths) {
                 $retentionText = Get-WorkflowScalar (Get-WorkflowProperty $arguments 'retention-days')
                 # Cloud artifacts are short-lived transport/diagnostics. Export
                 # release evidence before expiry; Actions is not its archive.
-                if ($retentionText -cne '1') { throw 'Require literal artifact retention of exactly 1 day.' }
-                if ((Get-WorkflowScalar (Get-WorkflowProperty $arguments 'compression-level')) -cne '9') {
-                    throw 'Require literal artifact compression level 9 to minimize shared Actions storage.'
+                if ($retentionText -cne $artifactRetentionDays) { throw "Require literal artifact retention of exactly $artifactRetentionDays day(s)." }
+                if ((Get-WorkflowScalar (Get-WorkflowProperty $arguments 'compression-level')) -cne $artifactCompressionLevel) {
+                    throw "Require literal artifact compression level $artifactCompressionLevel to minimize shared Actions storage."
                 }
             }
         }

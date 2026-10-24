@@ -3,11 +3,12 @@
    report followed by a live process is a shutdown failure, not a test pass. #>
 [CmdletBinding()]
 param(
-    [ValidateSet('DiagnosticSerialization','DiagnosticSuite','RecoveryDiagnostic')][string]$Scenario='RecoveryDiagnostic',
+    [ValidateSet('DiagnosticSerialization', 'DiagnosticSuite', 'RecoveryDiagnostic')][string]$Scenario = 'RecoveryDiagnostic',
     [Parameter(Mandatory)][string]$OutputDirectory
 )
 Set-StrictMode -Version Latest
-$ErrorActionPreference='Stop'
+Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'QualificationPolicy.psm1') -ErrorAction Stop
+$ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $output = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDirectory)
 if (Test-Path -LiteralPath $output) { throw 'Shutdown qualification output must be fresh and absent.' }
@@ -21,26 +22,27 @@ $specification = switch ($Scenario) {
 $start = [Diagnostics.ProcessStartInfo]::new()
 $start.FileName = Join-Path $root 'artifacts/bin/x64/Release/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.exe'
 $start.WorkingDirectory = Split-Path -Parent $start.FileName
-$start.UseShellExecute=$false
-$start.RedirectStandardOutput=$true
-$start.RedirectStandardError=$true
-$start.Environment['JPG_SPINNER_TEST_EXECUTION_ENVIRONMENT']='Headless'
-foreach ($argument in @('--reporter',"JUnit::out=$report",'--rng-seed','856262392',$specification,
-        '~[ui-automation]','~[assistive-technology]','~[packaged-runtime]','~[packaged-access-worker]')) {
+$start.UseShellExecute = $false
+$start.RedirectStandardOutput = $true
+$start.RedirectStandardError = $true
+$start.Environment['JPG_SPINNER_TEST_EXECUTION_ENVIRONMENT'] = 'Headless'
+foreach ($argument in @('--reporter', "JUnit::out=$report", '--rng-seed', '856262392', $specification,
+        '~[ui-automation]', '~[assistive-technology]', '~[packaged-runtime]', '~[packaged-access-worker]')) {
     [void]$start.ArgumentList.Add($argument)
 }
 $process = [Diagnostics.Process]::new()
-$process.StartInfo=$start
+$process.StartInfo = $start
 try {
     [void]$process.Start()
     $standardOutput = $process.StandardOutput.ReadToEndAsync()
     $standardError = $process.StandardError.ReadToEndAsync()
-    # The selected case normally takes milliseconds. This fixed native-host
-    # budget detects teardown deadlock without an unbounded whole-suite wait.
-    $exited = $process.WaitForExit(15000)
+    # The selected case normally takes milliseconds; allow cold bootstrap and
+    # host scheduling before declaring a teardown stall. This remains bounded
+    # and requires actual exit, independently of a completed JUnit report.
+    $exited = $process.WaitForExit((Get-QualificationTimeout -Category presentationShutdownProbe -Unit Milliseconds))
     if (-not $exited) {
         $process.Kill($true)
-        if (-not $process.WaitForExit(5000)) { throw 'Owned shutdown qualification host did not terminate.' }
+        if (-not $process.WaitForExit((Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))) { throw 'Owned shutdown qualification host did not terminate.' }
     }
     $standardOutput.GetAwaiter().GetResult() | Write-Output
     $standardError.GetAwaiter().GetResult() | Write-Output

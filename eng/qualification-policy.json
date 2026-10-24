@@ -1,0 +1,84 @@
+{
+    "schemaVersion": 1,
+    "timeoutSeconds": {
+        "nativeToolProcess": 600,
+        "nativeTeardown": 30,
+        "compilerProbe": 900,
+        "nativeBuildProcess": 3600,
+        "instrumentedSuite": 1800,
+        "sbomProducerBuild": 1800,
+        "runtimeInstallation": 900,
+        "hostedPrerequisiteStep": 2700,
+        "nestedPrerequisiteProbe": 900,
+        "artifactDownload": 300,
+        "jsonTransport": 120,
+        "nativeValidation": 300,
+        "gitObservation": 120,
+        "interactiveHost": 1800,
+        "presentationShutdownProbe": 120,
+        "presentationSelectionProbe": 300,
+        "interactivePreflight": 300,
+        "transactionScenario": 300,
+        "scannerSmoke": 300,
+        "fuzzSupervisionGrace": 300,
+        "sourcePolicyJob": 3600,
+        "nativeBuildJob": 10800,
+        "artifactPublisherJob": 1800,
+        "hostedJobLimit": 21600,
+        "interactiveJob": 3600,
+        "scannerJob": 7200,
+        "storeAttestationJob": 2700,
+        "uiAutomationConnection": 10,
+        "uiAutomationTransaction": 60,
+        "uiStateTransition": 90,
+        "uiApplicationStartup": 120,
+        "uiReviewPreparation": 120,
+        "uiForegroundAcquisition": 60,
+        "operatorFolderSelection": 600,
+        "packagedWorker": 300
+    },
+    "artifactPolicy": { "retentionDays": 1, "compressionLevel": 9 },
+    "cppPollingMilliseconds": {
+        "uiStatePollInterval": 20,
+        "uiAsyncPollInterval": 100,
+        "uiScrollPollInterval": 50,
+        "uiResizePollInterval": 10
+    },
+    "workflowJobCategories": {
+        "continuous-integration.yml": {
+            "policy": "sourcePolicyJob",
+            "build": "nativeBuildJob",
+            "interactive-inputs": "artifactPublisherJob",
+            "unsigned-package": "hostedJobLimit",
+            "asan": "nativeBuildJob",
+            "analysis": "nativeBuildJob"
+        },
+        "interactive-qualification.yml": {
+            "admission": "artifactPublisherJob",
+            "qualification": "interactiveJob",
+            "attestation": "artifactPublisherJob"
+        },
+        "store-package.yml": {
+            "admission": "artifactPublisherJob",
+            "package": "hostedJobLimit",
+            "attestation": "storeAttestationJob"
+        },
+        "scanner-fuzz.yml": { "scanner": "scannerJob" },
+        "codeql.yml": { "cpp": "nativeBuildJob" }
+    },
+    "workflowStepCategories": {
+        "Install the pinned Windows SDK": "hostedPrerequisiteStep",
+        "Deploy the pinned Windows App Runtime for native tests": "hostedPrerequisiteStep"
+    },
+    "cppTimeoutCategories": [
+        "nativeTeardown",
+        "uiAutomationConnection",
+        "uiAutomationTransaction",
+        "uiStateTransition",
+        "uiApplicationStartup",
+        "uiReviewPreparation",
+        "uiForegroundAcquisition",
+        "operatorFolderSelection",
+        "packagedWorker"
+    ]
+}

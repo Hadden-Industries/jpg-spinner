@@ -31,6 +31,11 @@ The [2.0 release-note draft](releases/2.0.0.md) is maintained as an unreleased
 communication artifact. Its existence does not authorize installation,
 distribution, cutover, certification or Store submission.
 
+The owner-approved [qualification timeout budgets](implementation/2026-10-24-qualification-timeouts.md)
+supersede earlier workstation-sized process and workflow ceilings. All waits
+remain finite; deliberate deadline-refusal tests and product assertions remain.
+This policy does not relabel prior attempts or authorize another remote run.
+
 The [hosted QA prerequisite repair](implementation/2026-10-24-hosted-qa-prerequisite-repair.md)
 addresses the failed manual run at `8efb4d5`: its provenance fixture lacked two
 adopted action pins, and the hosted image lacked the selected SDK 28000 inputs.

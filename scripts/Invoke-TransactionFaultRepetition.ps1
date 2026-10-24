@@ -8,6 +8,7 @@ param(
 )
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $platform = if ($Architecture -eq 'x86') { 'Win32' } else { 'x64' }
@@ -43,7 +44,7 @@ try {
             [void]$child.Handle
             $output = $child.StandardOutput.ReadToEndAsync()
             $errorOutput = $child.StandardError.ReadToEndAsync()
-            if (-not $child.WaitForExit(60000)) { throw "Iteration $iteration exceeded its bounded deadline." }
+            if (-not $child.WaitForExit((Get-QualificationTimeout -Category transactionScenario -Unit Milliseconds))) { throw "Iteration $iteration exceeded its bounded deadline." }
             $observations.Add([ordered]@{ iteration = $iteration; exitCode = $child.ExitCode; report = $report })
             if ($child.ExitCode -ne 0) { throw "Iteration $iteration failed. Inspect $report. $($errorOutput.GetAwaiter().GetResult())" }
             Write-Output "Completed $iteration/$Repetitions"
@@ -51,7 +52,7 @@ try {
         finally {
             if (-not $child.HasExited) {
                 $child.Kill()
-                if (-not $child.WaitForExit(10000)) { throw 'Owned test process termination did not complete.' }
+                if (-not $child.WaitForExit((Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))) { throw 'Owned test process termination did not complete.' }
             }
             $child.Dispose()
         }

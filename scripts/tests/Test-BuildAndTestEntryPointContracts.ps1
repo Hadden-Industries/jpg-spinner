@@ -276,9 +276,16 @@ if ($testParseErrors.Count -ne 0) { throw 'Test entry point has PowerShell synta
 $interactiveBoundedWaits = @($testSyntax.FindAll({
     param($node)
     if ($node -isnot [System.Management.Automation.Language.InvokeMemberExpressionAst] -or
-        $node.Member.Value -cne 'WaitForExit' -or $null -eq $node.Arguments -or $node.Arguments.Count -ne 1 -or
-        $node.Arguments[0] -isnot [System.Management.Automation.Language.ConstantExpressionAst] -or
-        $node.Arguments[0].Value -ne 300000) { return $false }
+        $node.Member.Value -cne 'WaitForExit' -or $null -eq $node.Arguments -or $node.Arguments.Count -ne 1) { return $false }
+    $budgetQuery = $node.Arguments[0].Find({
+        param($argument)
+        $argument -is [Management.Automation.Language.CommandAst] -and $argument.GetCommandName() -ceq 'Get-QualificationTimeout'
+    }, $true)
+    if ($null -eq $budgetQuery -or $budgetQuery.CommandElements.Count -ne 5 -or
+        $budgetQuery.CommandElements[1].ParameterName -cne 'Category' -or
+        $budgetQuery.CommandElements[2].Value -cne 'interactiveHost' -or
+        $budgetQuery.CommandElements[3].ParameterName -cne 'Unit' -or
+        $budgetQuery.CommandElements[4].Value -cne 'Milliseconds') { return $false }
 
     for ($ancestor = $node.Parent; $null -ne $ancestor; $ancestor = $ancestor.Parent) {
         if ($ancestor -isnot [System.Management.Automation.Language.IfStatementAst]) { continue }
@@ -299,7 +306,7 @@ $interactiveBoundedWaits = @($testSyntax.FindAll({
     return $false
 }, $true))
 if ($interactiveBoundedWaits.Count -ne 1) {
-    throw 'Interactive test hosts must have one native 300-second Process.WaitForExit deadline.'
+    throw 'Interactive test hosts must have one policy-derived native Process.WaitForExit deadline.'
 }
 
 Write-Output (

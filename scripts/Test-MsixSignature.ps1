@@ -7,10 +7,11 @@ param(
     [Parameter(Mandatory)][string]$DiagnosticsPath
 )
 Set-StrictMode -Version Latest
-$ErrorActionPreference='Stop'
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
+$ErrorActionPreference = 'Stop'
 $package = [IO.Path]::GetFullPath($PackagePath)
 $diagnostics = [IO.Path]::GetFullPath($DiagnosticsPath)
-if (-not [IO.File]::Exists($package) -or [IO.Path]::GetExtension($package) -cnotin @('.msix','.msixbundle')) {
+if (-not [IO.File]::Exists($package) -or [IO.Path]::GetExtension($package) -cnotin @('.msix', '.msixbundle')) {
     throw 'Signature verification requires an existing .msix or .msixbundle.'
 }
 if (Test-Path -LiteralPath $diagnostics) { throw 'Signature diagnostics must be fresh and absent.' }
@@ -29,20 +30,20 @@ try {
     $start.CreateNoWindow = $true
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
-    foreach ($argument in @('verify','/pa','/all',$package)) { $start.ArgumentList.Add($argument) }
-    $log = [IO.FileStream]::new($diagnostics,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
+    foreach ($argument in @('verify', '/pa', '/all', $package)) { $start.ArgumentList.Add($argument) }
+    $log = [IO.FileStream]::new($diagnostics, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start
     try {
         if (-not $process.Start()) { throw 'Native SignTool did not start.' }
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit(60000)) {
+        if (-not $process.WaitForExit((Get-QualificationTimeout -Category nativeValidation -Unit Milliseconds))) {
             $process.Kill($true)
             # Confirm termination only for this owned process; never use a
             # machine-wide process-name kill or retry trust verification.
-            if (-not $process.WaitForExit(5000)) { throw 'Native SignTool termination remains unresolved after its deadline.' }
-            throw 'Native SignTool verification exceeded its 60-second deadline.'
+            if (-not $process.WaitForExit((Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))) { throw 'Native SignTool termination remains unresolved after its deadline.' }
+            throw 'Native SignTool verification exceeded its qualification-policy deadline.'
         }
         $text = $stdout.GetAwaiter().GetResult() + $stderr.GetAwaiter().GetResult()
         $bytes = [Text.Encoding]::UTF8.GetBytes($text)
@@ -52,4 +53,4 @@ try {
     finally { $process.Dispose(); $log.Dispose() }
 }
 finally { $handle.Dispose() }
-[pscustomobject]@{PackagePath=$package;Sha256=$sha256}
+[pscustomobject]@{PackagePath = $package; Sha256 = $sha256 }

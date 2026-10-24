@@ -9,6 +9,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Import-Module (Join-Path $root 'scripts/QualificationPolicy.psm1')
+$hostedPrerequisiteMinutes = [string](Get-QualificationTimeout -Category hostedPrerequisiteStep -Unit Minutes)
 if (-not [IO.File]::Exists($WorkflowPath)) { throw 'Protected manual Store workflow is absent.' }
 & (Join-Path $root scripts/Test-GitHubWorkflowPolicy.ps1) -ToolsDirectory $ToolsDirectory -WorkflowPaths @($WorkflowPath)
 $yaml = [YamlDotNet.RepresentationModel.YamlStream]::new()
@@ -23,7 +25,7 @@ foreach ($name in @('admission', 'package', 'attestation')) {
 $package = Get-Property $jobs package
 $sdkStep = (Get-Property $package steps).Children[1]
 if ((Get-Property $sdkStep run).Value -cne './scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk' -or
-    (Get-Property $sdkStep 'timeout-minutes').Value -cne '15' -or $null -ne (Get-Property $sdkStep 'if')) {
+    (Get-Property $sdkStep 'timeout-minutes').Value -cne $hostedPrerequisiteMinutes -or $null -ne (Get-Property $sdkStep 'if')) {
     throw 'Store compiler prerequisites require unconditional bounded SDK setup immediately after checkout.'
 }
 if ((Get-Property $package needs).Value -cne 'admission' -or (Get-Property $package environment).Value -cne 'store-submission') {

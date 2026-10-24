@@ -15,6 +15,7 @@ param(
     [string]$RunDirectory = ''
 )
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot)
 $fuzzDirectory = Join-Path $repositoryRoot 'artifacts/fuzz/scanner'
@@ -101,7 +102,7 @@ function Invoke-FuzzTarget {
         $exited = $process.WaitForExit($TimeoutSeconds * 1000)
         if (-not $exited) {
             $process.Kill($true)
-            if (-not $process.WaitForExit(5000)) { throw "Owned $Phase target did not terminate after its deadline." }
+            if (-not $process.WaitForExit((Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))) { throw "Owned $Phase target did not terminate after its deadline." }
         }
         [void]$stdoutCopy.GetAwaiter().GetResult()
         [void]$stderrCopy.GetAwaiter().GetResult()
@@ -122,7 +123,7 @@ foreach ($projectName in @('JpgSpinner.FuzzToolchain.Smoke', 'JpgSpinner.JpegSeg
     if ($LASTEXITCODE -ne 0) { throw "Fuzz build failed: $projectName ($LASTEXITCODE)" }
 }
 Invoke-FuzzTarget -ProjectName 'JpgSpinner.FuzzToolchain.Smoke' `
-    -Arguments @('-runs=100', '-seed=20260930') -TimeoutSeconds 30 -Phase 'smoke'
+    -Arguments @('-runs=100', '-seed=20260930') -TimeoutSeconds (Get-QualificationTimeout -Category scannerSmoke) -Phase 'smoke'
 
 $scanner = 'JpgSpinner.JpegSegmentScanner.Fuzz'
 $limits = @(
@@ -130,16 +131,16 @@ $limits = @(
 )
 Invoke-FuzzTarget -ProjectName $scanner `
     -Arguments (@($corpusDirectory, "-max_total_time=$DurationSeconds") + $limits) `
-    -TimeoutSeconds ($DurationSeconds + 30) -Phase 'fuzz'
+    -TimeoutSeconds ($DurationSeconds + (Get-QualificationTimeout -Category fuzzSupervisionGrace)) -Phase 'fuzz'
 
 # Merge can recover from crashing inputs internally. Replay the full corpus
 # first so a crashing/timeout/ASan input cannot be silently filtered as a pass.
 Invoke-FuzzTarget -ProjectName $scanner -Arguments (@($corpusDirectory, '-runs=0') + $limits) `
-    -TimeoutSeconds 60 -Phase 'replay'
+    -TimeoutSeconds (Get-QualificationTimeout -Category nativeToolProcess) -Phase 'replay'
 [void][IO.Directory]::CreateDirectory($minimizedDirectory)
 Invoke-FuzzTarget -ProjectName $scanner `
     -Arguments (@('-merge=1', $minimizedDirectory, $corpusDirectory,
-        "-merge_control_file=$runDirectory/merge.control") + $limits) -TimeoutSeconds 60 -Phase 'merge'
+        "-merge_control_file=$runDirectory/merge.control") + $limits) -TimeoutSeconds (Get-QualificationTimeout -Category nativeToolProcess) -Phase 'merge'
 $minimizedBeforeAudit = @(Get-ChildItem -LiteralPath $minimizedDirectory -File | ForEach-Object Name | Sort-Object)
 if ($minimizedBeforeAudit.Count -eq 0) { throw 'Native corpus merge did not retain any coverage-bearing input.' }
 
@@ -147,7 +148,7 @@ if ($minimizedBeforeAudit.Count -eq 0) { throw 'Native corpus merge did not reta
 # already-minimized corpus must add no files; do not scrape feature-count prose.
 Invoke-FuzzTarget -ProjectName $scanner `
     -Arguments (@('-merge=1', $minimizedDirectory, $corpusDirectory,
-        "-merge_control_file=$runDirectory/merge-audit.control") + $limits) -TimeoutSeconds 60 -Phase 'merge-audit'
+        "-merge_control_file=$runDirectory/merge-audit.control") + $limits) -TimeoutSeconds (Get-QualificationTimeout -Category nativeToolProcess) -Phase 'merge-audit'
 $minimizedAfterAudit = @(Get-ChildItem -LiteralPath $minimizedDirectory -File | ForEach-Object Name | Sort-Object)
 if (@(Compare-Object $minimizedBeforeAudit $minimizedAfterAudit).Count -ne 0) {
     throw 'Native merge audit found additional coverage; the proposed minimized corpus is not qualified.'

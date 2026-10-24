@@ -5,6 +5,8 @@ param([Parameter(Mandatory)][string]$ToolsDirectory, [Parameter(Mandatory)][stri
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Import-Module (Join-Path $repositoryRoot 'scripts/QualificationPolicy.psm1')
+$hostedPrerequisiteMinutes = Get-QualificationTimeout -Category hostedPrerequisiteStep -Unit Minutes
 $policy = Join-Path $repositoryRoot 'scripts/Test-GitHubWorkflowPolicy.ps1'
 $fixture = Join-Path $PSScriptRoot 'WorkflowFixtures/Valid.yml'
 & $policy -ToolsDirectory $ToolsDirectory -WorkflowPaths @($fixture)
@@ -28,6 +30,11 @@ Copy-Item -LiteralPath $fixture -Destination (Join-Path $fixtureRoot 'Valid.yml'
 $uploadPath = Join-Path $fixtureRoot 'MinimalUpload.yml'
 [IO.File]::WriteAllText($uploadPath, $text.Replace($originalRun, $minimalUpload), [Text.UTF8Encoding]::new($false))
 & $policy -ToolsDirectory $ToolsDirectory -WorkflowPaths @($uploadPath)
+# Infrequent serial package qualification can use GitHub's six-hour hosted-job
+# ceiling. A larger value must still refuse instead of becoming unbounded.
+$longJobPath = Join-Path $fixtureRoot 'HostedJobLimit.yml'
+[IO.File]::WriteAllText($longJobPath, $text.Replace('    timeout-minutes: 15', '    timeout-minutes: 360'), [Text.UTF8Encoding]::new($false))
+& $policy -ToolsDirectory $ToolsDirectory -WorkflowPaths @($longJobPath)
 foreach ($uploadControl in @(
     @{Name = 'two-day-retention'; Before = 'retention-days: 1'; After = 'retention-days: 2'; Diagnostic = 'artifact retention' },
     @{Name = 'default-retention'; Before = 'retention-days: 1'; After = 'retention-days: 0'; Diagnostic = 'artifact retention' },
@@ -54,6 +61,7 @@ $cases = @(
     @{Name = 'privileged-pr'; Before = 'on: workflow_dispatch'; After = 'on: pull_request_target'; Diagnostic = 'pull_request_target' },
     @{Name = 'workflow-write'; Before = 'contents: read'; After = 'contents: write'; Diagnostic = 'workflow permissions' },
     @{Name = 'unbounded-job'; Before = '    timeout-minutes: 15'; After = ''; Diagnostic = 'job timeout' },
+    @{Name = 'above-hosted-job-limit'; Before = '    timeout-minutes: 15'; After = '    timeout-minutes: 361'; Diagnostic = 'job timeout' },
     @{Name = 'uncancelled'; Before = 'cancel-in-progress: true'; After = 'cancel-in-progress: false'; Diagnostic = 'concurrency cancellation' },
     @{Name = 'pr-secret'; Before = 'on: workflow_dispatch'; After = "on: [workflow_dispatch, pull_request]`nenv:`n  NEVER_EXECUTED: " + '''${{ secrets.TOKEN }}'''; Diagnostic = 'manual workflow_dispatch' },
     @{Name = 'retention'; Before = "      - run: Write-Output 'Static fixture only; never executed by its validator.'"; After = "      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2`n        with:`n          path: report.txt`n          retention-days: 31"; Diagnostic = 'artifact retention' },
@@ -92,12 +100,12 @@ $runtimeRefusal = 'Hosted runtime deployment requires one bounded native x86/x64
 foreach ($case in @(
     @{Name = 'omitted-sdk'; Before = $sdkRun; After = "              run: Write-Output 'SDK setup omitted'"; Expected = $sdkRefusal },
     @{Name = 'conditional-sdk'; Before = $sdkRun; After = "              if: inputs.cache_dependencies`n$sdkRun"; Expected = $sdkRefusal },
-    @{Name = 'unbounded-sdk'; Before = "              timeout-minutes: 15`n$sdkRun"; After = $sdkRun; Expected = $sdkRefusal },
+    @{Name = 'unbounded-sdk'; Before = "              timeout-minutes: $hostedPrerequisiteMinutes`n$sdkRun"; After = $sdkRun; Expected = $sdkRefusal },
     @{Name = 'comdat-unretained-diagnostics'; Before = $comdatCommand; After = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot $env:RUNNER_TEMP'; Expected = $comdatRefusal },
     @{Name = 'comdat-wrong-lane'; Before = "$comdatGuard`n              run: $comdatCommand"; After = "              if: matrix.architecture == 'x86' && matrix.configuration == 'Release'`n              run: $comdatCommand"; Expected = $comdatRefusal },
     @{Name = 'omitted-runtime'; Before = $runtimeCommand; After = "Write-Output 'Runtime setup omitted'"; Expected = 'Hosted runtime deployment must precede unpackaged presentation test-host execution.' },
-    @{Name = 'unbounded-runtime'; Before = "              timeout-minutes: 10`n              run: $runtimeCommand"; After = "              run: $runtimeCommand"; Expected = $runtimeRefusal },
-    @{Name = 'runtime-wrong-lane'; Before = "              if: matrix.architecture != 'ARM64'`n              timeout-minutes: 10`n              run: $runtimeCommand"; After = "              if: matrix.architecture == 'ARM64'`n              timeout-minutes: 10`n              run: $runtimeCommand"; Expected = $runtimeRefusal }
+    @{Name = 'unbounded-runtime'; Before = "              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; After = "              run: $runtimeCommand"; Expected = $runtimeRefusal },
+    @{Name = 'runtime-wrong-lane'; Before = "              if: matrix.architecture != 'ARM64'`n              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; After = "              if: matrix.architecture == 'ARM64'`n              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; Expected = $runtimeRefusal }
 )) {
     if (-not $ciText.Contains($case.Before, [StringComparison]::Ordinal)) { throw "Native CI fixture precondition differs: $($case.Name)" }
     $path = Join-Path $fixtureRoot ($case.Name + '.yml')

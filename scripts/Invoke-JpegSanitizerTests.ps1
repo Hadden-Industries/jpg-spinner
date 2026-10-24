@@ -5,6 +5,7 @@ param(
 )
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [System.IO.Path]::GetFullPath($RepositoryRoot)
 $toolchain = & (Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1') -RepositoryRoot $repositoryRoot
@@ -38,11 +39,11 @@ function Invoke-RepositoryChildProcess {
 # Release is deliberate: this profile links a distinct, fully instrumented,
 # release-only vcpkg graph. Mixing ordinary Debug libraries would violate the
 # MSVC STL container-annotation ABI, not merely reduce sanitizer coverage.
-Invoke-RepositoryChildProcess -Executable $toolchain.msBuildExecutablePath -TimeoutSeconds 1800 -Arguments @(
+Invoke-RepositoryChildProcess -Executable $toolchain.msBuildExecutablePath -TimeoutSeconds (Get-QualificationTimeout -Category nativeBuildProcess) -Arguments @(
     (Join-Path $repositoryRoot 'tests/JpgSpinner.JpegTransformation.Tests/JpgSpinner.JpegTransformation.Tests.vcxproj'),
     '-nologo', '-noAutoResponse', '-p:Configuration=Release', '-p:Platform=x64',
     '-p:EnableASAN=true', '-p:LinkIncremental=false', '-verbosity:minimal'
 )
 Invoke-RepositoryChildProcess -Executable (
     Join-Path $repositoryRoot 'artifacts/bin/x64/Release/JpgSpinner.JpegTransformation.Tests/JpgSpinner.JpegTransformation.Tests.exe'
-) -TimeoutSeconds 600 -WithSanitizerRuntime -Arguments @($TestSpecification)
+) -TimeoutSeconds (Get-QualificationTimeout -Category instrumentedSuite) -WithSanitizerRuntime -Arguments @($TestSpecification)

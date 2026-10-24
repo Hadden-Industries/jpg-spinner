@@ -32,6 +32,7 @@ param(
 )
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = [System.IO.Path]::GetFullPath($RepositoryRoot)
@@ -205,12 +206,13 @@ foreach ($selectedTestProject in $selectedTestProjects) {
         if ($ExecutionEnvironment -ceq 'Interactive') {
             # Native UIA has per-provider timeouts, but deployment/activation and
             # the whole test case do not. Bound this owned host separately from
-            # ordinary headless suites. Five minutes is the interactive host's
-            # execution budget, not a retry/threshold extension after a failure.
-            $testTimedOut = -not $process.WaitForExit(300000)
+            # ordinary headless suites. The interactiveHost category accommodates
+            # native deployment and bounded operator input; individual test
+            # assertions still determine correctness.
+            $testTimedOut = -not $process.WaitForExit((Get-QualificationTimeout -Category interactiveHost -Unit Milliseconds))
             if ($testTimedOut) {
                 [Console]::Error.WriteLine(
-                    'INTERACTIVE_TEST_PROCESS_TIMED_OUT: the test host exceeded 300 seconds. ' +
+                    'INTERACTIVE_TEST_PROCESS_TIMED_OUT: the test host exceeded its qualification-policy budget. ' +
                     'Retain any printed UUID-owned package/process locator and reconcile it ' +
                     'before recycling its working copy; client termination does not prove ' +
                     'broker-activated app exit or package removal.'
@@ -218,7 +220,7 @@ foreach ($selectedTestProject in $selectedTestProjects) {
                 # Only this child/process tree is targeted, not the deployment
                 # service or a guessed app PID. Broker activation may outlive it.
                 $process.Kill($true)
-                if (-not $process.WaitForExit(5000)) {
+                if (-not $process.WaitForExit((Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))) {
                     throw 'The timed-out interactive test host did not exit after bounded termination.'
                 }
             }

@@ -18,7 +18,7 @@ jobs:
     admission:
         if: github.ref == 'refs/heads/main'
         runs-on: windows-2025-vs2026
-        timeout-minutes: 10
+        timeout-minutes: 30
         permissions:
             contents: read
             actions: read
@@ -42,7 +42,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         runs-on: windows-2025-vs2026
         environment: store-submission
-        timeout-minutes: 180
+        timeout-minutes: 360
         permissions:
             contents: read
         steps:
@@ -50,7 +50,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Install the pinned Windows SDK
-              timeout-minutes: 15
+              timeout-minutes: 45
               run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
               with:
@@ -80,6 +80,7 @@ jobs:
             - name: Restore the reviewed native evidence tools
               run: |
                   Import-Module ./scripts/JsonObjectMemberValidation.psm1
+                  Import-Module ./scripts/QualificationPolicy.psm1
                   $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content ./eng/sbom-tools.json -Raw) -RequiredRootValueKind Object -SourceDescription 'SBOM tool pins' -AsHashtable
                   $downloads = Join-Path $env:STORE_WORKING_ROOT downloads
                   New-Item -ItemType Directory -Path $downloads | Out-Null
@@ -91,7 +92,7 @@ jobs:
                     @{ Name='spdx-json-schema.json'; Url=$pins.spdxSchema.url },
                     @{ Name='tools-java.zip'; Url=$pins.spdxWorkgroupTools.url }
                   )) {
-                    Invoke-WebRequest -Uri $asset.Url -OutFile (Join-Path $downloads $asset.Name) -ConnectionTimeoutSeconds 30 -OperationTimeoutSeconds 180
+                    Invoke-WebRequest -Uri $asset.Url -OutFile (Join-Path $downloads $asset.Name) -ConnectionTimeoutSeconds (Get-QualificationTimeout -Category jsonTransport) -OperationTimeoutSeconds (Get-QualificationTimeout -Category artifactDownload)
                   }
                   $node = (Get-Command node -CommandType Application | Select-Object -First 1).Source
                   $npmCli = Join-Path (Split-Path -Parent $node) node_modules/npm/bin/npm-cli.js
@@ -153,7 +154,7 @@ jobs:
         needs: package
         if: github.ref == 'refs/heads/main'
         runs-on: windows-2025-vs2026
-        timeout-minutes: 15
+        timeout-minutes: 45
         permissions:
             contents: read
             actions: read

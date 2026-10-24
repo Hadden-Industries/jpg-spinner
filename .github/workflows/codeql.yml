@@ -1,35 +1,35 @@
 name: CodeQL
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 permissions:
-  contents: read
+    contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 defaults:
-  run:
-    shell: pwsh
+    run:
+        shell: pwsh
 jobs:
-  cpp:
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 120
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
-        with:
-          languages: c-cpp
-          build-mode: manual
-          queries: security-extended
-      - name: Trace the real clean x64 build
-        run: |
-          ./scripts/Invoke-Build.ps1 -Configuration Release -Architecture x64 -MaximumBuildProcessCount 2
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
-        with:
-          category: cpp-security-extended
+    cpp:
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 180
+        permissions:
+            contents: read
+            actions: read
+            security-events: write
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+              with:
+                  languages: c-cpp
+                  build-mode: manual
+                  queries: security-extended
+            - name: Trace the real clean x64 build
+              run: |
+                  ./scripts/Invoke-Build.ps1 -Configuration Release -Architecture x64 -MaximumBuildProcessCount 2
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+              with:
+                  category: cpp-security-extended

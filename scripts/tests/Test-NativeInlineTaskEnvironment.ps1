@@ -44,9 +44,12 @@ $arguments = @(
     '-warnAsError', '-verbosity:minimal'
 )
 if ($EnableASAN) { $arguments += '-p:EnableASAN=true' }
+# Use the shared qualification ceiling for cold MSBuild/Roslyn
+# initialization. These controls assert native completion and warning/refusal
+# behavior, not a thirty-second performance requirement.
 $positive = Invoke-ArtifactToolProcess -Executable $toolchain.msBuildExecutablePath `
     -Arguments ($arguments + "-bl:$(Join-Path $output 'native-positive.binlog')") `
-    -WorkingDirectory $repositoryRoot -LogDirectory $output -LogName native-positive -TimeoutSeconds 30
+    -WorkingDirectory $repositoryRoot -LogDirectory $output -LogName native-positive
 if (-not $positive.Contains("Native inline-task environment qualified: $platform / $Configuration", [StringComparison]::Ordinal)) {
     throw 'The original native tasks did not reach their completion assertion.'
 }
@@ -78,7 +81,7 @@ foreach ($invalidPath in @((Join-Path $output 'absent-library-directory'), $ordi
     try {
         [void](Invoke-ArtifactToolProcess -Executable $toolchain.msBuildExecutablePath `
             -Arguments ($arguments + "-p:LibraryPath=$invalidPath") `
-            -WorkingDirectory $repositoryRoot -LogDirectory $output -LogName "native-$name" -TimeoutSeconds 30)
+            -WorkingDirectory $repositoryRoot -LogDirectory $output -LogName "native-$name")
     }
     catch {
         $diagnostic = [IO.File]::ReadAllText((Join-Path $output "native-$name.stdout.log"))

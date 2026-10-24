@@ -8,6 +8,7 @@ param(
     [Parameter(Mandatory)][string]$OwnedOutputRoot
 )
 Set-StrictMode -Version Latest
+Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $fixture = Join-Path $OwnedOutputRoot ('hosted-runtime-controls-' + [Guid]::NewGuid().ToString('N'))
@@ -16,7 +17,7 @@ $setup = Join-Path $root 'scripts/Install-HostedWindowsAppRuntime.ps1'
 Import-Module (Join-Path $root 'scripts/ArtifactToolProcess.psm1') -Force
 Import-Module (Join-Path $root 'scripts/JsonObjectMemberValidation.psm1') -Force
 $context = @{Executable = (Get-Process -Id $PID).Path; WorkingDirectory = $root; LogDirectory = $fixture;
-    EnvironmentValues = @{GITHUB_ACTIONS = 'false'; RUNNER_ENVIRONMENT = ''; RUNNER_OS = '' }; TimeoutSeconds = 60 }
+    EnvironmentValues = @{GITHUB_ACTIONS = 'false'; RUNNER_ENVIRONMENT = ''; RUNNER_OS = '' }; TimeoutSeconds = (Get-QualificationTimeout -Category nestedPrerequisiteProbe) }
 foreach ($case in @(
     @{architecture = 'x64'; path = $X64InstallerPath; sha256 = '931a421e8dc3e6e67724806cb67fecdbb88dfe323f0170842eb4a4b4b149f1e2' },
     @{architecture = 'x86'; path = $X86InstallerPath; sha256 = '76dbd7c272cee0bf18f0b7228255b353d669cd55dc530209c45646f47acb89d4' }

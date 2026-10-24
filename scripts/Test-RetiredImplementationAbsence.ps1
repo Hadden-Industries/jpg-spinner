@@ -9,6 +9,7 @@ param(
 )
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot)
 $failures = [Collections.Generic.List[string]]::new()
@@ -48,9 +49,9 @@ try {
     [void]$process.Start()
     $output = $process.StandardOutput.ReadToEndAsync()
     $errorOutput = $process.StandardError.ReadToEndAsync()
-    if (-not $process.WaitForExit(30000)) {
+    if (-not $process.WaitForExit((Get-QualificationTimeout -Category gitObservation -Unit Milliseconds))) {
         $process.Kill($true)
-        [void]$process.WaitForExit(5000)
+        [void]$process.WaitForExit((Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))
         throw 'Git source inventory exceeded its 30-second deadline.'
     }
     $fileNames = $output.GetAwaiter().GetResult()

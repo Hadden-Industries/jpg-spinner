@@ -1,6 +1,7 @@
 #requires -Version 7.6
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 
 $jsonObjectMemberValidationModulePath =
@@ -29,11 +30,11 @@ function Invoke-JsonWebRequestWithUniqueObjectMembers {
 
         [Parameter()]
         [ValidateRange(1, 300)]
-        [int]$ConnectionTimeoutSeconds = 30,
+        [int]$ConnectionTimeoutSeconds = (Get-QualificationTimeout -Category jsonTransport),
 
         [Parameter()]
         [ValidateRange(1, 300)]
-        [int]$ResponseDataReadTimeoutSeconds = 30,
+        [int]$ResponseDataReadTimeoutSeconds = (Get-QualificationTimeout -Category jsonTransport),
 
         [Parameter()]
         [switch]$AsHashtable
@@ -43,6 +44,8 @@ function Invoke-JsonWebRequestWithUniqueObjectMembers {
     # which irreversibly discards duplicate member names. Keep transport and
     # interpretation separate: obtain the textual body first, validate the raw
     # JSON with System.Text.Json, and only then perform PowerShell conversion.
+    # Qualification may encounter a cold proxy or slow service. Longer finite
+    # defaults do not retry or accept invalid JSON.
     # ConnectionTimeoutSeconds covers connection establishment;
     # OperationTimeoutSeconds also bounds stalled response-data reads.
     $webResponse = Invoke-WebRequest `

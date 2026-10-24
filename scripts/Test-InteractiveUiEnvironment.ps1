@@ -19,6 +19,7 @@ param(
 )
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 
 function Stop-UnqualifiedInteractiveEnvironment {
@@ -67,7 +68,7 @@ try {
         [void]$process.Start()
         $outputTask = $process.StandardOutput.ReadToEndAsync()
         $errorTask = $process.StandardError.ReadToEndAsync()
-        $timedOut = -not $process.WaitForExit(120000)
+        $timedOut = -not $process.WaitForExit((Get-QualificationTimeout -Category interactivePreflight -Unit Milliseconds))
         if ($timedOut) {
             # Bound only our child, never the OS deployment service. An in-flight
             # registration can outlive its client: keep its UUID-owned working

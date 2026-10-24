@@ -8,9 +8,10 @@ semantics; this script neither splits commas nor imitates tag/name matching.
 [CmdletBinding()]
 param([ValidateSet('x86', 'x64')][string]$Architecture = 'x64')
 Set-StrictMode -Version Latest
+Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$platform = @{x86 = 'Win32'; x64 = 'x64'}[$Architecture]
+$platform = @{x86 = 'Win32'; x64 = 'x64' }[$Architecture]
 $executable = Join-Path $root "artifacts/bin/$platform/Debug/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.exe"
 function Assert-NativeSelection {
     param([string]$Specification, [int]$ExpectedExitCode)
@@ -30,7 +31,7 @@ function Assert-NativeSelection {
         [void]$process.Start()
         $output = $process.StandardOutput.ReadToEndAsync()
         $errors = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit(30000)) {
+        if (-not $process.WaitForExit((Get-QualificationTimeout -Category presentationSelectionProbe -Unit Milliseconds))) {
             $process.Kill($true)
             $process.WaitForExit()
             throw 'Native selection listing exceeded its 30-second bound; no test execution was requested.'

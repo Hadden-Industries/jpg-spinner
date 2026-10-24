@@ -18,7 +18,7 @@ defaults:
 jobs:
     policy:
         runs-on: windows-2025-vs2026
-        timeout-minutes: 30
+        timeout-minutes: 60
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
@@ -28,6 +28,7 @@ jobs:
                   $tools = Join-Path $env:RUNNER_TEMP 'jpg-spinner-workflow-tools'
                   ./scripts/tests/Test-WorkflowVerificationToolContract.ps1 -ToolsDirectory $tools
                   ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools
+                  ./scripts/tests/Test-QualificationPolicy.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-WorkflowAttestationPermissions.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
@@ -50,7 +51,7 @@ jobs:
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     build:
         runs-on: windows-2025-vs2026
-        timeout-minutes: 90
+        timeout-minutes: 180
         strategy:
             fail-fast: false
             max-parallel: 4
@@ -71,7 +72,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Install the pinned Windows SDK
-              timeout-minutes: 15
+              timeout-minutes: 45
               run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: Resolve native cache identity
               # This step follows actual SDK setup; image labels do not promise
@@ -125,7 +126,7 @@ jobs:
               # The unpackaged WinUI test host bootstraps before main. SDK
               # compilation does not deploy its runtime framework packages.
               if: matrix.architecture != 'ARM64'
-              timeout-minutes: 10
+              timeout-minutes: 45
               run: ./scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture '${{ matrix.architecture }}' -OutputDirectory artifacts/build-logs/windows-app-runtime
             - name: Check bounded native host shutdown
               if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
@@ -185,7 +186,7 @@ jobs:
         needs: [policy, build, asan, analysis]
         if: github.ref == 'refs/heads/main'
         runs-on: windows-2025-vs2026
-        timeout-minutes: 15
+        timeout-minutes: 30
         permissions:
             contents: read
             actions: read
@@ -220,13 +221,13 @@ jobs:
         # Store submission belong to the separate protected release route.
         needs: [policy, build, asan, analysis]
         runs-on: windows-2025-vs2026
-        timeout-minutes: 180
+        timeout-minutes: 360
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
             - name: Install the pinned Windows SDK
-              timeout-minutes: 15
+              timeout-minutes: 45
               run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: Produce and inspect the three unsigned architecture packages
               run: |
@@ -278,13 +279,13 @@ jobs:
                       artifacts/build-logs/
     asan:
         runs-on: windows-2025-vs2026
-        timeout-minutes: 90
+        timeout-minutes: 180
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
             - name: Install the pinned Windows SDK
-              timeout-minutes: 15
+              timeout-minutes: 45
               run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: Restore the locked native project graph
               run: |
@@ -301,13 +302,13 @@ jobs:
                   path: artifacts/build-logs/
     analysis:
         runs-on: windows-2025-vs2026
-        timeout-minutes: 90
+        timeout-minutes: 180
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
             - name: Install the pinned Windows SDK
-              timeout-minutes: 15
+              timeout-minutes: 45
               run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: MSVC native code analysis
               run: |

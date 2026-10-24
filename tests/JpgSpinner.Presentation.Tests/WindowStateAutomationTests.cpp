@@ -1,4 +1,5 @@
 #include "InteractiveUiEnvironment.h"
+#include "QualificationTiming.h"
 #include "DeterministicJpegFixtureFactory.h"
 #include "TemporaryDirectory.h"
 #include <Windows.h>
@@ -92,13 +93,14 @@ wil::com_ptr<IUIAutomationElement> openOwnedStoragePicker(IUIAutomation2 *automa
     THROW_IF_FAILED(invoke->Invoke());
 
     HWND popup{};
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+    const auto deadline =
+        std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
     do
     {
         popup = GetWindow(owner, GW_ENABLEDPOPUP);
         if (popup && popup != owner && !IsWindowEnabled(owner))
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds{20});
+        std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiStatePollInterval);
     } while (std::chrono::steady_clock::now() < deadline);
     REQUIRE(popup);
     REQUIRE(popup != owner);
@@ -154,12 +156,13 @@ void awaitKeyboardSourceFolderGrant(IUIAutomation2 *automation, IUIAutomationEle
     UIA_HWND nativeWindow{};
     THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
     const auto owner = reinterpret_cast<HWND>(nativeWindow);
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{180};
+    const auto deadline =
+        std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::operatorFolderSelection;
     do
     {
         if (IsWindowEnabled(owner))
             return;
-        std::this_thread::sleep_for(std::chrono::milliseconds{20});
+        std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiStatePollInterval);
     } while (std::chrono::steady_clock::now() < deadline);
     INFO("No real keyboard-mediated folder grant arrived within the bounded operator interval; "
          "this is an input-qualification gap, not a product regression.");
@@ -172,7 +175,8 @@ wil::com_ptr<IUIAutomationElement> waitForEnabledControl(IUIAutomation2 *automat
                                                          const wchar_t *identifier)
 {
     INFO("Waiting for authored control: " << winrt::to_string(identifier));
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+    const auto deadline =
+        std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
     UIA_HWND nativeWindow{};
     THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
     wil::com_ptr<IUIAutomationElement> control;
@@ -185,9 +189,9 @@ wil::com_ptr<IUIAutomationElement> waitForEnabledControl(IUIAutomation2 *automat
             THROW_IF_FAILED(control->get_CurrentIsEnabled(&enabled));
         if (enabled)
             return control;
-        std::this_thread::sleep_for(std::chrono::milliseconds{20});
+        std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiStatePollInterval);
     } while (std::chrono::steady_clock::now() < deadline);
-    FAIL("The asynchronous shell did not enable the requested control within five seconds.");
+    FAIL("The asynchronous shell did not enable the requested control within its qualification budget.");
 }
 
 /// Select an authored option by its localized public label through native UIA.
@@ -215,8 +219,9 @@ void selectLocalizedOption(IUIAutomation2 *automation, IUIAutomationElement *win
 }
 
 /// Scrolls only the caller's verified native viewport, returning whether the
-/// control's complete physical bounds fit within five seconds. Native UIA
-/// failures propagate; a hidden or horizontally overflowing control stays false.
+/// control's complete physical bounds fit before the qualification polling
+/// deadline. Individual native UIA calls have their own provider timeout;
+/// failures propagate and an overflowing control stays false.
 bool scrollControlFullyIntoViewport(IUIAutomationElement *control, IUIAutomationElement *viewport,
                                     IUIAutomationScrollPattern *scrolling)
 {
@@ -227,7 +232,8 @@ bool scrollControlFullyIntoViewport(IUIAutomationElement *control, IUIAutomation
         // this bounded reachability observation at the native vertical origin;
         // searching downward from an arbitrary offset can never find that fact.
         THROW_IF_FAILED(scrolling->SetScrollPercent(UIA_ScrollPatternNoScroll, 0));
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+    const auto deadline =
+        std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
     do
     {
         RECT viewportBounds{};
@@ -244,7 +250,7 @@ bool scrollControlFullyIntoViewport(IUIAutomationElement *control, IUIAutomation
         THROW_IF_FAILED(scrolling->get_CurrentVerticalScrollPercent(&scrollPercent));
         if (canScroll && scrollPercent < 100)
             THROW_IF_FAILED(scrolling->Scroll(ScrollAmount_NoAmount, ScrollAmount_SmallIncrement));
-        std::this_thread::sleep_for(std::chrono::milliseconds{50});
+        std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiScrollPollInterval);
     } while (std::chrono::steady_clock::now() < deadline);
     return false;
 }
@@ -497,13 +503,14 @@ TEST_CASE("Cancelling the HWND-owned diagnostic export picker leaves every local
         // asynchronous focus notifications. Await the real focused peer, not
         // an arbitrary delay or a test-side SetFocus that would hide a defect.
         BOOL restoredFocus{};
-        const auto focusDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+        const auto focusDeadline =
+            std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
         do
         {
             THROW_IF_FAILED(exportButton->get_CurrentHasKeyboardFocus(&restoredFocus));
             if (restoredFocus)
                 break;
-            std::this_thread::sleep_for(std::chrono::milliseconds{20});
+            std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiStatePollInterval);
         } while (std::chrono::steady_clock::now() < focusDeadline);
         CHECK(restoredFocus);
         CHECK(physicalFolder.GetFilesAsync().get().Size() == files.Size());
@@ -583,9 +590,10 @@ TEST_CASE("A real save-picker grant exports exact sanitized diagnostics and comp
         invokeControl(save.get());
         UIA_HWND nativeWindow{};
         THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+        const auto deadline =
+            std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
         while (!IsWindowEnabled(reinterpret_cast<HWND>(nativeWindow)) && std::chrono::steady_clock::now() < deadline)
-            std::this_thread::sleep_for(std::chrono::milliseconds{20});
+            std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiStatePollInterval);
         REQUIRE(IsWindowEnabled(reinterpret_cast<HWND>(nativeWindow)));
         REQUIRE(waitForEnabledControl(automation, window, L"ExportDiagnostics"));
         REQUIRE(std::filesystem::is_regular_file(destination));
@@ -651,7 +659,8 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
         awaitKeyboardSourceFolderGrant(automation, window, selected);
         const auto analyze = waitForEnabledControl(automation, window, L"AnalyzeSelectedSource");
         invokeControl(analyze.get());
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{15};
+        const auto deadline =
+            std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiReviewPreparation;
         UIA_HWND nativeWindow{};
         THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
         bool reviewVisible{};
@@ -670,7 +679,7 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
                 }
             }
             if (!reviewVisible)
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
         } while (!reviewVisible && std::chrono::steady_clock::now() < deadline);
         INFO("The native picker and Analyze must reach the observable review; no folder test hook is supplied.");
         REQUIRE(reviewVisible);
@@ -704,13 +713,14 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
             const bool ownerEnabled = IsWindowEnabled(reinterpret_cast<HWND>(nativeWindow));
             pickerWasClosed = pickerWasOpened && ownerEnabled;
             if (!pickerWasClosed)
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
         } while (!pickerWasClosed && std::chrono::steady_clock::now() < cancellationDeadline);
         REQUIRE(pickerWasOpened);
         REQUIRE(pickerWasClosed);
         // Native owner re-enabling precedes completion of the awaiting handler.
         // Wait for its observable stable gate, not an arbitrary settling delay.
-        const auto resumeDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+        const auto resumeDeadline =
+            std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
         BOOL startEnabled{};
         const auto start = findControl(automation, window, L"StartProcessing");
         REQUIRE(start);
@@ -718,7 +728,7 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
         {
             THROW_IF_FAILED(start->get_CurrentIsEnabled(&startEnabled));
             if (!startEnabled)
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
         } while (!startEnabled && std::chrono::steady_clock::now() < resumeDeadline);
         REQUIRE(startEnabled);
         // Cancellation must keep the existing review, not merely its folder label.
@@ -781,13 +791,14 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
         // Package activation can publish its HWND before the native
         // provider admits resizing. Wait for that supported operation;
         // do not retry a refused Resize or mistake it for product RED.
-        const auto resizeDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
+        const auto resizeDeadline =
+            std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
         BOOL canResize{};
         do
         {
             THROW_IF_FAILED(transform->get_CurrentCanResize(&canResize));
             if (!canResize)
-                std::this_thread::sleep_for(std::chrono::milliseconds{10});
+                std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiResizePollInterval);
         } while (!canResize && std::chrono::steady_clock::now() < resizeDeadline);
         REQUIRE(canResize);
         THROW_IF_FAILED(transform->Resize(MulDiv(1100, static_cast<int>(windowDpi), 96),
@@ -808,7 +819,8 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
         invokeControl(analyze.get());
         UIA_HWND nativeWindow{};
         THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
-        const auto analysisDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{15};
+        const auto analysisDeadline =
+            std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiReviewPreparation;
         bool reviewVisible{};
         do
         {
@@ -823,7 +835,7 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
                 }
             }
             if (!reviewVisible)
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
         } while (!reviewVisible && std::chrono::steady_clock::now() < analysisDeadline);
         REQUIRE(reviewVisible);
         requireDefaultSelection(automation, window, L"OutputDisposition",
@@ -893,12 +905,13 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
         // Consent is invoked only after independently asserting the displayed
         // 7-right/0-bottom loss and disabled Start. Never invoke Start itself.
         invokeControl(acknowledgment.get());
-        const auto consentDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{15};
+        const auto consentDeadline =
+            std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiReviewPreparation;
         do
         {
             THROW_IF_FAILED(start->get_CurrentIsEnabled(&startEnabled));
             if (!startEnabled)
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
         } while (!startEnabled && std::chrono::steady_clock::now() < consentDeadline);
         REQUIRE(startEnabled);
         BOOL acknowledgmentEnabled{};
@@ -933,66 +946,67 @@ TEST_CASE("The shell preserves a usable minimum size and adaptive policy layout"
     REQUIRE(length < executablePath.size());
     const auto applicationDirectory =
         std::filesystem::path{executablePath.data()}.parent_path().parent_path() / L"JpgSpinner.App";
-    jpg_spinner::test_support::withIsolatedShellWindow(
-        applicationDirectory, [](IUIAutomation2 *automation, IUIAutomationElement *window) {
-            UIA_HWND nativeWindow{};
-            THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
-            const auto handle = reinterpret_cast<HWND>(nativeWindow);
-            const auto dpi = GetDpiForWindow(handle);
-            REQUIRE(dpi != 0);
-            wil::com_ptr<IUIAutomationTransformPattern> transform;
-            THROW_IF_FAILED(window->GetCurrentPatternAs(UIA_TransformPatternId, IID_PPV_ARGS(transform.put())));
-            BOOL canResize{};
-            THROW_IF_FAILED(transform->get_CurrentCanResize(&canResize));
-            REQUIRE(canResize);
-            // UX contract: at least 360 by 480 effective pixels. Content
-            // scrolling/reachability needs separate interaction checks.
-            // Do not mistake physical UIA pixels
-            // for XAML's effective-pixel adaptive thresholds on a scaled monitor.
-            THROW_IF_FAILED(transform->Resize(1, 1));
-            RECT minimumBounds{};
-            REQUIRE(GetWindowRect(handle, &minimumBounds));
-            CHECK(minimumBounds.right - minimumBounds.left >= MulDiv(360, static_cast<int>(dpi), 96));
-            CHECK(minimumBounds.bottom - minimumBounds.top >= MulDiv(480, static_cast<int>(dpi), 96));
-            for (const auto width : {600, 800, 1100})
+    jpg_spinner::test_support::withIsolatedShellWindow(applicationDirectory, [](IUIAutomation2 *automation,
+                                                                                IUIAutomationElement *window) {
+        UIA_HWND nativeWindow{};
+        THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
+        const auto handle = reinterpret_cast<HWND>(nativeWindow);
+        const auto dpi = GetDpiForWindow(handle);
+        REQUIRE(dpi != 0);
+        wil::com_ptr<IUIAutomationTransformPattern> transform;
+        THROW_IF_FAILED(window->GetCurrentPatternAs(UIA_TransformPatternId, IID_PPV_ARGS(transform.put())));
+        BOOL canResize{};
+        THROW_IF_FAILED(transform->get_CurrentCanResize(&canResize));
+        REQUIRE(canResize);
+        // UX contract: at least 360 by 480 effective pixels. Content
+        // scrolling/reachability needs separate interaction checks.
+        // Do not mistake physical UIA pixels
+        // for XAML's effective-pixel adaptive thresholds on a scaled monitor.
+        THROW_IF_FAILED(transform->Resize(1, 1));
+        RECT minimumBounds{};
+        REQUIRE(GetWindowRect(handle, &minimumBounds));
+        CHECK(minimumBounds.right - minimumBounds.left >= MulDiv(360, static_cast<int>(dpi), 96));
+        CHECK(minimumBounds.bottom - minimumBounds.top >= MulDiv(480, static_cast<int>(dpi), 96));
+        for (const auto width : {600, 800, 1100})
+        {
+            INFO("Requested effective-pixel width: " << width);
+            THROW_IF_FAILED(
+                transform->Resize(MulDiv(width, static_cast<int>(dpi), 96), MulDiv(800, static_cast<int>(dpi), 96)));
+            RECT resizedBounds{};
+            REQUIRE(GetWindowRect(handle, &resizedBounds));
+            REQUIRE(resizedBounds.right - resizedBounds.left == MulDiv(width, static_cast<int>(dpi), 96));
+            const auto traversal = findControl(automation, window, L"TraversalScope");
+            const auto edge = findControl(automation, window, L"EdgeHandling");
+            REQUIRE(traversal);
+            REQUIRE(edge);
+            RECT traversalBounds{};
+            RECT edgeBounds{};
+            // A completed native window resize does not flush XAML's
+            // deferred arrange pass. Observe the independent UX geometry
+            // within the same five-second interaction budget used above,
+            // rather than asserting stale bounds or sleeping unconditionally.
+            // Do not force UpdateLayout through a production test hook:
+            // https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.uielement.updatelayout
+            const auto layoutDeadline =
+                std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiStateTransition;
+            bool policyLayoutObserved{};
+            do
             {
-                INFO("Requested effective-pixel width: " << width);
-                THROW_IF_FAILED(transform->Resize(MulDiv(width, static_cast<int>(dpi), 96),
-                                                  MulDiv(800, static_cast<int>(dpi), 96)));
-                RECT resizedBounds{};
-                REQUIRE(GetWindowRect(handle, &resizedBounds));
-                REQUIRE(resizedBounds.right - resizedBounds.left == MulDiv(width, static_cast<int>(dpi), 96));
-                const auto traversal = findControl(automation, window, L"TraversalScope");
-                const auto edge = findControl(automation, window, L"EdgeHandling");
-                REQUIRE(traversal);
-                REQUIRE(edge);
-                RECT traversalBounds{};
-                RECT edgeBounds{};
-                // A completed native window resize does not flush XAML's
-                // deferred arrange pass. Observe the independent UX geometry
-                // within the same five-second interaction budget used above,
-                // rather than asserting stale bounds or sleeping unconditionally.
-                // Do not force UpdateLayout through a production test hook:
-                // https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.uielement.updatelayout
-                const auto layoutDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{5};
-                bool policyLayoutObserved{};
-                do
-                {
-                    THROW_IF_FAILED(traversal->get_CurrentBoundingRectangle(&traversalBounds));
-                    THROW_IF_FAILED(edge->get_CurrentBoundingRectangle(&edgeBounds));
-                    policyLayoutObserved =
-                        width < 640 ? edgeBounds.left == traversalBounds.left && edgeBounds.top > traversalBounds.bottom
-                                    : edgeBounds.left > traversalBounds.right;
-                    if (!policyLayoutObserved)
-                        std::this_thread::sleep_for(std::chrono::milliseconds{10});
-                } while (!policyLayoutObserved && std::chrono::steady_clock::now() < layoutDeadline);
-                if (width < 640)
-                {
-                    CHECK(edgeBounds.left == traversalBounds.left);
-                    CHECK(edgeBounds.top > traversalBounds.bottom);
-                }
-                else
-                    CHECK(edgeBounds.left > traversalBounds.right);
+                THROW_IF_FAILED(traversal->get_CurrentBoundingRectangle(&traversalBounds));
+                THROW_IF_FAILED(edge->get_CurrentBoundingRectangle(&edgeBounds));
+                policyLayoutObserved =
+                    width < 640 ? edgeBounds.left == traversalBounds.left && edgeBounds.top > traversalBounds.bottom
+                                : edgeBounds.left > traversalBounds.right;
+                if (!policyLayoutObserved)
+                    std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiResizePollInterval);
+            } while (!policyLayoutObserved && std::chrono::steady_clock::now() < layoutDeadline);
+            if (width < 640)
+            {
+                CHECK(edgeBounds.left == traversalBounds.left);
+                CHECK(edgeBounds.top > traversalBounds.bottom);
             }
-        });
+            else
+                CHECK(edgeBounds.left > traversalBounds.right);
+        }
+    });
 }

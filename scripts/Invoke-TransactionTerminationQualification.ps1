@@ -7,6 +7,7 @@ param(
 )
 
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $platform = if ($Architecture -eq 'x86') { 'Win32' } else { 'x64' }
@@ -62,7 +63,7 @@ function New-QualificationProcess {
 function Stop-OwnedQualificationProcess {
     param($Child)
     if (-not $Child.Process.HasExited) { $Child.Process.Kill() }
-    if (-not $Child.Process.WaitForExit(10000)) { throw 'Owned qualification process termination did not complete.' }
+    if (-not $Child.Process.WaitForExit((Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))) { throw 'Owned qualification process termination did not complete.' }
 }
 
 $observations = [Collections.Generic.List[object]]::new()
@@ -91,8 +92,9 @@ try {
                     $deadline = [Diagnostics.Stopwatch]::StartNew()
                     $observedBoundary = $false
                     # The event supplies the ordering proof; this bounded poll
-                    # only detects an early child failure without a 30-second wait.
-                    while ($deadline.Elapsed.TotalSeconds -lt 30) {
+                    # only detects an early child failure within the configured
+                    # transactionScenario budget; it does not establish ordering.
+                    while ($deadline.Elapsed.TotalSeconds -lt (Get-QualificationTimeout -Category transactionScenario)) {
                         if ($reached.WaitOne(100)) { $observedBoundary = $true; break }
                         if ($child.Process.HasExited) { break }
                     }
@@ -109,7 +111,7 @@ try {
                     } else { 'preserved' }
                     $report = Join-Path $evidenceRoot "$runIdentifier-$caseName-recovery.junit.xml"
                     $recovery = New-QualificationProcess '[termination-recovery]' $fixture $disposition $generation $boundary '' $expectation $report
-                    if (-not $recovery.Process.WaitForExit(30000)) { throw "Recovery timed out: $caseName" }
+                    if (-not $recovery.Process.WaitForExit((Get-QualificationTimeout -Category transactionScenario -Unit Milliseconds))) { throw "Recovery timed out: $caseName" }
                     if ($recovery.Process.ExitCode -ne 0) {
                         throw "Recovery failed: $caseName. Inspect $report. $($recovery.Error.GetAwaiter().GetResult())"
                     }

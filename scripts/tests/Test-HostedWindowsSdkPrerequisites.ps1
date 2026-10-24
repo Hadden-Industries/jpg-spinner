@@ -3,6 +3,7 @@
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OwnedOutputRoot)
 Set-StrictMode -Version Latest
+Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $installer = Join-Path $root 'scripts/Install-HostedWindowsSdk.ps1'
@@ -33,7 +34,7 @@ $rejected = $false
 try {
     [void](Invoke-ArtifactToolProcess -Executable (Get-Process -Id $PID).Path `
         -Arguments @('-NoProfile', '-File', $installer, '-RepositoryRoot', $repository, '-OutputDirectory', (Join-Path $fixture 'missing')) `
-        -WorkingDirectory $root -LogDirectory $fixture -LogName non-hosted-refusal -TimeoutSeconds 30 `
+        -WorkingDirectory $root -LogDirectory $fixture -LogName non-hosted-refusal -TimeoutSeconds (Get-QualificationTimeout -Category nestedPrerequisiteProbe) `
         -EnvironmentValues @{GITHUB_ACTIONS = 'false'; RUNNER_ENVIRONMENT = ''; RUNNER_OS = '' })
 }
 catch {

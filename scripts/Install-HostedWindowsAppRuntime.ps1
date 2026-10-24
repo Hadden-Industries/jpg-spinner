@@ -12,6 +12,7 @@ param(
     [string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot)
 )
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction Stop
 $ErrorActionPreference = 'Stop'
 # WhatIf can inspect an already acquired binary locally, but never acquires or
 # installs anything. Environment values are cooperative context checks, not an
@@ -39,7 +40,7 @@ $toolchain = & (Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1') -Reposit
 $context = @{WorkingDirectory = $root; LogDirectory = $output }
 # Native evaluation consumes the adopted central package version without a
 # parallel XML/lock-file parser or an SDK upgrade hidden in runner setup.
-$json = Invoke-ArtifactToolProcess @context -Executable $toolchain.msBuildExecutablePath -LogName sdk-package-selection -TimeoutSeconds 30 -Arguments @(
+$json = Invoke-ArtifactToolProcess @context -Executable $toolchain.msBuildExecutablePath -LogName sdk-package-selection -Arguments @(
     (Join-Path $root 'tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj'),
     '-nologo', '-noAutoResponse', '-nodeReuse:false', '-maxCpuCount:1',
     '-p:Configuration=Release', '-p:Platform=x64', '-getItem:PackageVersion'
@@ -69,7 +70,7 @@ if ($downloaded) {
     # Do not upload the reconstructible 120 MB installer with the small native
     # diagnostics. Only this UUID-owned hosted temporary file is disposable.
     $InstallerPath = Join-Path $env:RUNNER_TEMP ('jpg-spinner-runtime-' + [Guid]::NewGuid().ToString('N') + '.exe')
-    Invoke-WebRequest -Uri $pin.uri -OutFile $InstallerPath -TimeoutSec 120 -MaximumRedirection 0
+    Invoke-WebRequest -Uri $pin.uri -OutFile $InstallerPath -TimeoutSec (Get-QualificationTimeout -Category artifactDownload) -MaximumRedirection 0
 }
 $installer = (Get-Item -LiteralPath $InstallerPath -ErrorAction Stop).FullName
 $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -89,7 +90,7 @@ $installerIdentity = @{windowsAppSdkPackageVersion = $windowsAppSdkPackageVersio
 if (-not $PSCmdlet.ShouldProcess('Ephemeral hosted test runner', "Deploy Windows App SDK $windowsAppSdkPackageVersion runtime through the native $Architecture installer")) { return }
 # Do not force shutdowns, ignore errors, implement a package-graph solver, or
 # treat installation as evidence that the following real test host passed.
-[void](Invoke-ArtifactToolProcess @context -Executable $installer -Arguments @('--quiet') -LogName runtime-install -TimeoutSeconds 300)
+[void](Invoke-ArtifactToolProcess @context -Executable $installer -Arguments @('--quiet') -LogName runtime-install -TimeoutSeconds (Get-QualificationTimeout -Category runtimeInstallation))
 [IO.File]::WriteAllText((Join-Path $output 'installer-exit-code.txt'), '0')
 if ($downloaded) { Remove-Item -LiteralPath $installer -ErrorAction Stop }
 Write-Output 'PASS: native runtime deployment completed; the following tests must independently establish host execution.'

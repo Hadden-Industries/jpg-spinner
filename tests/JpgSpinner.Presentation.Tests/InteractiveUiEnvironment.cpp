@@ -1,4 +1,5 @@
 #include "InteractiveUiEnvironment.h"
+#include "QualificationTiming.h"
 #include "TemporaryDirectory.h"
 #include <Windows.h>
 #include <WtsApi32.h>
@@ -37,8 +38,14 @@ namespace
 wil::com_ptr<IUIAutomation2> createAutomationClient()
 {
     auto automation = wil::CoCreateInstance<IUIAutomation2>(CLSID_CUIAutomation8);
-    THROW_IF_FAILED(automation->put_ConnectionTimeout(3000));
-    THROW_IF_FAILED(automation->put_TransactionTimeout(3000));
+    // These are qualification-provider budgets, not application response SLAs.
+    // Microsoft's default transaction budget is already 20 seconds; a three-
+    // second override incorrectly penalized cold or heavily scheduled providers.
+    // https://learn.microsoft.com/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomation2-put_transactiontimeout
+    THROW_IF_FAILED(
+        automation->put_ConnectionTimeout(static_cast<DWORD>(qualification_timing::uiAutomationConnection.count())));
+    THROW_IF_FAILED(
+        automation->put_TransactionTimeout(static_cast<DWORD>(qualification_timing::uiAutomationTransaction.count())));
     return automation;
 }
 
@@ -356,12 +363,19 @@ void runPackagedSourceAccessTests(const std::filesystem::path &applicationDirect
             const auto stopOwnedWorker = wil::scope_exit([&] {
                 if (WaitForSingleObject(process.get(), 0) == WAIT_TIMEOUT)
                     if (!TerminateProcess(process.get(), 124) ||
-                        WaitForSingleObject(process.get(), 5000) != WAIT_OBJECT_0)
+                        WaitForSingleObject(process.get(),
+                                            static_cast<DWORD>(qualification_timing::nativeTeardown.count())) !=
+                            WAIT_OBJECT_0)
                         std::cerr << "RETAINED_OWNED_ACCESS_WORKER: pid=" << processId << std::endl;
             });
             // Real keyboard entry has a separately bounded operator interval;
-            // ordinary windowless controls retain their existing 60-second limit.
-            if (WaitForSingleObject(process.get(), requireRealFolderPicker ? 180000 : 60000) != WAIT_OBJECT_0)
+            // Distinct worker and operator-input categories account for cold
+            // activation and real keyboard entry without admitting retries.
+            if (WaitForSingleObject(
+                    process.get(),
+                    static_cast<DWORD>((requireRealFolderPicker ? qualification_timing::operatorFolderSelection
+                                                                : qualification_timing::packagedWorker)
+                                           .count())) != WAIT_OBJECT_0)
                 throw std::runtime_error{"The native packaged access-test worker exceeded its bounded interval."};
             DWORD exitCode{};
             THROW_IF_WIN32_BOOL_FALSE(GetExitCodeProcess(process.get(), &exitCode));
@@ -445,7 +459,10 @@ void withIsolatedShellWindow(const std::filesystem::path &applicationDirectory,
         const auto stopOwnedProcessOnFailure = wil::scope_exit([&] {
             if (WaitForSingleObject(process.get(), 0) == WAIT_TIMEOUT)
             {
-                if (!TerminateProcess(process.get(), 124) || WaitForSingleObject(process.get(), 5000) != WAIT_OBJECT_0)
+                if (!TerminateProcess(process.get(), 124) ||
+                    WaitForSingleObject(process.get(),
+                                        static_cast<DWORD>(qualification_timing::nativeTeardown.count())) !=
+                        WAIT_OBJECT_0)
                     std::cerr << "RETAINED_OWNED_TEST_PROCESS: pid=" << processId << std::endl;
             }
         });
@@ -468,14 +485,16 @@ void withIsolatedShellWindow(const std::filesystem::path &applicationDirectory,
         THROW_IF_FAILED(
             automation->CreateAndCondition(processCondition.get(), windowCondition.get(), ownedWindowCondition.put()));
         wil::com_ptr<IUIAutomationElement> window;
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{15};
+        const auto deadline = std::chrono::steady_clock::now() + qualification_timing::uiApplicationStartup;
         do
         {
             // Root children only: never walk unrelated users' desktop subtrees.
             THROW_IF_FAILED(desktop->FindFirst(TreeScope_Children, ownedWindowCondition.get(), window.put()));
             if (window)
                 break;
-            if (WaitForSingleObject(process.get(), 100) != WAIT_TIMEOUT)
+            if (WaitForSingleObject(process.get(),
+                                    static_cast<DWORD>(qualification_timing::uiAsyncPollInterval.count())) !=
+                WAIT_TIMEOUT)
                 throw std::runtime_error{"The isolated shell exited before exposing its native window."};
         } while (std::chrono::steady_clock::now() < deadline);
         if (!window)
@@ -484,7 +503,8 @@ void withIsolatedShellWindow(const std::filesystem::path &applicationDirectory,
         wil::com_ptr<IUIAutomationWindowPattern> windowPattern;
         THROW_IF_FAILED(window->GetCurrentPatternAs(UIA_WindowPatternId, IID_PPV_ARGS(windowPattern.put())));
         THROW_IF_FAILED(windowPattern->Close());
-        if (WaitForSingleObject(process.get(), 5000) != WAIT_OBJECT_0)
+        if (WaitForSingleObject(process.get(), static_cast<DWORD>(qualification_timing::nativeTeardown.count())) !=
+            WAIT_OBJECT_0)
             throw std::runtime_error{"The isolated shell did not shut down cleanly after native WindowPattern.Close."};
     });
 }
@@ -565,7 +585,7 @@ int qualifyInteractiveUiEnvironment(const std::filesystem::path &applicationDire
             QualificationWindow window;
             if (GetForegroundWindow() != window.handle())
                 std::cout << "FOREGROUND_QUALIFICATION_WAITING: activate only the owned JPG Spinner interactive "
-                             "qualification window within 30 seconds; pid="
+                             "qualification window before the configured foreground deadline; pid="
                           << GetCurrentProcessId() << std::endl;
             // SetForegroundWindow may legitimately refuse a background process
             // while the operator is in another app. Give ordinary operator or
@@ -573,12 +593,13 @@ int qualifyInteractiveUiEnvironment(const std::filesystem::path &applicationDire
             // actual native foreground HWND. Never force an input queue, change
             // foreground-lock settings, or infer success from the API call alone.
             // https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-setforegroundwindow
-            const auto foregroundDeadline = std::chrono::steady_clock::now() + std::chrono::seconds{30};
+            const auto foregroundDeadline =
+                std::chrono::steady_clock::now() + qualification_timing::uiForegroundAcquisition;
             while (GetForegroundWindow() != window.handle() && std::chrono::steady_clock::now() < foregroundDeadline)
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
             if (GetForegroundWindow() != window.handle())
                 throw std::runtime_error{
-                    "The owned qualification window did not receive foreground focus within 30 seconds."};
+                    "The owned qualification window did not receive foreground focus within its qualification budget."};
             auto automation = createAutomationClient();
             wil::com_ptr<IUIAutomationElement> element;
             THROW_IF_FAILED(automation->ElementFromHandle(window.handle(), element.put()));
