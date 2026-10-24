@@ -330,3 +330,10 @@ remain pending at this checkpoint. Task 20's physical-device, minimum-OS, human
 accessibility/localization, long-duration fuzzing, legal, certification and
 deliberately authorized distribution gates remain separate and unmet where no
 actual evidence exists.
+
+Subsequently on 2026-10-24, the owner explicitly waived the mandatory 24-hour
+fuzz campaign. The [accepted proportionality amendment](../plans/2026-08-30-jpg-spinner-modernization.md#step-202-clean-clone-automated-qualification)
+retains the maintained 60-second regression, replay, minimization and zero-growth
+audit. The historical delivery limits above are not a continuing requirement to
+run the waived campaign. Later native warning remediation and clean-source
+package/SBOM results have their own [source-bound checkpoint](2026-10-24-clean-source-qualification.md).

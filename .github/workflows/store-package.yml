@@ -1,173 +1,176 @@
 name: Store submission evidence
 on:
-  workflow_dispatch:
-    inputs:
-      source_run_id:
-        description: Successful manual CI run for this exact main commit
-        required: true
-        type: string
+    workflow_dispatch:
+        inputs:
+            source_run_id:
+                description: Successful manual CI run for this exact main commit
+                required: true
+                type: string
 permissions:
-  contents: read
+    contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 defaults:
-  run:
-    shell: pwsh
+    run:
+        shell: pwsh
 jobs:
-  admission:
-    if: github.ref == 'refs/heads/main'
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Require the same trusted producer and existing Store protection
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
-        run: |
-          if ($env:SOURCE_RUN_ID -cnotmatch '^[1-9][0-9]{0,18}$') { throw 'Invalid source run id.' }
-          $run = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' "repos/Hadden-Industries/jpg-spinner/actions/runs/$env:SOURCE_RUN_ID" | Out-String
-          if ($LASTEXITCODE -ne 0) { throw 'Could not read the native producer response.' }
-          $environment = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' repos/Hadden-Industries/jpg-spinner/environments/store-submission | Out-String
-          if ($LASTEXITCODE -ne 0) { throw 'Protected Store environment is absent or unreadable.' }
-          ./scripts/Test-ProtectedWorkflowAdmission.ps1 -TargetEnvironmentName store-submission -SourceRunJson $run -EnvironmentJson $environment -ExpectedSourceCommit $env:GITHUB_SHA -ExpectedRunId $env:SOURCE_RUN_ID
-  package:
-    needs: admission
-    if: github.ref == 'refs/heads/main'
-    runs-on: windows-2025-vs2026
-    environment: store-submission
-    timeout-minutes: 180
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.27.2'
-          cache: false
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '25.0.4.1+1'
-          verify-signature: true
-          force-download: true
-          overwrite-settings: false
-      - name: Build two independent clean source trees and qualify exact payloads
-        run: |
-          # Configure only this disposable checkout with the reviewed public
-          # policy. Native Git, not a workflow signature parser, owns trust.
-          git config --local gpg.ssh.allowedSignersFile (Join-Path $PWD eng/source-commit-allowed-signers)
-          if ($LASTEXITCODE -ne 0) { throw 'Cannot select the reviewed native Git trust policy.' }
-          $working = Join-Path $env:RUNNER_TEMP jpg-spinner-store
-          if (Test-Path -LiteralPath $working) { throw 'Existing Store working material requires explicit reconciliation.' }
-          New-Item -ItemType Directory -Path $working | Out-Null
-          "STORE_WORKING_ROOT=$working" >> $env:GITHUB_ENV
-          ./scripts/Invoke-IndependentPackageBuildComparison.ps1 -SourceCommit $env:GITHUB_SHA -WorkingDirectory (Join-Path $working builds) -OutputDirectory (Join-Path $working evidence)
-      - name: Restore the reviewed native evidence tools
-        run: |
-          Import-Module ./scripts/JsonObjectMemberValidation.psm1
-          $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content ./eng/sbom-tools.json -Raw) -RequiredRootValueKind Object -SourceDescription 'SBOM tool pins' -AsHashtable
-          $downloads = Join-Path $env:STORE_WORKING_ROOT downloads
-          New-Item -ItemType Directory -Path $downloads | Out-Null
-          # The restorer authenticates every original before extraction or
-          # execution. These URLs are fixed reviewed inputs, never latest.
-          foreach ($asset in @(
-            @{ Name='vcpkg.exe'; Url=$pins.vcpkgExporter.executableUrl },
-            @{ Name='vcpkg-standalone-bundle.tar.gz'; Url=$pins.vcpkgExporter.bundleUrl },
-            @{ Name='spdx-json-schema.json'; Url=$pins.spdxSchema.url },
-            @{ Name='tools-java.zip'; Url=$pins.spdxWorkgroupTools.url }
-          )) {
-            Invoke-WebRequest -Uri $asset.Url -OutFile (Join-Path $downloads $asset.Name) -ConnectionTimeoutSeconds 30 -OperationTimeoutSeconds 180
-          }
-          $node = (Get-Command node -CommandType Application | Select-Object -First 1).Source
-          $npmCli = Join-Path (Split-Path -Parent $node) node_modules/npm/bin/npm-cli.js
-          ./scripts/tests/Test-SbomVerificationToolRestoration.ps1 -DownloadDirectory $downloads -OwnedOutputRoot $env:STORE_WORKING_ROOT -NodeExecutablePath $node -NpmCliPath $npmCli
-          ./scripts/Restore-SbomVerificationTools.ps1 -DownloadDirectory $downloads -OutputDirectory (Join-Path $env:STORE_WORKING_ROOT tools) -NodeExecutablePath $node -NpmCliPath $npmCli
-      - name: Bind native component snapshots to the selected clean-build bundle
-        run: |
-          $working = $env:STORE_WORKING_ROOT
-          $selected = Join-Path $working builds/builds/retained/first
-          $native = @{}
-          foreach ($architecture in @('arm64','x64','x86')) {
-            $native[$architecture] = Join-Path $working "native-$architecture"
-            ./scripts/Export-JpgSpinnerVcpkgEvidence.ps1 -Architecture $architecture -InstalledRoot (Join-Path $selected "vcpkg_installed/$architecture-windows-static-md") -VcpkgRoot (Join-Path $working tools/vcpkg) -EvidenceDirectory $native[$architecture] -WorkingDirectory (Join-Path $working "export-$architecture")
-          }
-          ./scripts/New-JpgSpinnerBuildComponentEvidence.ps1 -NativeEvidenceDirectories $native -NuGetLockPath (Join-Path $selected src/JpgSpinner.App/packages.lock.json) -OutputDirectory (Join-Path $working components) -WorkingDirectory (Join-Path $working component-staging)
-          $go = (Get-Command go -CommandType Application | Select-Object -First 1).Source
-          ./scripts/Restore-GoModuleCache.ps1 -GoExecutablePath $go -ModuleDirectory (Join-Path $PWD eng/artifact-sbom) -ModuleCacheDirectory (Join-Path $working modules) -BuildCacheDirectory (Join-Path $working go-build-cache) -WorkingDirectory (Join-Path $working module-preparation)
-          Import-Module ./scripts/JsonObjectMemberValidation.psm1
-          $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content ./eng/sbom-tools.json -Raw) -RequiredRootValueKind Object -SourceDescription 'SBOM tool pins' -AsHashtable
-          $report = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content (Join-Path $working evidence/independent-package-build-comparison.json) -Raw) -RequiredRootValueKind Object -SourceDescription 'Independent clean-build comparison' -AsHashtable
-          # This is this job's native producer result, not caller-supplied
-          # evidence or a signature. Authentication follows in a separate job.
-          if ($report.sourceCommit -cne $env:GITHUB_SHA -or $report.comparisonSatisfied -isnot [bool] -or -not $report.comparisonSatisfied) { throw 'Clean-build comparison did not qualify this exact candidate.' }
-          $parameters = @{
-            BundlePath = Join-Path $working evidence/first/JpgSpinner.msixbundle
-            ExpectedBundleSha256 = $report.builds[0].unsignedBundleSha256
-            ComponentEvidenceRoot = Join-Path $working components/components
-            ComponentContractPath = Join-Path $working components/required-components.json
-            OutputDirectory = Join-Path $working evidence/submission-sbom
-            WorkingDirectory = Join-Path $working sbom-staging
-            GoExecutablePath = $go
-            ModuleCacheDirectory = Join-Path $working modules
-            BuildCacheDirectory = Join-Path $working go-build-cache
-            SpdxSchemaPath = Join-Path $working tools/spdx-json-schema.json
-            SchemaValidatorToolsDirectory = Join-Path $working tools/schema-validator
-            JavaExecutablePath = Join-Path $env:JAVA_HOME bin/java.exe
-            SpdxToolsJarPath = Join-Path $working "tools/spdx/tools-java-$($pins.spdxWorkgroupTools.version)-jar-with-dependencies.jar"
-          }
-          ./scripts/New-StoreSubmissionSbom.ps1 @parameters
-          # Authentication covers these actual runtime observations too; they
-          # are build-tool identities, not redistributed application packages.
-          & $go version *> (Join-Path $working evidence/go-version.log)
-          if ($LASTEXITCODE -ne 0) { throw 'Native Go identity observation failed.' }
-          & $parameters.JavaExecutablePath --version *> (Join-Path $working evidence/java-version.log)
-          if ($LASTEXITCODE -ne 0) { throw 'Native Java identity observation failed.' }
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: store-submission-inputs
-          retention-days: 14
-          if-no-files-found: error
-          path: ${{ env.STORE_WORKING_ROOT }}/evidence/
-      # Hosted runner disposal owns private caches/retained clones. Do not
-      # upload them, repair persistent state or recycle an uncertain producer.
-  attestation:
-    needs: package
-    if: github.ref == 'refs/heads/main'
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      actions: read
-      id-token: write
-      attestations: write
-    steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: store-submission-inputs
-          path: artifacts/store-submission
-          digest-mismatch: error
-      # Native SLSA provenance authenticates exact containers and JSON evidence.
-      # It does not assert certification, installability or release approval.
-      # No checkout, compilation, dependency restore or app execution occurs.
-      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-path: |
-            artifacts/store-submission/first/JpgSpinner.msixbundle
-            artifacts/store-submission/second/JpgSpinner.msixbundle
-            artifacts/store-submission/**/*.json
-            artifacts/store-submission/*-version.log
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: store-submission-evidence
-          retention-days: 14
-          if-no-files-found: error
-          path: artifacts/store-submission/
+    admission:
+        if: github.ref == 'refs/heads/main'
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 10
+        permissions:
+            contents: read
+            actions: read
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Require the same trusted producer and existing Store protection
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+              run: |
+                  if ($env:SOURCE_RUN_ID -cnotmatch '^[1-9][0-9]{0,18}$') { throw 'Invalid source run id.' }
+                  $run = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' "repos/Hadden-Industries/jpg-spinner/actions/runs/$env:SOURCE_RUN_ID" | Out-String
+                  if ($LASTEXITCODE -ne 0) { throw 'Could not read the native producer response.' }
+                  $environment = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' repos/Hadden-Industries/jpg-spinner/environments/store-submission | Out-String
+                  if ($LASTEXITCODE -ne 0) { throw 'Protected Store environment is absent or unreadable.' }
+                  ./scripts/Test-ProtectedWorkflowAdmission.ps1 -TargetEnvironmentName store-submission -SourceRunJson $run -EnvironmentJson $environment -ExpectedSourceCommit $env:GITHUB_SHA -ExpectedRunId $env:SOURCE_RUN_ID
+    package:
+        needs: admission
+        if: github.ref == 'refs/heads/main'
+        runs-on: windows-2025-vs2026
+        environment: store-submission
+        timeout-minutes: 180
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+              with:
+                  go-version: "1.27.2"
+                  cache: false
+            - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+              with:
+                  distribution: temurin
+                  java-version: "25.0.4.1+1"
+                  verify-signature: true
+                  force-download: true
+                  overwrite-settings: false
+            - name: Build two independent clean source trees and qualify exact payloads
+              run: |
+                  # Configure only this disposable checkout with the reviewed public
+                  # policy. Native Git, not a workflow signature parser, owns trust.
+                  git config --local gpg.ssh.allowedSignersFile (Join-Path $PWD eng/source-commit-allowed-signers)
+                  if ($LASTEXITCODE -ne 0) { throw 'Cannot select the reviewed native Git trust policy.' }
+                  # MSBuild diagnoses C++ output under TEMP/TMP with MSB8029. The
+                  # documented checkout context gives this hosted lane a sibling root,
+                  # disjoint from its source; run/attempt identity prevents drop reuse.
+                  $storeWorkingDirectoryPath = Join-Path (Split-Path -Parent $env:GITHUB_WORKSPACE) "jpg-spinner-store-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+                  if (Test-Path -LiteralPath $storeWorkingDirectoryPath) { throw 'Existing Store working material requires explicit reconciliation.' }
+                  New-Item -ItemType Directory -Path $storeWorkingDirectoryPath | Out-Null
+                  "STORE_WORKING_ROOT=$storeWorkingDirectoryPath" >> $env:GITHUB_ENV
+                  ./scripts/Invoke-IndependentPackageBuildComparison.ps1 -SourceCommit $env:GITHUB_SHA -WorkingDirectory (Join-Path $storeWorkingDirectoryPath builds) -OutputDirectory (Join-Path $storeWorkingDirectoryPath evidence)
+            - name: Restore the reviewed native evidence tools
+              run: |
+                  Import-Module ./scripts/JsonObjectMemberValidation.psm1
+                  $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content ./eng/sbom-tools.json -Raw) -RequiredRootValueKind Object -SourceDescription 'SBOM tool pins' -AsHashtable
+                  $downloads = Join-Path $env:STORE_WORKING_ROOT downloads
+                  New-Item -ItemType Directory -Path $downloads | Out-Null
+                  # The restorer authenticates every original before extraction or
+                  # execution. These URLs are fixed reviewed inputs, never latest.
+                  foreach ($asset in @(
+                    @{ Name='vcpkg.exe'; Url=$pins.vcpkgExporter.executableUrl },
+                    @{ Name='vcpkg-standalone-bundle.tar.gz'; Url=$pins.vcpkgExporter.bundleUrl },
+                    @{ Name='spdx-json-schema.json'; Url=$pins.spdxSchema.url },
+                    @{ Name='tools-java.zip'; Url=$pins.spdxWorkgroupTools.url }
+                  )) {
+                    Invoke-WebRequest -Uri $asset.Url -OutFile (Join-Path $downloads $asset.Name) -ConnectionTimeoutSeconds 30 -OperationTimeoutSeconds 180
+                  }
+                  $node = (Get-Command node -CommandType Application | Select-Object -First 1).Source
+                  $npmCli = Join-Path (Split-Path -Parent $node) node_modules/npm/bin/npm-cli.js
+                  ./scripts/tests/Test-SbomVerificationToolRestoration.ps1 -DownloadDirectory $downloads -OwnedOutputRoot $env:STORE_WORKING_ROOT -NodeExecutablePath $node -NpmCliPath $npmCli
+                  ./scripts/Restore-SbomVerificationTools.ps1 -DownloadDirectory $downloads -OutputDirectory (Join-Path $env:STORE_WORKING_ROOT tools) -NodeExecutablePath $node -NpmCliPath $npmCli
+            - name: Bind native component snapshots to the selected clean-build bundle
+              run: |
+                  $working = $env:STORE_WORKING_ROOT
+                  $selected = Join-Path $working builds/builds/retained/first
+                  $native = @{}
+                  foreach ($architecture in @('arm64','x64','x86')) {
+                    $native[$architecture] = Join-Path $working "native-$architecture"
+                    ./scripts/Export-JpgSpinnerVcpkgEvidence.ps1 -Architecture $architecture -InstalledRoot (Join-Path $selected "vcpkg_installed/$architecture-windows-static-md") -VcpkgRoot (Join-Path $working tools/vcpkg) -EvidenceDirectory $native[$architecture] -WorkingDirectory (Join-Path $working "export-$architecture")
+                  }
+                  ./scripts/New-JpgSpinnerBuildComponentEvidence.ps1 -NativeEvidenceDirectories $native -NuGetLockPath (Join-Path $selected src/JpgSpinner.App/packages.lock.json) -OutputDirectory (Join-Path $working components) -WorkingDirectory (Join-Path $working component-staging)
+                  $go = (Get-Command go -CommandType Application | Select-Object -First 1).Source
+                  ./scripts/Restore-GoModuleCache.ps1 -GoExecutablePath $go -ModuleDirectory (Join-Path $PWD eng/artifact-sbom) -ModuleCacheDirectory (Join-Path $working modules) -BuildCacheDirectory (Join-Path $working go-build-cache) -WorkingDirectory (Join-Path $working module-preparation)
+                  Import-Module ./scripts/JsonObjectMemberValidation.psm1
+                  $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content ./eng/sbom-tools.json -Raw) -RequiredRootValueKind Object -SourceDescription 'SBOM tool pins' -AsHashtable
+                  $report = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content (Join-Path $working evidence/independent-package-build-comparison.json) -Raw) -RequiredRootValueKind Object -SourceDescription 'Independent clean-build comparison' -AsHashtable
+                  # This is this job's native producer result, not caller-supplied
+                  # evidence or a signature. Authentication follows in a separate job.
+                  if ($report.sourceCommit -cne $env:GITHUB_SHA -or $report.comparisonSatisfied -isnot [bool] -or -not $report.comparisonSatisfied) { throw 'Clean-build comparison did not qualify this exact candidate.' }
+                  $parameters = @{
+                    BundlePath = Join-Path $working evidence/first/JpgSpinner.msixbundle
+                    ExpectedBundleSha256 = $report.builds[0].unsignedBundleSha256
+                    ComponentEvidenceRoot = Join-Path $working components/components
+                    ComponentContractPath = Join-Path $working components/required-components.json
+                    OutputDirectory = Join-Path $working evidence/submission-sbom
+                    WorkingDirectory = Join-Path $working sbom-staging
+                    GoExecutablePath = $go
+                    ModuleCacheDirectory = Join-Path $working modules
+                    BuildCacheDirectory = Join-Path $working go-build-cache
+                    SpdxSchemaPath = Join-Path $working tools/spdx-json-schema.json
+                    SchemaValidatorToolsDirectory = Join-Path $working tools/schema-validator
+                    JavaExecutablePath = Join-Path $env:JAVA_HOME bin/java.exe
+                    SpdxToolsJarPath = Join-Path $working "tools/spdx/tools-java-$($pins.spdxWorkgroupTools.version)-jar-with-dependencies.jar"
+                  }
+                  ./scripts/New-StoreSubmissionSbom.ps1 @parameters
+                  # Authentication covers these actual runtime observations too; they
+                  # are build-tool identities, not redistributed application packages.
+                  & $go version *> (Join-Path $working evidence/go-version.log)
+                  if ($LASTEXITCODE -ne 0) { throw 'Native Go identity observation failed.' }
+                  & $parameters.JavaExecutablePath --version *> (Join-Path $working evidence/java-version.log)
+                  if ($LASTEXITCODE -ne 0) { throw 'Native Java identity observation failed.' }
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: store-submission-inputs
+                  retention-days: 14
+                  if-no-files-found: error
+                  path: ${{ env.STORE_WORKING_ROOT }}/evidence/
+            # Hosted runner disposal owns private caches/retained clones. Do not
+            # upload them, repair persistent state or recycle an uncertain producer.
+    attestation:
+        needs: package
+        if: github.ref == 'refs/heads/main'
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 15
+        permissions:
+            contents: read
+            actions: read
+            id-token: write
+            attestations: write
+        steps:
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+              with:
+                  name: store-submission-inputs
+                  path: artifacts/store-submission
+                  digest-mismatch: error
+            # Native SLSA provenance authenticates exact containers and JSON evidence.
+            # It does not assert certification, installability or release approval.
+            # No checkout, compilation, dependency restore or app execution occurs.
+            - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+              with:
+                  subject-path: |
+                      artifacts/store-submission/first/JpgSpinner.msixbundle
+                      artifacts/store-submission/second/JpgSpinner.msixbundle
+                      artifacts/store-submission/**/*.json
+                      artifacts/store-submission/*-version.log
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: store-submission-evidence
+                  retention-days: 14
+                  if-no-files-found: error
+                  path: artifacts/store-submission/

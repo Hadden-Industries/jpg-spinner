@@ -2619,6 +2619,14 @@ Existing malformed-input, resource-limit, deterministic reproducer, sanitizer
 and transaction/recovery checks remain required. No security/external review,
 remote dispatch or public release is authorized by this amendment.
 
+**Local qualification checkpoint (2026-10-24):** The
+[signed-source package/SBOM/recovery record](../implementation/2026-10-24-clean-source-qualification.md)
+binds two independent native three-architecture Release package sets, successful
+closed comparison with explicit nonidentical raw payload/container bytes, the
+exact selected-bundle SBOM and 88 native termination/recovery cases. These are
+bounded local results, not blanket completion of this step, authenticated hosted
+qualification, physical-device acceptance, legal clearance or release approval.
+
 ### Step 20.3: Corpus and transaction qualification
 
 - [ ] Run every orientation across 8-bit and 12-bit lossy precision; 4:4:4, 4:2:2, 4:2:0; grayscale, RGB/YCbCr, CMYK/YCCK; sequential, progressive, Huffman, arithmetic; restart intervals; valid ICC v2/v4; Exif 3.1; XMP standard/extended; IPTC Photo Metadata 2025.1 in XMP/IIM; unknown APPn/COM; absent metadata; exact resource boundaries; and explicit rejection fixtures for C2PA 2.4, other JUMBF, MPF/Ultra HDR, Motion Photo, and generic trailing payloads.

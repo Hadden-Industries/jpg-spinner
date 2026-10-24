@@ -5,6 +5,12 @@ independent clean-source, device and release qualification remain pending.
 No desktop, security
 review, external review, hosted execution, SDK mutation or release is performed.
 
+The subsequent [clean-source qualification](2026-10-24-clean-source-qualification.md)
+records the new independent package comparison, exact selected-bundle SBOM and
+native recovery results. It supersedes the pending local package/SBOM observation
+at this checkpoint, while preserving its own temporary-root MSB8029 limitation
+and all remaining device/release gates.
+
 ## Reproducer and root cause
 
 The original task-level reproducer invokes the installed vcpkg
@@ -136,6 +142,12 @@ verifies all 109 required diagnosis originals, with zero missing evidence.
 The source group is 49,958,841 bytes; pinned validator installations and a
 32,236,700-byte derivative replay are explicitly reconstructible. After the
 signed source checkpoint, dispose this released group through native HISEW.
+Native recoverable operation `108d2174-e9b2-4f97-a9ba-9470e46ed64b`
+subsequently reports `removed-confirmed`, with recycled source and independent
+absence/recovery readback. Terminal record `9ec48f67e8bc4333ada42e726b363bf9`
+and the original preservation receipts remain retained. The temporary diagnosis
+group is therefore removed, not a continuing tool-cache dependency or a claim of
+physical capacity reclaimed.
 The older corpus's waived long-duration consumer is explicitly released in
 native disposition `b950f2184f914ea5a315a1a9bb8303e3`; its unpreserved historical
 full/minimized pair remains held for supported preservation, not for a fictitious
