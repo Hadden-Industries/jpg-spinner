@@ -77,24 +77,36 @@ catch { $message = $_.Exception.Message }
 if ($null -eq $message -or -not $message.Contains('Duplicate key', [StringComparison]::Ordinal)) { throw 'Duplicate YAML members were not refused natively.' }
 Write-Output 'PASS: valid native workflow and all targeted policy refusals.'
 
-# Retain the actual source as each fixture, then alter only SDK admission. The
-# real CI contract must refuse omission, conditional setup and unbounded setup.
+# Retain actual source, then challenge SDK admission and the native compiler
+# control's lane/evidence placement through the real CI contract.
 $ciText = (Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/continuous-integration.yml') -Raw).Replace("`r`n", "`n")
 $sdkRun = '              run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk'
 if (-not $ciText.Contains($sdkRun, [StringComparison]::Ordinal)) { throw 'SDK setup source fixture is absent.' }
+$sdkRefusal = 'Hosted SDK prerequisite must run unconditionally immediately after checkout'
+$comdatRefusal = 'Native COMDAT control requires the SDK-prepared x64 Release lane and retained build-log output.'
+$comdatCommand = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot ' +
+    '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/build-logs/x64/Release/ComdatIdentity'')'
+$comdatGuard = "              if: matrix.architecture == 'x64' && matrix.configuration == 'Release'"
+$runtimeCommand = './scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture ''${{ matrix.architecture }}'' -OutputDirectory artifacts/build-logs/windows-app-runtime'
+$runtimeRefusal = 'Hosted runtime deployment requires one bounded native x86/x64 setup after compilation and before test-host execution.'
 foreach ($case in @(
-    @{Name = 'omitted-sdk'; Before = $sdkRun; After = "              run: Write-Output 'SDK setup omitted'" },
-    @{Name = 'conditional-sdk'; Before = $sdkRun; After = "              if: inputs.cache_dependencies`n$sdkRun" },
-    @{Name = 'unbounded-sdk'; Before = "              timeout-minutes: 15`n$sdkRun"; After = $sdkRun }
+    @{Name = 'omitted-sdk'; Before = $sdkRun; After = "              run: Write-Output 'SDK setup omitted'"; Expected = $sdkRefusal },
+    @{Name = 'conditional-sdk'; Before = $sdkRun; After = "              if: inputs.cache_dependencies`n$sdkRun"; Expected = $sdkRefusal },
+    @{Name = 'unbounded-sdk'; Before = "              timeout-minutes: 15`n$sdkRun"; After = $sdkRun; Expected = $sdkRefusal },
+    @{Name = 'comdat-unretained-diagnostics'; Before = $comdatCommand; After = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot $env:RUNNER_TEMP'; Expected = $comdatRefusal },
+    @{Name = 'comdat-wrong-lane'; Before = "$comdatGuard`n              run: $comdatCommand"; After = "              if: matrix.architecture == 'x86' && matrix.configuration == 'Release'`n              run: $comdatCommand"; Expected = $comdatRefusal },
+    @{Name = 'omitted-runtime'; Before = $runtimeCommand; After = "Write-Output 'Runtime setup omitted'"; Expected = 'Hosted runtime deployment must precede unpackaged presentation test-host execution.' },
+    @{Name = 'unbounded-runtime'; Before = "              timeout-minutes: 10`n              run: $runtimeCommand"; After = "              run: $runtimeCommand"; Expected = $runtimeRefusal },
+    @{Name = 'runtime-wrong-lane'; Before = "              if: matrix.architecture != 'ARM64'`n              timeout-minutes: 10`n              run: $runtimeCommand"; After = "              if: matrix.architecture == 'ARM64'`n              timeout-minutes: 10`n              run: $runtimeCommand"; Expected = $runtimeRefusal }
 )) {
-    if (-not $ciText.Contains($case.Before, [StringComparison]::Ordinal)) { throw "SDK fixture precondition differs: $($case.Name)" }
+    if (-not $ciText.Contains($case.Before, [StringComparison]::Ordinal)) { throw "Native CI fixture precondition differs: $($case.Name)" }
     $path = Join-Path $fixtureRoot ($case.Name + '.yml')
     [IO.File]::WriteAllText($path, $ciText.Replace($case.Before, $case.After), [Text.UTF8Encoding]::new($false))
     $message = $null
     try { & (Join-Path $PSScriptRoot 'Test-ContinuousIntegrationContract.ps1') -ToolsDirectory $ToolsDirectory -WorkflowPath $path }
     catch { $message = $_.Exception.Message }
-    if ($null -eq $message -or -not $message.Contains('Hosted SDK prerequisite must run unconditionally immediately after checkout', [StringComparison]::Ordinal)) {
+    if ($null -eq $message -or -not $message.Contains($case.Expected, [StringComparison]::Ordinal)) {
         throw "CI accepted $($case.Name) or refused it at the wrong boundary: $message"
     }
-    Write-Output "PASS hosted SDK source refusal: $($case.Name)"
+    Write-Output "PASS native CI source refusal: $($case.Name)"
 }

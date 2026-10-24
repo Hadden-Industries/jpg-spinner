@@ -44,7 +44,6 @@ jobs:
                   ./scripts/tests/Test-JpgSpinnerBlockMapVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-IndependentSourceBuildPair.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-SourceCommitSignatureTrust.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
-                  ./scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
                   # Isolate intentional negative-control native exit codes from the
                   # caller's LASTEXITCODE; only this script's process result is a gate.
                   pwsh -NoProfile -File ./scripts/Test-RepositoryPolicy.ps1
@@ -116,6 +115,18 @@ jobs:
               run: |
                   ./scripts/Invoke-Build.ps1 -Configuration '${{ matrix.configuration }}' -Architecture '${{ matrix.architecture }}' -MaximumBuildProcessCount 2
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - name: Check native Release and Debug COMDAT identities
+              # This control compiles and links a real C++ probe. Keep it with
+              # the existing SDK-prepared runner and retain failures as well as
+              # successes under the always-uploaded native diagnostic root.
+              if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
+              run: ./scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot (Join-Path $env:GITHUB_WORKSPACE 'artifacts/build-logs/x64/Release/ComdatIdentity')
+            - name: Deploy the pinned Windows App Runtime for native tests
+              # The unpackaged WinUI test host bootstraps before main. SDK
+              # compilation does not deploy its runtime framework packages.
+              if: matrix.architecture != 'ARM64'
+              timeout-minutes: 10
+              run: ./scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture '${{ matrix.architecture }}' -OutputDirectory artifacts/build-logs/windows-app-runtime
             - name: Check bounded native host shutdown
               if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
               run: |

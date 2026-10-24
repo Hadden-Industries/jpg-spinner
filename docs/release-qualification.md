@@ -34,9 +34,15 @@ distribution, cutover, certification or Store submission.
 The [hosted QA prerequisite repair](implementation/2026-10-24-hosted-qa-prerequisite-repair.md)
 addresses the failed manual run at `8efb4d5`: its provenance fixture lacked two
 adopted action pins, and the hosted image lacked the selected SDK 28000 inputs.
-Focused provenance, workflow-composition and native read-only SDK/refusal proof
-remain distinct from actual hosted installation and successful full QA. The
-original run remains failed; another remote run requires deliberate authorization.
+The owner-authorized follow-up at signed `9e7ac782` successfully installed that
+SDK and compiled all five matrix configurations; ARM64, ASan and MSVC analysis
+jobs passed. The attempt still failed because the COMDAT probe ran outside an
+SDK-equipped lane and the unpackaged presentation host lacked deployed Windows
+App Runtime packages. The follow-up moves the probe and adds Microsoft's pinned
+native runtime deployment to executable test lanes. Local read-only identity
+and source/refusal checks remain distinct from actual hosted deployment and
+successful full QA. Both prior attempts remain failed; another remote run
+requires deliberate authorization.
 
 The [2026-10-24 Adobe static-library packaging qualification](implementation/2026-10-24-adobe-static-debug-information.md)
 repairs missing compiler PDBs without dropping debug information or suppressing

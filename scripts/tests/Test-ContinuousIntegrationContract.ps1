@@ -58,11 +58,12 @@ foreach ($step in (Get-NodeProperty (Get-NodeProperty $jobs 'policy') 'steps').C
     $runKey = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
     if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-IndependentSourceBuildPair.ps1', [StringComparison]::Ordinal)) { $hasSourcePairControl = $true }
     if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-SourceCommitSignatureTrust.ps1', [StringComparison]::Ordinal)) { $hasSourceTrustControl = $true }
-    if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1', [StringComparison]::Ordinal)) { $hasComdatIdentityControl = $true }
+    if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1', [StringComparison]::Ordinal)) {
+        throw 'Native COMDAT compilation must run in the SDK-prepared x64 Release build lane, not source policy.'
+    }
 }
 if (-not $hasSourcePairControl) { throw 'Manual CI lacks the real independent-checkout lifecycle control.' }
 if (-not $hasSourceTrustControl) { throw 'Manual CI lacks the portable native source-signature trust control.' }
-if (-not $hasComdatIdentityControl) { throw 'Manual CI lacks the native x64 Release COMDAT identity control.' }
 $build = Get-NodeProperty $jobs 'build'
 if ($build.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new('permissions'))) { throw 'Compiler jobs must inherit only the read-only workflow token.' }
 $strategy = Get-NodeProperty $build 'strategy'
@@ -81,10 +82,34 @@ $steps = Get-NodeProperty $build 'steps'
 $hasBuild = $false; $hasHeadlessTests = $false; $hasProvenance = $false; $hasShutdownRegression = $false
 $hasAdobeStaticDebugInformation = $false
 $hasNativeInlineTaskEnvironment = $false
+$hasHostedRuntime = $false
 foreach ($step in $steps.Children) {
     $key = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
     if (-not $step.Children.ContainsKey($key)) { continue }
     $command = $step.Children[$key].Value
+    if ($command.Contains('scripts/Install-HostedWindowsAppRuntime.ps1', [StringComparison]::Ordinal)) {
+        # Compilation needs the SDK; starting the unpackaged WinUI test host
+        # additionally needs Microsoft's deployed runtime for the current user.
+        $expectedRuntimeCommand = './scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture ''${{ matrix.architecture }}'' -OutputDirectory artifacts/build-logs/windows-app-runtime'
+        $runtimeGuard = Get-NodeProperty $step 'if'
+        $runtimeTimeout = Get-NodeProperty $step 'timeout-minutes'
+        if ($hasHostedRuntime -or -not $hasBuild -or $command -cne $expectedRuntimeCommand -or
+            $null -eq $runtimeGuard -or $runtimeGuard.Value -cne "matrix.architecture != 'ARM64'" -or
+            $null -eq $runtimeTimeout -or $runtimeTimeout.Value -cne '10') {
+            throw 'Hosted runtime deployment requires one bounded native x86/x64 setup after compilation and before test-host execution.'
+        }
+        $hasHostedRuntime = $true
+    }
+    if ($command.Contains('scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1', [StringComparison]::Ordinal)) {
+        $guard = Get-NodeProperty $step 'if'
+        $expectedComdatCommand = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot ' +
+            '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/build-logs/x64/Release/ComdatIdentity'')'
+        if ($null -eq $guard -or $guard.Value -cne "matrix.architecture == 'x64' && matrix.configuration == 'Release'" -or
+            $command -cne $expectedComdatCommand) {
+            throw 'Native COMDAT control requires the SDK-prepared x64 Release lane and retained build-log output.'
+        }
+        $hasComdatIdentityControl = $true
+    }
     if ($command.Contains('scripts/tests/Test-NativeInlineTaskEnvironment.ps1', [StringComparison]::Ordinal)) {
         # Every lane must exercise its actual selected native environment, and
         # its raw failure evidence must live under the always-uploaded log root.
@@ -111,6 +136,7 @@ foreach ($step in $steps.Children) {
         $hasAdobeStaticDebugInformation = $true
     }
     if ($command.Contains('scripts/tests/Test-PresentationHostShutdown.ps1 -Scenario RecoveryDiagnostic', [StringComparison]::Ordinal)) {
+        if (-not $hasHostedRuntime) { throw 'Hosted runtime deployment must precede unpackaged presentation test-host execution.' }
         $condition = (Get-NodeProperty $step 'if').Value
         if ($condition -cne "matrix.architecture == 'x64' && matrix.configuration == 'Release'") {
             throw 'The bounded shutdown regression requires its actual x64 Release host.'
@@ -121,6 +147,7 @@ foreach ($step in $steps.Children) {
     if ($command.Contains('scripts/New-BuildProvenance.ps1', [StringComparison]::Ordinal) -and
         $command.Contains('-RequireCleanSourceTree', [StringComparison]::Ordinal)) { $hasProvenance = $true }
     if ($command.Contains('scripts/Invoke-TestSuite.ps1 -Project HeadlessAll', [StringComparison]::Ordinal)) {
+        if (-not $hasHostedRuntime) { throw 'Hosted runtime deployment must precede unpackaged presentation test-host execution.' }
         $condition = (Get-NodeProperty $step 'if').Value
         if ($condition -cne "matrix.architecture != 'ARM64'") { throw 'Cross-compiled ARM64 must not masquerade as executed tests.' }
         $hasHeadlessTests = $true
@@ -130,6 +157,7 @@ if (-not ($hasBuild -and $hasHeadlessTests -and $hasProvenance)) { throw 'Build,
 if (-not $hasShutdownRegression) { throw 'Bounded native presentation process-shutdown regression wiring is absent.' }
 if (-not $hasAdobeStaticDebugInformation) { throw 'Installed Adobe static-library debug-information regression wiring is absent.' }
 if (-not $hasNativeInlineTaskEnvironment) { throw 'Native inline-task environment regression wiring is absent.' }
+if (-not $hasComdatIdentityControl) { throw 'Manual CI lacks the native x64 Release COMDAT identity control.' }
 $packageJob = Get-NodeProperty $jobs 'unsigned-package'
 $packageNeeds = Get-NodeProperty $packageJob 'needs'
 $neededJobs = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
