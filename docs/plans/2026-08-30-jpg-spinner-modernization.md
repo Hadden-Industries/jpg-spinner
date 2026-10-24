@@ -1889,7 +1889,7 @@ two-process MSBuild concurrency and the documented native vcpkg Release mapping
 bound this development path. No custom minimizer or coverage-prose parser is
 introduced; [LLVM's corpus contract](https://llvm.org/docs/LibFuzzer.html#corpus)
 owns feature selection. These bounded development passes do not establish the
-final aggregate fuzz duration or authorize a remote CI run.
+final-candidate fuzz regression or authorize a remote CI run.
 
 - [ ] CodeQL runs C++ analysis on a clean x64 build with `security-extended`; no high-severity result may remain open at release.
 - [ ] Manually dispatched fuzz qualification runs the scanner target under AddressSanitizer for a bounded duration, minimizes new corpus inputs, uploads only non-user corpus/reproducers, and fails on crash, timeout, leak, or memory-limit violation. It has no scheduled trigger.
@@ -2608,8 +2608,16 @@ git commit -m "refactor: remove the retired UWP implementation"
 - [ ] From a fresh clone with no global vcpkg integration or warm build output, restore locked inputs and run repository/documentation policy.
 - [ ] Build Debug and Release x86/x64 and Release ARM64 twice from independent clean roots. Natively validate/unpack each unsigned bundle and satisfy the approved closed metadata/block-map comparison contract. Retain complete raw manifests and actual byte-identity results; record both container hashes without calling an allowed-variance result full byte reproducibility.
 - [ ] Execute all headless tests on x86/x64; execute the transform, transaction, recovery, batch, and packaged-app smoke suites on physical ARM64. Execute black-box UI Automation and assistive-technology checks in the separately qualified interactive Windows environment.
-- [ ] Run x64 AddressSanitizer, MSVC `/analyze`, CodeQL `security-extended`, and a minimum 24-hour aggregate fuzz campaign with the reviewed corpus.
+- [ ] Run x64 AddressSanitizer, MSVC `/analyze`, CodeQL `security-extended`, and the bounded scanner fuzz regression with the reviewed corpus. Use the maintained 60-second mutation budget, full-corpus replay, native minimization and zero-growth merge audit; preserve any failure without an automatic retry.
 - [ ] Require no compiler warning, sanitizer finding, leak, static-analysis error, CodeQL high-severity alert, fuzz crash/hang, or flaky retry.
+
+**Owner-approved proportionality amendment (2026-10-24):** The mandatory
+24-hour aggregate fuzz campaign is waived. The bounded scanner regression above
+remains; this reduces duration-based assurance and does not claim equivalence to
+the waived campaign. The manual scanner workflow uses the same 60-second budget.
+Existing malformed-input, resource-limit, deterministic reproducer, sanitizer
+and transaction/recovery checks remain required. No security/external review,
+remote dispatch or public release is authorized by this amendment.
 
 ### Step 20.3: Corpus and transaction qualification
 
