@@ -402,6 +402,21 @@ foreach ($override in $vcpkgOverrides) {
         throw 'Every vcpkg override must contain a dependency name and exact version.'
     }
 
+    $isLocalAdobeOverlay = $usesMetadataOverlays -and $dependencyName -ceq 'adobe-xmp-core'
+    if ($isLocalAdobeOverlay) {
+        # vcpkg overlays intentionally bypass registry version resolution. The
+        # root pin must still match the approved local packaging revision, and
+        # changing it invalidates MSBuild's manifest-install input stamp.
+        # Upstream source freshness was checked above against Adobe's releases;
+        # this local-only port has no Microsoft registry version history.
+        if ($adobeManifest.'version-string' -isnot [string] -or
+            $adobeManifest.'port-version' -isnot [long] -or
+            $adobeManifest.'port-version' -lt 0 -or
+            $pinnedVersion -cne "$($adobeManifest.'version-string')#$($adobeManifest.'port-version')") {
+            throw 'The local adobe-xmp-core overlay does not match the exact root override.'
+        }
+        continue
+    }
     $isLocalExivOverlay = $usesMetadataOverlays -and $dependencyName -ceq 'exiv2'
     $isLocalCatchOverlay = $usesCatch2Overlay -and $dependencyName -ceq 'catch2'
     if ($isLocalCatchOverlay) {

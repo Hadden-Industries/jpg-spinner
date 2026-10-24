@@ -1411,7 +1411,10 @@ function Test-ModernSolutionArchitecture {
         # model. Validate both ActiveCfg (FullName) and Build.0
         # (IncludeInBuild) instead of reparsing the .sln text.
         $isFuzzProject = $fuzzProjectPaths -ccontains $expectedProjectPath
-        $requiredMappingNames = if ($isFuzzProject) { @('Debug|x64', 'Release|x64') } else { $expectedConfigurationNames }
+        # Even an unselected project needs ActiveCfg in every solution lane.
+        # MSBuild otherwise emits MSB4121 before compilation. Keep fuzz projects
+        # mapped to their sole native configuration with IncludeInBuild=false.
+        $requiredMappingNames = $expectedConfigurationNames
         if ($isFuzzProject) {
             foreach ($mapping in $matchingProjectEntries[0].Model.ProjectConfigurations.Values) {
                 if ($mapping.IncludeInBuild) {
@@ -2011,15 +2014,22 @@ function Test-VcpkgManifest {
             -SourceDescription "vcpkg.json legacy 'vcpkg-configuration'"
     }
 
-    $expectedVersions = [ordered]@{
+    $expectedOverrideVersions = [ordered]@{
         'libjpeg-turbo' = '3.2.0#1'
         'exiv2' = '0.28.9#1'
         'catch2' = '3.16.1'
+        'adobe-xmp-core' = '2025.03#2'
     }
 
     $dependencies = @($manifest.dependencies)
     $overrides = @($manifest.overrides)
-    $approvedDependencyNames = @($expectedVersions.Keys)
+    # Adobe remains a transitive Exiv2 dependency. Its explicit root revision
+    # also makes the native MSBuild manifest input change when that overlay's
+    # packaging changes; the installed target does not track overlay files.
+    # Overlay ports bypass vcpkg version resolution, so policy/freshness checks
+    # must additionally agree with the selected local port identity.
+    $approvedDependencyNames = @('libjpeg-turbo', 'exiv2', 'catch2')
+    $approvedOverrideNames = @($expectedOverrideVersions.Keys)
 
     # Check JSON types before normalizing names or versions to strings. Without
     # this boundary, PowerShell comparison can make malformed JSON values look
@@ -2066,13 +2076,13 @@ function Test-VcpkgManifest {
     }
     foreach ($unapprovedOverrideName in @(
         $declaredOverrideNames |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and $_ -cnotin $approvedDependencyNames } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and $_ -cnotin $approvedOverrideNames } |
             Sort-Object -Unique
     )) {
         Add-PolicyFailure -Message "vcpkg.json contains unapproved override '$unapprovedOverrideName'."
     }
 
-    foreach ($dependencyName in $expectedVersions.Keys) {
+    foreach ($dependencyName in $approvedDependencyNames) {
         $matchingDependencies = @(
             $dependencies |
                 Where-Object { (Get-VcpkgManifestEntryName -Entry $_) -ceq $dependencyName }
@@ -2104,26 +2114,29 @@ function Test-VcpkgManifest {
             }
         }
 
+    }
+
+    foreach ($packageName in $expectedOverrideVersions.Keys) {
         $matchingOverrides = @(
             $overrides |
-                Where-Object { (Get-VcpkgManifestEntryName -Entry $_) -ceq $dependencyName }
+                Where-Object { (Get-VcpkgManifestEntryName -Entry $_) -ceq $packageName }
         )
         if ($matchingOverrides.Count -ne 1) {
-            Add-PolicyFailure -Message "vcpkg override '$dependencyName' must pin exact version '$($expectedVersions[$dependencyName])'."
+            Add-PolicyFailure -Message "vcpkg override '$packageName' must pin exact version '$($expectedOverrideVersions[$packageName])'."
         }
         else {
             $override = $matchingOverrides[0]
             Assert-ExactJsonObjectPropertySet `
                 -JsonObject $override `
                 -ExpectedPropertyNames @('name', 'version') `
-                -Description "vcpkg override '$dependencyName'"
+                -Description "vcpkg override '$packageName'"
 
             if (
                 $override -isnot [System.Collections.IDictionary] -or
                 -not $override.Contains('version') -or
-                [string]$override['version'] -cne $expectedVersions[$dependencyName]
+                [string]$override['version'] -cne $expectedOverrideVersions[$packageName]
             ) {
-                Add-PolicyFailure -Message "vcpkg override '$dependencyName' must pin exact version '$($expectedVersions[$dependencyName])'."
+                Add-PolicyFailure -Message "vcpkg override '$packageName' must pin exact version '$($expectedOverrideVersions[$packageName])'."
             }
         }
     }

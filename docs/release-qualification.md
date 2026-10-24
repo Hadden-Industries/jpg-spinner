@@ -18,6 +18,21 @@ The product's restored x64 JPEG suite passes all 165 testcase elements against
 the revised recipe. This focused evidence does not qualify the final application
 matrix, ARM64 runtime, independent package pair, SBOM, signed upgrade or release.
 
+The [native dependency-refresh repair](implementation/2026-10-24-native-dependency-refresh.md)
+addresses the later discovery that the actual ARM64 installation still consumed
+Adobe revision 1. The actual public-package probe reaches LNK4099 RED and
+revision-2 GREEN, with root-manifest pin alignment. An additional all-warning
+MSBuild gate was rejected after actual ARM64 qualification exposed the SDK's
+CS1668 library-search-path warning; it is retained as counterevidence. Final
+warning-free application builds and desktop acceptance remain
+separate; a successful build exit alone does not qualify either.
+
+The repair's final supported headless checkpoint has exit-0 Release x86/x64/ARM64
+builds, 378 passing headless cases on each of x86/x64 and a passing policy-control
+component follow-up. MSB4121/LNK4099 are absent from the final build logs, while
+SDK inline-task CS1668 warnings remain documented. This is not a complete
+warning-free clean-source matrix, native ARM64 run, desktop acceptance or release.
+
 The owner approved bounded qualification of the
 [closed native metadata/block-map comparison amendment](implementation/2026-10-15-package-payload-comparison-contract.md).
 It reduces the former unconditional byte-equality guarantee; original bytes and

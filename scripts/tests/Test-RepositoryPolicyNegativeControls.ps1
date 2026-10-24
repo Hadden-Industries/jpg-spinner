@@ -7,6 +7,8 @@ param(
     [switch]$PackageArtworkControlsOnly,
     # Exercise the public repository-policy entry point after source retirement.
     [switch]$RetiredImplementationControlsOnly,
+    # Bound follow-up to explicit overlay pins and unselected fuzz mappings.
+    [switch]$NativeDependencyIntegrationControlsOnly,
     # A preallocated HISEW working group keeps raw fixture/results available
     # for the caller's native evidence-promotion and disposal lifecycle.
     [string]$FixtureRoot
@@ -96,36 +98,67 @@ try {
         [void][System.IO.Directory]::CreateDirectory((Split-Path -Parent $destinationPath))
         Copy-Item -LiteralPath (Join-Path $repositoryRoot $relativeFilePath) -Destination $destinationPath
     }
-    Copy-Item `
-        -LiteralPath (Join-Path $repositoryRoot 'eng') `
-        -Destination (Join-Path $temporaryRoot 'eng') `
-        -Recurse
-    # The real repository policy now consumes documentation and exact native
-    # notices. Keep the valid fixture complete before mutating other contracts.
-    Copy-Item `
-        -LiteralPath (Join-Path $repositoryRoot 'docs') `
-        -Destination (Join-Path $temporaryRoot 'docs') `
-        -Recurse
-    Copy-Item `
-        -LiteralPath (Join-Path $repositoryRoot 'vcpkg-triplets') `
-        -Destination (Join-Path $temporaryRoot 'vcpkg-triplets') `
-        -Recurse
-    Copy-Item `
-        -LiteralPath (Join-Path $repositoryRoot 'src') `
-        -Destination (Join-Path $temporaryRoot 'src') `
-        -Recurse
-    Copy-Item `
-        -LiteralPath (Join-Path $repositoryRoot 'tests') `
-        -Destination (Join-Path $temporaryRoot 'tests') `
-        -Recurse
-    Copy-Item `
-        -LiteralPath (Join-Path $repositoryRoot 'fuzz') `
-        -Destination (Join-Path $temporaryRoot 'fuzz') `
-        -Recurse
+    # Git owns source selection, including current non-ignored new files. Copy
+    # their current working bytes so uncommitted edits remain under test. A
+    # recursive directory copy also picked up 85 MiB of ignored WinRT-generated
+    # headers per fixture; those are neither policy inputs nor source evidence.
+    # NUL-delimited names retain spaces literally. This native Windows test
+    # runner cannot encounter newline-containing Windows filenames.
+    $sourceInventory = @(& git -C $repositoryRoot ls-files -z --cached --others --exclude-standard -- `
+        eng docs vcpkg-triplets vcpkg-ports src tests fuzz)
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot enumerate the current policy fixture source.' }
+    foreach ($relativePath in (($sourceInventory -join "`n").Split([char]0, [StringSplitOptions]::RemoveEmptyEntries) |
+        Sort-Object -Unique)) {
+        $sourcePath = Join-Path $repositoryRoot $relativePath
+        if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) { continue }
+        $destinationPath = Join-Path $temporaryRoot $relativePath
+        [void][IO.Directory]::CreateDirectory((Split-Path -Parent $destinationPath))
+        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
+    }
 
     $baselineResult = Invoke-IsolatedRepositoryPolicy
     if ($baselineResult.exitCode -ne 0) {
         throw "The isolated valid configuration must pass before negative controls run.`n$($baselineResult.output)"
+    }
+
+    $fixtureVcpkgManifestPath = Join-Path $temporaryRoot 'vcpkg.json'
+    $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
+    $manifest.overrides = @($manifest.overrides | Where-Object name -CNE 'adobe-xmp-core')
+    $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
+    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'adobe-xmp-core' must pin exact version '2025.03#2'"
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
+
+    $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
+    ($manifest.overrides | Where-Object name -CEQ 'adobe-xmp-core').version = '2025.03#1'
+    $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
+    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'adobe-xmp-core' must pin exact version '2025.03#2'"
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
+
+    # A transitive pin must not broaden the closed direct dependency set.
+    $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
+    $manifest.dependencies += [pscustomobject]@{name = 'adobe-xmp-core'; 'default-features' = $false }
+    $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
+    Assert-RejectedMutation -ExpectedDiagnostics "unapproved direct dependency 'adobe-xmp-core'"
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
+
+    # Remove literal known fixture lines; MSBuild's SolutionFile still owns
+    # parsing and interpreting the resulting ActiveCfg/Build.0 contract.
+    $fixtureSolutionPath = Join-Path $temporaryRoot 'JpgSpinner.sln'
+    foreach ($mappingLine in @(
+        '{06C4AF87-6B1B-47EE-9B25-CCFCF58D80BA}.Release|ARM64.ActiveCfg = Fuzz|x64',
+        '{76087416-906E-4697-ADBD-F2A6C9049085}.Debug|Win32.ActiveCfg = Fuzz|x64'
+    )) {
+        $lines = [IO.File]::ReadAllLines($fixtureSolutionPath)
+        if (@($lines | Where-Object { $_.Trim() -ceq $mappingLine }).Count -ne 1) {
+            throw 'The valid solution fixture lacks its expected unselected mapping.'
+        }
+        [IO.File]::WriteAllLines($fixtureSolutionPath, @($lines | Where-Object { $_.Trim() -cne $mappingLine }))
+        Assert-RejectedMutation -ExpectedDiagnostics 'must map solution configuration'
+        Copy-Item -LiteralPath (Join-Path $repositoryRoot 'JpgSpinner.sln') -Destination $fixtureSolutionPath -Force
+    }
+    if ($NativeDependencyIntegrationControlsOnly) {
+        Write-Output 'PASS: explicit Adobe revision and unselected fuzz mappings are required; the direct dependency set remains closed.'
+        return
     }
 
     # Test through the maintained entry point, not just the leaf checker: a
@@ -1059,15 +1092,21 @@ try {
     $duplicateJsonMemberControlFailures = [System.Collections.Generic.List[string]]::new()
 
     $validVcpkgManifestText = [System.IO.File]::ReadAllText($vcpkgManifestPath)
-    $libjpegDependencyText = @"
-      "name": "libjpeg-turbo",
-      "default-features": false
-"@
-    $duplicateDefaultFeaturesText = @"
-      "name": "libjpeg-turbo",
-      "default-features": true,
-      "default-features": false
-"@
+    # Let the native JSON reader locate the exact original object regardless of
+    # formatter indentation. A serializer/hashtable cannot construct duplicate
+    # names, so splice one deliberate member into those native raw boundaries.
+    # https://learn.microsoft.com/dotnet/api/system.text.json.jsonelement.getrawtext
+    $manifestDocument = [System.Text.Json.JsonDocument]::Parse($validVcpkgManifestText)
+    try {
+        $libjpegDependencies = @($manifestDocument.RootElement.GetProperty('dependencies').EnumerateArray() |
+            Where-Object { $_.GetProperty('name').ValueEquals('libjpeg-turbo') })
+        if ($libjpegDependencies.Count -ne 1) {
+            throw 'The valid manifest fixture must contain exactly one libjpeg-turbo dependency.'
+        }
+        $libjpegDependencyText = $libjpegDependencies[0].GetRawText()
+    }
+    finally { $manifestDocument.Dispose() }
+    $duplicateDefaultFeaturesText = '{"default-features": true,' + $libjpegDependencyText.Substring(1)
     $duplicateDependencyMemberManifestText = $validVcpkgManifestText.Replace(
         $libjpegDependencyText,
         $duplicateDefaultFeaturesText

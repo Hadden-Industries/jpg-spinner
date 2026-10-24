@@ -2495,6 +2495,13 @@ controls. The modern solution already contains only maintained projects.
 GitHub alert reconciliation and Task 20's distribution/device/human gates remain
 open; source deletion is not a public release.
 
+The retirement checkpoint is now signed commit `e1eb2361`. Subsequent
+[native integration remediation](../implementation/2026-10-24-native-dependency-refresh.md)
+aligns the existing Adobe revision with the root manifest and supplies unselected
+fuzz mappings for every solution lane. A broader native warning-failure gate was
+tested and rejected on an actual SDK warning; no workaround or suppression
+is adopted. Focused RED/GREEN does not close final desktop or release gates.
+
 **Coverage-mapping checkpoint (2026-10-16):**
 [`docs/legacy-cutover-coverage.md`](../legacy-cutover-coverage.md) now maps each
 supported user outcome to maintained executable test boundaries and explicitly
