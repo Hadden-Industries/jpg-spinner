@@ -144,3 +144,55 @@ groups remain intact; their holds are not bypassed to claim cleanup completion.
 
 No desktop use, security review, external review, hosted execution, app
 installation, signing, trust change, Store submission or release is performed.
+
+## Current-source unsigned packaging
+
+At signed source `7edc40f4ffb66f56a970837b6d112a8660382936`, the maintained
+`Test-StoreSubmissionPackageBuild.ps1` succeeds separately for Release x86, x64
+and ARM64. Each invocation uses the actual build driver and SDK-selected upload
+component. Native MakeAppx extraction, exact Store/AppContainer identity and
+framework policy, unsigned-payload checks, 55 artwork dimensions and 24 exact
+notice assets pass. This is local incremental packaging, not an independent
+clean build or runtime execution of ARM64.
+
+`New-MsixBundle.ps1` composes those three exact components, and
+`Expand-JpgSpinnerBundle.ps1` validates and inventories the resulting bundle with
+the selected native SDK. `New-BuildProvenance.ps1 -RequireCleanSourceTree` also
+succeeds for each architecture. Those local records do not establish hosted
+producer authentication or attestation.
+
+| Original container                 |     Bytes | SHA-256                                                            |
+| ---------------------------------- | --------: | ------------------------------------------------------------------ |
+| x86 SDK upload component           | 2,703,747 | `4e77af4acc9e749c5b2163553b38e26186e4ec0365ec2ebb2196eaff77e7d71e` |
+| x64 SDK upload component           | 3,052,618 | `0d8f22ce696b5eb17e936decd0f706b05755930aa356bff9afe9b582ca61fb97` |
+| ARM64 SDK upload component         | 2,902,486 | `b30c95c23d36d2f8a5daf747f96735f416849270b7a16d06a5efd9120fac5d54` |
+| Three-architecture unsigned bundle | 8,661,104 | `43eb6b07c9703ae1a03ca59195350d0828e1ce217785816086971fd66c07a740` |
+
+Native inventory `549386e7a3b44a9691253a812682dcae` records the fresh working
+group before accumulation. The SDK also emits duplicate deployment framework
+packages and symbols; two architecture drops exceed the initial 384 MiB estimate.
+The measured growth is recorded before the third drop, with a finite 1 GiB
+budget. The final group contains 644 files / 802,706,055 bytes. Regenerable
+deployment staging and uncompressed extractions are distinguished from selected
+original containers and unique result evidence.
+
+Native promotion checkpoint `913e15a3426f458897b427f3c36be447` verifies 43 original
+files / 20,039,090 bytes with zero missing evidence. They include all four
+containers, raw native streams and binlogs, exact manifests, SDK selection paths,
+payload inventories and local provenance. The source-to-retained-byte mappings
+are in external operator record `native-package-result-promotion.json` under
+`b70f634d955345ee838ae8f64e56c9db`; the bundle's retained EvidenceStore object is
+`43eb6b07c9703ae1a03ca59195350d0828e1ce217785816086971fd66c07a740.bin`.
+
+After consumer release, native recoverable disposal operation
+`40a6049b-663e-43da-8983-9b6a3d57cae7` returns `removed-confirmed`,
+`actualMode=recycled` and absence/recovery readback. The original package
+workspace is absent. This removes the spent working group; it does not prove
+reclaimed physical capacity or release the earlier blocked groups. The native
+disposal receipt remains `native-package-disposal-result.json`.
+
+This checkpoint does not establish a current exact-bundle SBOM, independent
+package-pair comparison, warning-free clean-source matrix, final desktop/device
+acceptance, trusted same-identity upgrade, legal review, certification or release.
+No installation, trust change, hosted workflow, security/external review or
+Store submission occurs.
