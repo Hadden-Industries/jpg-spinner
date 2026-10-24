@@ -1,11 +1,14 @@
 <# Source-wiring contract for the actual hosted build matrix. Native workflow
    validation remains separate from hosted execution, which this test cannot prove. #>
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ToolsDirectory)
+param(
+    [Parameter(Mandatory)][string]$ToolsDirectory,
+    [string]$WorkflowPath = (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) '.github/workflows/continuous-integration.yml')
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$workflow = Join-Path $root '.github/workflows/continuous-integration.yml'
+$workflow = $WorkflowPath
 if (-not (Test-Path -LiteralPath $workflow -PathType Leaf)) { throw 'The continuous integration workflow is absent.' }
 & (Join-Path $root 'scripts/Test-GitHubWorkflowPolicy.ps1') -ToolsDirectory $ToolsDirectory -WorkflowPaths @($workflow)
 $yaml = [YamlDotNet.RepresentationModel.YamlStream]::new()
@@ -33,6 +36,20 @@ foreach ($job in $jobs.Children.Values) {
 }
 foreach ($name in @('build', 'policy', 'asan', 'analysis', 'unsigned-package', 'interactive-inputs')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Missing required hosted job: $name" }
+}
+# A hosted image label does not promise the SDK selected by the project. The
+# first post-checkout step must install/check it before native tool evaluation.
+foreach ($name in @('build', 'asan', 'analysis', 'unsigned-package')) {
+    $jobSteps = Get-NodeProperty (Get-NodeProperty $jobs $name) 'steps'
+    $setupStep = $jobSteps.Children[1]
+    $setupRun = Get-NodeProperty $setupStep 'run'
+    $setupTimeout = Get-NodeProperty $setupStep 'timeout-minutes'
+    if ($null -eq $setupRun -or
+        $setupRun.Value -cne './scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk' -or
+        $null -eq $setupTimeout -or $setupTimeout.Value -cne '15' -or
+        $null -ne (Get-NodeProperty $setupStep 'if')) {
+        throw "Hosted SDK prerequisite must run unconditionally immediately after checkout with a 15-minute bound: $name"
+    }
 }
 $hasSourcePairControl = $false
 $hasSourceTrustControl = $false
@@ -198,6 +215,11 @@ $scannerYaml = [YamlDotNet.RepresentationModel.YamlStream]::new()
 $reader = [IO.File]::OpenText($scannerWorkflow)
 try { $scannerYaml.Load($reader) } finally { $reader.Dispose() }
 $scannerJob = Get-NodeProperty (Get-NodeProperty $scannerYaml.Documents[0].RootNode 'jobs') 'scanner'
+$scannerSdkStep = (Get-NodeProperty $scannerJob 'steps').Children[1]
+if ((Get-NodeProperty $scannerSdkStep 'run').Value -cne './scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/fuzz/scanner/windows-sdk' -or
+    (Get-NodeProperty $scannerSdkStep 'timeout-minutes').Value -cne '15' -or $null -ne (Get-NodeProperty $scannerSdkStep 'if')) {
+    throw 'Scanner compiler prerequisites require unconditional bounded SDK setup immediately after checkout.'
+}
 $hasPreservedRegression = $false
 $hasScannerUpload = $false
 foreach ($step in (Get-NodeProperty $scannerJob 'steps').Children) {

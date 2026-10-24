@@ -17,6 +17,9 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+            - name: Install the pinned Windows SDK
+              timeout-minutes: 15
+              run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/fuzz/scanner/windows-sdk
             - name: Native corpus minimization regression with redundant synthetic inputs
               # Preserve this step's native failure diagnostics with the later fuzz
               # output even when its failure prevents that later step from running.

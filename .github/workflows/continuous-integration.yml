@@ -71,7 +71,12 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+            - name: Install the pinned Windows SDK
+              timeout-minutes: 15
+              run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: Resolve native cache identity
+              # This step follows actual SDK setup; image labels do not promise
+              # the SDK selected by the checked-in native project properties.
               id: native-inputs
               run: |
                   Import-Module ./scripts/JsonObjectMemberValidation.psm1
@@ -102,6 +107,7 @@ jobs:
                   if ('${{ matrix.architecture }}' -eq 'x64') {
                       ./scripts/tests/Test-NativeInlineTaskEnvironment.ps1 -Project JpgSpinner.JpegTransformation.Tests -EnableASAN -Configuration '${{ matrix.configuration }}' -OutputDirectory 'artifacts/build-logs/x64/${{ matrix.configuration }}/NativeAsanEnvironment'
                       if ('${{ matrix.configuration }}' -eq 'Release') {
+                          ./scripts/tests/Test-HostedWindowsSdkPrerequisites.ps1 -OwnedOutputRoot (Join-Path $env:GITHUB_WORKSPACE 'artifacts/build-logs/x64/Release/HostedWindowsSdkPrerequisites')
                           ./scripts/tests/Test-NativeInlineTaskEnvironment.ps1 -Project JpgSpinner.FuzzToolchain.Smoke -Configuration Fuzz -OutputDirectory 'artifacts/build-logs/x64/Fuzz/NativeSmokeEnvironment'
                           ./scripts/tests/Test-NativeInlineTaskEnvironment.ps1 -Project JpgSpinner.JpegSegmentScanner.Fuzz -Configuration Fuzz -OutputDirectory 'artifacts/build-logs/x64/Fuzz/NativeScannerEnvironment'
                       }
@@ -208,6 +214,9 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+            - name: Install the pinned Windows SDK
+              timeout-minutes: 15
+              run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: Produce and inspect the three unsigned architecture packages
               run: |
                   $packages = [Collections.Generic.List[string]]::new()
@@ -263,6 +272,9 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+            - name: Install the pinned Windows SDK
+              timeout-minutes: 15
+              run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: Restore the locked native project graph
               run: |
                   ./scripts/Invoke-Build.ps1 -Configuration Release -Architecture x64 -MaximumBuildProcessCount 2
@@ -283,6 +295,9 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+            - name: Install the pinned Windows SDK
+              timeout-minutes: 15
+              run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - name: MSVC native code analysis
               run: |
                   ./scripts/tests/Test-StaticAnalysisWarningControl.ps1 -OutputDirectory artifacts/analysis-warning-control
@@ -294,6 +309,7 @@ jobs:
                   retention-days: 1
                   compression-level: 9
                   path: |
+                      artifacts/build-logs/windows-sdk/
                       artifacts/analysis/
                       artifacts/analysis-warning-control/
                       artifacts/obj/**/*.nativecodeanalysis.xml

@@ -21,6 +21,11 @@ foreach ($name in @('admission', 'package', 'attestation')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Store workflow lacks required job: $name" }
 }
 $package = Get-Property $jobs package
+$sdkStep = (Get-Property $package steps).Children[1]
+if ((Get-Property $sdkStep run).Value -cne './scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk' -or
+    (Get-Property $sdkStep 'timeout-minutes').Value -cne '15' -or $null -ne (Get-Property $sdkStep 'if')) {
+    throw 'Store compiler prerequisites require unconditional bounded SDK setup immediately after checkout.'
+}
 if ((Get-Property $package needs).Value -cne 'admission' -or (Get-Property $package environment).Value -cne 'store-submission') {
     throw 'Store production escaped protected admission.'
 }
