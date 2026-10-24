@@ -1,138 +1,140 @@
 name: Interactive qualification
 on:
-  workflow_dispatch:
-    inputs:
-      source_run_id:
-        description: Successful manual CI run for this exact main commit
-        required: true
-        type: string
+    workflow_dispatch:
+        inputs:
+            source_run_id:
+                description: Successful manual CI run for this exact main commit
+                required: true
+                type: string
 permissions:
-  contents: read
+    contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 defaults:
-  run:
-    shell: pwsh
+    run:
+        shell: pwsh
 jobs:
-  admission:
-    if: github.ref == 'refs/heads/main'
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Require a trusted producer and existing reviewer protection
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
-        run: |
-          if ($env:SOURCE_RUN_ID -cnotmatch '^[1-9][0-9]{0,18}$') { throw 'Invalid source run id.' }
-          $run = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' "repos/Hadden-Industries/jpg-spinner/actions/runs/$env:SOURCE_RUN_ID" | Out-String
-          if ($LASTEXITCODE -ne 0) { throw 'Could not read the native producer response.' }
-          $environment = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' repos/Hadden-Industries/jpg-spinner/environments/interactive-qualification | Out-String
-          if ($LASTEXITCODE -ne 0) { throw 'Protected environment is absent or unreadable; no self-hosted job is admitted.' }
-          ./scripts/Test-ProtectedWorkflowAdmission.ps1 -TargetEnvironmentName interactive-qualification -SourceRunJson $run -EnvironmentJson $environment -ExpectedSourceCommit $env:GITHUB_SHA -ExpectedRunId $env:SOURCE_RUN_ID
-  qualification:
-    needs: admission
-    if: github.ref == 'refs/heads/main'
-    # This label denotes an operator-owned isolated/dedicated interactive
-    # session, not a service runner on a developer's ordinary desktop.
-    runs-on: [self-hosted, Windows, X64, jpg-spinner-interactive]
-    environment: interactive-qualification
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Allocate a fresh deployment-only workspace
-        run: |
-          $working = Join-Path $env:RUNNER_TEMP "jpg-spinner-ui-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
-          if (Test-Path -LiteralPath $working) { throw 'Retained prior material requires explicit reconciliation; it will not be overwritten.' }
-          New-Item -ItemType Directory -Path $working | Out-Null
-          "UI_WORKING_ROOT=$working" >> $env:GITHUB_ENV
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: interactive-test-drop
-          path: ${{ env.UI_WORKING_ROOT }}/input
-          github-token: ${{ github.token }}
-          repository: Hadden-Industries/jpg-spinner
-          run-id: ${{ inputs.source_run_id }}
-          digest-mismatch: error
-      - name: Authenticate and execute the bounded automated UI selection
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
-          JPG_SPINNER_INTERACTIVE_TEST_LANE: DedicatedSelfHosted
-        run: |
-          $dropDirectory = Join-Path $env:UI_WORKING_ROOT input
-          $context = Join-Path $dropDirectory build-context.json
-          gh attestation verify $context --repo Hadden-Industries/jpg-spinner --signer-workflow Hadden-Industries/jpg-spinner/.github/workflows/continuous-integration.yml --source-digest $env:GITHUB_SHA --source-ref refs/heads/main --predicate-type https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1 --deny-self-hosted-runners
-          if ($LASTEXITCODE -ne 0) { throw 'Native platform input attestation verification failed.' }
-          $drop = ./scripts/Test-InteractiveTestDrop.ps1 -DropDirectory $dropDirectory -ExpectedSourceCommit $env:GITHUB_SHA -WorkingDirectory (Join-Path $env:UI_WORKING_ROOT validation)
-          $report = Join-Path $drop.RepositoryRoot artifacts/TestResults/x64/Release/JpgSpinner.Presentation.Tests.junit.xml
-          if (Test-Path -LiteralPath $report) { throw 'A stale interactive report exists before execution.' }
-          $started = [DateTimeOffset]::UtcNow
-          # Invoke-TestSuite performs Test-InteractiveUiEnvironment.ps1 first.
-          # Unavailable/locked/service desktops fail with 78, not a passing skip.
-          ./scripts/Invoke-TestSuite.ps1 -Project JpgSpinner.Presentation.Tests -Configuration Release -Architecture x64 -ExecutionEnvironment Interactive -TestSpecification '[ui-automation]~[operator-assisted]' -RepositoryRoot $drop.RepositoryRoot
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $evidence = Join-Path $env:UI_WORKING_ROOT evidence
-          New-Item -ItemType Directory -Path $evidence | Out-Null
-          ./scripts/New-InteractiveTestEvidence.ps1 -JUnitPath $report -InputContextPath $context -SourceCommit $env:GITHUB_SHA -SourceRunId $env:SOURCE_RUN_ID -QualificationRunId $env:GITHUB_RUN_ID -StartedAt $started -OutputPath (Join-Path $evidence execution.json)
-          Copy-Item -LiteralPath $report -Destination (Join-Path $evidence native.junit.xml)
-          Copy-Item -LiteralPath $context -Destination (Join-Path $evidence build-context.json)
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: interactive-execution-inputs
-          retention-days: 14
-          if-no-files-found: error
-          path: ${{ env.UI_WORKING_ROOT }}/evidence/
-      # Do not recycle on uncertain native teardown: a broker-activated package
-      # can outlive its client. The lane owner reconciles UUID-owned fixtures.
-  attestation:
-    needs: qualification
-    if: github.ref == 'refs/heads/main'
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      actions: read
-      id-token: write
-      attestations: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: interactive-execution-inputs
-          path: artifacts/interactive-evidence
-          digest-mismatch: error
-      - name: Check execution identity and unchanged native evidence
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
-        run: |
-          $directory = Join-Path $PWD artifacts/interactive-evidence
-          gh attestation verify (Join-Path $directory build-context.json) --repo Hadden-Industries/jpg-spinner --signer-workflow Hadden-Industries/jpg-spinner/.github/workflows/continuous-integration.yml --source-digest $env:GITHUB_SHA --source-ref refs/heads/main --predicate-type https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1 --deny-self-hosted-runners
-          if ($LASTEXITCODE -ne 0) { throw 'Native platform input attestation verification failed.' }
-          ./scripts/Test-InteractiveExecutionEvidence.ps1 -EvidenceDirectory $directory -SourceCommit $env:GITHUB_SHA -SourceRunId $env:SOURCE_RUN_ID -QualificationRunId $env:GITHUB_RUN_ID
-      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-path: artifacts/interactive-evidence/native.junit.xml
-          predicate-type: https://haddenindustries.com/schemas/jpg-spinner/automated-ui-execution/v1
-          predicate-path: artifacts/interactive-evidence/execution.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: interactive-qualified-automated-evidence
-          retention-days: 14
-          if-no-files-found: error
-          path: artifacts/interactive-evidence/
+    admission:
+        if: github.ref == 'refs/heads/main'
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 10
+        permissions:
+            contents: read
+            actions: read
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Require a trusted producer and existing reviewer protection
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+              run: |
+                  if ($env:SOURCE_RUN_ID -cnotmatch '^[1-9][0-9]{0,18}$') { throw 'Invalid source run id.' }
+                  $run = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' "repos/Hadden-Industries/jpg-spinner/actions/runs/$env:SOURCE_RUN_ID" | Out-String
+                  if ($LASTEXITCODE -ne 0) { throw 'Could not read the native producer response.' }
+                  $environment = gh api --hostname github.com -H 'X-GitHub-Api-Version: 2026-03-10' repos/Hadden-Industries/jpg-spinner/environments/interactive-qualification | Out-String
+                  if ($LASTEXITCODE -ne 0) { throw 'Protected environment is absent or unreadable; no self-hosted job is admitted.' }
+                  ./scripts/Test-ProtectedWorkflowAdmission.ps1 -TargetEnvironmentName interactive-qualification -SourceRunJson $run -EnvironmentJson $environment -ExpectedSourceCommit $env:GITHUB_SHA -ExpectedRunId $env:SOURCE_RUN_ID
+    qualification:
+        needs: admission
+        if: github.ref == 'refs/heads/main'
+        # This label denotes an operator-owned isolated/dedicated interactive
+        # session, not a service runner on a developer's ordinary desktop.
+        runs-on: [self-hosted, Windows, X64, jpg-spinner-interactive]
+        environment: interactive-qualification
+        timeout-minutes: 20
+        permissions:
+            contents: read
+            actions: read
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Allocate a fresh deployment-only workspace
+              run: |
+                  $working = Join-Path $env:RUNNER_TEMP "jpg-spinner-ui-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+                  if (Test-Path -LiteralPath $working) { throw 'Retained prior material requires explicit reconciliation; it will not be overwritten.' }
+                  New-Item -ItemType Directory -Path $working | Out-Null
+                  "UI_WORKING_ROOT=$working" >> $env:GITHUB_ENV
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+              with:
+                  name: interactive-test-drop
+                  path: ${{ env.UI_WORKING_ROOT }}/input
+                  github-token: ${{ github.token }}
+                  repository: Hadden-Industries/jpg-spinner
+                  run-id: ${{ inputs.source_run_id }}
+                  digest-mismatch: error
+            - name: Authenticate and execute the bounded automated UI selection
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+                  JPG_SPINNER_INTERACTIVE_TEST_LANE: DedicatedSelfHosted
+              run: |
+                  $dropDirectory = Join-Path $env:UI_WORKING_ROOT input
+                  $context = Join-Path $dropDirectory build-context.json
+                  gh attestation verify $context --repo Hadden-Industries/jpg-spinner --signer-workflow Hadden-Industries/jpg-spinner/.github/workflows/continuous-integration.yml --source-digest $env:GITHUB_SHA --source-ref refs/heads/main --predicate-type https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1 --deny-self-hosted-runners
+                  if ($LASTEXITCODE -ne 0) { throw 'Native platform input attestation verification failed.' }
+                  $drop = ./scripts/Test-InteractiveTestDrop.ps1 -DropDirectory $dropDirectory -ExpectedSourceCommit $env:GITHUB_SHA -WorkingDirectory (Join-Path $env:UI_WORKING_ROOT validation)
+                  $report = Join-Path $drop.RepositoryRoot artifacts/TestResults/x64/Release/JpgSpinner.Presentation.Tests.junit.xml
+                  if (Test-Path -LiteralPath $report) { throw 'A stale interactive report exists before execution.' }
+                  $started = [DateTimeOffset]::UtcNow
+                  # Invoke-TestSuite performs Test-InteractiveUiEnvironment.ps1 first.
+                  # Unavailable/locked/service desktops fail with 78, not a passing skip.
+                  ./scripts/Invoke-TestSuite.ps1 -Project JpgSpinner.Presentation.Tests -Configuration Release -Architecture x64 -ExecutionEnvironment Interactive -TestSpecification '[ui-automation]~[operator-assisted]' -RepositoryRoot $drop.RepositoryRoot
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  $evidence = Join-Path $env:UI_WORKING_ROOT evidence
+                  New-Item -ItemType Directory -Path $evidence | Out-Null
+                  ./scripts/New-InteractiveTestEvidence.ps1 -JUnitPath $report -InputContextPath $context -SourceCommit $env:GITHUB_SHA -SourceRunId $env:SOURCE_RUN_ID -QualificationRunId $env:GITHUB_RUN_ID -StartedAt $started -OutputPath (Join-Path $evidence execution.json)
+                  Copy-Item -LiteralPath $report -Destination (Join-Path $evidence native.junit.xml)
+                  Copy-Item -LiteralPath $context -Destination (Join-Path $evidence build-context.json)
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: interactive-execution-inputs
+                  retention-days: 1
+                  compression-level: 9
+                  if-no-files-found: error
+                  path: ${{ env.UI_WORKING_ROOT }}/evidence/
+            # Do not recycle on uncertain native teardown: a broker-activated package
+            # can outlive its client. The lane owner reconciles UUID-owned fixtures.
+    attestation:
+        needs: qualification
+        if: github.ref == 'refs/heads/main'
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 10
+        permissions:
+            contents: read
+            actions: read
+            id-token: write
+            attestations: write
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+              with:
+                  name: interactive-execution-inputs
+                  path: artifacts/interactive-evidence
+                  digest-mismatch: error
+            - name: Check execution identity and unchanged native evidence
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+              run: |
+                  $directory = Join-Path $PWD artifacts/interactive-evidence
+                  gh attestation verify (Join-Path $directory build-context.json) --repo Hadden-Industries/jpg-spinner --signer-workflow Hadden-Industries/jpg-spinner/.github/workflows/continuous-integration.yml --source-digest $env:GITHUB_SHA --source-ref refs/heads/main --predicate-type https://haddenindustries.com/schemas/jpg-spinner/interactive-test-inputs/v1 --deny-self-hosted-runners
+                  if ($LASTEXITCODE -ne 0) { throw 'Native platform input attestation verification failed.' }
+                  ./scripts/Test-InteractiveExecutionEvidence.ps1 -EvidenceDirectory $directory -SourceCommit $env:GITHUB_SHA -SourceRunId $env:SOURCE_RUN_ID -QualificationRunId $env:GITHUB_RUN_ID
+            - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+              with:
+                  subject-path: artifacts/interactive-evidence/native.junit.xml
+                  predicate-type: https://haddenindustries.com/schemas/jpg-spinner/automated-ui-execution/v1
+                  predicate-path: artifacts/interactive-evidence/execution.json
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: interactive-qualified-automated-evidence
+                  retention-days: 1
+                  compression-level: 9
+                  if-no-files-found: error
+                  path: artifacts/interactive-evidence/

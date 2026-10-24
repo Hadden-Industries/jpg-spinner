@@ -1,6 +1,12 @@
 name: Continuous integration
 on:
     workflow_dispatch:
+        inputs:
+            cache_dependencies:
+                description: Restore/save cloud dependency caches (uses shared Actions storage)
+                type: boolean
+                required: false
+                default: false
 permissions:
     contents: read
 concurrency:
@@ -77,6 +83,9 @@ jobs:
                   "VCPKG_DEFAULT_BINARY_CACHE=$binaryCache" >> $env:GITHUB_ENV
                   New-Item -ItemType Directory -Path $binaryCache -Force | Out-Null
             - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+              # Manual runs are infrequent: avoid persistent cloud storage unless
+              # the operator deliberately trades allowance for faster restores.
+              if: inputs.cache_dependencies
               with:
                   # vcpkg validates native ABI-addressed archives; never cache staged
                   # packages, signing material, installed trees or test results.
@@ -139,14 +148,16 @@ jobs:
               if: matrix.architecture == 'x64' && matrix.configuration == 'Release'
               with:
                   name: unsigned-interactive-inputs
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   if-no-files-found: error
                   path: artifacts/interactive-inputs/
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               if: always()
               with:
                   name: build-${{ matrix.architecture }}-${{ matrix.configuration }}
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   path: |
                       artifacts/build-logs/
                       artifacts/TestResults/
@@ -183,7 +194,8 @@ jobs:
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: interactive-test-drop
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   if-no-files-found: error
                   path: artifacts/interactive-inputs/
     unsigned-package:
@@ -234,7 +246,8 @@ jobs:
               if: always()
               with:
                   name: unsigned-bundle-and-provenance
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   # Do not upload dependency caches, credentials or a claim of release
                   # approval. Failed/partial drops remain diagnostic artifacts only.
                   path: |
@@ -260,7 +273,8 @@ jobs:
               if: always()
               with:
                   name: jpeg-asan-evidence
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   path: artifacts/build-logs/
     analysis:
         runs-on: windows-2025-vs2026
@@ -277,7 +291,8 @@ jobs:
               if: always()
               with:
                   name: msvc-analysis-evidence
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   path: |
                       artifacts/analysis/
                       artifacts/analysis-warning-control/

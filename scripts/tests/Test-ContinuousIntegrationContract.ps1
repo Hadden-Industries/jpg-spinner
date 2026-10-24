@@ -12,7 +12,25 @@ $yaml = [YamlDotNet.RepresentationModel.YamlStream]::new()
 $reader = [IO.File]::OpenText($workflow)
 try { $yaml.Load($reader) } finally { $reader.Dispose() }
 function Get-NodeProperty { param($Mapping, [string]$Name); return , $Mapping.Children[[YamlDotNet.RepresentationModel.YamlScalarNode]::new($Name)] }
+$dispatch = Get-NodeProperty (Get-NodeProperty $yaml.Documents[0].RootNode 'on') 'workflow_dispatch'
+if ($dispatch -isnot [YamlDotNet.RepresentationModel.YamlMappingNode]) {
+    throw 'Dependency caching must require an explicit manual boolean opt-in, defaulting to false.'
+}
+$cacheInput = Get-NodeProperty (Get-NodeProperty $dispatch 'inputs') 'cache_dependencies'
+if ((Get-NodeProperty $cacheInput 'type').Value -cne 'boolean' -or
+    (Get-NodeProperty $cacheInput 'default').Value -cne 'false') {
+    throw 'Dependency caching must require an explicit manual boolean opt-in, defaulting to false.'
+}
 $jobs = Get-NodeProperty $yaml.Documents[0].RootNode 'jobs'
+foreach ($job in $jobs.Children.Values) {
+    foreach ($step in (Get-NodeProperty $job 'steps').Children) {
+        $uses = Get-NodeProperty $step 'uses'
+        if ($null -ne $uses -and $uses.Value.StartsWith('actions/cache@', [StringComparison]::Ordinal) -and
+            (Get-NodeProperty $step 'if').Value -cne 'inputs.cache_dependencies') {
+            throw 'Cloud dependency cache restore/save must be gated by the explicit manual opt-in.'
+        }
+    }
+}
 foreach ($name in @('build', 'policy', 'asan', 'analysis', 'unsigned-package', 'interactive-inputs')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Missing required hosted job: $name" }
 }

@@ -6,6 +6,27 @@ build, installed package and Store submission are different outcomes. The
 [approved plan](plans/2026-08-30-jpg-spinner-modernization.md)
 owns full acceptance; nothing here replaces its thresholds.
 
+GitHub Actions storage is a short-lived transfer service, not the release
+evidence archive. All explicit artifact uploads use the native minimum
+`retention-days: 1` and `compression-level: 9`. Retrieve the exact candidate's
+required packages, reports, provenance and attestations into the approved
+evidence store before that deadline; expiry does not waive any release gate.
+Keep artifact IDs, source/run identity and digests with the retained originals.
+CI dependency caching requires the explicit manual `cache_dependencies` boolean,
+which defaults to false. This reduces shared cloud storage; it does not disable
+native dependency integrity checks or local build caches. Workflow triggers
+remain manual-only. When removing existing cloud artifacts, verify the retained
+original archives first; remove reconstructible cloud caches by their exact IDs.
+GitHub may update its usage meter after the deletion itself has completed.
+
+This follows the short-lived producer-transfer pattern used in
+[`json-quality` CI](https://github.com/Hadden-Industries/json-quality/blob/main/.github/workflows/ci.yml)
+and the explicit one-day transfer retention in
+[`owlapi` maintenance](https://github.com/Hadden-Industries/owlapi/blob/main/.github/workflows/maintenance.yml).
+The native action documents
+[minimum retention and compression](https://github.com/actions/upload-artifact#inputs);
+GitHub documents [artifact deletion](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/remove-workflow-artifacts).
+
 The [2.0 release-note draft](releases/2.0.0.md) is maintained as an unreleased
 communication artifact. Its existence does not authorize installation,
 distribution, cutover, certification or Store submission.

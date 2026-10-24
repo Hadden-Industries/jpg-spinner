@@ -137,7 +137,8 @@ jobs:
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: store-submission-inputs
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   if-no-files-found: error
                   path: ${{ env.STORE_WORKING_ROOT }}/evidence/
             # Hosted runner disposal owns private caches/retained clones. Do not
@@ -171,6 +172,7 @@ jobs:
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: store-submission-evidence
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   if-no-files-found: error
                   path: artifacts/store-submission/

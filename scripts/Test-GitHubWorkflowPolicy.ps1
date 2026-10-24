@@ -19,10 +19,10 @@ if ($pins.schemaVersion -ne 1) { throw 'Unsupported GitHub action-pin contract.'
 # Preserve native nodes, including scalar spelling, instead of round-tripping
 # YAML through PowerShell's case-insensitive dictionaries or JSON conversion.
 function Get-WorkflowProperty {
-    param($Mapping,[string]$Name)
+    param($Mapping, [string]$Name)
     if ($Mapping -isnot [YamlDotNet.RepresentationModel.YamlMappingNode]) { throw 'Workflow policy requires a YAML mapping.' }
     $key = [YamlDotNet.RepresentationModel.YamlScalarNode]::new($Name)
-    if ($Mapping.Children.ContainsKey($key)) { return ,$Mapping.Children[$key] }
+    if ($Mapping.Children.ContainsKey($key)) { return , $Mapping.Children[$key] }
     return $null
 }
 function Get-WorkflowScalar {
@@ -32,10 +32,10 @@ function Get-WorkflowScalar {
 }
 if ($WorkflowPaths.Count -eq 0) {
     $workflowDirectory = Join-Path $repositoryRoot '.github/workflows'
-    foreach ($required in @('continuous-integration.yml','codeql.yml','scanner-fuzz.yml','store-package.yml','interactive-qualification.yml')) {
+    foreach ($required in @('continuous-integration.yml', 'codeql.yml', 'scanner-fuzz.yml', 'store-package.yml', 'interactive-qualification.yml')) {
         if (-not (Test-Path -LiteralPath (Join-Path $workflowDirectory $required) -PathType Leaf)) { throw "Required workflow is absent: $required" }
     }
-    $WorkflowPaths = @(Get-ChildItem -LiteralPath $workflowDirectory -File | Where-Object Extension -In @('.yml','.yaml') | Select-Object -ExpandProperty FullName)
+    $WorkflowPaths = @(Get-ChildItem -LiteralPath $workflowDirectory -File | Where-Object Extension -In @('.yml', '.yaml') | Select-Object -ExpandProperty FullName)
 }
 foreach ($path in $WorkflowPaths) {
     # Bind relative inputs once, before the child-process working-directory
@@ -76,7 +76,7 @@ foreach ($path in $WorkflowPaths) {
     $comments = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $reader = [IO.StringReader]::new($text)
     try {
-        $scanner = [YamlDotNet.Core.Scanner]::new($reader,$false)
+        $scanner = [YamlDotNet.Core.Scanner]::new($reader, $false)
         $parser = [YamlDotNet.Core.Parser]::new($scanner)
         while ($parser.MoveNext()) {
             if ($parser.Current -is [YamlDotNet.Core.Events.Comment]) {
@@ -96,20 +96,20 @@ foreach ($path in $WorkflowPaths) {
         if ($isInteractive -and $null -eq (Get-WorkflowProperty $job 'environment')) { throw 'Interactive runner requires a protected manual qualification job.' }
         $timeoutText = Get-WorkflowScalar (Get-WorkflowProperty $job 'timeout-minutes')
         $timeout = 0
-        if (-not [int]::TryParse($timeoutText,[ref]$timeout) -or $timeout -lt 1 -or $timeout -gt 180) { throw 'Require a bounded literal job timeout between 1 and 180 minutes.' }
+        if (-not [int]::TryParse($timeoutText, [ref]$timeout) -or $timeout -lt 1 -or $timeout -gt 180) { throw 'Require a bounded literal job timeout between 1 and 180 minutes.' }
         $jobPermissions = Get-WorkflowProperty $job 'permissions'
         $steps = Get-WorkflowProperty $job 'steps'
         if ($steps -isnot [YamlDotNet.RepresentationModel.YamlSequenceNode]) { throw 'Job must declare actual steps.' }
-        $hasNativeAttestation=$false
+        $hasNativeAttestation = $false
         foreach ($step in $steps.Children) {
-            $uses=Get-WorkflowScalar (Get-WorkflowProperty $step 'uses')
-            if ($uses -ceq "actions/attest@$($pins.actions['actions/attest'].commit)") {$hasNativeAttestation=$true}
+            $uses = Get-WorkflowScalar (Get-WorkflowProperty $step 'uses')
+            if ($uses -ceq "actions/attest@$($pins.actions['actions/attest'].commit)") { $hasNativeAttestation = $true }
         }
         if ($null -ne $jobPermissions) {
             if ($jobPermissions -isnot [YamlDotNet.RepresentationModel.YamlMappingNode]) { throw 'Job permissions must be an explicit mapping.' }
             foreach ($permission in $jobPermissions.Children.GetEnumerator()) {
                 $pair = "$(Get-WorkflowScalar $permission.Key):$(Get-WorkflowScalar $permission.Value)"
-                if ($pair -cin @('attestations:write','id-token:write')) {
+                if ($pair -cin @('attestations:write', 'id-token:write')) {
                     # Only a trusted-main hosted publisher can request platform
                     # signing. Compilers and self-hosted desktop jobs retain
                     # read-only tokens; the signing job has no product secrets.
@@ -117,7 +117,7 @@ foreach ($path in $WorkflowPaths) {
                         (Get-WorkflowScalar (Get-WorkflowProperty $job 'if')) -cne "github.ref == 'refs/heads/main'") {
                         throw 'Platform attestation permissions require a trusted-main hosted native publisher.'
                     }
-                } elseif ($pair -cnotin @('contents:read','actions:read','security-events:write')) { throw 'Job requests unapproved permissions.' }
+                } elseif ($pair -cnotin @('contents:read', 'actions:read', 'security-events:write')) { throw 'Job requests unapproved permissions.' }
             }
         }
         foreach ($step in $steps.Children) {
@@ -127,7 +127,7 @@ foreach ($path in $WorkflowPaths) {
             if ($uses -cnotmatch '^(?<action>[A-Za-z0-9_./-]+)@(?<commit>[a-f0-9]{40})$') { throw 'Step must reference an approved immutable action commit.' }
             $actionName = $Matches.action
             $commit = $Matches.commit
-            $ownerAction = if ($actionName -cin @('github/codeql-action/init','github/codeql-action/analyze')) { 'github/codeql-action' } else { $actionName }
+            $ownerAction = if ($actionName -cin @('github/codeql-action/init', 'github/codeql-action/analyze')) { 'github/codeql-action' } else { $actionName }
             if (-not $pins.actions.ContainsKey($ownerAction) -or $pins.actions[$ownerAction].commit -cne $commit) { throw 'Step differs from the approved immutable action commit.' }
             if (-not $comments.Contains("$($usesNode.End.Line):v$($pins.actions[$ownerAction].version)")) { throw 'Step lacks its exact native action version comment.' }
             $arguments = Get-WorkflowProperty $step 'with'
@@ -135,8 +135,12 @@ foreach ($path in $WorkflowPaths) {
                 (Get-WorkflowScalar (Get-WorkflowProperty $arguments 'persist-credentials')) -cne 'false') { throw 'Checkout must disable persisted credentials.' }
             if ($actionName -ceq 'actions/upload-artifact') {
                 $retentionText = Get-WorkflowScalar (Get-WorkflowProperty $arguments 'retention-days')
-                $days = 0
-                if (-not [int]::TryParse($retentionText,[ref]$days) -or $days -lt 1 -or $days -gt 30) { throw 'Require literal artifact retention between 1 and 30 days.' }
+                # Cloud artifacts are short-lived transport/diagnostics. Export
+                # release evidence before expiry; Actions is not its archive.
+                if ($retentionText -cne '1') { throw 'Require literal artifact retention of exactly 1 day.' }
+                if ((Get-WorkflowScalar (Get-WorkflowProperty $arguments 'compression-level')) -cne '9') {
+                    throw 'Require literal artifact compression level 9 to minimize shared Actions storage.'
+                }
             }
         }
     }

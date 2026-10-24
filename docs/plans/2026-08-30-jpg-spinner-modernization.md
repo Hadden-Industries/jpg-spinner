@@ -1844,7 +1844,7 @@ project reports from the preceding run remain separate retained evidence.
 
 ### Step 17.1: RED on immutable CI policy
 
-- [ ] Extend repository policy to parse workflow YAML and reject mutable action tags, `windows-latest`, prerelease tools, unbounded permissions, missing timeouts, artifact retention over 30 days, and any secret passed to pull-request builds.
+- [ ] Extend repository policy to parse workflow YAML and reject mutable action tags, `windows-latest`, prerelease tools, unbounded permissions, missing timeouts, artifact retention other than one day, and any secret passed to pull-request builds. Require native maximum ZIP compression for explicit artifact uploads. Export required release evidence to the approved evidence store before expiry; Actions is only short-lived transport.
 - [ ] Require `scripts/Invoke-Sbom.ps1` to consume the qualified `eng/artifact-sbom` adapter, readonly Go module graph and `eng/sbom-tools.json` pins for Syft SDK 1.54.1, SPDX Workgroup Tools 2.0.7 and the official SPDX 3.0.1 schema. Reject moving release URLs, mismatched validator digests, module replacements and `Microsoft.Sbom.Targets`, whose NuGet `Pack` integration does not describe an MSIX release drop.
 - [ ] Require these reviewed action commits with a version comment:
     - `actions/checkout` v7.0.1 at `3d3c42e5aac5ba805825da76410c181273ba90b1`;
@@ -1873,7 +1873,7 @@ CI, prove the hosted image/toolchain or claim hosted packaging succeeded.
 - [ ] On explicit manual qualification, restore qualified locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all headless Domain/JPEG/Storage/Batch/Presentation-contract tests on x86/x64, compile Release ARM64, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure. Do not run black-box UI Automation, Narrator, or Accessibility Insights on a GitHub-hosted service session. Do not register push, pull-request or scheduled triggers.
 - [ ] Define a required separate interactive Windows VM/self-hosted workflow or protected qualification job for black-box UI Automation and assistive-technology checks. It begins with `Test-InteractiveUiEnvironment.ps1`, never has pull-request secrets, and publishes signed test evidence; a hosted headless pass cannot substitute for this gate.
 - [ ] Use a separate package job for the unsigned x86/x64/ARM64 bundle. Package creation must not require Store credentials.
-- [ ] Cache only content-addressed dependency/build inputs whose key includes vcpkg baseline, manifest hash, architecture, toolset, and configuration. Never cache signing material or staged packages.
+- [ ] Keep cloud dependency caches disabled by default; enable them only through the explicit manual `cache_dependencies` boolean. When enabled, cache only content-addressed dependency/build inputs whose key includes vcpkg baseline, manifest hash, architecture, toolset, and configuration. Never cache signing material or staged packages. Remove reconstructible obsolete caches and verified-retained artifact copies through the native GitHub API without deleting workflow history or weakening release evidence requirements.
 - [ ] Require warnings as errors and fail on sanitizer findings, leaked handles, unhandled exceptions, or flaky-test retries.
 
 ### Step 17.3: GREEN CodeQL and fuzz workflows

@@ -28,5 +28,6 @@ jobs:
               if: always()
               with:
                   name: synthetic-scanner-corpus-and-reproducers
-                  retention-days: 14
+                  retention-days: 1
+                  compression-level: 9
                   path: artifacts/fuzz/scanner/
