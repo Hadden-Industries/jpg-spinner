@@ -1,0 +1,15 @@
+diff --git a/cmake/FindFilesystem.cmake b/cmake/FindFilesystem.cmake
+--- a/cmake/FindFilesystem.cmake
++++ b/cmake/FindFilesystem.cmake
+@@ -198,8 +198,9 @@ if(CXX_FILESYSTEM_HAVE_FS)
+         #include <@CXX_FILESYSTEM_HEADER@>
+ 
+         int main() {
+-            auto cwd = @CXX_FILESYSTEM_NAMESPACE@::current_path();
+-            printf("%s", cwd.c_str());
++            // Check the filesystem API without formatting its platform-native
++            // character type. CMake consumes the exit status, not this path.
++            (void)@CXX_FILESYSTEM_NAMESPACE@::current_path();
+             return EXIT_SUCCESS;
+         }
+     ]] code @ONLY)

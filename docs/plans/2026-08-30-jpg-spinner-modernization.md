@@ -18,6 +18,17 @@ evidence remains historical, not proof for the new dependency.
 
 **Design specification:** `docs/specs/2026-08-30-jpg-spinner-modernization-design.md`
 
+**Approved 2026-10-25 source-repair amendment:** The fix-first alert decision
+qualifies Exiv2 overlay `0.28.9#2` using the unchanged stable source archive and
+the existing Adobe backend. Two additional native patches remove unsafe
+filesystem-probe formatting and use correctly typed Windows conversion buffers
+with exact byte/code-unit counts. No additional overlay, parser, wrapper or
+runtime backend is introduced. See the [source-repair evidence](../implementation/2026-10-25-exiv2-source-repairs.md).
+The root revision/policy and corresponding-source patch inventory must agree;
+historical revision-1 reports/SBOM fixtures remain unchanged. Native component
+qualification is separate from the final product matrix and a separately
+authorized CodeQL run; no alert dismissal follows automatically.
+
 **Dependency refresh, 2026-10-03:** Before Task 6, qualify Exiv2 0.28.9, Windows App SDK 2.5.1, and libjpeg-turbo 3.2.0 at vcpkg port revision 1 (`3.2.0#1`). The immutable registry baseline above supersedes the original Task 1 baseline. Historical implementation logs retain the versions actually tested at those milestones. See `docs/implementation/2026-10-03-dependency-refresh-log.md` for authority, scope, and evidence.
 
 **Approved Task 6 backend amendment, 2026-10-03:** The user approved bounded qualification of Adobe XMP Toolkit SDK v2025.03 behind the public Exiv2 API and then the narrow native language-alternative preservation patch. Adopt only the two repository-owned ports `vcpkg-ports/adobe-xmp-core` (2025.03#1, immutable upstream commit and archive digest) and `vcpkg-ports/exiv2` (0.28.9#1, external XMP enabled). This explicitly supersedes the blanket overlay prohibition below for this pair only; alternate registries, arbitrary overlays, and simultaneous configuration representations remain prohibited. Native vcpkg owns source acquisition, patch application, ABI caching and installation; no research binaries, XML parser, or API shim enters production. Freshness checks must validate the local Exiv2 revision against its local manifest, compare source versions independently of official registry revision counters, and monitor official Adobe releases. See [qualification evidence](../implementation/2026-10-03-task-6-xmp-backend-qualification.md). Production sanitizer and milestone verification remain required before adoption is complete.
@@ -233,7 +244,7 @@ Expected RED: exit code 1 with separate diagnostics for absent root configuratio
     ],
     "overrides": [
         { "name": "libjpeg-turbo", "version": "3.2.0#1" },
-        { "name": "exiv2", "version": "0.28.9#1" },
+        { "name": "exiv2", "version": "0.28.9#2" },
         { "name": "catch2", "version": "3.16.1" }
     ]
 }

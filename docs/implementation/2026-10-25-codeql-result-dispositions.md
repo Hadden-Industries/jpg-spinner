@@ -11,6 +11,14 @@ runtime validation, delegation or external review was performed.
 
 ## Scoped outcome
 
+**Subsequent fix-first decision (2026-10-25):** The maintainer approved
+[durable Exiv2 source repairs](2026-10-25-exiv2-source-repairs.md) before any
+administrative dismissal. The original static triage and raw reports below
+remain historical. Its blanket "no source patch" recommendation is superseded:
+absence of a demonstrated product exploit does not settle build correctness or
+the best native buffer contract. Keep the proposed batch dismissals unexecuted;
+new local repair evidence does not itself change GitHub's alert state.
+
 Positive static evidence defeats the specific product-vulnerability claims for
 all 29 current results under the pinned configuration. The five historical
 locations are obsolete in current v2 source after signed retirement `e1eb2361`.

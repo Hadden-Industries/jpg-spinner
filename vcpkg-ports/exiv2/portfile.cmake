@@ -1,5 +1,6 @@
 # This closed repository port uses Exiv2's public external-XMP capability.
-# The only parser-source change selects the selected SDK's native MD5 signature.
+# Source repairs retain native APIs: MD5 ownership, filesystem probing and typed
+# Windows conversion buffers. The source/version archive pin remains unchanged.
 vcpkg_check_linkage(ONLY_STATIC_LIBRARY ONLY_DYNAMIC_CRT)
 if(NOT "xmp" IN_LIST FEATURES)
     message(FATAL_ERROR "The reviewed metadata build requires the xmp feature.")
@@ -12,10 +13,15 @@ vcpkg_from_github(
     PATCHES
         use-native-inih-package.patch
         adobe-md5-buffer.patch
+        filesystem-probe-no-format-output.patch
+        windows-charset-typed-buffers.patch
 )
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
+        # Protect the actual configure probe from a returning char/wchar_t
+        # variadic-format mismatch on the Windows toolchain.
+        -DCMAKE_REQUIRED_FLAGS=/we4477
         -DEXIV2_ENABLE_XMP=OFF
         -DEXIV2_ENABLE_EXTERNAL_XMP=ON
         -DEXIV2_ENABLE_PNG=OFF

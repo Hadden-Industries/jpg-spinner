@@ -16,13 +16,13 @@ if ($LASTEXITCODE -ne 0) {
 
 $successReport = $policyOutput -join "`n"
 foreach ($requiredEvidenceLabel in @(
-    'Visual Studio 2026/v145',
-    'MSVC 14.51.36231',
-    'Windows SDK 10.0.28000.0',
-    'libjpeg-turbo 3.2.0#1',
-    'Exiv2 0.28.9#1+xmp',
-    'Catch2 3.16.1'
-)) {
+        'Visual Studio 2026/v145',
+        'MSVC 14.51.36231',
+        'Windows SDK 10.0.28000.0',
+        'libjpeg-turbo 3.2.0#1',
+        'Exiv2 0.28.9#2+xmp',
+        'Catch2 3.16.1'
+    )) {
     if ($successReport.IndexOf($requiredEvidenceLabel, [System.StringComparison]::Ordinal) -lt 0) {
         throw "Repository-policy success report omits verified evidence '$requiredEvidenceLabel'."
     }
@@ -33,10 +33,10 @@ foreach ($requiredEvidenceLabel in @(
 # them; Task 2 will add and validate those pins before they enter this report.
 if (-not (Test-Path -LiteralPath $centralPackageVersionsPath -PathType Leaf)) {
     foreach ($undeclaredNuGetVersion in @(
-        'Windows App SDK 2.5.1',
-        'C++/WinRT 3.0.260818.1',
-        'SDK BuildTools 10.0.28000.2705'
-    )) {
+            'Windows App SDK 2.5.1',
+            'C++/WinRT 3.0.260818.1',
+            'SDK BuildTools 10.0.28000.2705'
+        )) {
         if ($successReport.IndexOf($undeclaredNuGetVersion, [System.StringComparison]::Ordinal) -ge 0) {
             throw "Repository policy reports undeclared NuGet evidence '$undeclaredNuGetVersion'."
         }

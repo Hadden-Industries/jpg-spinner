@@ -72,7 +72,7 @@ The following are preparation boundaries, not automatic legal classifications.
 
 For the native graph, preserve the selected baseline's registry and version
 metadata as well as the source archives. A baseline alone does not contain
-upstream source. The Exiv2 overlay's two patches and Adobe overlay's three patches
+upstream source. All patches listed by the selected Exiv2 and Adobe port files
 are build inputs, not optional commentary; retain their original bytes and let
 the existing vcpkg port execute them. Do not replace them with manually edited
 build trees. Preserve source for actual transitive inputs, including Expat,

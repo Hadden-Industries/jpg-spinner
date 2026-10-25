@@ -33,6 +33,7 @@
     <ClInclude Include="DeterministicJpegTransformationEngine.h" />
     <ClInclude Include="DeterministicJpegFixtureFactory.h" />
     <ClInclude Include="TemporaryDirectory.h" />
+    <ClInclude Include="WindowsCharsetConversionCases.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CoefficientDigest.cpp" />

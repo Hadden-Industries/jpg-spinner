@@ -140,7 +140,7 @@ jobs:
                   # PEReader can inspect every target architecture without executing it.
                   $platform = if ('${{ matrix.architecture }}' -eq 'x86') { 'Win32' } else { '${{ matrix.architecture }}' }
                   ./scripts/tests/Test-PeProgramDatabaseReference.ps1 -PortableImagePath "artifacts/bin/$platform/Release/JpgSpinner.App/JpgSpinner.exe" -OwnedOutputRoot $env:RUNNER_TEMP
-            - name: Link the installed Adobe static package with complete debug information
+            - name: Qualify installed native dependency clients
               run: |
                   # Use the existing per-platform manifest-install contract, also used
                   # by Test-VcpkgExportEvidence. Pass its actual package prefix explicitly;
@@ -149,6 +149,8 @@ jobs:
                   $triplet = "$($architecture.ToLowerInvariant())-windows-static-md"
                   $prefix = Join-Path $PWD "vcpkg_installed/$triplet/$triplet"
                   ./scripts/tests/Test-AdobeXmpStaticDebugInformation.ps1 -Architecture $architecture -Configuration '${{ matrix.configuration }}' -InstalledDependencyPrefix $prefix -OutputDirectory (Join-Path $env:RUNNER_TEMP 'adobe-static-debug-information')
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  ./scripts/tests/Test-Exiv2WindowsCharset.ps1 -Architecture $architecture -Configuration '${{ matrix.configuration }}' -InstalledDependencyPrefix $prefix -WorkingDirectory (Join-Path $env:RUNNER_TEMP 'exiv2-charset') -EvidenceDirectory (Join-Path $PWD 'artifacts/build-logs/Exiv2Charset')
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             - name: Run native headless tests
               if: matrix.architecture != 'ARM64'

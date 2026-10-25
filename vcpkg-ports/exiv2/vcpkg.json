@@ -1,7 +1,7 @@
 {
   "name": "exiv2",
   "version": "0.28.9",
-  "port-version": 1,
+  "port-version": 2,
   "description": "Exiv2 metadata library with the qualified external Adobe XMP core",
   "homepage": "https://exiv2.org",
   "license": "GPL-2.0-or-later",
@@ -10,9 +10,7 @@
     {
       "name": "inih",
       "default-features": false,
-      "features": [
-        "cpp"
-      ]
+      "features": ["cpp"]
     },
     {
       "name": "vcpkg-cmake",
@@ -26,10 +24,7 @@
   "features": {
     "xmp": {
       "description": "XMP through the pinned Adobe core and preservation repair",
-      "dependencies": [
-        "adobe-xmp-core",
-        "expat"
-      ]
+      "dependencies": ["adobe-xmp-core", "expat"]
     }
   }
 }

@@ -84,6 +84,7 @@ if (-not $actual.SetEquals([string[]]@('x86/Debug', 'x86/Release', 'x64/Debug', 
 $steps = Get-NodeProperty $build 'steps'
 $hasBuild = $false; $hasHeadlessTests = $false; $hasProvenance = $false; $hasShutdownRegression = $false
 $hasAdobeStaticDebugInformation = $false
+$hasExiv2CharsetQualification = $false
 $hasNativeInlineTaskEnvironment = $false
 $hasHostedRuntime = $false
 foreach ($step in $steps.Children) {
@@ -127,6 +128,15 @@ foreach ($step in $steps.Children) {
         }
         $hasNativeInlineTaskEnvironment = $true
     }
+    if ($command.Contains('scripts/tests/Test-Exiv2WindowsCharset.ps1', [StringComparison]::Ordinal)) {
+        if ($null -ne (Get-NodeProperty $step 'if') -or
+            -not $command.Contains('-InstalledDependencyPrefix $prefix', [StringComparison]::Ordinal) -or
+            -not $command.Contains('-WorkingDirectory (Join-Path $env:RUNNER_TEMP ''exiv2-charset'')', [StringComparison]::Ordinal) -or
+            -not $command.Contains('-EvidenceDirectory (Join-Path $PWD ''artifacts/build-logs/Exiv2Charset'')', [StringComparison]::Ordinal)) {
+            throw 'Installed Exiv2 charset qualification must run in every actual matrix lane with separate retained diagnostics.'
+        }
+        $hasExiv2CharsetQualification = $true
+    }
     if ($command.Contains('scripts/tests/Test-AdobeXmpStaticDebugInformation.ps1', [StringComparison]::Ordinal)) {
         # Exercise the installed package in every native matrix configuration,
         # not merely one standalone developer probe or Release-only shortcut.
@@ -159,6 +169,7 @@ foreach ($step in $steps.Children) {
 if (-not ($hasBuild -and $hasHeadlessTests -and $hasProvenance)) { throw 'Build, native headless tests or clean-source provenance wiring is absent.' }
 if (-not $hasShutdownRegression) { throw 'Bounded native presentation process-shutdown regression wiring is absent.' }
 if (-not $hasAdobeStaticDebugInformation) { throw 'Installed Adobe static-library debug-information regression wiring is absent.' }
+if (-not $hasExiv2CharsetQualification) { throw 'Installed Exiv2 Windows charset qualification wiring is absent.' }
 if (-not $hasNativeInlineTaskEnvironment) { throw 'Native inline-task environment regression wiring is absent.' }
 if (-not $hasComdatIdentityControl) { throw 'Manual CI lacks the native x64 Release COMDAT identity control.' }
 

@@ -1,0 +1,104 @@
+diff --git a/src/convert.cpp b/src/convert.cpp
+index a588dd2..9dc3ba9 100644
+--- a/src/convert.cpp
++++ b/src/convert.cpp
+@@ -19,8 +19,12 @@
+ 
+ // + standard includes
+ #include <algorithm>
++#include <cstddef>
++#include <cstring>
+ #include <functional>
+ #include <iomanip>
++#include <limits>
++#include <utility>
+ 
+ #ifdef EXV_HAVE_ICONV
+ #include <iconv.h>
+@@ -1471,55 +1475,68 @@ bool swapBytes(std::string& str) {
+ bool mb2wc(UINT cp, std::string& str) {
+   if (str.empty())
+     return true;
+-  int len = MultiByteToWideChar(cp, 0, str.c_str(), static_cast<int>(str.size()), nullptr, 0);
+-  if (len == 0) {
++  if (str.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
++    return false;
++  const auto inputByteCount = static_cast<int>(str.size());
++  const int requiredUtf16CodeUnitCount = MultiByteToWideChar(cp, 0, str.data(), inputByteCount, nullptr, 0);
++  if (requiredUtf16CodeUnitCount == 0) {
+ #ifdef EXIV2_DEBUG_MESSAGES
+     EXV_DEBUG << "mb2wc: Failed to determine required size of output buffer.\n";
+ #endif
+     return false;
+   }
+-  std::vector<std::string::value_type> out;
+-  out.resize(len * 2);
+-  int ret = MultiByteToWideChar(cp, 0, str.c_str(), static_cast<int>(str.size()), reinterpret_cast<LPWSTR>(out.data()),
+-                                len * 2);
+-  if (ret == 0) {
++  // Win32 receives actual wchar_t objects and a capacity in UTF-16 code units,
++  // not a reinterpreted byte buffer with twice its real character capacity.
++  std::wstring utf16Buffer(static_cast<std::size_t>(requiredUtf16CodeUnitCount), L'\0');
++  const int writtenUtf16CodeUnitCount =
++      MultiByteToWideChar(cp, 0, str.data(), inputByteCount, utf16Buffer.data(), requiredUtf16CodeUnitCount);
++  if (writtenUtf16CodeUnitCount != requiredUtf16CodeUnitCount) {
+ #ifdef EXIV2_DEBUG_MESSAGES
+     EXV_DEBUG << "mb2wc: Failed to convert the input string to a wide character string.\n";
+ #endif
+     return false;
+   }
+-  str.assign(out.begin(), out.end());
++  // Preserve the public API's native-endian byte representation, including NULs.
++  str.resize(utf16Buffer.size() * sizeof(wchar_t));
++  std::memcpy(str.data(), utf16Buffer.data(), str.size());
+   return true;
+ }
+ 
+ bool wc2mb(UINT cp, std::string& str) {
+   if (str.empty())
+     return true;
+-  if (str.size() & 1) {
++  if (str.size() % sizeof(wchar_t) != 0) {
+ #ifdef EXIV2_DEBUG_MESSAGES
+     EXV_DEBUG << "wc2mb: Size " << str.size() << " of input string is not even.\n";
+ #endif
+     return false;
+   }
+-  int len = WideCharToMultiByte(cp, 0, reinterpret_cast<LPCWSTR>(str.data()), static_cast<int>(str.size()) / 2, nullptr,
+-                                0, nullptr, nullptr);
+-  if (len == 0) {
++  const auto utf16CodeUnitCount = str.size() / sizeof(wchar_t);
++  if (utf16CodeUnitCount > static_cast<std::size_t>(std::numeric_limits<int>::max()))
++    return false;
++  // Byte-oriented metadata may be unaligned. Copy its object representation
++  // into typed storage before either native sizing or conversion call.
++  std::wstring utf16Buffer(utf16CodeUnitCount, L'\0');
++  std::memcpy(utf16Buffer.data(), str.data(), str.size());
++  const auto inputCodeUnitCount = static_cast<int>(utf16CodeUnitCount);
++  const int requiredByteCount =
++      WideCharToMultiByte(cp, 0, utf16Buffer.data(), inputCodeUnitCount, nullptr, 0, nullptr, nullptr);
++  if (requiredByteCount == 0) {
+ #ifdef EXIV2_DEBUG_MESSAGES
+     EXV_DEBUG << "wc2mb: Failed to determine required size of output buffer.\n";
+ #endif
+     return false;
+   }
+-  std::vector<std::string::value_type> out;
+-  out.resize(len);
+-  int ret = WideCharToMultiByte(cp, 0, reinterpret_cast<LPCWSTR>(str.data()), static_cast<int>(str.size()) / 2,
+-                                static_cast<LPSTR>(out.data()), len, nullptr, nullptr);
+-  if (ret == 0) {
++  std::string convertedBytes(static_cast<std::size_t>(requiredByteCount), '\0');
++  const int writtenByteCount = WideCharToMultiByte(cp, 0, utf16Buffer.data(), inputCodeUnitCount,
++                                                 convertedBytes.data(), requiredByteCount, nullptr, nullptr);
++  if (writtenByteCount != requiredByteCount) {
+ #ifdef EXIV2_DEBUG_MESSAGES
+     EXV_DEBUG << "wc2mb: Failed to convert the input string to a multi byte string.\n";
+ #endif
+     return false;
+   }
+-  str.assign(out.begin(), out.end());
++  str = std::move(convertedBytes);
+   return true;
+ }
+ 
