@@ -6,6 +6,11 @@ technology observations prove different contracts. A missing lane or tool is
 unavailable evidence, never a passing result. Do not publish a release until
 the applicable plan gates have actual results tied to its frozen candidate.
 
+The maintainer has accepted responsibility for these human checks. The
+[acceptance record](release-prerequisites.md#maintainer-owned-acceptance) is the
+canonical owner/status record and defines the engineering handoff. This protocol
+remains the checklist authority; assignment alone supplies no passing result.
+
 ## Authority and test boundaries
 
 Follow Microsoft's [keyboard accessibility](https://learn.microsoft.com/en-us/windows/apps/design/accessibility/keyboard-accessibility),

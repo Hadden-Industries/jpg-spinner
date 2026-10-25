@@ -115,6 +115,15 @@ not physical hardware. Its prebuilt headless tests join existing manual CI;
 interactive/package/upgrade evidence remains distinct and may use qualified
 desktop/VM lanes. Historical compile-only observations above are unchanged.
 
+SLICE-003's human accessibility/localization and licensing/corresponding-source
+roles are now assigned to the maintainer in the
+[canonical acceptance record](../release-prerequisites.md#maintainer-owned-acceptance).
+Engineering prepares the exact candidate and technical/source-delivery inputs;
+the maintainer performs and records those two acceptances. Ownership is resolved,
+execution/sign-off remains pending, and other OS/credential/flight prerequisites
+retain their separate status. Do not repeat builds to substitute for human
+acceptance or treat the assignment as release authorization.
+
 - **One decision log and gate register.** Use this sequence and
   [release qualification](../release-qualification.md). Historical implementation
   records remain evidence, not competing to-do lists. Record a blocker once

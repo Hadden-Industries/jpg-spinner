@@ -7,6 +7,12 @@ legal opinion, source offer or release approval**. Task 18 still requires exact
 source assembly, independent reconstruction and qualified rights review for the
 distributed candidate. See the [release register](release-qualification.md).
 
+The maintainer has accepted the licensing/corresponding-source sign-off role.
+Use the [acceptance record](release-prerequisites.md#maintainer-owned-acceptance)
+for its owner, pending status and engineering handoff. This assignment does not
+establish rights clearance, complete source delivery or a successful independent
+reconstruction; provide the actual candidate-bound inputs defined below.
+
 The repository's [GPL version 3 text](../LICENSE), sections 1 and 6, defines
 Corresponding Source and the conditions for conveying object code. It covers
 more than an application checkout: include the preferred form for modification,

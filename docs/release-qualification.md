@@ -32,6 +32,13 @@ The initial absence of Store protection is retained as history; the subsequent
 configures that approval gate. Establish the remaining resources before the
 frozen candidate's full campaign.
 
+The maintainer now owns the human accessibility/localization checks and the
+licensing/corresponding-source sign-off, as recorded in the canonical
+[acceptance record](release-prerequisites.md#maintainer-owned-acceptance).
+Their owner-availability gaps are resolved. Both outcomes remain pending until
+the maintainer records results for the exact candidate; engineering supplies
+the deployment, source-delivery and technical evidence inputs.
+
 The maintainer's [2026-10-25 device amendment](implementation/2026-10-25-native-arm64-qualification.md)
 accepts native Windows ARM64 VM execution and makes physical-device testing
 optional and nonblocking. Manual CI now defines a separate deployment-only ARM64
