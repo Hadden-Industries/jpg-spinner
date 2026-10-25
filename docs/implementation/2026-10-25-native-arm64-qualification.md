@@ -52,7 +52,10 @@ meaning.
 ## Focused implementation evidence
 
 The implemented `arm64-runtime` job consumes only the same CI run's
-`arm64-test-binaries` artifact, with native digest mismatch treated as an error.
+`arm64-headless-test-inputs` artifact, with native digest mismatch treated as an
+error. The transfer includes the generated application manifest consumed by the
+non-interactive package-fixture test, beside the test hosts. See the retained
+[first-campaign omission and bounded repair](2026-10-25-arm64-manifest-fixture.md).
 It installs the pinned ARM64 Windows App Runtime and executes the existing
 `HeadlessAll` selector with native OS/PE admission before any test process starts.
 Both unsigned packaging and interactive-input publication depend on this job.

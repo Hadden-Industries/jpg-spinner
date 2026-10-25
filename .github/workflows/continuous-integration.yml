@@ -184,16 +184,18 @@ jobs:
                       artifacts/TestResults/
                       artifacts/provenance/
             # Same-run native artifact transfer: compilation stays in this job.
-            # Ship test deployment dependencies, not compiler intermediates/PDBs.
+            # The headless package-fixture case reads the generated app manifest
+            # beside the test hosts. Preserve that sibling layout in deployment.
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               if: matrix.architecture == 'ARM64' && matrix.configuration == 'Release'
               with:
-                  name: arm64-test-binaries
+                  name: arm64-headless-test-inputs
                   retention-days: 1
                   compression-level: 9
                   if-no-files-found: error
                   path: |
                       artifacts/bin/ARM64/Release/*.Tests/**
+                      artifacts/bin/ARM64/Release/JpgSpinner.App/AppxManifest.xml
                       !artifacts/bin/ARM64/Release/**/*.pdb
     arm64-runtime:
         # A native ARM64 VM executes the exact same-run prebuilt test inputs.
@@ -207,7 +209,7 @@ jobs:
                   persist-credentials: false
             - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
               with:
-                  name: arm64-test-binaries
+                  name: arm64-headless-test-inputs
                   path: artifacts/bin/ARM64/Release
                   digest-mismatch: error
             - name: Deploy the pinned Windows App Runtime for native tests

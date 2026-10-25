@@ -174,7 +174,7 @@ if (-not $hasNativeInlineTaskEnvironment) { throw 'Native inline-task environmen
 if (-not $hasComdatIdentityControl) { throw 'Manual CI lacks the native x64 Release COMDAT identity control.' }
 
 # Native execution is a separate deployment-only job, consuming only this run's
-# immutable ARM64 binary artifact. A cross-build or x64 emulation cannot close it.
+# immutable ARM64 test-input artifact. A cross-build or x64 emulation cannot close it.
 $arm64 = Get-NodeProperty $jobs 'arm64-runtime'
 if ((Get-NodeProperty $arm64 'runs-on').Value -cne 'windows-11-vs2026-arm' -or
     (Get-NodeProperty $arm64 'needs').Value -cne 'build' -or
@@ -210,7 +210,7 @@ foreach ($step in (Get-NodeProperty $arm64 'steps').Children) {
     if ($null -eq $uses) { continue }
     $arguments = Get-NodeProperty $step 'with'
     if ($uses.Value.StartsWith('actions/download-artifact@', [StringComparison]::Ordinal)) {
-        if ($arguments.Children.Count -ne 3 -or (Get-NodeProperty $arguments 'name').Value -cne 'arm64-test-binaries' -or
+        if ($arguments.Children.Count -ne 3 -or (Get-NodeProperty $arguments 'name').Value -cne 'arm64-headless-test-inputs' -or
             (Get-NodeProperty $arguments 'path').Value -cne 'artifacts/bin/ARM64/Release' -or
             (Get-NodeProperty $arguments 'digest-mismatch').Value -cne 'error') {
             throw 'ARM64 execution requires exact same-run artifact selection and native digest refusal.'
@@ -230,10 +230,10 @@ foreach ($step in $steps.Children) {
     $uses = Get-NodeProperty $step 'uses'
     if ($null -eq $uses -or -not $uses.Value.StartsWith('actions/upload-artifact@', [StringComparison]::Ordinal)) { continue }
     $arguments = Get-NodeProperty $step 'with'
-    if ((Get-NodeProperty $arguments 'name').Value -cne 'arm64-test-binaries') { continue }
+    if ((Get-NodeProperty $arguments 'name').Value -cne 'arm64-headless-test-inputs') { continue }
     if ((Get-NodeProperty $step 'if').Value -cne "matrix.architecture == 'ARM64' && matrix.configuration == 'Release'" -or
-        (Get-NodeProperty $arguments 'path').Value.Trim() -cne "artifacts/bin/ARM64/Release/*.Tests/**`n!artifacts/bin/ARM64/Release/**/*.pdb") {
-        throw 'ARM64 test transfer must select only the actual Release test inputs and exclude reconstructible PDBs.'
+        (Get-NodeProperty $arguments 'path').Value.Trim() -cne "artifacts/bin/ARM64/Release/*.Tests/**`nartifacts/bin/ARM64/Release/JpgSpinner.App/AppxManifest.xml`n!artifacts/bin/ARM64/Release/**/*.pdb") {
+        throw 'ARM64 test transfer must include the native manifest fixture and Release test hosts while excluding reconstructible PDBs.'
     }
     $hasArm64Upload = $true
 }
