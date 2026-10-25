@@ -39,6 +39,14 @@ The unchanged focused probe passes after stabilizing that fixture's qualified
 names. The hosted attempt remains failed and its later packaging controls remain
 unexecuted; another dispatch requires deliberate authorization.
 
+The [published-alert remediation](implementation/2026-10-25-published-security-alert-remediation.md)
+updates Ajv's locked `fast-uri` dependency to the compatible patched release.
+All four advisory regressions and ordinary URI/Ajv controls pass after failing
+against the old lock. The five historical CodeQL locations were already deleted
+by signed source retirement; their absence gate and refusal controls pass.
+This targeted repair starts no scan or remote workflow. GitHub alert-state
+reconciliation and complete release qualification remain pending.
+
 The owner-approved [qualification timeout budgets](implementation/2026-10-24-qualification-timeouts.md)
 supersede earlier workstation-sized process and workflow ceilings. All waits
 remain finite; deliberate deadline-refusal tests and product assertions remain.
