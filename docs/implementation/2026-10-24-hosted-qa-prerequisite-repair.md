@@ -49,8 +49,9 @@ installation repair loop or workstation installation fallback.
 Microsoft documents [component modification and installer parameters](https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio).
 `setup.exe` does not support the bootstrapper's `--wait` switch; the script uses
 [PowerShell's process-tree wait](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-process)
-and retains the native exit code. Each workflow setup step has a 15-minute
-limit. Existing manual-only triggers and one-day compressed artifact retention
+and retains the native exit code. Workflow setup uses the generated
+`hostedPrerequisiteStep` budget from the [shared qualification policy](../../eng/qualification-policy.json).
+Existing manual-only triggers and compressed artifact retention
 remain unchanged. SDK diagnostics stay within the existing uploaded evidence
 roots; no installed SDK tree or package cache is uploaded.
 
@@ -108,7 +109,7 @@ existing-version handling. It receives only the documented `--quiet` option;
 there is no custom deployment solver, forced shutdown, bootstrap bypass,
 runtime downgrade, workstation installation, signing/trust modification or
 self-contained test-host replacement. Acquisition and native execution have
-bounded deadlines, and the whole workflow step is limited to ten minutes.
+bounded deadlines, and the whole workflow step uses that same shared category.
 The reconstructible executable stays outside uploaded diagnostics and is
 removed after successful native execution. A failed hosted setup retains its
 native streams; an unresolved installer remains within the disposable runner's
@@ -130,3 +131,26 @@ failure logs are retained through inventory
 `c494a27086ca4f83a35545e691cc90be`. A retained failed run is diagnostic evidence,
 not successful full QA, desktop acceptance, WACK, trusted upgrade, legal
 approval or Store release.
+
+## Manual CodeQL prerequisite follow-up (2026-10-25)
+
+Targeted intake of the five historical code-scanning alerts exposed a remaining
+workflow omission: `codeql.yml` selects the same hosted image and locked build
+as ordinary CI, but did not prepare its adopted SDK. The already-correct scanner
+workflow supplies a control. A native YAML regression passes that control and
+then refuses the CodeQL lane's missing prerequisite before any installation,
+compilation or analysis is attempted.
+
+The CodeQL workflow now calls the existing SDK bootstrap immediately after
+checkout and before initialization of build tracing. It retains the shared
+generated prerequisite timeout, original manual build command, query suite and
+result category. This follows GitHub's
+[manual compiled-language build model](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/codeql-for-compiled-languages).
+The new regression is included in ordinary CI's source-policy lane. Native
+syntax/policy validation remains distinct from actual CodeQL execution.
+
+An always-uploaded, maximally compressed diagnostic artifact contains only
+`artifacts/build-logs/`, with retention generated from the existing shared
+artifact policy. It excludes installed SDK trees, compiler caches and the CodeQL
+database. Triggers remain exclusively manual; this source correction starts no
+workflow, security review or external review and closes no historical alert.

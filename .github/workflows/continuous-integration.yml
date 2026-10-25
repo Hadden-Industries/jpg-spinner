@@ -32,6 +32,7 @@ jobs:
                   ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-WorkflowAttestationPermissions.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-ContinuousIntegrationContract.ps1 -ToolsDirectory $tools
+                  ./scripts/tests/Test-ManualCompilerSdkPrerequisites.ps1 -ToolsDirectory $tools
                   ./scripts/tests/Test-InteractiveTestDrop.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-ProtectedWorkflowAdmission.ps1
                   ./scripts/tests/Test-InteractiveTestEvidence.ps1 -OwnedOutputRoot $env:RUNNER_TEMP

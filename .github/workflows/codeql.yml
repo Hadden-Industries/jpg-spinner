@@ -21,6 +21,11 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+            - name: Install the pinned Windows SDK
+              # Prepare the adopted SDK before CodeQL traces the real build.
+              # The timeout is materialized from the shared qualification policy.
+              timeout-minutes: 45
+              run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
             - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
               with:
                   languages: c-cpp
@@ -33,3 +38,12 @@ jobs:
             - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
               with:
                   category: cpp-security-extended
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: codeql-native-build-diagnostics
+                  # Generated from the shared artifact policy; retain diagnostics,
+                  # never the SDK installation, compiler cache or CodeQL database.
+                  retention-days: 1
+                  compression-level: 9
+                  path: artifacts/build-logs/
