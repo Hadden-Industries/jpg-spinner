@@ -51,7 +51,7 @@ function Invoke-FreshnessCheck {
 
     return [pscustomobject]@{
         exitCode = $LASTEXITCODE
-        output = $output -join "`n"
+        output   = $output -join "`n"
     }
 }
 
@@ -69,7 +69,7 @@ function Assert-FileHashUnchanged {
     }
 }
 
-function Assert-RejectedMetadataRoot {
+function Assert-RejectedMetadata {
     param(
         [Parameter(Mandatory)]
         [string]$Path,
@@ -86,7 +86,7 @@ function Assert-RejectedMetadataRoot {
         Write-Utf8TextFile -Path $Path -Content $InvalidJson
         $result = Invoke-FreshnessCheck
         if ($result.exitCode -eq 0) {
-            throw "Dependency freshness accepted metadata with the wrong JSON root: $Path"
+            throw "Dependency freshness accepted invalid metadata: $Path"
         }
         $normalizedOutput = $result.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
         if ($normalizedOutput.IndexOf(
@@ -94,7 +94,7 @@ function Assert-RejectedMetadataRoot {
                 [System.StringComparison]::Ordinal
             ) -lt 0) {
             throw (
-                "Dependency freshness rejected the wrong metadata root without '$ExpectedDiagnostic'." +
+                "Dependency freshness rejected metadata without '$ExpectedDiagnostic'." +
                 "`n$($result.output)"
             )
         }
@@ -113,20 +113,20 @@ try {
     [void][System.IO.Directory]::CreateDirectory($metadataSnapshotDirectory)
 
     Write-JsonFixture -Path (Join-Path $fixtureRepositoryRoot 'vcpkg.json') -Value ([ordered]@{
-        name = 'jpg-spinner'
-        'version-string' = '2.0.0'
-        'builtin-baseline' = '118bba14b94bc040c098c0c15e63c142148c05ca'
-        dependencies = @(
-            [ordered]@{ name = 'libjpeg-turbo'; 'default-features' = $false },
-            [ordered]@{ name = 'exiv2'; 'default-features' = $false; features = @('xmp') },
-            [ordered]@{ name = 'catch2'; 'default-features' = $false }
-        )
-        overrides = @(
-            [ordered]@{ name = 'libjpeg-turbo'; version = '3.2.0' },
-            [ordered]@{ name = 'exiv2'; version = '0.28.8' },
-            [ordered]@{ name = 'catch2'; version = '3.16.0' }
-        )
-    })
+            name               = 'jpg-spinner'
+            'version-string'   = '2.0.0'
+            'builtin-baseline' = '118bba14b94bc040c098c0c15e63c142148c05ca'
+            dependencies       = @(
+                [ordered]@{ name = 'libjpeg-turbo'; 'default-features' = $false },
+                [ordered]@{ name = 'exiv2'; 'default-features' = $false; features = @('xmp') },
+                [ordered]@{ name = 'catch2'; 'default-features' = $false }
+            )
+            overrides          = @(
+                [ordered]@{ name = 'libjpeg-turbo'; version = '3.2.0' },
+                [ordered]@{ name = 'exiv2'; version = '0.28.8' },
+                [ordered]@{ name = 'catch2'; version = '3.16.0' }
+            )
+        })
     Write-Utf8TextFile -Path (Join-Path $fixtureRepositoryRoot 'Directory.Packages.props') -Content @'
 <Project>
   <ItemGroup>
@@ -139,25 +139,25 @@ try {
 
     $vcpkgVersions = [ordered]@{
         'libjpeg-turbo' = '3.2.0'
-        exiv2 = '0.28.8'
-        catch2 = '3.16.0'
+        exiv2           = '0.28.8'
+        catch2          = '3.16.0'
     }
     foreach ($dependencyName in $vcpkgVersions.Keys) {
         Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory "vcpkg/$dependencyName.json") -Value ([ordered]@{
-            versions = @(
-                [ordered]@{
-                    'version-semver' = $vcpkgVersions[$dependencyName]
-                    'port-version' = 0
-                    'git-tree' = '0123456789abcdef0123456789abcdef01234567'
-                }
-            )
-        })
+                versions = @(
+                    [ordered]@{
+                        'version-semver' = $vcpkgVersions[$dependencyName]
+                        'port-version'   = 0
+                        'git-tree'       = '0123456789abcdef0123456789abcdef01234567'
+                    }
+                )
+            })
     }
 
     $githubRepositories = [ordered]@{
         'libjpeg-turbo' = '3.2.0'
-        exiv2 = '0.28.8'
-        catch2 = '3.16.0'
+        exiv2           = '0.28.8'
+        catch2          = '3.16.0'
     }
     foreach ($repositoryName in $githubRepositories.Keys) {
         Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory "github/$repositoryName.releases.json") -Value @(
@@ -167,24 +167,51 @@ try {
         )
     }
 
+    # Tooling pins live outside the runtime manifests. Exercise the same
+    # official-release boundary, including CodeQL's unrelated bundle tags.
+    Write-JsonFixture -Path (Join-Path $fixtureRepositoryRoot 'eng/github-actions-lock.json') -Value @{
+        schemaVersion = 1
+        actions       = @{'github/codeql-action' = @{version = '4.38.3'; commit = '0123456789abcdef0123456789abcdef01234567' } }
+    }
+    Write-JsonFixture -Path (Join-Path $fixtureRepositoryRoot 'eng/sbom-tools.json') -Value @{
+        schemaVersion      = 1
+        syftSdk            = @{module = 'github.com/anchore/syft'; version = 'v1.54.1' }
+        spdxWorkgroupTools = @{version = '2.0.7' }
+    }
+    $toolingReleases = [ordered]@{
+        'github--codeql-action' = '4.38.3'
+        'anchore--syft'         = '1.54.1'
+        'spdx--tools-java'      = '2.0.7'
+    }
+    foreach ($repositoryName in $toolingReleases.Keys) {
+        Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory "github/$repositoryName.releases.json") -Value @(
+            @{tag_name = "v$($toolingReleases[$repositoryName])"; draft = $false; prerelease = $false },
+            @{tag_name = 'codeql-bundle-v99.0.0'; draft = $false; prerelease = $false },
+            @{tag_name = 'v99.0.0-preview.1'; draft = $false; prerelease = $true },
+            @{tag_name = 'v100.0.0'; draft = $true; prerelease = $false }
+        )
+    }
+
     $nuGetVersions = [ordered]@{
-        'microsoft.windowsappsdk' = '2.4.0'
-        'microsoft.windows.cppwinrt' = '3.0.260818.1'
+        'microsoft.windowsappsdk'          = '2.4.0'
+        'microsoft.windows.cppwinrt'       = '3.0.260818.1'
         'microsoft.windows.sdk.buildtools' = '10.0.28000.2705'
     }
     foreach ($packageId in $nuGetVersions.Keys) {
         Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory "nuget/$packageId.index.json") -Value ([ordered]@{
-            versions = @($nuGetVersions[$packageId], "$($nuGetVersions[$packageId])-preview.1")
-        })
+                versions = @($nuGetVersions[$packageId], "$($nuGetVersions[$packageId])-preview.1")
+            })
     }
 
     $manifestPaths = @(
         Join-Path $fixtureRepositoryRoot 'vcpkg.json'
         Join-Path $fixtureRepositoryRoot 'Directory.Packages.props'
+        Join-Path $fixtureRepositoryRoot 'eng/github-actions-lock.json'
+        Join-Path $fixtureRepositoryRoot 'eng/sbom-tools.json'
     )
     $originalVcpkgManifestContent = [System.IO.File]::ReadAllText($manifestPaths[0])
     $originalCentralPackageVersionsContent =
-        [System.IO.File]::ReadAllText($manifestPaths[1])
+    [System.IO.File]::ReadAllText($manifestPaths[1])
     $originalHashes = @{}
     foreach ($manifestPath in $manifestPaths) {
         $originalHashes[$manifestPath] = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash
@@ -195,7 +222,7 @@ try {
         throw "Current stable pins should pass freshness verification.`n$($currentResult.output)"
     }
     $expectedNoActionableUpdateStatement =
-        'No newer dependency versions actionable through the approved package authorities were found.'
+    'No newer dependency versions actionable through the approved package authorities were found.'
     if ($currentResult.output.IndexOf(
             $expectedNoActionableUpdateStatement,
             [System.StringComparison]::Ordinal
@@ -212,8 +239,9 @@ try {
     # agrees with the root pin. Upstream releases must still be monitored.
     $overlayManifest = $originalVcpkgManifestContent | ConvertFrom-Json -AsHashtable
     $overlayManifest.configuration = @{ 'overlay-ports' = @(
-        'vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2'
-    ) }
+            'vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2'
+        )
+    }
     $overlayManifest.overrides[1].version = '0.28.8#1'
     $overlayManifest.overrides[2].version = '3.16.1'
     $localCatchManifestPath = Join-Path $fixtureRepositoryRoot 'vcpkg-ports/catch2/vcpkg.json'
@@ -249,12 +277,12 @@ try {
     # malformed JSON or mismatching local identities. No registry assertion may
     # falsely claim that 3.16.1 is available in this 3.16.0 registry fixture.
     foreach ($invalidCatchManifest in @(
-        @{ name = 'another-package'; 'version-semver' = '3.16.1' },
-        @{ name = @('catch2'); 'version-semver' = '3.16.1' },
-        @{ name = 'catch2'; 'version-semver' = '3.16.0' },
-        @{ name = 'catch2'; 'version-semver' = 3161 },
-        @{ name = 'catch2'; 'version-semver' = '3.16.1'; 'port-version' = 1 }
-    )) {
+            @{ name = 'another-package'; 'version-semver' = '3.16.1' },
+            @{ name = @('catch2'); 'version-semver' = '3.16.1' },
+            @{ name = 'catch2'; 'version-semver' = '3.16.0' },
+            @{ name = 'catch2'; 'version-semver' = 3161 },
+            @{ name = 'catch2'; 'version-semver' = '3.16.1'; 'port-version' = 1 }
+        )) {
         Write-JsonFixture -Path $localCatchManifestPath -Value $invalidCatchManifest
         $invalidCatchResult = Invoke-FreshnessCheck
         if ($invalidCatchResult.exitCode -eq 0 -or
@@ -265,9 +293,9 @@ try {
     Write-JsonFixture -Path $localCatchManifestPath -Value @{
         name = 'catch2'; 'version-semver' = '3.16.1'; license = 'BSL-1.0'
     }
-    Assert-RejectedMetadataRoot -Path $localCatchManifestPath -InvalidJson '[]' `
+    Assert-RejectedMetadata -Path $localCatchManifestPath -InvalidJson '[]' `
         -ExpectedDiagnostic 'root must be a JSON object'
-    Assert-RejectedMetadataRoot -Path $localCatchManifestPath `
+    Assert-RejectedMetadata -Path $localCatchManifestPath `
         -InvalidJson '{"name":"catch2","version-semver":"3.16.0","version-semver":"3.16.1"}' `
         -ExpectedDiagnostic "Duplicate property 'version-semver'"
     Write-JsonFixture -Path $catchReleasesPath -Value @(
@@ -345,9 +373,9 @@ try {
         )
     }
     $normalizedUnavailableNuGetPinOutput =
-        $unavailableNuGetPinResult.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
+    $unavailableNuGetPinResult.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
     $requiredUnavailableNuGetPinDiagnostic =
-        'Microsoft.WindowsAppSDK pins 2.5.0, but official NuGet does not contain that exact version.'
+    'Microsoft.WindowsAppSDK pins 2.5.0, but official NuGet does not contain that exact version.'
     if ($normalizedUnavailableNuGetPinOutput.IndexOf(
             $requiredUnavailableNuGetPinDiagnostic,
             [System.StringComparison]::OrdinalIgnoreCase
@@ -367,24 +395,24 @@ try {
     # Every authority has a documented top-level schema. Validate the raw root
     # before member access so JSON null/array/object substitutions cannot flow
     # into PowerShell's permissive property enumeration or coercion behavior.
-    Assert-RejectedMetadataRoot `
+    Assert-RejectedMetadata `
         -Path (Join-Path $metadataSnapshotDirectory 'vcpkg/libjpeg-turbo.json') `
         -InvalidJson '[]' `
         -ExpectedDiagnostic (
-            'official vcpkg registry metadata for libjpeg-turbo snapshot root must be a JSON object'
-        )
-    Assert-RejectedMetadataRoot `
+        'official vcpkg registry metadata for libjpeg-turbo snapshot root must be a JSON object'
+    )
+    Assert-RejectedMetadata `
         -Path (Join-Path $metadataSnapshotDirectory 'github/libjpeg-turbo.releases.json') `
         -InvalidJson '{}' `
         -ExpectedDiagnostic (
-            'upstream GitHub releases for libjpeg-turbo snapshot root must be a JSON array'
-        )
-    Assert-RejectedMetadataRoot `
+        'upstream GitHub releases for libjpeg-turbo snapshot root must be a JSON array'
+    )
+    Assert-RejectedMetadata `
         -Path (Join-Path $metadataSnapshotDirectory 'nuget/microsoft.windowsappsdk.index.json') `
         -InvalidJson '[]' `
         -ExpectedDiagnostic (
-            'official NuGet metadata for Microsoft.WindowsAppSDK snapshot root must be a JSON object'
-        )
+        'official NuGet metadata for Microsoft.WindowsAppSDK snapshot root must be a JSON object'
+    )
 
     # Dependency freshness consumes the repository manifest directly. A
     # duplicate override version must be rejected before ConvertFrom-Json can
@@ -410,7 +438,7 @@ try {
         )
     }
     $normalizedDuplicateOverrideVersionOutput =
-        $duplicateOverrideVersionResult.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
+    $duplicateOverrideVersionResult.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
     if ($normalizedDuplicateOverrideVersionOutput.IndexOf(
             "Duplicate property 'version'",
             [System.StringComparison]::Ordinal
@@ -432,19 +460,19 @@ try {
     # is newer than revision #0 even when the upstream version is unchanged.
     $libjpegTurboRegistryMetadataPath = Join-Path $metadataSnapshotDirectory 'vcpkg/libjpeg-turbo.json'
     Write-JsonFixture -Path $libjpegTurboRegistryMetadataPath -Value ([ordered]@{
-        versions = @(
-            [ordered]@{
-                'version-semver' = '3.2.0'
-                'port-version' = 0
-                'git-tree' = '0123456789abcdef0123456789abcdef01234567'
-            },
-            [ordered]@{
-                'version-semver' = '3.2.0'
-                'port-version' = 1
-                'git-tree' = '1123456789abcdef0123456789abcdef01234567'
-            }
-        )
-    })
+            versions = @(
+                [ordered]@{
+                    'version-semver' = '3.2.0'
+                    'port-version'   = 0
+                    'git-tree'       = '0123456789abcdef0123456789abcdef01234567'
+                },
+                [ordered]@{
+                    'version-semver' = '3.2.0'
+                    'port-version'   = 1
+                    'git-tree'       = '1123456789abcdef0123456789abcdef01234567'
+                }
+            )
+        })
 
     $outdatedPortRevisionResult = Invoke-FreshnessCheck
     if ($outdatedPortRevisionResult.exitCode -eq 0) {
@@ -452,11 +480,11 @@ try {
     }
     $normalizedPortRevisionOutput = $outdatedPortRevisionResult.output -replace '\s+', ' '
     foreach ($requiredPortRevisionDiagnostic in @(
-        'libjpeg-turbo',
-        'pinned 3.2.0;',
-        'offers 3.2.0#1',
-        'official vcpkg registry'
-    )) {
+            'libjpeg-turbo',
+            'pinned 3.2.0;',
+            'offers 3.2.0#1',
+            'official vcpkg registry'
+        )) {
         if ($normalizedPortRevisionOutput.IndexOf(
                 $requiredPortRevisionDiagnostic,
                 [System.StringComparison]::OrdinalIgnoreCase
@@ -470,7 +498,7 @@ try {
     # version string itself. Prove that an exact #N override parses, compares,
     # and remains immutable when it already matches the newest registry entry.
     $portRevisionPinnedManifest =
-        Get-Content -LiteralPath $manifestPaths[0] -Raw |
+    Get-Content -LiteralPath $manifestPaths[0] -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $libjpegTurboOverride = @(
         $portRevisionPinnedManifest.overrides |
@@ -485,7 +513,7 @@ try {
     $portRevisionPinnedHashes = @{}
     foreach ($manifestPath in $manifestPaths) {
         $portRevisionPinnedHashes[$manifestPath] =
-            (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash
+        (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash
     }
     $currentPortRevisionResult = Invoke-FreshnessCheck
     if ($currentPortRevisionResult.exitCode -ne 0) {
@@ -499,23 +527,23 @@ try {
         [System.Text.UTF8Encoding]::new($false)
     )
     Write-JsonFixture -Path $libjpegTurboRegistryMetadataPath -Value ([ordered]@{
-        versions = @(
-            [ordered]@{
-                'version-semver' = '3.2.0'
-                'port-version' = 0
-                'git-tree' = '0123456789abcdef0123456789abcdef01234567'
-            }
-        )
-    })
+            versions = @(
+                [ordered]@{
+                    'version-semver' = '3.2.0'
+                    'port-version'   = 0
+                    'git-tree'       = '0123456789abcdef0123456789abcdef01234567'
+                }
+            )
+        })
     Assert-FileHashUnchanged -ExpectedHashes $originalHashes
 
     # A stable release in either authoritative channel must become actionable.
     Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory 'vcpkg/exiv2.json') -Value ([ordered]@{
-        versions = @(
-            [ordered]@{ 'version-semver' = '0.28.9'; 'port-version' = 0; 'git-tree' = '1123456789abcdef0123456789abcdef01234567' },
-            [ordered]@{ 'version-semver' = '0.28.8'; 'port-version' = 0; 'git-tree' = '0123456789abcdef0123456789abcdef01234567' }
-        )
-    })
+            versions = @(
+                [ordered]@{ 'version-semver' = '0.28.9'; 'port-version' = 0; 'git-tree' = '1123456789abcdef0123456789abcdef01234567' },
+                [ordered]@{ 'version-semver' = '0.28.8'; 'port-version' = 0; 'git-tree' = '0123456789abcdef0123456789abcdef01234567' }
+            )
+        })
     Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory 'github/exiv2.releases.json') -Value @(
         [ordered]@{ tag_name = 'v0.28.9'; draft = $false; prerelease = $false },
         [ordered]@{ tag_name = 'v0.29.0-rc1'; draft = $false; prerelease = $true }
@@ -540,10 +568,10 @@ try {
     # resolve is important channel-lag information, not an actionable manifest
     # update. The gate must not encourage an unreviewed overlay or source shim.
     Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory 'vcpkg/exiv2.json') -Value ([ordered]@{
-        versions = @(
-            [ordered]@{ 'version-semver' = '0.28.8'; 'port-version' = 0; 'git-tree' = '0123456789abcdef0123456789abcdef01234567' }
-        )
-    })
+            versions = @(
+                [ordered]@{ 'version-semver' = '0.28.8'; 'port-version' = 0; 'git-tree' = '0123456789abcdef0123456789abcdef01234567' }
+            )
+        })
     $registryLagResult = Invoke-FreshnessCheck
     if ($registryLagResult.exitCode -ne 0) {
         throw "An upstream-only release must be reported without proposing an unrestorable vcpkg pin.`n$($registryLagResult.output)"
@@ -570,7 +598,7 @@ try {
     # version and port revision. A false-green here would bless a manifest that
     # vcpkg itself rejects as unavailable.
     $unavailableRegistryPinManifest =
-        Get-Content -LiteralPath $manifestPaths[0] -Raw |
+    Get-Content -LiteralPath $manifestPaths[0] -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $exiv2Override = @(
         $unavailableRegistryPinManifest.overrides |
@@ -590,9 +618,9 @@ try {
         )
     }
     $normalizedUnavailableRegistryPinOutput =
-        $unavailableRegistryPinResult.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
+    $unavailableRegistryPinResult.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
     $requiredUnavailableRegistryPinDiagnostic =
-        'exiv2 pins 0.28.9, but official vcpkg registry does not contain that exact version.'
+    'exiv2 pins 0.28.9, but official vcpkg registry does not contain that exact version.'
     if ($normalizedUnavailableRegistryPinOutput.IndexOf(
             $requiredUnavailableRegistryPinDiagnostic,
             [System.StringComparison]::OrdinalIgnoreCase
@@ -607,6 +635,39 @@ try {
         $originalVcpkgManifestContent,
         [System.Text.UTF8Encoding]::new($false)
     )
+    Assert-FileHashUnchanged -ExpectedHashes $originalHashes
+
+    foreach ($upgrade in @(
+            @{repository = 'github--codeql-action'; pinned = '4.38.3'; available = '4.39.1' },
+            @{repository = 'anchore--syft'; pinned = '1.54.1'; available = '1.55.0' },
+            @{repository = 'spdx--tools-java'; pinned = '2.0.7'; available = '2.0.8' }
+        )) {
+        $metadataPath = Join-Path $metadataSnapshotDirectory "github/$($upgrade.repository).releases.json"
+        $originalMetadata = [IO.File]::ReadAllText($metadataPath)
+        try {
+            Write-JsonFixture -Path $metadataPath -Value @(
+                @{tag_name = "v$($upgrade.pinned)"; draft = $false; prerelease = $false },
+                @{tag_name = "v$($upgrade.available)"; draft = $false; prerelease = $false }
+            )
+            $toolingUpgradeResult = Invoke-FreshnessCheck
+            if ($toolingUpgradeResult.exitCode -eq 0 -or
+                $toolingUpgradeResult.output -notlike "*offers $($upgrade.available)*") {
+                throw "Freshness missed an actionable tooling update for $($upgrade.repository).`n$($toolingUpgradeResult.output)"
+            }
+        }
+        finally { [IO.File]::WriteAllText($metadataPath, $originalMetadata, [Text.UTF8Encoding]::new($false)) }
+    }
+    Assert-RejectedMetadata -Path (Join-Path $metadataSnapshotDirectory 'github/anchore--syft.releases.json') `
+        -InvalidJson '{}' -ExpectedDiagnostic 'root must be a JSON array'
+    Assert-RejectedMetadata -Path (Join-Path $fixtureRepositoryRoot 'eng/sbom-tools.json') `
+        -InvalidJson '{"syftSdk":{"version":1.54},"spdxWorkgroupTools":{"version":"2.0.7"}}' `
+        -ExpectedDiagnostic 'must pin a JSON string version'
+    Assert-RejectedMetadata -Path (Join-Path $metadataSnapshotDirectory 'github/anchore--syft.releases.json') `
+        -InvalidJson '[{"tag_name":"v1.54.1","draft":"false","prerelease":false}]' `
+        -ExpectedDiagnostic 'GitHub release fields have invalid JSON types'
+    Assert-RejectedMetadata -Path (Join-Path $fixtureRepositoryRoot 'eng/github-actions-lock.json') `
+        -InvalidJson '{"actions":{"github/codeql-action":{"version":"4.38.3","version":"4.39.1"}}}' `
+        -ExpectedDiagnostic "Duplicate property 'version'"
     Assert-FileHashUnchanged -ExpectedHashes $originalHashes
 
     Write-Output (

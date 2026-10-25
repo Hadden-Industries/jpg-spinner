@@ -5,7 +5,7 @@ Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1') -ErrorAction 
 $ErrorActionPreference = 'Stop'
 
 $jsonObjectMemberValidationModulePath =
-    Join-Path $PSScriptRoot 'JsonObjectMemberValidation.psm1'
+Join-Path $PSScriptRoot 'JsonObjectMemberValidation.psm1'
 Import-Module -Name $jsonObjectMemberValidationModulePath
 
 function Invoke-JsonWebRequestWithUniqueObjectMembers {
@@ -22,7 +22,7 @@ function Invoke-JsonWebRequestWithUniqueObjectMembers {
 
         [Parameter()]
         [System.Text.Json.JsonValueKind]$RequiredRootValueKind =
-            [System.Text.Json.JsonValueKind]::Undefined,
+        [System.Text.Json.JsonValueKind]::Undefined,
 
         [Parameter()]
         [ValidateRange(1, 1024)]
@@ -37,7 +37,14 @@ function Invoke-JsonWebRequestWithUniqueObjectMembers {
         [int]$ResponseDataReadTimeoutSeconds = (Get-QualificationTimeout -Category jsonTransport),
 
         [Parameter()]
-        [switch]$AsHashtable
+        [switch]$AsHashtable,
+
+        [Parameter()]
+        [switch]$FollowPagination,
+
+        [Parameter()]
+        [ValidateRange(1, 1000)]
+        [int]$MaximumPageCount = 100
     )
 
     # Invoke-RestMethod automatically converts JSON into PSCustomObject values,
@@ -48,19 +55,34 @@ function Invoke-JsonWebRequestWithUniqueObjectMembers {
     # defaults do not retry or accept invalid JSON.
     # ConnectionTimeoutSeconds covers connection establishment;
     # OperationTimeoutSeconds also bounds stalled response-data reads.
-    $webResponse = Invoke-WebRequest `
-        -Uri $Uri `
-        -Method Get `
-        -Headers $Headers `
-        -ConnectionTimeoutSeconds $ConnectionTimeoutSeconds `
-        -OperationTimeoutSeconds $ResponseDataReadTimeoutSeconds
+    $nextPageUri = $Uri
+    $parsedPages = [Collections.Generic.List[object]]::new()
+    for ($pageNumber = 1; $pageNumber -le $MaximumPageCount; $pageNumber++) {
+        $webResponse = Invoke-WebRequest `
+            -Uri $nextPageUri `
+            -Method Get `
+            -Headers $Headers `
+            -ConnectionTimeoutSeconds $ConnectionTimeoutSeconds `
+            -OperationTimeoutSeconds $ResponseDataReadTimeoutSeconds
 
-    return ConvertFrom-JsonWithUniqueObjectMembers `
-        -JsonText ([string]$webResponse.Content) `
-        -SourceDescription $SourceDescription `
-        -RequiredRootValueKind $RequiredRootValueKind `
-        -MaximumDepth $MaximumDepth `
-        -AsHashtable:$AsHashtable
+        $parsedPages.Add((ConvertFrom-JsonWithUniqueObjectMembers `
+                    -JsonText ([string]$webResponse.Content) `
+                    -SourceDescription $SourceDescription `
+                    -RequiredRootValueKind $RequiredRootValueKind `
+                    -MaximumDepth $MaximumDepth `
+                    -AsHashtable:$AsHashtable))
+
+        # Invoke-WebRequest supplies the native RFC relation-link dictionary.
+        # Keep raw-body validation on every page; no JSON auto-deserialization
+        # or custom Link-header parser participates in this trust boundary.
+        if (-not $FollowPagination -or -not $webResponse.RelationLink.ContainsKey('next')) {
+            foreach ($parsedPage in $parsedPages) { $parsedPage }
+            return
+        }
+        $nextPageUri = [uri]$webResponse.RelationLink['next']
+    }
+    # Never publish a partial successful inventory when a server keeps linking.
+    throw "Pagination remains incomplete after $MaximumPageCount pages: $SourceDescription"
 }
 
 Export-ModuleMember -Function Invoke-JsonWebRequestWithUniqueObjectMembers

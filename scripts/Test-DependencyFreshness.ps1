@@ -11,7 +11,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $jsonObjectMemberValidationModulePath =
-    Join-Path $PSScriptRoot 'JsonObjectMemberValidation.psm1'
+Join-Path $PSScriptRoot 'JsonObjectMemberValidation.psm1'
 Import-Module -Name $jsonObjectMemberValidationModulePath -Force
 $strictJsonWebRequestModulePath = Join-Path $PSScriptRoot 'StrictJsonWebRequest.psm1'
 Import-Module -Name $strictJsonWebRequestModulePath -Force
@@ -35,7 +35,7 @@ if ($null -ne $resolvedMetadataSnapshotDirectory -and
 $availableUpdates = [System.Collections.Generic.List[string]]::new()
 $releaseChannelNotices = [System.Collections.Generic.List[string]]::new()
 $approvedPackageAuthorities =
-    [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+[System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
 
 function Read-JsonFile {
     param(
@@ -78,7 +78,9 @@ function Read-OfficialJsonMetadata {
         [string]$Description,
 
         [Parameter(Mandatory)]
-        [System.Text.Json.JsonValueKind]$RequiredRootValueKind
+        [System.Text.Json.JsonValueKind]$RequiredRootValueKind,
+
+        [switch]$FollowPagination
     )
 
     if ($null -ne $resolvedMetadataSnapshotDirectory) {
@@ -95,16 +97,56 @@ function Read-OfficialJsonMetadata {
         return Invoke-JsonWebRequestWithUniqueObjectMembers `
             -Uri $Uri `
             -Headers @{
-                Accept = 'application/json'
-                'User-Agent' = 'JPG-Spinner-Dependency-Freshness/2.0'
-            } `
+            Accept       = 'application/json'
+            'User-Agent' = 'JPG-Spinner-Dependency-Freshness/2.0'
+        } `
             -SourceDescription $Description `
             -RequiredRootValueKind $RequiredRootValueKind `
+            -FollowPagination:$FollowPagination `
             -MaximumDepth 100
     }
     catch {
         throw "Unable to read $Description from '$Uri': $($_.Exception.Message)"
     }
+}
+
+function Get-StableGitHubReleaseTag {
+    param([string]$Repository, [string]$DependencyName, [string]$SnapshotRelativePath)
+
+    if ($Repository -cnotmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+        throw "Unsupported GitHub repository identity: $Repository"
+    }
+    # GitHub's release list is paginated; /latest may instead select a separate
+    # product's release, as with CodeQL bundles in the action repository.
+    # Reuse native relation links and the existing stable-version comparison.
+    $releases = Read-OfficialJsonMetadata `
+        -Uri "https://api.github.com/repos/$Repository/releases?per_page=100" `
+        -SnapshotRelativePath $SnapshotRelativePath `
+        -Description "upstream GitHub releases for $DependencyName" `
+        -RequiredRootValueKind Array -FollowPagination
+    foreach ($release in @($releases)) {
+        if ($release.draft -isnot [bool] -or $release.prerelease -isnot [bool] -or
+            $release.tag_name -isnot [string]) {
+            throw "GitHub release fields have invalid JSON types for $DependencyName."
+        }
+        if (-not $release.draft -and -not $release.prerelease) { $release.tag_name }
+    }
+}
+
+function Add-GitHubReleaseUpdate {
+    param([string]$Repository, [string]$DependencyName, [object]$PinnedVersion)
+
+    if ($PinnedVersion -isnot [string] -or [string]::IsNullOrWhiteSpace($PinnedVersion)) {
+        throw "$DependencyName must pin a JSON string version."
+    }
+    $tags = @(Get-StableGitHubReleaseTag -Repository $Repository -DependencyName $DependencyName `
+            -SnapshotRelativePath "github/$($Repository.Replace('/', '--')).releases.json")
+    Assert-PinnedVersionExistsInAuthority -DependencyName $DependencyName -PinnedVersion $PinnedVersion `
+        -AuthorityVersions $tags -Authority 'upstream GitHub'
+    $newest = Get-NewestStableVersion -Candidates $tags -Description "upstream GitHub releases for $DependencyName"
+    Add-AvailableUpdate -DependencyName $DependencyName -PinnedVersion $PinnedVersion `
+        -AvailableVersion $newest -Authority 'upstream GitHub'
+    [void]$approvedPackageAuthorities.Add('upstream GitHub releases for engineering tools')
 }
 
 function ConvertTo-StableVersionRecord {
@@ -163,10 +205,10 @@ function ConvertTo-StableVersionRecord {
     }
 
     return [pscustomobject]@{
-        originalVersion = $CandidateVersion
+        originalVersion   = $CandidateVersion
         normalizedVersion = $normalizedVersion
-        components = $components
-        portVersion = $portVersion
+        components        = $components
+        portVersion       = $portVersion
     }
 }
 
@@ -272,7 +314,7 @@ function Assert-PinnedVersionExistsInAuthority {
     $publishedNormalizedVersions = @(
         foreach ($authorityVersion in $AuthorityVersions) {
             $publishedVersionRecord =
-                ConvertTo-StableVersionRecord -CandidateVersion ([string]$authorityVersion)
+            ConvertTo-StableVersionRecord -CandidateVersion ([string]$authorityVersion)
             if ($null -ne $publishedVersionRecord) {
                 $publishedVersionRecord.normalizedVersion
             }
@@ -324,8 +366,8 @@ if ($vcpkgOverrides.Count -eq 0) {
 
 $upstreamGitHubRepositories = @{
     'libjpeg-turbo' = 'libjpeg-turbo/libjpeg-turbo'
-    exiv2 = 'Exiv2/exiv2'
-    catch2 = 'catchorg/Catch2'
+    exiv2           = 'Exiv2/exiv2'
+    catch2          = 'catchorg/Catch2'
 }
 
 # Overlay ports take precedence over registry version selection. Their local
@@ -376,8 +418,8 @@ if ($usesMetadataOverlays) {
         -SnapshotRelativePath 'github/adobe-xmp-core.releases.json' `
         -Description 'upstream Adobe XMP Toolkit releases' -RequiredRootValueKind Array
     $adobeStableTags = @($adobeReleases | Where-Object {
-        $_.draft -eq $false -and $_.prerelease -eq $false
-    } | ForEach-Object { $_.tag_name })
+            $_.draft -eq $false -and $_.prerelease -eq $false
+        } | ForEach-Object { $_.tag_name })
     Assert-PinnedVersionExistsInAuthority -DependencyName 'adobe-xmp-core' `
         -PinnedVersion $adobeManifest.'version-string' `
         -AuthorityVersions $adobeStableTags -Authority 'upstream Adobe XMP Toolkit'
@@ -428,7 +470,7 @@ foreach ($override in $vcpkgOverrides) {
             $localCatchManifest.'version-semver' -isnot [string] -or
             $pinnedVersion -cne $localCatchManifest.'version-semver' -or
             ($null -ne $catchPortRevision -and
-                ($catchPortRevision.Value -isnot [long] -or $catchPortRevision.Value -ne 0))) {
+            ($catchPortRevision.Value -isnot [long] -or $catchPortRevision.Value -ne 0))) {
             throw 'The local catch2 overlay does not match the exact root override.'
         }
     }
@@ -514,19 +556,8 @@ foreach ($override in $vcpkgOverrides) {
 
     if ($upstreamGitHubRepositories.ContainsKey($dependencyName)) {
         $githubRepository = $upstreamGitHubRepositories[$dependencyName]
-        $githubMetadata = Read-OfficialJsonMetadata `
-            -Uri "https://api.github.com/repos/$githubRepository/releases?per_page=100" `
-            -SnapshotRelativePath "github/$dependencyName.releases.json" `
-            -Description "upstream GitHub releases for $dependencyName" `
-            -RequiredRootValueKind Array
-        $stableReleaseTags = @(
-            foreach ($release in @($githubMetadata)) {
-                if ($release.draft -eq $true -or $release.prerelease -eq $true) {
-                    continue
-                }
-                [string]$release.tag_name
-            }
-        )
+        $stableReleaseTags = @(Get-StableGitHubReleaseTag -Repository $githubRepository `
+                -DependencyName $dependencyName -SnapshotRelativePath "github/$dependencyName.releases.json")
         $newestGitHubVersion = Get-NewestStableVersion `
             -Candidates $stableReleaseTags `
             -Description "upstream GitHub releases for $dependencyName"
@@ -607,6 +638,25 @@ if (Test-Path -LiteralPath $centralPackageVersionsPath -PathType Leaf) {
             -PinnedVersion $pinnedVersion `
             -AvailableVersion $newestNuGetVersion `
             -Authority 'official NuGet'
+    }
+}
+
+$actionLockPath = Join-Path $resolvedRepositoryRoot 'eng/github-actions-lock.json'
+if (Test-Path -LiteralPath $actionLockPath -PathType Leaf) {
+    $actionLock = Read-JsonFile -Path $actionLockPath -Description 'GitHub action pins' -RequiredRootValueKind Object
+    foreach ($action in $actionLock.actions.PSObject.Properties) {
+        Add-GitHubReleaseUpdate -Repository $action.Name -DependencyName $action.Name -PinnedVersion $action.Value.version
+    }
+}
+$sbomToolPinsPath = Join-Path $resolvedRepositoryRoot 'eng/sbom-tools.json'
+if (Test-Path -LiteralPath $sbomToolPinsPath -PathType Leaf) {
+    $sbomToolPins = Read-JsonFile -Path $sbomToolPinsPath -Description 'SBOM tool pins' -RequiredRootValueKind Object
+    # These are the adopted SDK/verifier authorities, not a new resolver or a
+    # reason to re-adopt the rejected Microsoft SBOM CLI.
+    $releaseToolRepositories = [ordered]@{syftSdk = 'anchore/syft'; spdxWorkgroupTools = 'spdx/tools-java' }
+    foreach ($toolName in $releaseToolRepositories.Keys) {
+        Add-GitHubReleaseUpdate -Repository $releaseToolRepositories[$toolName] -DependencyName $toolName `
+            -PinnedVersion $sbomToolPins.$toolName.version
     }
 }
 
