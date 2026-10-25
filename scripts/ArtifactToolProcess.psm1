@@ -7,7 +7,9 @@ Import-Module (Join-Path $PSScriptRoot 'QualificationPolicy.psm1')
 function Invoke-ArtifactToolProcess {
     <# Bound one owned native child and preserve both diagnostic streams.
        A timeout, nonzero exit, unresolved termination or undrained stream
-       throws; a successful call returns the complete standard output. #>
+       throws; a successful text call returns the complete standard output.
+       BinaryStandardOutputPath streams original bytes into a new caller-owned
+       file instead; partial bytes and stderr survive a failed child. #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Executable,
@@ -17,6 +19,7 @@ function Invoke-ArtifactToolProcess {
         [Parameter(Mandatory)][string]$LogDirectory,
         [hashtable]$EnvironmentValues = @{},
         [hashtable]$EnvironmentOverrides = @{},
+        [ValidateNotNullOrEmpty()][string]$BinaryStandardOutputPath,
         # Cold qualification tools may initialize MSBuild/Roslyn or verify a
         # large package graph. This is a process ceiling, not a product SLA.
         [ValidateRange(1, 3600)][int]$TimeoutSeconds = (Get-QualificationTimeout -Category nativeToolProcess)
@@ -35,9 +38,21 @@ function Invoke-ArtifactToolProcess {
     foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start
+    $binaryOutput = $null
+    $hasBinaryOutput = $PSBoundParameters.ContainsKey('BinaryStandardOutputPath')
     try {
+        if ($hasBinaryOutput) {
+            # Exclusive creation preserves an existing original on retry. The
+            # caller owns the directory and any retained partial download.
+            $binaryOutput = [IO.File]::Open($BinaryStandardOutputPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
+        }
         if (-not $process.Start()) { throw "Artifact tool did not start: $LogName" }
-        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stdout = if ($hasBinaryOutput) {
+            # BaseStream avoids StreamReader's UTF-8 replacement and newline
+            # handling. Native artifact/container hashes cover these exact bytes.
+            $process.StandardOutput.BaseStream.CopyToAsync($binaryOutput)
+        }
+        else { $process.StandardOutput.ReadToEndAsync() }
         $stderr = $process.StandardError.ReadToEndAsync()
         $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
         if ($timedOut) {
@@ -50,14 +65,25 @@ function Invoke-ArtifactToolProcess {
         if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), (Get-QualificationTimeout -Category nativeTeardown -Unit Milliseconds))) {
             throw "Artifact tool diagnostic stream completion remains unresolved: $LogName"
         }
-        $standardOutput = $stdout.GetAwaiter().GetResult()
-        [IO.File]::WriteAllText((Join-Path $LogDirectory "$LogName.stdout.log"), $standardOutput)
+        $standardOutput = $null
+        if ($hasBinaryOutput) {
+            $stdout.GetAwaiter().GetResult()
+            $binaryOutput.Flush()
+        }
+        else {
+            $standardOutput = $stdout.GetAwaiter().GetResult()
+            [IO.File]::WriteAllText((Join-Path $LogDirectory "$LogName.stdout.log"), $standardOutput)
+        }
         [IO.File]::WriteAllText((Join-Path $LogDirectory "$LogName.stderr.log"), $stderr.GetAwaiter().GetResult())
         # Keep completed diagnostics even when the operation was unsuccessful.
         if ($timedOut) { throw "Artifact tool exceeded its deadline: $LogName" }
         if ($process.ExitCode -ne 0) { throw "Native artifact tool failed: $LogName (exit $($process.ExitCode))" }
         return $standardOutput
-    } finally { $process.Dispose() }
+    }
+    finally {
+        if ($null -ne $binaryOutput) { $binaryOutput.Dispose() }
+        $process.Dispose()
+    }
 }
 
 Export-ModuleMember -Function Invoke-ArtifactToolProcess

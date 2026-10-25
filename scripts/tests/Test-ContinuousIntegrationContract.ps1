@@ -57,12 +57,19 @@ foreach ($name in @('build', 'asan', 'analysis', 'unsigned-package')) {
 $hasSourcePairControl = $false
 $hasSourceTrustControl = $false
 $hasComdatIdentityControl = $false
+$policyCommands = [Collections.Generic.List[string]]::new()
 foreach ($step in (Get-NodeProperty (Get-NodeProperty $jobs 'policy') 'steps').Children) {
     $runKey = [YamlDotNet.RepresentationModel.YamlScalarNode]::new('run')
+    if ($step.Children.ContainsKey($runKey)) { $policyCommands.Add($step.Children[$runKey].Value) }
     if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-IndependentSourceBuildPair.ps1', [StringComparison]::Ordinal)) { $hasSourcePairControl = $true }
     if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-SourceCommitSignatureTrust.ps1', [StringComparison]::Ordinal)) { $hasSourceTrustControl = $true }
     if ($step.Children.ContainsKey($runKey) -and $step.Children[$runKey].Value.Contains('scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1', [StringComparison]::Ordinal)) {
         throw 'Native COMDAT compilation must run in the SDK-prepared x64 Release build lane, not source policy.'
+    }
+}
+foreach ($control in @('Test-ArtifactBinaryOutput.ps1', 'Test-ReleaseCandidateArchive.ps1', 'Test-ReleaseCandidateArchiveContext.ps1')) {
+    if (-not ($policyCommands -join "`n").Contains("./scripts/tests/$control -OwnedOutputRoot `$env:RUNNER_TEMP", [StringComparison]::Ordinal)) {
+        throw "Manual CI lacks the candidate archival control: $control"
     }
 }
 if (-not $hasSourcePairControl) { throw 'Manual CI lacks the real independent-checkout lifecycle control.' }

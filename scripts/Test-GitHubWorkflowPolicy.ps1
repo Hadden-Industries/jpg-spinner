@@ -56,12 +56,16 @@ foreach ($path in $WorkflowPaths) {
         throw 'Workflow must have exactly one YAML object root.'
     }
     $workflow = $yaml.Documents[0].RootNode
+    $isStoreWorkflow = (Get-WorkflowScalar (Get-WorkflowProperty $workflow 'name')) -ceq 'Store submission evidence'
     $permissions = Get-WorkflowProperty $workflow 'permissions'
     if ($permissions -isnot [YamlDotNet.RepresentationModel.YamlMappingNode] -or $permissions.Children.Count -ne 1 -or
         (Get-WorkflowScalar (Get-WorkflowProperty $permissions 'contents')) -cne 'read') { throw 'Require explicit read-only workflow permissions (contents: read).' }
     $concurrency = Get-WorkflowProperty $workflow 'concurrency'
-    if ((Get-WorkflowScalar (Get-WorkflowProperty $concurrency 'cancel-in-progress')) -cne 'true' -or
-        [string]::IsNullOrWhiteSpace((Get-WorkflowScalar (Get-WorkflowProperty $concurrency 'group')))) { throw 'Require explicit concurrency cancellation and group.' }
+    # Store archival replaces the previous candidate only after successor byte
+    # readback. Cancellation could strand that transition; serialize it instead.
+    $expectedCancellation = if ($isStoreWorkflow) { 'false' } else { 'true' }
+    if ((Get-WorkflowScalar (Get-WorkflowProperty $concurrency 'cancel-in-progress')) -cne $expectedCancellation -or
+        [string]::IsNullOrWhiteSpace((Get-WorkflowScalar (Get-WorkflowProperty $concurrency 'group')))) { throw 'Require the workflow-specific concurrency cancellation policy and group.' }
     $trigger = Get-WorkflowProperty $workflow 'on'
     $events = switch ($trigger.NodeType.ToString()) {
         'Scalar' { $trigger.Value }
@@ -125,6 +129,16 @@ foreach ($path in $WorkflowPaths) {
                     if (-not $hasNativeAttestation -or $isInteractive -or
                         (Get-WorkflowScalar (Get-WorkflowProperty $job 'if')) -cne "github.ref == 'refs/heads/main'") {
                         throw 'Platform attestation permissions require a trusted-main hosted native publisher.'
+                    }
+                }
+                elseif ($pair -ceq 'contents:write') {
+                    # Reserve repository writes for this isolated archival role.
+                    # Its stronger source-composition contract separately rejects
+                    # compilation, signing and an incomplete predecessor chain.
+                    if (-not $isStoreWorkflow -or $jobEntry.Key.Value -cne 'archive-candidate' -or $isInteractive -or
+                        $hasNativeAttestation -or (Get-WorkflowScalar (Get-WorkflowProperty $job 'needs')) -cne 'attestation' -or
+                        (Get-WorkflowScalar (Get-WorkflowProperty $job 'if')) -cne "github.ref == 'refs/heads/main'") {
+                        throw 'Repository write permission requires the isolated trusted-main Store archival role after attestation.'
                     }
                 }
                 elseif ($pair -cnotin @('contents:read', 'actions:read', 'security-events:write')) { throw 'Job requests unapproved permissions.' }

@@ -42,6 +42,9 @@ jobs:
                   ./scripts/tests/Test-ReleaseSbomBindingContract.ps1
                   ./scripts/tests/Test-StoreSubmissionBindingContract.ps1
                   ./scripts/tests/Test-ArtifactToolProcessLifecycle.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-ArtifactBinaryOutput.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-ReleaseCandidateArchive.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
+                  ./scripts/tests/Test-ReleaseCandidateArchiveContext.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-WinmdBuildIdentityVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-JpgSpinnerBlockMapVariance.ps1 -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-IndependentSourceBuildPair.ps1 -OwnedOutputRoot $env:RUNNER_TEMP

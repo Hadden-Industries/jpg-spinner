@@ -54,7 +54,7 @@ the single-candidate steady state has been restored.
 Actions artifacts remain short-lived transfer copies. Their one-day expiry is
 acceptable only when required candidate/evidence preservation is completed and
 verified before expiry; it must not impose a one-day deadline on human review.
-Automatic durable archival still needs implementation and hosted qualification
+The implemented durable-archival automation still needs hosted qualification
 before that handoff can be claimed. Do not launch another build to compensate
 for a missing archive without separately resolving its actual outcome.
 

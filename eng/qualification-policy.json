@@ -62,7 +62,8 @@
         "store-package.yml": {
             "admission": "artifactPublisherJob",
             "package": "hostedJobLimit",
-            "attestation": "storeAttestationJob"
+            "attestation": "storeAttestationJob",
+            "archive-candidate": "artifactPublisherJob"
         },
         "scanner-fuzz.yml": { "scanner": "scannerJob" },
         "codeql.yml": { "cpp": "nativeBuildJob" }

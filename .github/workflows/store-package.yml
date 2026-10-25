@@ -10,7 +10,8 @@ permissions:
     contents: read
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+    # Never interrupt a candidate replacement after verified staging begins.
+    cancel-in-progress: false
 defaults:
     run:
         shell: pwsh
@@ -99,6 +100,8 @@ jobs:
                   ./scripts/tests/Test-SbomVerificationToolRestoration.ps1 -DownloadDirectory $downloads -OwnedOutputRoot $env:STORE_WORKING_ROOT -NodeExecutablePath $node -NpmCliPath $npmCli
                   ./scripts/Restore-SbomVerificationTools.ps1 -DownloadDirectory $downloads -OutputDirectory (Join-Path $env:STORE_WORKING_ROOT tools) -NodeExecutablePath $node -NpmCliPath $npmCli
             - name: Bind native component snapshots to the selected clean-build bundle
+              env:
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
               run: |
                   $working = $env:STORE_WORKING_ROOT
                   $selected = Join-Path $working builds/builds/retained/first
@@ -141,6 +144,21 @@ jobs:
                   # Preserve SDK setup observations with the actual candidate's
                   # evidence; no installed SDK tree or installer cache is uploaded.
                   Copy-Item -LiteralPath artifacts/build-logs/windows-sdk -Destination (Join-Path $working evidence/windows-sdk) -Recurse
+                  $candidateContext = @{
+                    schemaVersion = 1; sourceCommit = $env:GITHUB_SHA
+                    producerRunId = $env:GITHUB_RUN_ID; sourceQaRunId = $env:SOURCE_RUN_ID
+                    selectedBundle = 'first/JpgSpinner.msixbundle'; selectedBundleSha256 = $parameters.ExpectedBundleSha256
+                    payloadManifest = 'candidate-payload.json'
+                    technicalEvidence = @{ independentBuildComparison = 'satisfied'; exactSubmissionSbom = 'generated'; attestation = 'follows-in-separate-job' }
+                    releaseAcceptance = 'pending'; releaseGateRegister = "https://github.com/Hadden-Industries/jpg-spinner/blob/$env:GITHUB_SHA/docs/release-qualification.md"
+                  }
+                  [IO.File]::WriteAllText((Join-Path $working evidence/candidate-context.json), ($candidateContext | ConvertTo-Json -Depth 4) + "`n", [Text.UTF8Encoding]::new($false))
+                  # Reuse the existing non-following ordinal inventory. Produce
+                  # it outside its payload, then include it as an attested JSON
+                  # subject; a manifest cannot recursively hash itself.
+                  $candidateManifest = Join-Path $working candidate-payload.json
+                  ./scripts/New-PayloadManifest.ps1 -PayloadRoot (Join-Path $working evidence) -OutputPath $candidateManifest
+                  Copy-Item -LiteralPath $candidateManifest -Destination (Join-Path $working evidence/candidate-payload.json)
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: store-submission-inputs
@@ -183,3 +201,36 @@ jobs:
                   compression-level: 9
                   if-no-files-found: error
                   path: artifacts/store-submission/
+    archive-candidate:
+        needs: attestation
+        if: github.ref == 'refs/heads/main'
+        runs-on: windows-2025-vs2026
+        timeout-minutes: 30
+        permissions:
+            contents: write
+            actions: read
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            # This job neither compiles, signs nor submits an application. It only
+            # preserves the original transport ZIP and replaces an owned draft
+            # after reading back and verifying the new uploaded asset bytes.
+            - name: Preserve and replace the single current candidate archive
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  $candidateArchiveRoot = Join-Path $env:RUNNER_TEMP "jpg-spinner-candidate-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+                  "CANDIDATE_ARCHIVE_ROOT=$candidateArchiveRoot" >> $env:GITHUB_ENV
+                  ./scripts/Update-ReleaseCandidateArchive.ps1 -WorkingDirectory $candidateArchiveRoot
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: candidate-archive-diagnostics
+                  retention-days: 1
+                  compression-level: 9
+                  if-no-files-found: warn
+                  path: |
+                      ${{ env.CANDIDATE_ARCHIVE_ROOT }}/archive-receipt.json
+                      ${{ env.CANDIDATE_ARCHIVE_ROOT }}/candidate-notes.md
+                      ${{ env.CANDIDATE_ARCHIVE_ROOT }}/logs/

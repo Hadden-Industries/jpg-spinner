@@ -115,6 +115,7 @@ foreach ($case in @(
         @{Name = 'arm64-not-a-package-gate'; Before = 'needs: [policy, build, arm64-runtime, asan, analysis]'; After = 'needs: [policy, build, asan, analysis]'; Expected = 'Unsigned packaging must wait for every automated qualification job.' },
         @{Name = 'exiv2-omitted-qualification'; Before = './scripts/tests/Test-Exiv2WindowsCharset.ps1'; After = "Write-Output 'Exiv2 qualification omitted' #"; Expected = 'Installed Exiv2 Windows charset qualification wiring is absent.' },
         @{Name = 'exiv2-unretained-evidence'; Before = '-EvidenceDirectory (Join-Path $PWD ''artifacts/build-logs/Exiv2Charset'')'; After = '-EvidenceDirectory (Join-Path $env:RUNNER_TEMP ''exiv2-evidence'')'; Expected = 'Installed Exiv2 charset qualification must run in every actual matrix lane with separate retained diagnostics.' }
+        @{Name = 'omitted-candidate-control'; Before = './scripts/tests/Test-ReleaseCandidateArchive.ps1'; After = './scripts/tests/Absent-CandidateControl.ps1'; Expected = 'Manual CI lacks the candidate archival control' }
     )) {
     if (-not $ciText.Contains($case.Before, [StringComparison]::Ordinal)) { throw "Native CI fixture precondition differs: $($case.Name)" }
     $path = Join-Path $fixtureRoot ($case.Name + '.yml')

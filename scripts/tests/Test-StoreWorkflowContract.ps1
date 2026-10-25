@@ -18,8 +18,13 @@ $reader = [IO.File]::OpenText($WorkflowPath)
 try { $yaml.Load($reader) } finally { $reader.Dispose() }
 function Get-Property($Mapping, [string]$Name) { return , $Mapping.Children[[YamlDotNet.RepresentationModel.YamlScalarNode]::new($Name)] }
 $workflow = $yaml.Documents[0].RootNode
+$concurrency = Get-Property $workflow concurrency
+if ((Get-Property $concurrency 'cancel-in-progress').Value -cne 'false' -or
+    (Get-Property $concurrency group).Value -cne '${{ github.workflow }}-${{ github.ref }}') {
+    throw 'Candidate replacement requires one serialized workflow/ref group without cancellation.'
+}
 $jobs = Get-Property $workflow jobs
-foreach ($name in @('admission', 'package', 'attestation')) {
+foreach ($name in @('admission', 'package', 'attestation', 'archive-candidate')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Store workflow lacks required job: $name" }
 }
 $package = Get-Property $jobs package
@@ -33,6 +38,13 @@ if ((Get-Property $package needs).Value -cne 'admission' -or (Get-Property $pack
 }
 $publisher = Get-Property $jobs attestation
 if ((Get-Property $publisher needs).Value -cne 'package') { throw 'Store attestation precedes successful package qualification.' }
+$archiver = Get-Property $jobs archive-candidate
+if ((Get-Property $archiver needs).Value -cne 'attestation') { throw 'Candidate archival precedes successful attestation.' }
+$archivePermissions = Get-Property $archiver permissions
+if ($archivePermissions.Children.Count -ne 2 -or (Get-Property $archivePermissions contents).Value -cne 'write' -or
+    (Get-Property $archivePermissions actions).Value -cne 'read') {
+    throw 'Candidate archiver requires only contents write and Actions read permissions.'
+}
 $commands = @{}
 foreach ($entry in $jobs.Children.GetEnumerator()) {
     $name = $entry.Key.Value; $job = $entry.Value
@@ -54,7 +66,7 @@ foreach ($entry in $jobs.Children.GetEnumerator()) {
     }
     foreach ($permission in (Get-Property $job permissions).Children.GetEnumerator()) {
         $pair = "$($permission.Key.Value):$($permission.Value.Value)"
-        if ($name -cne 'attestation' -and $pair -cnotin @('contents:read', 'actions:read')) { throw 'Store compiler/admission tokens must remain read-only.' }
+        if ($name -cnotin @('attestation', 'archive-candidate') -and $pair -cnotin @('contents:read', 'actions:read')) { throw 'Store compiler/admission tokens must remain read-only.' }
     }
 }
 if (-not (($commands.admission -join "`n").Contains('Test-ProtectedWorkflowAdmission.ps1 -TargetEnvironmentName store-submission', [StringComparison]::Ordinal))) { throw 'Store admission lacks the explicit current environment role.' }
@@ -68,7 +80,7 @@ if (-not $production.Contains($requiredStoreBuildWorkspaceSource, [StringCompari
     throw 'Store C++ build workspace must be a sibling of the checkout, outside runner temporary storage.'
 }
 $previous = -1
-foreach ($boundary in @('gpg.ssh.allowedSignersFile', 'Invoke-IndependentPackageBuildComparison.ps1', 'Export-JpgSpinnerVcpkgEvidence.ps1', 'New-JpgSpinnerBuildComponentEvidence.ps1', 'New-StoreSubmissionSbom.ps1')) {
+foreach ($boundary in @('gpg.ssh.allowedSignersFile', 'Invoke-IndependentPackageBuildComparison.ps1', 'Export-JpgSpinnerVcpkgEvidence.ps1', 'New-JpgSpinnerBuildComponentEvidence.ps1', 'New-StoreSubmissionSbom.ps1', 'candidate-context.json', 'New-PayloadManifest.ps1')) {
     $position = $production.IndexOf($boundary, [StringComparison]::Ordinal)
     if ($position -le $previous) { throw "Store production lacks ordered boundary: $boundary" }
     $previous = $position
@@ -76,7 +88,29 @@ foreach ($boundary in @('gpg.ssh.allowedSignersFile', 'Invoke-IndependentPackage
 foreach ($forbidden in @('Invoke-Build.ps1', 'Invoke-IndependentPackageBuildComparison.ps1', 'New-StoreSubmissionSbom.ps1', 'go build', 'npm ci')) {
     if (($commands.attestation -join "`n").Contains($forbidden, [StringComparison]::OrdinalIgnoreCase)) { throw 'The Store attestation publisher must not compile or generate its own subject.' }
 }
+# Keep the write-capable job closed: checkout, the reviewed archive entry point
+# and small diagnostics only. A list of forbidden compilers cannot cover every
+# future install/build command, whereas this role has one actual responsibility.
+$archiveSteps = (Get-Property $archiver steps).Children
+$requiredArchiveCommand = @'
+$candidateArchiveRoot = Join-Path $env:RUNNER_TEMP "jpg-spinner-candidate-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+"CANDIDATE_ARCHIVE_ROOT=$candidateArchiveRoot" >> $env:GITHUB_ENV
+./scripts/Update-ReleaseCandidateArchive.ps1 -WorkingDirectory $candidateArchiveRoot
+'@
+if ($archiveSteps.Count -ne 3 -or $commands['archive-candidate'].Count -ne 1 -or
+    $commands['archive-candidate'][0].TrimEnd() -cne $requiredArchiveCommand -or
+    -not (Get-Property $archiveSteps[0] uses).Value.StartsWith('actions/checkout@', [StringComparison]::Ordinal) -or
+    -not (Get-Property $archiveSteps[2] uses).Value.StartsWith('actions/upload-artifact@', [StringComparison]::Ordinal)) {
+    throw 'Candidate archiver must contain only checkout, the archive entry point and diagnostics.'
+}
+$archiveDiagnostics = Get-Property $archiveSteps[2] with
+if ((Get-Property $archiveSteps[2] 'if').Value -cne 'always()' -or
+    (Get-Property $archiveDiagnostics path).Value.TrimEnd() -cne @'
+${{ env.CANDIDATE_ARCHIVE_ROOT }}/archive-receipt.json
+${{ env.CANDIDATE_ARCHIVE_ROOT }}/candidate-notes.md
+${{ env.CANDIDATE_ARCHIVE_ROOT }}/logs/
+'@) { throw 'Candidate diagnostics must preserve receipts/logs without duplicating the archive ZIP.' }
 foreach ($forbidden in @('secrets.', 'signtool sign', 'Add-AppxPackage', 'PartnerCenter')) {
     if ([IO.File]::ReadAllText($WorkflowPath).Contains($forbidden, [StringComparison]::OrdinalIgnoreCase)) { throw "Store evidence workflow contains a non-evidence operation: $forbidden" }
 }
-Write-Output 'PASS: native-validated manual/protected Store composition, source verification before independent builds, exact build-component/SBOM ordering and separate read-only compiler/native-attestation roles; hosted execution remains pending.'
+Write-Output 'PASS: native-validated manual/protected Store composition, ordered build/SBOM/attestation/archive roles and serialized candidate replacement; hosted execution remains pending.'

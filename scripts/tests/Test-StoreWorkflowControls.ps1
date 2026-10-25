@@ -16,10 +16,19 @@ $cases = @(
     @{Name = 'permissive-download'; Before = 'digest-mismatch: error'; After = 'digest-mismatch: warn'; Expected = 'fail on a digest mismatch' },
     @{Name = 'signer-before-producer'; Before = 'needs: package'; After = 'needs: admission'; Expected = 'precedes successful package qualification' },
     @{Name = 'missing-comparison'; Before = 'Invoke-IndependentPackageBuildComparison.ps1'; After = 'Unqualified-PackageComparison.ps1'; Expected = 'ordered boundary' },
+    @{Name = 'missing-candidate-context'; Before = 'candidate-context.json'; After = 'missing-context.json'; Expected = 'ordered boundary' },
+    @{Name = 'missing-candidate-membership'; Before = 'New-PayloadManifest.ps1'; After = 'Missing-PayloadManifest.ps1'; Expected = 'ordered boundary' },
     @{Name = 'temporary-native-build-workspace'; Before = '(Split-Path -Parent $env:GITHUB_WORKSPACE)'; After = '$env:RUNNER_TEMP'; Expected = 'workspace must be a sibling' },
     @{Name = 'nested-checkout-build-workspace'; Before = '(Split-Path -Parent $env:GITHUB_WORKSPACE)'; After = '$env:GITHUB_WORKSPACE'; Expected = 'workspace must be a sibling' },
     @{Name = 'privileged-compiler'; YamlMutation = 'compiler-id-token-write'; Expected = 'trusted-main hosted native publisher' },
-    @{Name = 'compiler-in-publisher'; YamlMutation = 'publisher-compile-step'; Expected = 'publisher must not compile' }
+    @{Name = 'compiler-in-publisher'; YamlMutation = 'publisher-compile-step'; Expected = 'publisher must not compile' },
+    @{Name = 'cancellable-candidate-replacement'; Before = 'cancel-in-progress: false'; After = 'cancel-in-progress: true'; Expected = 'workflow-specific concurrency' },
+    @{Name = 'uncoordinated-candidate-group'; Before = 'group: ${{ github.workflow }}-${{ github.ref }}'; After = 'group: ${{ github.workflow }}-${{ github.run_id }}'; Expected = 'serialized workflow/ref group' },
+    @{Name = 'archive-before-attestation'; Before = 'needs: attestation'; After = 'needs: package'; Expected = 'archival role after attestation' },
+    @{Name = 'archive-compiler'; Before = './scripts/Update-ReleaseCandidateArchive.ps1 -WorkingDirectory $candidateArchiveRoot'; After = './scripts/Invoke-Build.ps1'; Expected = 'archive entry point and diagnostics' },
+    @{Name = 'privileged-archive'; YamlMutation = 'archive-id-token-write'; Expected = 'trusted-main hosted native publisher' },
+    @{Name = 'archive-extra-permission'; YamlMutation = 'archive-security-events-write'; Expected = 'only contents write and Actions read' },
+    @{Name = 'duplicate-archive-diagnostics'; Before = '${{ env.CANDIDATE_ARCHIVE_ROOT }}/logs/'; After = '${{ env.CANDIDATE_ARCHIVE_ROOT }}/'; Expected = 'without duplicating the archive ZIP' }
 )
 foreach ($case in $cases) {
     $path = Join-Path $fixture ($case.Name + '.yml')
@@ -50,6 +59,11 @@ foreach ($case in $cases) {
                 }
                 $insertionNode = $steps
                 $insertionSource = "- run: ./scripts/New-StoreSubmissionSbom.ps1`n"
+            }
+            { $_ -cin @('archive-id-token-write', 'archive-security-events-write') } {
+                $archiver = $jobs.Children[[YamlDotNet.RepresentationModel.YamlScalarNode]::new('archive-candidate')]
+                $insertionNode = $archiver.Children[[YamlDotNet.RepresentationModel.YamlScalarNode]::new('permissions')]
+                $insertionSource = if ($case.YamlMutation -ceq 'archive-id-token-write') { "id-token: write`n" } else { "security-events: write`n" }
             }
             default { throw "Unknown native YAML control mutation: $($case.YamlMutation)" }
         }
