@@ -50,7 +50,8 @@ in signed checkpoints `f722cc9858e2` and `057fc66cda92`. The
 [supplied-result dispositions](../implementation/2026-10-25-codeql-result-dispositions.md)
 cover all 34 inputs without another scan or automatic GitHub mutation. The
 [prerequisite register](../release-prerequisites.md) records actual resource
-availability and the missing protected packaging environment. The baseline
+availability. The subsequently approved single-maintainer amendment resolves
+the original protected-environment absence. The baseline
 above remains historical; do not use it as a competing current work queue.
 
 The work lacked a single candidate boundary and a visible critical path.
@@ -98,6 +99,14 @@ for concurrent source writers or subagents. A shared gate register and one
 integration owner coordinate them.
 
 ## Execution controls
+
+The owner's 2026-10-25 single-developer amendment allows required environment
+self-review. The agreed maintainer account is the required reviewer; an
+independent person is not a prerequisite for this approval gate. Preserve
+explicit approval, native Boolean typing, the trusted manual producer and exact
+source/ref checks. The [self-review checkpoint](../implementation/2026-10-25-maintainer-self-review.md)
+records live Store configuration separately from source publication, workflow
+execution and the remaining device/human/legal/flight requirements.
 
 - **One decision log and gate register.** Use this sequence and
   [release qualification](../release-qualification.md). Historical implementation

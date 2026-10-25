@@ -32,13 +32,13 @@ comparison, Store acceptance or whole Task 17 completion.
 
 ## What each result establishes
 
-| Result | Claim | Not established |
-| --- | --- | --- |
-| Native installed vcpkg export | Installed build closure of `exiv2` and `libjpeg-turbo`, separately for each target triplet | Which static-library objects were linked or executed |
-| Application `packages.lock.json` | Resolved direct/transitive package identities across all recorded targets | Every package is redistributed, or a build ran with this lock |
-| Extracted payload inventory | Exact relative filenames, lengths and SHA-256 values | Container authenticity, installation or runtime behaviour |
-| Native SPDX plus official validation | Format/semantic validity and membership matching independent required identities and file hashes | Completeness of arbitrary caller requirements or release approval |
-| Release `binding.json` | Hash linkage between the selected signed container and the exact SBOM/input-evidence files | Build-execution attestation, linkage analysis or deployed/instrumented runtime inventory |
+| Result                               | Claim                                                                                            | Not established                                                                          |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Native installed vcpkg export        | Installed build closure of `exiv2` and `libjpeg-turbo`, separately for each target triplet       | Which static-library objects were linked or executed                                     |
+| Application `packages.lock.json`     | Resolved direct/transitive package identities across all recorded targets                        | Every package is redistributed, or a build ran with this lock                            |
+| Extracted payload inventory          | Exact relative filenames, lengths and SHA-256 values                                             | Container authenticity, installation or runtime behaviour                                |
+| Native SPDX plus official validation | Format/semantic validity and membership matching independent required identities and file hashes | Completeness of arbitrary caller requirements or release approval                        |
+| Release `binding.json`               | Hash linkage between the selected signed container and the exact SBOM/input-evidence files       | Build-execution attestation, linkage analysis or deployed/instrumented runtime inventory |
 
 The approved scope is **build context plus exact artifact bytes**. SPDX
 [distinguishes build, deployed and runtime inventories](https://spdx.github.io/spdx-spec/v3.0.1/model/Software/Vocabularies/SbomType/).
@@ -281,19 +281,26 @@ The [interactive workflow](../.github/workflows/interactive-qualification.yml)
 requires a successful manually dispatched CI run for the **same main commit**.
 It reads unfiltered native [workflow-run metadata](https://docs.github.com/en/rest/actions/workflow-runs#get-a-workflow-run)
 and the [existing environment](https://docs.github.com/en/rest/deployments/environments#get-an-environment),
-requiring nonempty required reviewers and prevention of self-review before
-scheduling the dedicated runner. Referencing an environment name alone does not
+requiring nonempty required reviewers and a native Boolean self-review setting
+before scheduling the dedicated runner. The owner's 2026-10-25 amendment permits
+the sole maintainer to approve their own run: configure `prevent_self_review=false`
+and retain deliberate reviewer approval. A `true` value remains admissible when
+another reviewer is available; strings, numbers, null and omission are refused.
+Referencing an environment name alone does not
 configure its protection. An absent, unreadable or unprotected environment
 refuses admission. Repository administrators must separately configure/review
 reviewer membership, bypass policy and the dedicated runner; source changes here
 do not create those live settings or prove VM isolation.
 
+The [self-review checkpoint](implementation/2026-10-25-maintainer-self-review.md)
+records the separately authorized live `store-submission` configuration and its
+native readback. It does not establish a hosted interactive lane or approve a run.
+
 The runner verifies the input attestation, re-inventories payload bytes and uses
 the prebuilt host through `Invoke-TestSuite.ps1`; its native environment probe
 runs first. No compilation, toolchain installation, signing key or trust-store
 change occurs on that runner. The fixed selection
-`[ui-automation]~[operator-assisted]` is bounded; unavailable desktops fail with
-78. The workflow does not suppress or change the dedicated host's screen saver.
+`[ui-automation]~[operator-assisted]` is bounded; unavailable desktops fail with 78. The workflow does not suppress or change the dedicated host's screen saver.
 The lane owner must provide its ordinary unlocked interactive test session.
 
 The native Catch2 [JUnit reporter](https://github.com/catchorg/Catch2/blob/v3.16.0/src/catch2/reporters/catch_reporter_junit.cpp)

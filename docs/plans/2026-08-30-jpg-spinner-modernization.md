@@ -2172,6 +2172,16 @@ and [MSIX signing guidance](https://learn.microsoft.com/en-us/windows/msix/packa
 
 ### Step 17.5: Protected Store packaging workflow
 
+**Owner-approved single-maintainer amendment (2026-10-25):** Required environment
+review may be performed by the sole developer who triggered the workflow.
+Configure `prevent_self_review=false` with that maintainer as a required reviewer;
+keep a genuine native Boolean in admission and require nonempty reviewer
+membership. Stronger reviewer separation remains supported when available.
+This deliberately replaces human-independent approval with explicit maintainer
+approval; it does not automate approval, relax the same-source/manual/main-ref
+requirements, authorize a Store submission or replace other release evidence.
+See the [native configuration and regression record](../implementation/2026-10-25-maintainer-self-review.md).
+
 **Protected source-composition checkpoint (2026-10-16):**
 The manual-only `store-package.yml` now composes same-candidate native admission,
 existing reviewer protection, portable source-signature trust, two independent
