@@ -44,8 +44,20 @@ updates Ajv's locked `fast-uri` dependency to the compatible patched release.
 All four advisory regressions and ordinary URI/Ajv controls pass after failing
 against the old lock. The five historical CodeQL locations were already deleted
 by signed source retirement; their absence gate and refusal controls pass.
-This targeted repair starts no scan or remote workflow. GitHub alert-state
-reconciliation and complete release qualification remain pending.
+After owner-authorized publication of signed `0d78e54b`, GitHub reports all four
+Dependabot alerts fixed without dismissal. The separately authorized native
+CodeQL run and historical configuration reconciliation remain distinct from this
+dependency fix and from complete release qualification.
+
+The [successful hosted-QA checkpoint](implementation/2026-10-25-hosted-qa-completion.md)
+at exact signed `0d78e54b` completes all ten jobs: the five build lanes, source
+policy, x64 ASan/analysis, input attestation and native unsigned packaging.
+The four x86/x64 headless lanes contain 1,513 passing testcase executions with
+no JUnit failure/error/skip; the extra x64 Release case exercises shutdown.
+Actual package/control checks pass for all three architectures. ARM64 remains
+compile/package evidence, and an upstream unused CMake option warning remains
+disclosed. Original archives and native identities are retained before spent
+cloud-copy removal; this is not final device, signed-upgrade or release proof.
 
 The owner-approved [qualification timeout budgets](implementation/2026-10-24-qualification-timeouts.md)
 supersede earlier workstation-sized process and workflow ceilings. All waits

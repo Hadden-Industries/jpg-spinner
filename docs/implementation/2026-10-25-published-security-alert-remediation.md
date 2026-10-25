@@ -115,9 +115,15 @@ and HISEW resource inventory `b91f43cc50354253a444131923d2e70a`. Generated npm
 trees and cache bytes are reconstructible from the retained locks and registry
 integrities; native cleanup must preserve required evidence before disposal.
 
-After the signed source fix is deliberately published, Dependabot can reconcile
-the updated lock. The five historical CodeQL records require a separately
-authorized current analysis; this document does not authorize it. Full final
+The owner authorized publication of signed fix
+`0d78e54bc27018856742647a9e3c4098fea8a1da`. GitHub's subsequent native alert
+records report all four Dependabot alerts **fixed**, with `fixed_at` values on
+2026-10-25 at 08:20:21–08:20:22 UTC. No alert was dismissed. The fully paginated
+open-alert readback is empty. The associated
+[ordinary manual QA run passed](2026-10-25-hosted-qa-completion.md).
+
+The five historical CodeQL records require a separately authorized current
+analysis; this document does not authorize it. Full final
 verification, existing review restrictions, trusted Store-upgrade evidence,
 device/accessibility checks and legal/publication approvals remain as recorded
 in the [release register](../release-qualification.md).
