@@ -75,6 +75,17 @@ obligations; this source update does not supply those approvals.
 
 ## Evidence and next work
 
+The retained ARM64 dependency diagnostic is now classified. Microsoft's pinned
+[libjpeg-turbo port](https://github.com/microsoft/vcpkg/blob/c748cb44f2a435fcf015c35225c9d5545fe0021c/ports/libjpeg-turbo/portfile.cmake#L27)
+passes `NEON_INTRINSICS=ON`, but upstream 3.2.0's
+[ARM SIMD source selection](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/3.2.0/simd/CMakeLists.txt#L234)
+uses the architecture/bitness and `WITH_SIMD`; that obsolete variable is unused.
+CMake documents [unused command-line variables](https://cmake.org/cmake/help/v4.3/manual/cmake.1.html#cmdoption-cmake-no-warn-unused-cli)
+as configure diagnostics. The plan's compiler-warning prohibition and `/WX`
+remain unchanged. The original configure warning remains visible; this is not
+a compiler warning, evidence of disabled ARM SIMD or physical ARM64 runtime
+qualification. No suppression, overlay or dependency-authority change is added.
+
 The adopted maintained contract runner passes all ten native Go tests, the
 independent fixed-hash/component fixture, official schema and Workgroup semantic
 validation. Native YAML/actionlint and protected Store composition checks pass

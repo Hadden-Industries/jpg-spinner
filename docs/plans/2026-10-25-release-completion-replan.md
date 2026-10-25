@@ -37,11 +37,21 @@ its actual hosted qualification; there is no authorized automatic submission.
 | Resources                                    | Required ordinary-QA and CodeQL originals are independently retained. Ordinary-QA cloud artifact count is zero.                                                                                                                                           | Existing local cleanup holds remain under [HISEW #197](https://github.com/Hadden-Industries/software-engineering-workflow/issues/197#issuecomment-6395313372). Preserve blocked directories; do not work around native admission.                   |
 
 The current package log's unused `NEON_INTRINSICS` CMake option warning also
-needs classification against the actual compiler-warning requirement. It is
-not permission to add an overlay, change dependency authority or suppress
-diagnostics. Preserve the successful run and its original warning.
+has a subsequent [source-backed classification](../implementation/2026-10-25-qualified-tooling-refresh.md#evidence-and-next-work):
+it is an obsolete upstream-port configure input, outside the compiler-warning
+condition. Preserve the successful run and original warning; add no overlay,
+authority change or suppression.
 
 ## Why the approach became reactive
+
+Subsequent execution closes the [freshness repair](../implementation/2026-10-25-release-tool-freshness.md)
+and [qualified tooling adoption](../implementation/2026-10-25-qualified-tooling-refresh.md)
+in signed checkpoints `f722cc9858e2` and `057fc66cda92`. The
+[supplied-result dispositions](../implementation/2026-10-25-codeql-result-dispositions.md)
+cover all 34 inputs without another scan or automatic GitHub mutation. The
+[prerequisite register](../release-prerequisites.md) records actual resource
+availability and the missing protected packaging environment. The baseline
+above remains historical; do not use it as a competing current work queue.
 
 The work lacked a single candidate boundary and a visible critical path.
 New tooling releases, fixture defects, old alert configurations and HISEW
@@ -140,6 +150,7 @@ owns Store rollout/withdrawal; do not assume a lower-version reinstall is a
 valid rollback. Keep the last known artifact and evidence, and choose a supported
 forward fix or restore path from the actual deployment state.
 
-The immediate next action is to finish SLICE-001 and the bounded supplied-alert
-triage while establishing SLICE-003's availability. A further complete release
-build is not the next action.
+The next action after those engineering checkpoints is to establish SLICE-003's
+actual operators and lanes, prepare any deliberate administrative dispositions,
+then freeze one candidate. A further complete release build is not the next
+action while those prerequisites remain unavailable.

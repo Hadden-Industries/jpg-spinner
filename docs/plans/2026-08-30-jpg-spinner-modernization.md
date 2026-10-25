@@ -2599,7 +2599,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 
 ### Step 20.1: Re-audit all version pins before release
 
-- [ ] Run the stable-only freshness checker against official Windows App SDK, Windows SDK, C++/WinRT, NuGet, vcpkg, libjpeg-turbo, Exiv2, Catch2, Microsoft SBOM Tool, and GitHub Action releases.
+- [ ] Run the stable-only freshness checker against official Windows App SDK, Windows SDK, C++/WinRT, NuGet, vcpkg, libjpeg-turbo, Exiv2, Catch2, the adopted Syft SDK, SPDX Workgroup Tools, and GitHub Action releases. Compare the workflow's selected Go patch with the official stable Go distribution metadata; the module's minimum language directive is a separate input.
 - [ ] If any newer stable release exists, update the relevant immutable pin, lock, notice, and action SHA through a separate RED/GREEN dependency-change commit, then restart Task 20 from the clean-clone gate.
 - [ ] Do not substitute experimental, preview, release-candidate, nightly, or moving “latest” references for stable pins.
 

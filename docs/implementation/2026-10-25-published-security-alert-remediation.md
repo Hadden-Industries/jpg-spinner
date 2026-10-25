@@ -127,3 +127,14 @@ analysis; this document does not authorize it. Full final
 verification, existing review restrictions, trusted Store-upgrade evidence,
 device/accessibility checks and legal/publication approvals remain as recorded
 in the [release register](../release-qualification.md).
+
+## Subsequent authorized CodeQL result
+
+The separately approved native run on `435b87b3` subsequently completed. The
+[supplied-result disposition record](2026-10-25-codeql-result-dispositions.md)
+now accounts for all 29 results from that analysis and preserves the five
+historical inputs separately. The current claims have positive static
+counterevidence under the pinned configuration; historical source obsolescence
+does not declare the original claims false. No further scan, alert dismissal or
+analysis deletion follows automatically. The earlier intake and missing-analysis
+observations above remain historical evidence.
