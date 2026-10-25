@@ -12,11 +12,11 @@ changes only workflow inputs, their controls and documentation. It adds the
 the production C++ source and dependency recipe remain those analyzed at
 `74f168b3`.
 
-| Deliberately authorized run                                                                               | Exact source                               | Observed outcome                                                                                                                                                                                    |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [First manual QA, 40221234193](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40221234193) | `74f168b3912bd1bedf706e3baf0167f9c5edd1c9` | Failed: the prebuilt ARM64 transfer omitted the application manifest required by one headless test. Other successful results retain their actual scope.                                             |
-| [Native CodeQL, 40221237300](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40221237300)   | `74f168b3912bd1bedf706e3baf0167f9c5edd1c9` | Completed successfully at 19:45:56 UTC on 2026-10-25; five source-repaired alerts are fixed without dismissal.                                                                                      |
-| [Final manual QA, 40227978479](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40227978479) | `8183255a9e63c9d8282b526aee448b330440446a` | All five build lanes, policy, ASan, MSVC analysis, native ARM64 headless execution and interactive-input publication passed. Unsigned package qualification remains in progress at this checkpoint. |
+| Deliberately authorized run                                                                               | Exact source                               | Observed outcome                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [First manual QA, 40221234193](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40221234193) | `74f168b3912bd1bedf706e3baf0167f9c5edd1c9` | Failed: the prebuilt ARM64 transfer omitted the application manifest required by one headless test. Other successful results retain their actual scope.     |
+| [Native CodeQL, 40221237300](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40221237300)   | `74f168b3912bd1bedf706e3baf0167f9c5edd1c9` | Completed successfully at 19:45:56 UTC on 2026-10-25; five source-repaired alerts are fixed without dismissal.                                              |
+| [Final manual QA, 40227978479](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40227978479) | `8183255a9e63c9d8282b526aee448b330440446a` | Completed successfully at 21:12:37 UTC on 2026-10-25: all eleven jobs passed, including native ARM64 headless execution and unsigned package qualification. |
 
 Each workflow was dispatched once under its own recorded authority. The first
 failed run was not rerun or relabeled successful. The CI-only repair did not
@@ -61,6 +61,31 @@ This establishes the headless native-execution requirement; packaged-app smoke,
 other OS/provider lanes, performance and human acceptance retain their own
 requirements.
 
+## Unsigned package qualification
+
+Job `121286257880` produced and inspected the x86, x64 and ARM64 unsigned
+packages. Each passed the native manifest/framework/payload checks, 55 artwork
+controls and 24 notice-asset checks. All three original package provenance
+records identify clean signed source `8183255a9e63c9d8282b526aee448b330440446a`.
+Native bundling/extraction, synthetic payload-comparison refusals, false
+block-hash rejection, WinRT-origin preservation, Store-component construction
+and release/Store-SBOM refusal controls also passed.
+
+The original unsigned bundle is 8,663,308 bytes, SHA-256
+`38ec9ac0d3ca9e3af404d508b0b58ffdad5de84ff3ec9766c5c19044ccb08b01`.
+It remains inside the preserved original diagnostic ZIP, artifact `12613993331`,
+11,041,030 bytes, SHA-256
+`109a7ef64f4c148585192f20e6c7ff4ee98ed6fc08b5218c06c00c7dcc11cea3`.
+The retained log still records the previously observed ARM64 libjpeg-turbo port
+warning that `NEON_INTRINSICS` is unused; successful qualification does not
+declare the dependency producer entirely diagnostic-free.
+
+This ordinary QA run did not produce a second independent build set or an exact
+final-bundle SBOM. Native packaged-app smoke, the required OS/provider and
+performance observations, human accessibility/localization, WACK, trusted Store
+upgrade, licensing/source sign-off and deliberate distribution decisions remain
+under their existing release gates.
+
 ## Source repair result
 
 CodeQL 2.27.3 analysis `2023185530`, category `cpp-security-extended`, evaluated
@@ -101,10 +126,21 @@ original compressed diagnostics, actual native API records, the provider's
 returned SARIF subset, and the selected decoded job logs. Original ZIPs were
 checked against their native GitHub SHA-256 digests before independent native
 preservation. Checkpoint `88810d6b21424de9a4b5f13134ff4774` includes the successful
-ARM64 runtime and input-publication evidence. A decoded UTF-8/LF log is identified
+ARM64 runtime and input-publication evidence; successor
+`8053780f75bf46ef9dee7765c91a7956` includes the original final container, completed
+run, package log and cloud-disposal receipts. A decoded UTF-8/LF log is identified
 as that representation; it is not claimed to reproduce the server's original
 log-container bytes. No entire dependency environment or compiler tree is
 archived.
+
+After fresh original/independent-copy hash and length readback, the nine spent
+diagnostic cloud copies from the two completed earlier runs were removed through
+GitHub's native artifact API. Every deletion returned HTTP 204; independent
+listing confirms those IDs are absent. Their 14,216,825 provider-reported bytes
+are removed from artifact storage, subject to GitHub's usage-meter delay. The
+original reports, workflow runs, CodeQL analyses, older unpreserved input
+archives and current acceptance inputs remain retained; this is not a claim of
+complete cloud cleanup or local disk reclamation.
 
 Blocked local working groups remain intact under
 [HISEW issue #197](https://github.com/Hadden-Industries/software-engineering-workflow/issues/197).

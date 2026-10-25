@@ -98,7 +98,15 @@ Dependabot alerts fixed without dismissal. The separately authorized native
 CodeQL run and historical configuration reconciliation remain distinct from this
 dependency fix and from complete release qualification.
 
-The [successful hosted-QA checkpoint](implementation/2026-10-25-hosted-qa-completion.md)
+The later [completed source-repair campaign](implementation/2026-10-25-exiv2-hosted-qualification.md)
+passes all eleven manual QA jobs on exact signed source
+`8183255a9e63c9d8282b526aee448b330440446a`, including native ARM64 headless
+execution and unsigned package qualification. The original final container,
+clean-source provenance and reports are independently retained. This ordinary
+QA result does not supply a second independent build set, an exact-final-bundle
+SBOM, the pending maintainer acceptances or Store release authority.
+
+The earlier [successful hosted-QA checkpoint](implementation/2026-10-25-hosted-qa-completion.md)
 at exact signed `0d78e54b` completes all ten jobs: the five build lanes, source
 policy, x64 ASan/analysis, input attestation and native unsigned packaging.
 The four x86/x64 headless lanes contain 1,513 passing testcase executions with
