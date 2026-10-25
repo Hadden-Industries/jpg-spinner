@@ -1,5 +1,8 @@
-# Register the one deployment-only lane label with actionlint's native schema.
-# This declares a label, not a runner installation or an isolation claim.
+# Register labels through actionlint's supported configuration. Its 1.7.12
+# built-in table predates GitHub's GA VS2026 ARM64 hosted image. The native
+# extension key below also accepts that exact hosted label; it does not change
+# GitHub scheduling or assert that this hosted VM is self-hosted.
 self-hosted-runner:
-  labels:
-    - jpg-spinner-interactive
+    labels:
+        - jpg-spinner-interactive
+        - windows-11-vs2026-arm

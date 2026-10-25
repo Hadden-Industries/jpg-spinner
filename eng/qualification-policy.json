@@ -48,6 +48,7 @@
         "continuous-integration.yml": {
             "policy": "sourcePolicyJob",
             "build": "nativeBuildJob",
+            "arm64-runtime": "nativeBuildJob",
             "interactive-inputs": "artifactPublisherJob",
             "unsigned-package": "hostedJobLimit",
             "asan": "nativeBuildJob",

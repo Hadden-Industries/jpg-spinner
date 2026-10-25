@@ -6,7 +6,7 @@
    https://learn.microsoft.com/windows/apps/windows-app-sdk/downloads #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [Parameter(Mandatory)][ValidateSet('x86', 'x64')][string]$Architecture,
+    [Parameter(Mandatory)][ValidateSet('x86', 'x64', 'ARM64')][string]$Architecture,
     [Parameter(Mandatory)][string]$OutputDirectory,
     [string]$InstallerPath,
     [string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot)
@@ -36,12 +36,15 @@ if (Test-Path -LiteralPath $output) { throw 'Runtime prerequisite diagnostics re
 [void][IO.Directory]::CreateDirectory($output)
 Import-Module (Join-Path $PSScriptRoot 'ArtifactToolProcess.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'JsonObjectMemberValidation.psm1') -Force
-$toolchain = & (Join-Path $PSScriptRoot 'Resolve-MSBuildToolchain.ps1') -RepositoryRoot $root
 $context = @{WorkingDirectory = $root; LogDirectory = $output }
 # Native evaluation consumes the adopted central package version without a
-# parallel XML/lock-file parser or an SDK upgrade hidden in runner setup.
-$json = Invoke-ArtifactToolProcess @context -Executable $toolchain.msBuildExecutablePath -LogName sdk-package-selection -Arguments @(
-    (Join-Path $root 'tests/JpgSpinner.Presentation.Tests/JpgSpinner.Presentation.Tests.vcxproj'),
+# parallel XML/lock-file parser or an SDK upgrade hidden in runner setup. The
+# deployment lane needs no C++ toolchain/project imports: evaluate the central
+# MSBuild document with the installed .NET SDK, without running any build target.
+$dotnet = (Get-Command dotnet.exe -CommandType Application -ErrorAction Stop).Source
+$json = Invoke-ArtifactToolProcess @context -Executable $dotnet -LogName sdk-package-selection `
+    -EnvironmentValues @{DOTNET_NOLOGO = '1' } -Arguments @(
+    'msbuild', (Join-Path $root 'Directory.Packages.props'),
     '-nologo', '-noAutoResponse', '-nodeReuse:false', '-maxCpuCount:1',
     '-p:Configuration=Release', '-p:Platform=x64', '-getItem:PackageVersion'
 )
@@ -55,13 +58,17 @@ if ($sdkPackages.Count -ne 1 -or $sdkPackages[0].Version -cne $windowsAppSdkPack
 # official 2.5.1 release links. Hashes bind the exact associated native binaries;
 # their PE FileVersion is 2.5, distinct from the SDK package version 2.5.1.
 $pins = @{
-    x64 = @{
-        uri = 'https://download.microsoft.com/download/de664922-b046-432f-bb2a-54aec3c5f1f6/WindowsAppRuntimeInstall-x64.exe'
+    x64   = @{
+        uri    = 'https://download.microsoft.com/download/de664922-b046-432f-bb2a-54aec3c5f1f6/WindowsAppRuntimeInstall-x64.exe'
         sha256 = '931a421e8dc3e6e67724806cb67fecdbb88dfe323f0170842eb4a4b4b149f1e2'
     }
-    x86 = @{
-        uri = 'https://download.microsoft.com/download/652efa1f-ce5b-4ce9-8bfe-5a08e96145f4/WindowsAppRuntimeInstall-x86.exe'
+    x86   = @{
+        uri    = 'https://download.microsoft.com/download/652efa1f-ce5b-4ce9-8bfe-5a08e96145f4/WindowsAppRuntimeInstall-x86.exe'
         sha256 = '76dbd7c272cee0bf18f0b7228255b353d669cd55dc530209c45646f47acb89d4'
+    }
+    ARM64 = @{
+        uri    = 'https://download.microsoft.com/download/83fdef97-1ca8-491d-80f3-a94b5adc5b1c/WindowsAppRuntimeInstall-arm64.exe'
+        sha256 = 'd5e4d34547eb4e31c64bf1532415b3019c0d92b750e72eb18d3d95bd00feacbb'
     }
 }
 $pin = $pins[$Architecture]
@@ -82,7 +89,8 @@ if ($signature.Status -ne 'Valid' -or
 }
 $fileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($installer).FileVersion
 $installerIdentity = @{windowsAppSdkPackageVersion = $windowsAppSdkPackageVersion; architecture = $Architecture; uri = $pin.uri;
-    sha256 = $hash; fileVersion = $fileVersion; signatureStatus = [string]$signature.Status } |
+    sha256 = $hash; fileVersion = $fileVersion; signatureStatus = [string]$signature.Status
+} |
     ConvertTo-Json
 # WhatIf suppresses deployment, while this explicitly requested diagnostic is
 # still retained alongside the read-only native selection streams.

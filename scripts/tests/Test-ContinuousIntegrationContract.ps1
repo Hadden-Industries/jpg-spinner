@@ -37,7 +37,7 @@ foreach ($job in $jobs.Children.Values) {
         }
     }
 }
-foreach ($name in @('build', 'policy', 'asan', 'analysis', 'unsigned-package', 'interactive-inputs')) {
+foreach ($name in @('build', 'policy', 'asan', 'analysis', 'unsigned-package', 'interactive-inputs', 'arm64-runtime')) {
     if (-not $jobs.Children.ContainsKey([YamlDotNet.RepresentationModel.YamlScalarNode]::new($name))) { throw "Missing required hosted job: $name" }
 }
 # A hosted image label does not promise the SDK selected by the project. The
@@ -106,7 +106,7 @@ foreach ($step in $steps.Children) {
     if ($command.Contains('scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1', [StringComparison]::Ordinal)) {
         $guard = Get-NodeProperty $step 'if'
         $expectedComdatCommand = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot ' +
-            '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/build-logs/x64/Release/ComdatIdentity'')'
+        '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/build-logs/x64/Release/ComdatIdentity'')'
         if ($null -eq $guard -or $guard.Value -cne "matrix.architecture == 'x64' && matrix.configuration == 'Release'" -or
             $command -cne $expectedComdatCommand) {
             throw 'Native COMDAT control requires the SDK-prepared x64 Release lane and retained build-log output.'
@@ -161,11 +161,79 @@ if (-not $hasShutdownRegression) { throw 'Bounded native presentation process-sh
 if (-not $hasAdobeStaticDebugInformation) { throw 'Installed Adobe static-library debug-information regression wiring is absent.' }
 if (-not $hasNativeInlineTaskEnvironment) { throw 'Native inline-task environment regression wiring is absent.' }
 if (-not $hasComdatIdentityControl) { throw 'Manual CI lacks the native x64 Release COMDAT identity control.' }
+
+# Native execution is a separate deployment-only job, consuming only this run's
+# immutable ARM64 binary artifact. A cross-build or x64 emulation cannot close it.
+$arm64 = Get-NodeProperty $jobs 'arm64-runtime'
+if ((Get-NodeProperty $arm64 'runs-on').Value -cne 'windows-11-vs2026-arm' -or
+    (Get-NodeProperty $arm64 'needs').Value -cne 'build' -or
+    $null -ne (Get-NodeProperty $arm64 'permissions')) {
+    throw 'ARM64 runtime requires the native hosted VM, successful same-run build and inherited read-only permissions.'
+}
+$hasArm64Download = $false; $hasArm64Runtime = $false; $hasArm64Tests = $false; $hasArm64Reports = $false; $hasArm64Upload = $false
+foreach ($step in (Get-NodeProperty $arm64 'steps').Children) {
+    $run = Get-NodeProperty $step 'run'
+    if ($null -ne $run) {
+        if ($run.Value.Contains('Invoke-Build.ps1', [StringComparison]::Ordinal) -or
+            $run.Value.Contains('Install-HostedWindowsSdk.ps1', [StringComparison]::Ordinal)) {
+            throw 'ARM64 runtime job must deploy prebuilt inputs without compilation or SDK installation.'
+        }
+        if ($run.Value.Contains('Install-HostedWindowsAppRuntime.ps1', [StringComparison]::Ordinal)) {
+            if (-not $hasArm64Download -or $null -ne (Get-NodeProperty $step 'if') -or
+                (Get-NodeProperty $step 'timeout-minutes').Value -cne $hostedPrerequisiteMinutes -or
+                $run.Value -cne './scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture ARM64 -OutputDirectory artifacts/build-logs/windows-app-runtime') {
+                throw 'ARM64 runtime setup must deploy the bounded native prerequisite after same-run download.'
+            }
+            $hasArm64Runtime = $true
+        }
+        if ($run.Value.Contains('Invoke-TestSuite.ps1', [StringComparison]::Ordinal)) {
+            if (-not $hasArm64Runtime -or $null -ne (Get-NodeProperty $step 'if') -or
+                $run.Value.Trim() -cne ('./scripts/Invoke-TestSuite.ps1 -Project HeadlessAll -Configuration Release -Architecture ARM64 -RequireNativeArchitecture' +
+                    "`nif (`$LASTEXITCODE -ne 0) { exit `$LASTEXITCODE }")) {
+                throw 'ARM64 headless tests must require actual native machine identities and propagate their exit code after runtime deployment.'
+            }
+            $hasArm64Tests = $true
+        }
+    }
+    $uses = Get-NodeProperty $step 'uses'
+    if ($null -eq $uses) { continue }
+    $arguments = Get-NodeProperty $step 'with'
+    if ($uses.Value.StartsWith('actions/download-artifact@', [StringComparison]::Ordinal)) {
+        if ($arguments.Children.Count -ne 3 -or (Get-NodeProperty $arguments 'name').Value -cne 'arm64-test-binaries' -or
+            (Get-NodeProperty $arguments 'path').Value -cne 'artifacts/bin/ARM64/Release' -or
+            (Get-NodeProperty $arguments 'digest-mismatch').Value -cne 'error') {
+            throw 'ARM64 execution requires exact same-run artifact selection and native digest refusal.'
+        }
+        $hasArm64Download = $true
+    }
+    if ($uses.Value.StartsWith('actions/upload-artifact@', [StringComparison]::Ordinal)) {
+        if ((Get-NodeProperty $step 'if').Value -cne 'always()' -or
+            (Get-NodeProperty $arguments 'name').Value -cne 'arm64-runtime-evidence' -or
+            (Get-NodeProperty $arguments 'path').Value.Trim() -cne "artifacts/build-logs/`nartifacts/TestResults/`nartifacts/provenance/") {
+            throw 'ARM64 runtime must retain original diagnostics, architecture identities and test reports even on failure.'
+        }
+        $hasArm64Reports = $true
+    }
+}
+foreach ($step in $steps.Children) {
+    $uses = Get-NodeProperty $step 'uses'
+    if ($null -eq $uses -or -not $uses.Value.StartsWith('actions/upload-artifact@', [StringComparison]::Ordinal)) { continue }
+    $arguments = Get-NodeProperty $step 'with'
+    if ((Get-NodeProperty $arguments 'name').Value -cne 'arm64-test-binaries') { continue }
+    if ((Get-NodeProperty $step 'if').Value -cne "matrix.architecture == 'ARM64' && matrix.configuration == 'Release'" -or
+        (Get-NodeProperty $arguments 'path').Value.Trim() -cne "artifacts/bin/ARM64/Release/*.Tests/**`n!artifacts/bin/ARM64/Release/**/*.pdb") {
+        throw 'ARM64 test transfer must select only the actual Release test inputs and exclude reconstructible PDBs.'
+    }
+    $hasArm64Upload = $true
+}
+if (-not ($hasArm64Upload -and $hasArm64Download -and $hasArm64Runtime -and $hasArm64Tests -and $hasArm64Reports)) {
+    throw 'ARM64 native execution transfer, runtime, tests or retained reports are absent.'
+}
 $packageJob = Get-NodeProperty $jobs 'unsigned-package'
 $packageNeeds = Get-NodeProperty $packageJob 'needs'
 $neededJobs = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 foreach ($dependency in $packageNeeds.Children) { [void]$neededJobs.Add($dependency.Value) }
-if (-not $neededJobs.SetEquals([string[]]@('policy', 'build', 'asan', 'analysis'))) {
+if (-not $neededJobs.SetEquals([string[]]@('policy', 'build', 'arm64-runtime', 'asan', 'analysis'))) {
     throw 'Unsigned packaging must wait for every automated qualification job.'
 }
 $packageSteps = Get-NodeProperty $packageJob 'steps'
@@ -194,7 +262,7 @@ $interactivePublisher = Get-NodeProperty $jobs 'interactive-inputs'
 $publisherNeeds = Get-NodeProperty $interactivePublisher 'needs'
 $neededJobs.Clear()
 foreach ($dependency in $publisherNeeds.Children) { [void]$neededJobs.Add($dependency.Value) }
-if (-not $neededJobs.SetEquals([string[]]@('policy', 'build', 'asan', 'analysis'))) { throw 'Interactive input publication must wait for all automated qualification jobs.' }
+if (-not $neededJobs.SetEquals([string[]]@('policy', 'build', 'arm64-runtime', 'asan', 'analysis'))) { throw 'Interactive input publication must wait for all automated qualification jobs.' }
 if ((Get-NodeProperty $interactivePublisher 'if').Value -cne "github.ref == 'refs/heads/main'") { throw 'Interactive attestation must be restricted to the trusted main ref.' }
 $hasDropProducer = $false
 foreach ($step in $steps.Children) {
@@ -259,7 +327,7 @@ foreach ($step in (Get-NodeProperty $scannerJob 'steps').Children) {
         $step.Children[$runKey].Value.Contains('scripts/tests/Test-ScannerCorpusMinimization.ps1',
             [StringComparison]::Ordinal)) {
         $expectedCommand = './scripts/tests/Test-ScannerCorpusMinimization.ps1 -OwnedOutputRoot ' +
-            '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/fuzz/scanner/regression'')'
+        '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/fuzz/scanner/regression'')'
         if ($step.Children[$runKey].Value -cne $expectedCommand) {
             throw 'Scanner regression must reserve its output beneath the uploaded scanner artifact root.'
         }

@@ -36,12 +36,12 @@ $longJobPath = Join-Path $fixtureRoot 'HostedJobLimit.yml'
 [IO.File]::WriteAllText($longJobPath, $text.Replace('    timeout-minutes: 15', '    timeout-minutes: 360'), [Text.UTF8Encoding]::new($false))
 & $policy -ToolsDirectory $ToolsDirectory -WorkflowPaths @($longJobPath)
 foreach ($uploadControl in @(
-    @{Name = 'two-day-retention'; Before = 'retention-days: 1'; After = 'retention-days: 2'; Diagnostic = 'artifact retention' },
-    @{Name = 'default-retention'; Before = 'retention-days: 1'; After = 'retention-days: 0'; Diagnostic = 'artifact retention' },
-    @{Name = 'missing-retention'; Before = 'retention-days: 1'; After = ''; Diagnostic = 'artifact retention' },
-    @{Name = 'default-compression'; Before = 'compression-level: 9'; After = 'compression-level: 6'; Diagnostic = 'artifact compression' },
-    @{Name = 'missing-compression'; Before = 'compression-level: 9'; After = ''; Diagnostic = 'artifact compression' }
-)) {
+        @{Name = 'two-day-retention'; Before = 'retention-days: 1'; After = 'retention-days: 2'; Diagnostic = 'artifact retention' },
+        @{Name = 'default-retention'; Before = 'retention-days: 1'; After = 'retention-days: 0'; Diagnostic = 'artifact retention' },
+        @{Name = 'missing-retention'; Before = 'retention-days: 1'; After = ''; Diagnostic = 'artifact retention' },
+        @{Name = 'default-compression'; Before = 'compression-level: 9'; After = 'compression-level: 6'; Diagnostic = 'artifact compression' },
+        @{Name = 'missing-compression'; Before = 'compression-level: 9'; After = ''; Diagnostic = 'artifact compression' }
+    )) {
     $path = Join-Path $fixtureRoot ($uploadControl.Name + '.yml')
     [IO.File]::WriteAllText($path, $text.Replace($originalRun, $minimalUpload.Replace($uploadControl.Before, $uploadControl.After)), [Text.UTF8Encoding]::new($false))
     $message = $null
@@ -93,20 +93,26 @@ if (-not $ciText.Contains($sdkRun, [StringComparison]::Ordinal)) { throw 'SDK se
 $sdkRefusal = 'Hosted SDK prerequisite must run unconditionally immediately after checkout'
 $comdatRefusal = 'Native COMDAT control requires the SDK-prepared x64 Release lane and retained build-log output.'
 $comdatCommand = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot ' +
-    '(Join-Path $env:GITHUB_WORKSPACE ''artifacts/build-logs/x64/Release/ComdatIdentity'')'
+'(Join-Path $env:GITHUB_WORKSPACE ''artifacts/build-logs/x64/Release/ComdatIdentity'')'
 $comdatGuard = "              if: matrix.architecture == 'x64' && matrix.configuration == 'Release'"
 $runtimeCommand = './scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture ''${{ matrix.architecture }}'' -OutputDirectory artifacts/build-logs/windows-app-runtime'
 $runtimeRefusal = 'Hosted runtime deployment requires one bounded native x86/x64 setup after compilation and before test-host execution.'
 foreach ($case in @(
-    @{Name = 'omitted-sdk'; Before = $sdkRun; After = "              run: Write-Output 'SDK setup omitted'"; Expected = $sdkRefusal },
-    @{Name = 'conditional-sdk'; Before = $sdkRun; After = "              if: inputs.cache_dependencies`n$sdkRun"; Expected = $sdkRefusal },
-    @{Name = 'unbounded-sdk'; Before = "              timeout-minutes: $hostedPrerequisiteMinutes`n$sdkRun"; After = $sdkRun; Expected = $sdkRefusal },
-    @{Name = 'comdat-unretained-diagnostics'; Before = $comdatCommand; After = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot $env:RUNNER_TEMP'; Expected = $comdatRefusal },
-    @{Name = 'comdat-wrong-lane'; Before = "$comdatGuard`n              run: $comdatCommand"; After = "              if: matrix.architecture == 'x86' && matrix.configuration == 'Release'`n              run: $comdatCommand"; Expected = $comdatRefusal },
-    @{Name = 'omitted-runtime'; Before = $runtimeCommand; After = "Write-Output 'Runtime setup omitted'"; Expected = 'Hosted runtime deployment must precede unpackaged presentation test-host execution.' },
-    @{Name = 'unbounded-runtime'; Before = "              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; After = "              run: $runtimeCommand"; Expected = $runtimeRefusal },
-    @{Name = 'runtime-wrong-lane'; Before = "              if: matrix.architecture != 'ARM64'`n              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; After = "              if: matrix.architecture == 'ARM64'`n              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; Expected = $runtimeRefusal }
-)) {
+        @{Name = 'omitted-sdk'; Before = $sdkRun; After = "              run: Write-Output 'SDK setup omitted'"; Expected = $sdkRefusal },
+        @{Name = 'conditional-sdk'; Before = $sdkRun; After = "              if: inputs.cache_dependencies`n$sdkRun"; Expected = $sdkRefusal },
+        @{Name = 'unbounded-sdk'; Before = "              timeout-minutes: $hostedPrerequisiteMinutes`n$sdkRun"; After = $sdkRun; Expected = $sdkRefusal },
+        @{Name = 'comdat-unretained-diagnostics'; Before = $comdatCommand; After = './scripts/tests/Test-ReleaseComdatIdentityPolicy.ps1 -OwnedOutputRoot $env:RUNNER_TEMP'; Expected = $comdatRefusal },
+        @{Name = 'comdat-wrong-lane'; Before = "$comdatGuard`n              run: $comdatCommand"; After = "              if: matrix.architecture == 'x86' && matrix.configuration == 'Release'`n              run: $comdatCommand"; Expected = $comdatRefusal },
+        @{Name = 'omitted-runtime'; Before = $runtimeCommand; After = "Write-Output 'Runtime setup omitted'"; Expected = 'Hosted runtime deployment must precede unpackaged presentation test-host execution.' },
+        @{Name = 'unbounded-runtime'; Before = "              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; After = "              run: $runtimeCommand"; Expected = $runtimeRefusal },
+        @{Name = 'runtime-wrong-lane'; Before = "              if: matrix.architecture != 'ARM64'`n              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; After = "              if: matrix.architecture == 'ARM64'`n              timeout-minutes: $hostedPrerequisiteMinutes`n              run: $runtimeCommand"; Expected = $runtimeRefusal },
+        @{Name = 'arm64-emulated-host'; Before = 'runs-on: windows-11-vs2026-arm'; After = 'runs-on: windows-2025-vs2026'; Expected = 'ARM64 runtime requires the native hosted VM' },
+        @{Name = 'arm64-wrong-producer'; Before = '        needs: build'; After = '        needs: policy'; Expected = 'ARM64 runtime requires the native hosted VM' },
+        @{Name = 'arm64-digest-warning'; Before = "name: arm64-test-binaries`n                  path: artifacts/bin/ARM64/Release`n                  digest-mismatch: error"; After = "name: arm64-test-binaries`n                  path: artifacts/bin/ARM64/Release`n                  digest-mismatch: warn"; Expected = 'ARM64 execution requires exact same-run artifact selection' },
+        @{Name = 'arm64-without-native-admission'; Before = '-Architecture ARM64 -RequireNativeArchitecture'; After = '-Architecture ARM64'; Expected = 'ARM64 headless tests must require actual native machine identities' },
+        @{Name = 'arm64-build-on-test-host'; Before = 'run: ./scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture ARM64'; After = "run: ./scripts/Invoke-Build.ps1 -Architecture ARM64`n              # ./scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture ARM64"; Expected = 'ARM64 runtime job must deploy prebuilt inputs' },
+        @{Name = 'arm64-not-a-package-gate'; Before = 'needs: [policy, build, arm64-runtime, asan, analysis]'; After = 'needs: [policy, build, asan, analysis]'; Expected = 'Unsigned packaging must wait for every automated qualification job.' }
+    )) {
     if (-not $ciText.Contains($case.Before, [StringComparison]::Ordinal)) { throw "Native CI fixture precondition differs: $($case.Name)" }
     $path = Join-Path $fixtureRoot ($case.Name + '.yml')
     [IO.File]::WriteAllText($path, $ciText.Replace($case.Before, $case.After), [Text.UTF8Encoding]::new($false))

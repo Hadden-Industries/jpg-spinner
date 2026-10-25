@@ -1870,7 +1870,7 @@ YamlDotNet/actionlint validation. Trigger mutation controls still reject push,
 PR, release, reusable-call, scheduled and mixed events. This does not dispatch
 CI, prove the hosted image/toolchain or claim hosted packaging succeeded.
 
-- [ ] On explicit manual qualification, restore qualified locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all headless Domain/JPEG/Storage/Batch/Presentation-contract tests on x86/x64, compile Release ARM64, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure. Do not run black-box UI Automation, Narrator, or Accessibility Insights on a GitHub-hosted service session. Do not register push, pull-request or scheduled triggers.
+- [ ] On explicit manual qualification, restore qualified locked NuGet/vcpkg inputs, build Debug and Release for x86/x64, run all headless Domain/JPEG/Storage/Batch/Presentation-contract tests on x86/x64, compile Release ARM64 and execute its prebuilt headless tests in the native Windows ARM64 VM job, run x64 AddressSanitizer suites, run MSVC `/analyze`, validate manifests, and upload binary logs/test reports on failure. Do not run black-box UI Automation, Narrator, or Accessibility Insights on a GitHub-hosted service session. Do not register push, pull-request or scheduled triggers.
 - [ ] Define a required separate interactive Windows VM/self-hosted workflow or protected qualification job for black-box UI Automation and assistive-technology checks. It begins with `Test-InteractiveUiEnvironment.ps1`, never has pull-request secrets, and publishes signed test evidence; a hosted headless pass cannot substitute for this gate.
 - [ ] Use a separate package job for the unsigned x86/x64/ARM64 bundle. Package creation must not require Store credentials.
 - [ ] Keep cloud dependency caches disabled by default; enable them only through the explicit manual `cache_dependencies` boolean. When enabled, cache only content-addressed dependency/build inputs whose key includes vcpkg baseline, manifest hash, architecture, toolset, and configuration. Never cache signing material or staged packages. Remove reconstructible obsolete caches and verified-retained artifact copies through the native GitHub API without deleting workflow history or weakening release evidence requirements.
@@ -2617,7 +2617,7 @@ git commit -m "refactor: remove the retired UWP implementation"
 
 - [ ] From a fresh clone with no global vcpkg integration or warm build output, restore locked inputs and run repository/documentation policy.
 - [ ] Build Debug and Release x86/x64 and Release ARM64 twice from independent clean roots. Natively validate/unpack each unsigned bundle and satisfy the approved closed metadata/block-map comparison contract. Retain complete raw manifests and actual byte-identity results; record both container hashes without calling an allowed-variance result full byte reproducibility.
-- [ ] Execute all headless tests on x86/x64; execute the transform, transaction, recovery, batch, and packaged-app smoke suites on physical ARM64. Execute black-box UI Automation and assistive-technology checks in the separately qualified interactive Windows environment.
+- [ ] Execute all headless tests on x86/x64 and native Windows ARM64. A native ARM64 VM satisfies the ARM64 execution requirement; deploy prebuilt artifacts without compiling on the test VM. Execute native ARM64 packaged-app smoke and black-box UI Automation/assistive-technology checks in appropriately qualified Windows desktop/VM environments. Physical-device acceptance is optional and nonblocking under the amendment below.
 - [ ] Run x64 AddressSanitizer, MSVC `/analyze`, CodeQL `security-extended`, and the bounded scanner fuzz regression with the reviewed corpus. Use the maintained 60-second mutation budget, full-corpus replay, native minimization and zero-growth merge audit; preserve any failure without an automatic retry.
 - [ ] Require no compiler warning, sanitizer finding, leak, static-analysis error, CodeQL high-severity alert, fuzz crash/hang, or flaky retry.
 
@@ -2628,6 +2628,17 @@ the waived campaign. The manual scanner workflow uses the same 60-second budget.
 Existing malformed-input, resource-limit, deterministic reproducer, sanitizer
 and transaction/recovery checks remain required. No security/external review,
 remote dispatch or public release is authorized by this amendment.
+
+**Owner-approved device amendment (2026-10-25):** Live testing on a physical
+device is not a release prerequisite. Native Windows ARM64 VM execution is
+accepted; x64 emulation and cross-compilation alone are not execution evidence.
+The [native ARM64 checkpoint](../implementation/2026-10-25-native-arm64-qualification.md)
+defines the deployment-only manual CI lane and its precise proof boundary.
+Physical customer-device checks, including unavailable Windows 11 26H1 hardware,
+are optional and nonblocking. General interactive, supported-OS, performance,
+package, accessibility, legal and trusted Store-upgrade gates retain their
+requirements and can use appropriate qualified VM/desktop lanes. Do not claim
+that a headless hosted pass proves UI, physical hardware or Store trust.
 
 **Local qualification checkpoint (2026-10-24):** The
 [signed-source package/SBOM/recovery record](../implementation/2026-10-24-clean-source-qualification.md)
@@ -2655,7 +2666,7 @@ qualification, physical-device acceptance, legal clearance or release approval.
 
 ### Step 20.5: Accessibility, localization, and package qualification
 
-- [ ] Repeat the full manual accessibility checklist on current Windows 10 22H2 ESU and maintained Windows 11 24H2 and 25H2 systems, plus Windows 11 26H1 hardware where available. Record that 26H1 is a supported new-device hardware cohort rather than an assumed in-place update path for existing 24H2/25H2 systems.
+- [ ] Repeat the full manual accessibility checklist on current Windows 10 22H2 ESU and maintained Windows 11 24H2 and 25H2 systems; qualified desktop/VM lanes are eligible. Windows 11 26H1 physical-device testing is optional and nonblocking. Record that 26H1 is a supported new-device hardware cohort rather than an assumed in-place update path for existing 24H2/25H2 systems.
 - [ ] Review every screen and error in en-US, en-GB, and ru; run pseudo-localization for expansion and bidirectional layout defects.
 - [ ] Install the trusted published baseline (observed x64 main 1.1.2.0, bundle 2015.616.2316.3521), update to 2.0.0.0 for x86/x64 and native ARM64 paths, then verify identity, bundle ordering/restore, launch, processing, recovery, uninstall, and no orphan staging artifacts. Record the actual compatible legacy architecture in each lane; this does not assert an ARM64 legacy package exists.
 - [ ] In the protected Store-submission workflow, satisfy the approved closed package comparison, retain both complete raw payload manifests and exact unsigned container hashes, and generate/validate the external SPDX 3.0.1 submission-artifact SBOM for the exact selected bundle with authenticated provenance. Require Windows App Certification Kit, bundle manifest validation, malware scanning and Store ingestion qualification for the applicable exact candidate. Microsoft supplies the Store signature after certification; record separately any acquired Store-signed artifact and its native trust/hash proof. A separately requested signed sideload route must still sign/verify its exact container before release-SBOM extraction. No path waives device/upgrade qualification or grants automatic submission.

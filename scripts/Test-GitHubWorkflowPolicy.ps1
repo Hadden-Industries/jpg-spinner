@@ -97,8 +97,8 @@ foreach ($path in $WorkflowPaths) {
         $job = $jobEntry.Value
         $runner = Get-WorkflowProperty $job 'runs-on'
         $isInteractive = $runner -is [YamlDotNet.RepresentationModel.YamlSequenceNode] -and
-            ((@($runner.Children | ForEach-Object Value) -join ',') -ceq 'self-hosted,Windows,X64,jpg-spinner-interactive')
-        if ((Get-WorkflowScalar $runner) -cne 'windows-2025-vs2026' -and -not $isInteractive) { throw 'Job must select an approved runner.' }
+        ((@($runner.Children | ForEach-Object Value) -join ',') -ceq 'self-hosted,Windows,X64,jpg-spinner-interactive')
+        if ((Get-WorkflowScalar $runner) -cnotin @('windows-2025-vs2026', 'windows-11-vs2026-arm') -and -not $isInteractive) { throw 'Job must select an approved runner.' }
         if ($isInteractive -and $null -eq (Get-WorkflowProperty $job 'environment')) { throw 'Interactive runner requires a protected manual qualification job.' }
         $timeoutText = Get-WorkflowScalar (Get-WorkflowProperty $job 'timeout-minutes')
         $timeout = 0
@@ -126,7 +126,8 @@ foreach ($path in $WorkflowPaths) {
                         (Get-WorkflowScalar (Get-WorkflowProperty $job 'if')) -cne "github.ref == 'refs/heads/main'") {
                         throw 'Platform attestation permissions require a trusted-main hosted native publisher.'
                     }
-                } elseif ($pair -cnotin @('contents:read', 'actions:read', 'security-events:write')) { throw 'Job requests unapproved permissions.' }
+                }
+                elseif ($pair -cnotin @('contents:read', 'actions:read', 'security-events:write')) { throw 'Job requests unapproved permissions.' }
             }
         }
         foreach ($step in $steps.Children) {
@@ -155,7 +156,10 @@ foreach ($path in $WorkflowPaths) {
     }
     Push-Location -LiteralPath $repositoryRoot
     try {
-        & $tools.actionlintExecutablePath -color=false $workflowPath
+        # Pin native configuration for external refusal fixtures too: actionlint
+        # otherwise discovers configuration from each input's directory instead
+        # of this repository's approved label declaration.
+        & $tools.actionlintExecutablePath -color=false -config-file (Join-Path $repositoryRoot '.github/actionlint.yaml') $workflowPath
         if ($LASTEXITCODE -ne 0) { throw 'Native actionlint rejected workflow syntax or expressions.' }
     }
     finally { Pop-Location }

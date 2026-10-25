@@ -27,6 +27,10 @@ param(
     [ValidateSet('Headless', 'Interactive')]
     [string]$ExecutionEnvironment = 'Headless',
 
+    # Deployment-only lanes must inspect every selected image before launching
+    # any host. This also refuses x64 emulation as native ARM64 evidence.
+    [switch]$RequireNativeArchitecture,
+
     [Parameter()]
     [string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot)
 )
@@ -104,7 +108,7 @@ if ($Project -ceq 'HeadlessAll' -and $ExecutionEnvironment -cne 'Headless') {
 
 if ($ExecutionEnvironment -ceq 'Interactive') {
     $interactiveEnvironmentTestPath =
-        Join-Path $PSScriptRoot 'Test-InteractiveUiEnvironment.ps1'
+    Join-Path $PSScriptRoot 'Test-InteractiveUiEnvironment.ps1'
     if (-not (Test-Path -LiteralPath $interactiveEnvironmentTestPath -PathType Leaf)) {
         throw (
             'Interactive test execution requires ' +
@@ -123,8 +127,8 @@ if ($ExecutionEnvironment -ceq 'Interactive') {
 }
 
 $msBuildPlatformByArchitecture = @{
-    x86 = 'Win32'
-    x64 = 'x64'
+    x86   = 'Win32'
+    x64   = 'x64'
     ARM64 = 'ARM64'
 }
 $msBuildPlatform = $msBuildPlatformByArchitecture[$Architecture]
@@ -137,7 +141,7 @@ $headlessTestProjects = @(
     'JpgSpinner.Presentation.Tests'
 )
 $selectedTestProjects =
-    if ($Project -ceq 'HeadlessAll') { $headlessTestProjects } else { @($Project) }
+if ($Project -ceq 'HeadlessAll') { $headlessTestProjects } else { @($Project) }
 
 $testExecutableByProject = [ordered]@{}
 foreach ($selectedTestProject in $selectedTestProjects) {
@@ -159,6 +163,13 @@ $testResultsDirectory = Join-Path $repositoryRoot (
 )
 [void][System.IO.Directory]::CreateDirectory($testResultsDirectory)
 
+if ($RequireNativeArchitecture) {
+    $identities = @(& (Join-Path $PSScriptRoot 'Test-ExecutableArchitecture.ps1') `
+            -ImagePath @($testExecutableByProject.Values) -Architecture $Architecture -RequireNativeHost)
+    [IO.File]::WriteAllText((Join-Path $testResultsDirectory 'native-architecture.json'),
+        (ConvertTo-Json -InputObject $identities -Depth 4), [Text.UTF8Encoding]::new($false))
+}
+
 $firstFailingExitCode = 0
 foreach ($selectedTestProject in $selectedTestProjects) {
     $testExecutablePath = $testExecutableByProject[$selectedTestProject]
@@ -175,11 +186,11 @@ foreach ($selectedTestProject in $selectedTestProjects) {
     # this explicit process-scoped restriction makes such selections fail closed.
     $startInfo.Environment['JPG_SPINNER_TEST_EXECUTION_ENVIRONMENT'] = $ExecutionEnvironment
     foreach ($argument in @(
-        '--reporter',
-        "JUnit::out=$jUnitReportPath",
-        '--name',
-        $selectedTestProject
-    )) {
+            '--reporter',
+            "JUnit::out=$jUnitReportPath",
+            '--name',
+            $selectedTestProject
+        )) {
         [void]$startInfo.ArgumentList.Add($argument)
     }
     if (-not [string]::IsNullOrWhiteSpace($TestSpecification)) {

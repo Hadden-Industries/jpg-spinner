@@ -181,10 +181,60 @@ jobs:
                       artifacts/build-logs/
                       artifacts/TestResults/
                       artifacts/provenance/
+            # Same-run native artifact transfer: compilation stays in this job.
+            # Ship test deployment dependencies, not compiler intermediates/PDBs.
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: matrix.architecture == 'ARM64' && matrix.configuration == 'Release'
+              with:
+                  name: arm64-test-binaries
+                  retention-days: 1
+                  compression-level: 9
+                  if-no-files-found: error
+                  path: |
+                      artifacts/bin/ARM64/Release/*.Tests/**
+                      !artifacts/bin/ARM64/Release/**/*.pdb
+    arm64-runtime:
+        # A native ARM64 VM executes the exact same-run prebuilt test inputs.
+        # No compiler, interactive desktop, Store trust or physical-device claim.
+        needs: build
+        runs-on: windows-11-vs2026-arm
+        timeout-minutes: 180
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+              with:
+                  name: arm64-test-binaries
+                  path: artifacts/bin/ARM64/Release
+                  digest-mismatch: error
+            - name: Deploy the pinned Windows App Runtime for native tests
+              timeout-minutes: 45
+              run: ./scripts/Install-HostedWindowsAppRuntime.ps1 -Architecture ARM64 -OutputDirectory artifacts/build-logs/windows-app-runtime
+            - name: Execute prebuilt native ARM64 headless tests
+              run: |
+                  ./scripts/Invoke-TestSuite.ps1 -Project HeadlessAll -Configuration Release -Architecture ARM64 -RequireNativeArchitecture
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - name: Record the native runner and source identity
+              if: always()
+              run: |
+                  New-Item -ItemType Directory -Path artifacts/provenance -Force | Out-Null
+                  @{ sourceCommit=$env:GITHUB_SHA; runId=$env:GITHUB_RUN_ID; runAttempt=$env:GITHUB_RUN_ATTEMPT; imageOS=$env:ImageOS; imageVersion=$env:ImageVersion; runnerArchitecture=$env:RUNNER_ARCH } | ConvertTo-Json | Set-Content artifacts/provenance/arm64-runner.json
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              if: always()
+              with:
+                  name: arm64-runtime-evidence
+                  retention-days: 1
+                  compression-level: 9
+                  if-no-files-found: error
+                  path: |
+                      artifacts/build-logs/
+                      artifacts/TestResults/
+                      artifacts/provenance/
     interactive-inputs:
         # Keep OIDC/signing permission out of all compiler and desktop processes.
         # This stage signs an input inventory, not a claim that UI acceptance ran.
-        needs: [policy, build, asan, analysis]
+        needs: [policy, build, arm64-runtime, asan, analysis]
         if: github.ref == 'refs/heads/main'
         runs-on: windows-2025-vs2026
         timeout-minutes: 30
@@ -220,7 +270,7 @@ jobs:
     unsigned-package:
         # A development/qualification drop only. Signing, trust changes, WACK and
         # Store submission belong to the separate protected release route.
-        needs: [policy, build, asan, analysis]
+        needs: [policy, build, arm64-runtime, asan, analysis]
         runs-on: windows-2025-vs2026
         timeout-minutes: 360
         steps:
