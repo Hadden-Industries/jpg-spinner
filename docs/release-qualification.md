@@ -55,6 +55,13 @@ legal and trusted Store-upgrade evidence remain separate requirements, eligible
 for their appropriate qualified VM/desktop lanes. A headless pass supplies none
 of those other results automatically.
 
+The approved [candidate-retention rule](release-candidate-retention.md) keeps
+at most one current candidate archive. A complete, verified successor replaces
+it and triggers retirement of its predecessor's owned unpublished archive;
+failed attempts leave the current candidate available. Temporary staging overlap
+and independently required evidence remain explicit. This rule is accepted;
+automatic durable archival still needs implementation and qualification.
+
 GitHub Actions storage is a short-lived transfer service, not the release
 evidence archive. All explicit artifact uploads use the native minimum
 `retention-days: 1` and `compression-level: 9`. Retrieve the exact candidate's

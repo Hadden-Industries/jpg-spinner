@@ -154,6 +154,13 @@ acceptance or treat the assignment as release authorization.
   No compatibility shim or library fork is introduced as a release shortcut.
   Canonical policy variables are shared; historical observations retain their
   original versions and are not rewritten to look current.
+- **One current candidate archive.** Apply the owner's
+  [approved replacement-retention rule](../release-candidate-retention.md):
+  retain the latest successfully archived candidate until its complete successor
+  is verified, then retire its predecessor's owned unpublished archive. A failed
+  attempt leaves the existing candidate available. Temporary staging overlap,
+  published releases and independently required evidence retain their explicit
+  boundaries; elapsed time alone does not expire the current candidate.
 - **Resources at each slice boundary.** Retain required original evidence,
   release actual consumers and invoke native HISEW disposition. Preserve
   blocked directories with their next actor/checkpoint. HISEW repair proceeds
