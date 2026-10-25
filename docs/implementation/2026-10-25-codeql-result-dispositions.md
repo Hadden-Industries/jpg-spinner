@@ -1,6 +1,6 @@
 # Supplied CodeQL result dispositions
 
-This completes static triage for SLICE-002 of the [accepted release replan](../plans/2026-10-25-release-completion-replan.md).
+This preserves the original static triage for SLICE-002 of the [accepted release replan](../plans/2026-10-25-release-completion-replan.md).
 The [authorized native analysis](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40179840428)
 ran on `435b87b36bc3fe63f40fa09132945edc6edf83bc` with CodeQL 2.27.3 and produced
 29 results. Five additional open alerts belong to the historical default category
@@ -17,7 +17,35 @@ administrative dismissal. The original static triage and raw reports below
 remain historical. Its blanket "no source patch" recommendation is superseded:
 absence of a demonstrated product exploit does not settle build correctness or
 the best native buffer contract. Keep the proposed batch dismissals unexecuted;
-new local repair evidence does not itself change GitHub's alert state.
+new local repair evidence does not itself change GitHub's alert state. The later
+authorized native analysis below supplies the actual post-repair state.
+
+## Native analysis after the approved repairs
+
+The [completed native CodeQL run](https://github.com/Hadden-Industries/jpg-spinner/actions/runs/40221237300)
+analyzed signed `74f168b3912bd1bedf706e3baf0167f9c5edd1c9` with CodeQL 2.27.3.
+Analysis `2023185530`, category `cpp-security-extended`, reports 24 results from
+95 rules. GitHub marks **#9, #10, #12, #13 and #14** fixed without dismissal at
+`2026-10-25T19:43:40Z`. These are the five actual source-repaired findings.
+
+Old #11 closed while [#35](https://github.com/Hadden-Industries/jpg-spinner/security/code-scanning/35)
+opened for the same FileIo expression at `basicio.cpp:413`. Only the vcpkg
+source-directory hash changed; original and revised source bytes have the same
+SHA-256, `89d465f195320eb683d7b20f58c3089b05596edd282e10af9cd62bf366feae44`.
+This is an observed relocation, not another repaired source defect. The original
+product-boundary assessment still applies to that unchanged observation; the
+upstream FileIo operation is not declared fixed.
+
+The actual post-analysis snapshot has 29 open alerts: 24 current manual results
+and five historical default-configuration results. No alert dismissal, query
+suppression or analysis deletion occurred. The
+[hosted qualification record](2026-10-25-exiv2-hosted-qualification.md)
+identifies the original provider responses, native traced-build evidence and
+independently preserved diagnostics. This section reconciles those existing
+results; it introduces no new review or scan. The original rows and managed
+triage below retain their historical inputs and meaning.
+
+## Original static assessment
 
 Positive static evidence defeats the specific product-vulnerability claims for
 all 29 current results under the pinned configuration. The five historical
@@ -34,7 +62,7 @@ separate deliberate maintainer decision. No release approval follows from triage
 
 ## One disposition per input
 
-All rows have the scoped outcome above. Separate generated instances and
+All rows retain the original static assessment above. Separate generated instances and
 Debug/Release probes remain separate inputs in their original order.
 
 | Alert                                                                            | Exact reported location                                                                                                                | Positive counterevidence                                      |

@@ -22,10 +22,14 @@ closes that engineering slice without claiming a new application build,
 additional CodeQL analysis, hosted Store execution or final release approval.
 
 The [supplied CodeQL dispositions](implementation/2026-10-25-codeql-result-dispositions.md)
-complete static source/boundary triage of 29 current and five historical inputs.
-No product patch is justified by those claims; historical source obsolescence
-is distinct from declaring the original findings false. GitHub states and
-analyses remain unchanged. The [release prerequisites](release-prerequisites.md)
+preserve the original static source/boundary triage. The approved fix-first
+follow-up repairs five Exiv2 findings; the
+[completed native analysis](implementation/2026-10-25-exiv2-hosted-qualification.md#source-repair-result)
+confirms they are fixed without dismissal. The remaining 24 current and five
+historical results retain their scoped assessments and open states. The unchanged
+FileIo observation now appears as #35 rather than #11; that relocation is not a
+sixth source repair. Historical source obsolescence is distinct from declaring
+the original findings false. The [release prerequisites](release-prerequisites.md)
 record the available host and outstanding qualification-lane and human owners.
 The initial absence of Store protection is retained as history; the subsequent
 [single-maintainer amendment](implementation/2026-10-25-maintainer-self-review.md)
@@ -42,8 +46,10 @@ the deployment, source-delivery and technical evidence inputs.
 The maintainer's [2026-10-25 device amendment](implementation/2026-10-25-native-arm64-qualification.md)
 accepts native Windows ARM64 VM execution and makes physical-device testing
 optional and nonblocking. Manual CI now defines a separate deployment-only ARM64
-runtime job using the same run's prebuilt binaries. Local focused source,
-architecture and installer controls pass; that hosted job has not run yet.
+runtime job using the same run's prebuilt binaries. The
+[actual hosted headless run](implementation/2026-10-25-exiv2-hosted-qualification.md#native-arm64-execution)
+passes on signed `8183255a9e63c9d8282b526aee448b330440446a`, with original JUnit
+and native OS/observer/PE identities retained.
 Native packaged-app smoke and general interactive/accessibility, OS, performance,
 legal and trusted Store-upgrade evidence remain separate requirements, eligible
 for their appropriate qualified VM/desktop lanes. A headless pass supplies none

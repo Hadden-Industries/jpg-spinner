@@ -91,6 +91,11 @@ there is no parser patch or skipped diagnostic.
 Original focused logs are retained in HISEW operator group
 `f98310a13af74542b3d9d5f99884cb5d`; working inventory
 `dd7435ef951444e6b13fe202f00a4aa7` owns the bounded installer/tool/fixture inputs.
-The actual hosted ARM64 job, native packaged-app smoke, final campaign and release
-remain unexecuted. No source publication, cloud run, desktop input, external
-review or security review is performed by this checkpoint.
+At that focused checkpoint, the actual hosted ARM64 job, native packaged-app
+smoke, final campaign and release remained unexecuted. No source publication,
+cloud run, desktop input, external review or security review was performed by
+that checkpoint. The later
+[hosted execution record](2026-10-25-exiv2-hosted-qualification.md#native-arm64-execution)
+records successful native headless execution on the exact signed candidate,
+including the repaired manifest fixture. Packaged-app smoke and the other
+release requirements remain separate.
