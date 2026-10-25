@@ -31,6 +31,14 @@ The [2.0 release-note draft](releases/2.0.0.md) is maintained as an unreleased
 communication artifact. Its existence does not authorize installation,
 distribution, cutover, certification or Store submission.
 
+The [WinRT probe symbol-identity repair](implementation/2026-10-25-winrt-probe-symbol-identity.md)
+addresses the final failure in manual attempt `40127045938` at signed `887bec0adf5b`.
+All build lanes, ASan, analysis and interactive-input publication passed; packaging
+reached a source-root-sensitive fixture namespace after native bundle controls.
+The unchanged focused probe passes after stabilizing that fixture's qualified
+names. The hosted attempt remains failed and its later packaging controls remain
+unexecuted; another dispatch requires deliberate authorization.
+
 The owner-approved [qualification timeout budgets](implementation/2026-10-24-qualification-timeouts.md)
 supersede earlier workstation-sized process and workflow ceilings. All waits
 remain finite; deliberate deadline-refusal tests and product assertions remain.

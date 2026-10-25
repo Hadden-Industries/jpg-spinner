@@ -4,26 +4,32 @@
 // Debug retains those optional diagnostics. Neither lane creates app UI.
 #include <winrt/base.h>
 
-namespace
+// Keep this single-translation-unit fixture's qualified symbol names stable
+// while its source directory varies. An unnamed namespace gives MSVC an
+// implementation-generated identity that can perturb LTCG layout across roots,
+// independently of the C++/WinRT error-origin configuration being exercised.
+namespace jpg_spinner::test_support::winrt_error_origin_probe
 {
-    bool callbackObserved = false;
-    bool sourceFileObserved = false;
-    std::uint32_t observedLine = 0;
-    winrt::hresult observedResult{};
-    constexpr winrt::hresult expectedResult{static_cast<std::int32_t>(0x80070005u)};
+bool callbackObserved = false;
+bool sourceFileObserved = false;
+std::uint32_t observedLine = 0;
+winrt::hresult observedResult{};
+constexpr winrt::hresult expectedResult{static_cast<std::int32_t>(0x80070005u)};
 
-    void __stdcall CaptureErrorOrigin(std::uint32_t line, char const* file,
-        char const*, void*, winrt::hresult result) noexcept
-    {
-        callbackObserved = true;
-        sourceFileObserved = file != nullptr && file[0] != '\0';
-        observedLine = line;
-        observedResult = result;
-    }
+void __stdcall CaptureErrorOrigin(std::uint32_t line, char const *file, char const *, void *,
+                                  winrt::hresult result) noexcept
+{
+    callbackObserved = true;
+    sourceFileObserved = file != nullptr && file[0] != '\0';
+    observedLine = line;
+    observedResult = result;
 }
+} // namespace jpg_spinner::test_support::winrt_error_origin_probe
 
 int main() noexcept
 {
+    using namespace jpg_spinner::test_support::winrt_error_origin_probe;
+
     // The callback is the native extension used by WIL to observe originated
     // C++/WinRT errors. It is set before this single-threaded test operation.
     ::winrt_throw_hresult_handler = CaptureErrorOrigin;
@@ -31,7 +37,7 @@ int main() noexcept
     {
         winrt::check_hresult(expectedResult);
     }
-    catch (winrt::hresult_error const& error)
+    catch (winrt::hresult_error const &error)
     {
         if (!callbackObserved || observedResult != expectedResult || error.code() != expectedResult)
         {
