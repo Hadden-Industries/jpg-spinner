@@ -6,6 +6,13 @@ build, installed package and Store submission are different outcomes. The
 [approved plan](plans/2026-08-30-jpg-spinner-modernization.md)
 owns full acceptance; nothing here replaces its thresholds.
 
+The [2026-10-25 release completion replan](plans/2026-10-25-release-completion-replan.md)
+proposes one coordinated execution order: consolidate the current engineering
+batch and supplied-alert dispositions, establish device/human/legal/Store-flight
+prerequisites, freeze one candidate, then run its final qualification campaign.
+It preserves existing acceptance and authorization boundaries; it introduces no
+new scan, automatic workflow or release waiver.
+
 GitHub Actions storage is a short-lived transfer service, not the release
 evidence archive. All explicit artifact uploads use the native minimum
 `retention-days: 1` and `compression-level: 9`. Retrieve the exact candidate's
