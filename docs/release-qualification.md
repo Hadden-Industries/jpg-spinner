@@ -7,11 +7,19 @@ build, installed package and Store submission are different outcomes. The
 owns full acceptance; nothing here replaces its thresholds.
 
 The [2026-10-25 release completion replan](plans/2026-10-25-release-completion-replan.md)
-proposes one coordinated execution order: consolidate the current engineering
+defines the accepted execution order: consolidate the current engineering
 batch and supplied-alert dispositions, establish device/human/legal/Store-flight
 prerequisites, freeze one candidate, then run its final qualification campaign.
 It preserves existing acceptance and authorization boundaries; it introduces no
 new scan, automatic workflow or release waiver.
+
+The [qualified tooling refresh](implementation/2026-10-25-qualified-tooling-refresh.md)
+adopts Syft SDK 1.55.0 after native identity/integrity, independent fixture and
+official SPDX validation, artifact refusals and preservation of all 38 real
+component identities against the retained three-architecture payload. It also
+updates the immutable CodeQL Action pin and selected Go workflow patch. This
+closes that engineering slice without claiming a new application build,
+additional CodeQL analysis, hosted Store execution or final release approval.
 
 GitHub Actions storage is a short-lived transfer service, not the release
 evidence archive. All explicit artifact uploads use the native minimum

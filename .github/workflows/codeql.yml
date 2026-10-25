@@ -26,7 +26,7 @@ jobs:
               # The timeout is materialized from the shared qualification policy.
               timeout-minutes: 45
               run: ./scripts/Install-HostedWindowsSdk.ps1 -OutputDirectory artifacts/build-logs/windows-sdk
-            - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+            - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
               with:
                   languages: c-cpp
                   build-mode: manual
@@ -35,7 +35,7 @@ jobs:
               run: |
                   ./scripts/Invoke-Build.ps1 -Configuration Release -Architecture x64 -MaximumBuildProcessCount 2
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+            - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
               with:
                   category: cpp-security-extended
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

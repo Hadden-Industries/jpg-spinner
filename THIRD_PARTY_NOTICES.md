@@ -65,9 +65,10 @@ final frozen-candidate, independent-build, legal or release proof.
 
 ## Engineering tools
 
-Syft SDK 1.54.1, go-sync 0.1.2 and stereoscope 0.3.4 use Apache-2.0 and serve
+Syft SDK 1.55.0, go-sync 0.1.2 and stereoscope 0.3.4 use Apache-2.0 and serve
 the isolated release-engineering adapter, not the application runtime. The
-[Apache-2.0 license text](eng/licenses/Anchore.Apache-2.0.txt) is retained. SPDX
+[Apache-2.0 license text](eng/licenses/Anchore.Apache-2.0.txt) and
+[Syft copyright notice](eng/licenses/Syft.COPYRIGHT.txt) are retained. SPDX
 Workgroup Tools 2.0.7 is an Apache-2.0 qualification tool. Their exact pins and
 validator digests are in `eng/sbom-tools.json`; native Go module checksums are
 retained under `eng/artifact-sbom`. The SDK's upstream transitive graph includes
@@ -91,7 +92,7 @@ and local tool tests do not establish a successful hosted action invocation.
 The Store evidence source also pins actions/setup-go 7.0.0 and
 actions/setup-java 6.1.0. Both exact revisions use the
 [retained MIT notice](eng/licenses/actions-setup-runtimes.LICENSE.txt). Their
-Go 1.27.2 and Temurin 25.0.4.1+1 inputs are external engineering runtimes, not
+Go 1.27.3 and Temurin 25.0.4.1+1 inputs are external engineering runtimes, not
 application payload dependencies. Go's archive carries its BSD-style notice;
 Temurin's exact distribution notices and signature verification remain with the
 selected runtime. Native local qualification is not hosted installation proof

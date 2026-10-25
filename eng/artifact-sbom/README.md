@@ -1,7 +1,7 @@
 # Artifact SBOM composition
 
 This release-engineering command composes an explicit payload inventory and
-resolved component evidence through [Syft 1.54.1's public SDK](https://github.com/anchore/syft/tree/v1.54.1/syft).
+resolved component evidence through [Syft 1.55.0's public SDK](https://github.com/anchore/syft/tree/v1.55.0/syft).
 It does not parse NuGet/vcpkg manifests itself, rewrite generated JSON, extract
 MSIX containers, sign packages, install tools or become an app dependency.
 
@@ -39,7 +39,9 @@ it runs no SDK compilation, dependency download or package generation.
 From this directory, with caller-selected external Go caches:
 
 ```powershell
-go test -mod=readonly -p=2 -count=1 -timeout=90s -v .
+Import-Module ../../scripts/QualificationPolicy.psm1
+$testTimeoutArgument = '-timeout={0}s' -f (Get-QualificationTimeout -Category nativeToolProcess)
+go test -mod=readonly -p=2 -count=1 $testTimeoutArgument -v .
 ```
 
 Tests use synthetic payload and retained native component metadata under
@@ -87,6 +89,7 @@ safe recursive extraction, complete architecture-specific dependency coverage,
 payload-manifest comparison and release provenance remain Task 17 obligations.
 No compliant application-release SBOM is claimed by fixture qualification.
 
-The SDK, go-sync and stereoscope use [Apache-2.0](../licenses/Anchore.Apache-2.0.txt); retain their exact notices and
+The SDK, go-sync and stereoscope use [Apache-2.0](../licenses/Anchore.Apache-2.0.txt); the SDK's
+[copyright notice](../licenses/Syft.COPYRIGHT.txt) is also retained. Keep their exact notices and
 the native transitive rights inventory before redistributing a built tool.
 First-party adapter code remains under the repository's GPL-3.0 license.

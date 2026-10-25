@@ -1,6 +1,6 @@
 # JPG Spinner 2.0 release completion replan
 
-Status: proposed execution order, 2026-10-25. This addendum organizes the
+Status: execution order accepted by the owner's instruction to proceed, 2026-10-25. This addendum organizes the
 [approved modernization plan](2026-08-30-jpg-spinner-modernization.md); its
 product requirements and approved amendments remain authoritative. It grants
 no Store submission, signing, installation, remote dispatch or alert dismissal.
@@ -23,7 +23,7 @@ Successful source publication or CI advances the first outcome. It does not
 complete the other two. The protected Store preparation workflow still needs
 its actual hosted qualification; there is no authorized automatic submission.
 
-## Current baseline
+## Baseline when drafted
 
 | Workstream                                   | Observed result                                                                                                                                                                                                                                           | Remaining boundary                                                                                                                                                                                                                                  |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

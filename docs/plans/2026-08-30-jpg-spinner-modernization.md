@@ -6,7 +6,7 @@
 
 **Architecture:** A single-project packaged MSIX presentation shell composes four native modules: domain policy, JPEG transformation, AppContainer storage transactions, and batch orchestration. Dependencies point inward toward immutable value types and capability contracts. The old application remains only as a temporary behavioral reference and is deleted at the verified cutover; no legacy code is wrapped.
 
-**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.5.1; Microsoft.Windows.CppWinRT 3.0.260818.1; Microsoft.Windows.ImplementationLibrary 1.0.260126.7; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.9 with XMP; Catch2 3.16.1 through the qualified native overlay; Syft SDK 1.54.1 and SPDX Workgroup Tools 2.0.7; vcpkg manifest mode at baseline `c748cb44f2a435fcf015c35225c9d5545fe0021c`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
+**Tech stack:** Visual Studio 2026 / MSVC 14.51 / PlatformToolset v145 with an exact qualification-time `VCToolsVersion`; C++20; WinUI 3 and Windows App SDK 2.5.1; Microsoft.Windows.CppWinRT 3.0.260818.1; Microsoft.Windows.ImplementationLibrary 1.0.260126.7; Windows SDK BuildTools 10.0.28000.2705; libjpeg-turbo 3.2.0; Exiv2 0.28.9 with XMP; Catch2 3.16.1 through the qualified native overlay; Syft SDK 1.55.0 and SPDX Workgroup Tools 2.0.7; vcpkg manifest mode at baseline `c748cb44f2a435fcf015c35225c9d5545fe0021c`; MSBuild for first-party projects; GitHub Actions on `windows-2025-vs2026` with the exact runner/tool versions recorded in provenance.
 
 **Approved 2026-10-17 amendment:** the closed native overlay set adds only
 `vcpkg-ports/catch2`, for upstream Catch2 3.16.1 while Microsoft's registry still
@@ -1845,12 +1845,12 @@ project reports from the preceding run remain separate retained evidence.
 ### Step 17.1: RED on immutable CI policy
 
 - [ ] Extend repository policy to parse workflow YAML and reject mutable action tags, `windows-latest`, prerelease tools, unbounded permissions, missing timeouts, artifact retention other than one day, and any secret passed to pull-request builds. Require native maximum ZIP compression for explicit artifact uploads. Export required release evidence to the approved evidence store before expiry; Actions is only short-lived transport.
-- [ ] Require `scripts/Invoke-Sbom.ps1` to consume the qualified `eng/artifact-sbom` adapter, readonly Go module graph and `eng/sbom-tools.json` pins for Syft SDK 1.54.1, SPDX Workgroup Tools 2.0.7 and the official SPDX 3.0.1 schema. Reject moving release URLs, mismatched validator digests, module replacements and `Microsoft.Sbom.Targets`, whose NuGet `Pack` integration does not describe an MSIX release drop.
+- [ ] Require `scripts/Invoke-Sbom.ps1` to consume the qualified `eng/artifact-sbom` adapter, readonly Go module graph and `eng/sbom-tools.json` pins for Syft SDK 1.55.0, SPDX Workgroup Tools 2.0.7 and the official SPDX 3.0.1 schema. Reject moving release URLs, mismatched validator digests, module replacements and `Microsoft.Sbom.Targets`, whose NuGet `Pack` integration does not describe an MSIX release drop.
 - [ ] Require these reviewed action commits with a version comment:
     - `actions/checkout` v7.0.1 at `3d3c42e5aac5ba805825da76410c181273ba90b1`;
     - `actions/cache` v6.1.0 at `55cc8345863c7cc4c66a329aec7e433d2d1c52a9`;
     - `actions/upload-artifact` v7.0.2 at `cf430e030ddbb5b0abf93d22962f4752f3646cd9`;
-    - `github/codeql-action` v4.38.3 at `24c54180a607b1449ed407dd24f251e4e9147c8d`.
+    - `github/codeql-action` v4.39.1 at `9b3254085494b55a0f7c4c2b3d2d52cc712ce370`.
 - [ ] Require `windows-2025-vs2026`, least-privilege workflow permissions, job timeouts, and concurrency cancellation for superseded manually dispatched runs.
 - [ ] Require every build/package job to capture runner `ImageVersion`, OS build, exact `VCToolsVersion`, full `cl.exe`/`link.exe` versions and paths, Windows SDK/MakeAppx versions, NuGet lock hashes, vcpkg baseline, action commits, and source commit. The runner label is selection policy, not immutable provenance.
 - [ ] Implement `Test-BuildProvenance.ps1` before workflow provenance emission. Give it an empty or deliberately incomplete JSON record and observe RED diagnostics for every missing field; then make the workflow emit one versioned, schema-checked record whose executable/file paths are normalized without leaking the developer profile path.
@@ -2040,8 +2040,8 @@ finish, with hashes/inventories and thin native metadata retained separately.
 Sources: [native export](https://learn.microsoft.com/en-us/vcpkg/commands/export),
 [Visual Studio distribution limitation](https://learn.microsoft.com/en-us/vcpkg/troubleshoot/build-failures#cannot-install-packages-using-classic-mode),
 [immutable standalone tool release](https://github.com/microsoft/vcpkg-tool/releases/tag/2026-09-26),
-[native package identity fields](https://github.com/anchore/syft/blob/v1.54.1/syft/pkg/package.go),
-and [public content-hash API](https://github.com/anchore/syft/blob/v1.54.1/syft/artifact/id.go).
+[native package identity fields](https://github.com/anchore/syft/blob/v1.55.0/syft/pkg/package.go),
+and [public content-hash API](https://github.com/anchore/syft/blob/v1.55.0/syft/artifact/id.go).
 
 **Approved build-context scope amendment (2026-10-15):** The user approved
 separating three independently evidenced claims rather than inferring runtime
@@ -2449,7 +2449,7 @@ unchanged. Final frozen-candidate, contribution, source/terms/legal and compiler
 helper-lifetime obligations remain open.
 
 - [ ] Generate the first notice inventory from resolved NuGet/vcpkg license metadata, then manually compare every direct/transitive dependency’s shipped files and upstream license.
-- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.1 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.54.1 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
+- [ ] Record libjpeg-turbo 3.2.0, Exiv2 0.28.9, Catch2 3.16.1 for test distributions where applicable, Microsoft Windows packages, the qualified Syft SDK 1.55.0 adapter and SPDX Workgroup Tools 2.0.7 as release tooling, and each transitive native dependency actually present in the bundle. Microsoft SBOM Tool CLI 4.1.5 is rejected qualification evidence, not adopted release tooling. Complete the native SDK's exact transitive rights/security inventory before final adoption or tool redistribution.
 - [ ] Confirm Exiv2’s selected GPL-2.0-or-later terms are used compatibly under this repository’s GPL-3.0 license and include the required source/notice offer.
 - [ ] Prepare the exact corresponding source, patches, dependency locks, and reproducible build instructions for the distributed binary. Follow the [corresponding-source preparation procedure](../corresponding-source.md), which distinguishes an application Git archive from the complete dependency/source delivery set. Its missing-document and missing-reconstruction-section controls observed meaningful RED and now pass with the documentation policy. Actual artifact assembly, independent reconstruction, recipient availability and qualified legal review remain open. Do not assume that static versus dynamic linkage or a separate process removes license obligations, and do not introduce a loader/process boundary merely as a licensing shim.
     - [x] Preserve and independently read back the selected native-input subset offline: eight original upstream archives, 12 complete selected port trees, all four overlay patches, 28 original installed SPDX documents and 11 native baseline/version metadata files. The [2026-10-17 checkpoint](../corresponding-source.md#selected-native-input-preservation-checkpoint-2026-10-17) binds exact source/tree/digest identities and four actual refusal controls. This does not close corresponding-source assembly, actual build-tool/NuGet acquisition closure, independent reconstruction, recipient access, rights review or final candidate binding; retain the two archives exceeding native evidence transport limits for their named consumers.

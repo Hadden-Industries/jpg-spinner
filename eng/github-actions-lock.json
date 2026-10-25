@@ -1,13 +1,13 @@
 {
-  "schemaVersion": 1,
-  "actions": {
-    "actions/checkout": { "version": "7.0.1", "commit": "3d3c42e5aac5ba805825da76410c181273ba90b1" },
-    "actions/cache": { "version": "6.1.0", "commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9" },
-    "actions/upload-artifact": { "version": "7.0.2", "commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9" },
-    "actions/download-artifact": { "version": "8.0.2", "commit": "9000827ccba6bdab643e8b6fd33ac0654aef8333" },
-    "actions/attest": { "version": "4.2.2", "commit": "1e69f48acb82d1966a394da916b4c1698aa569d6" },
-    "actions/setup-go": { "version": "7.0.0", "commit": "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e" },
-    "actions/setup-java": { "version": "6.1.0", "commit": "b843ebf9b913146b38da2eaa7aeddf76074ae1ad" },
-    "github/codeql-action": { "version": "4.38.3", "commit": "24c54180a607b1449ed407dd24f251e4e9147c8d" }
-  }
+    "schemaVersion": 1,
+    "actions": {
+        "actions/checkout": { "version": "7.0.1", "commit": "3d3c42e5aac5ba805825da76410c181273ba90b1" },
+        "actions/cache": { "version": "6.1.0", "commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9" },
+        "actions/upload-artifact": { "version": "7.0.2", "commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9" },
+        "actions/download-artifact": { "version": "8.0.2", "commit": "9000827ccba6bdab643e8b6fd33ac0654aef8333" },
+        "actions/attest": { "version": "4.2.2", "commit": "1e69f48acb82d1966a394da916b4c1698aa569d6" },
+        "actions/setup-go": { "version": "7.0.0", "commit": "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e" },
+        "actions/setup-java": { "version": "6.1.0", "commit": "b843ebf9b913146b38da2eaa7aeddf76074ae1ad" },
+        "github/codeql-action": { "version": "4.39.1", "commit": "9b3254085494b55a0f7c4c2b3d2d52cc712ce370" }
+    }
 }

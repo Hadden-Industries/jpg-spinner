@@ -17,13 +17,14 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $repositoryRoot 'scripts/JsonObjectMemberValidation.psm1') -Force
+Import-Module (Join-Path $repositoryRoot 'scripts/QualificationPolicy.psm1')
 $pins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content -LiteralPath (Join-Path $repositoryRoot 'eng/sbom-tools.json') -Raw) -RequiredRootValueKind Object -SourceDescription 'SBOM tool pins' -AsHashtable
 $expected = ConvertFrom-JsonWithUniqueObjectMembers -JsonText (Get-Content -LiteralPath (Join-Path $repositoryRoot 'tests/TestData/SbomContractFixture/expected-contract.json') -Raw) -RequiredRootValueKind Object -SourceDescription 'Independent SBOM fixture contract' -AsHashtable
 
 foreach ($inputFile in @(
-    @{ Path=$SpdxSchemaPath; Hash=$pins.spdxSchema.sha256 },
-    @{ Path=$SpdxToolsJarPath; Hash=$pins.spdxWorkgroupTools.jarSha256 }
-)) {
+        @{ Path = $SpdxSchemaPath; Hash = $pins.spdxSchema.sha256 },
+        @{ Path = $SpdxToolsJarPath; Hash = $pins.spdxWorkgroupTools.jarSha256 }
+    )) {
     if ((Get-FileHash -LiteralPath $inputFile.Path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputFile.Hash) {
         throw "SPDX validator identity differs from the reviewed pin: $($inputFile.Path)"
     }
@@ -32,10 +33,10 @@ if (Test-Path -LiteralPath $OutputDirectory) { throw 'SBOM qualification output 
 [void][IO.Directory]::CreateDirectory($OutputDirectory)
 $manifestPath = Join-Path $OutputDirectory 'fixture.spdx.json'
 $settings = @{
-    GOMODCACHE=$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ModuleCacheDirectory)
-    GOCACHE=$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BuildCacheDirectory)
+    GOMODCACHE                            =$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ModuleCacheDirectory)
+    GOCACHE                               =$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BuildCacheDirectory)
     GOMAXPROCS='2'; GOTOOLCHAIN='local'; GOWORK='off'; GOENV='off'; GOFLAGS=''
-    JPG_SPINNER_SBOM_QUALIFICATION_OUTPUT=$manifestPath
+    JPG_SPINNER_SBOM_QUALIFICATION_OUTPUT =$manifestPath
 }
 $previous = @{}
 foreach ($name in $settings.Keys) { $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
@@ -48,7 +49,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Native pinned SDK module resolution failed.' }
     $sdk = ConvertFrom-JsonWithUniqueObjectMembers -JsonText ($moduleJson -join "`n") -RequiredRootValueKind Object -SourceDescription 'Native Syft module identity' -AsHashtable
     if ($sdk.Version -cne $pins.syftSdk.version -or $sdk.Sum -cne $pins.syftSdk.moduleSum -or $sdk.ContainsKey('Replace')) { throw 'Native Syft SDK identity differs from the reviewed module.' }
-    & $GoExecutablePath test -mod=readonly -p=2 -count=1 -timeout=90s -v .
+    # Go bounds execution after compilation; the invoking qualification process
+    # separately supervises cold compilation. Both use canonical policy budgets.
+    $testTimeoutArgument = '-timeout={0}s' -f (Get-QualificationTimeout -Category nativeToolProcess)
+    & $GoExecutablePath test -mod=readonly -p=2 -count=1 $testTimeoutArgument -v .
     if ($LASTEXITCODE -ne 0) { throw 'Native SBOM adapter contract tests failed.' }
 }
 finally {

@@ -1,30 +1,27 @@
-<# A literal, non-execution provenance fixture exercises the record contract.
-   These constants are test data, never claims that fixture tools were run. #>
+<# A non-execution provenance fixture exercises the record contract. Canonical
+   pins supply valid Action identities; placeholder tool/runner facts never
+   claim that those tools ran. Refusal mutations remain independent. #>
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OwnedOutputRoot)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Import-Module (Join-Path $root 'scripts/JsonObjectMemberValidation.psm1') -Force
+$actionPins = ConvertFrom-JsonWithUniqueObjectMembers -JsonText ([IO.File]::ReadAllText((Join-Path $root 'eng/github-actions-lock.json'))) `
+    -RequiredRootValueKind Object -SourceDescription 'Canonical provenance fixture Action identities' -AsHashtable
+$actionCommits = [ordered]@{}
+foreach ($action in $actionPins.actions.GetEnumerator()) { $actionCommits[$action.Key] = $action.Value.commit }
 $validator = Join-Path $root 'scripts/Test-BuildProvenance.ps1'
 $fixtureRoot = Join-Path $OwnedOutputRoot ('provenance-contract-' + [Guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($fixtureRoot)
 $record = [ordered]@{
     schemaVersion = 1; sourceCommit = ('1' * 40); sourceTreeIsClean = $true; architecture = 'x64'; configuration = 'Release'
-    runnerImage = @{label = 'windows-2025-vs2026'; version = '20261014.1.0' }
+    runnerImage   = @{label = 'windows-2025-vs2026'; version = '20261014.1.0' }
     operatingSystemVersion = '10.0.26300.0'; vcToolsVersion = '14.51.36231'; windowsSdkVersion = '10.0.28000.0'
     selectedTools = @{}
-    nugetLocks = @{'src/JpgSpinner.App/packages.lock.json' = ('a' * 64) }
+    nugetLocks    = @{'src/JpgSpinner.App/packages.lock.json' = ('a' * 64) }
     vcpkgBaseline = ('2' * 40); vcpkgManifestSha256 = ('b' * 64)
-    actionCommits = @{
-        'actions/checkout' = '3d3c42e5aac5ba805825da76410c181273ba90b1'
-        'actions/cache' = '55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
-        'actions/upload-artifact' = 'cf430e030ddbb5b0abf93d22962f4752f3646cd9'
-        'actions/download-artifact' = '9000827ccba6bdab643e8b6fd33ac0654aef8333'
-        'actions/attest' = '1e69f48acb82d1966a394da916b4c1698aa569d6'
-        'actions/setup-go' = 'b7ad1dad31e06c5925ef5d2fc7ad053ef454303e'
-        'actions/setup-java' = 'b843ebf9b913146b38da2eaa7aeddf76074ae1ad'
-        'github/codeql-action' = '24c54180a607b1449ed407dd24f251e4e9147c8d'
-    }
+    actionCommits = $actionCommits
 }
 foreach ($name in @('msBuild', 'compiler', 'linker', 'makeAppx')) {
     $record.selectedTools[$name] = @{path = "<visual-studio>/$name.exe"; fileVersion = '1.2.3.4'; sha256 = ('c' * 64) }
