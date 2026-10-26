@@ -91,10 +91,6 @@ MainWindow::MainWindow()
             page.Content(content);
         }
     });
-    AppTitleBar().BackRequested([weak = get_weak()](auto const &, auto const &) {
-        if (auto window = weak.get())
-            window->tryNavigateBack();
-    });
     // VirtualKey defines these browser/navigation keys, but WinUI's XAML
     // converter does not accept their names. Use the documented native setter
     // rather than numeric literals or a second window-message input path.
@@ -307,11 +303,6 @@ bool MainWindow::tryNavigateForward()
         return false;
     ShellFrame().GoForward();
     return true;
-}
-void MainWindow::NavigateForward_Click(Windows::Foundation::IInspectable const &,
-                                       Microsoft::UI::Xaml::RoutedEventArgs const &)
-{
-    tryNavigateForward();
 }
 void MainWindow::NavigateBack_Invoked(const Microsoft::UI::Xaml::Input::KeyboardAccelerator &,
                                       const Microsoft::UI::Xaml::Input::KeyboardAcceleratorInvokedEventArgs &arguments)

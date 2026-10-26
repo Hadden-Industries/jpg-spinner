@@ -47,7 +47,6 @@ struct MainWindow : MainWindowT<MainWindow>
                                        Microsoft::UI::Xaml::RoutedEventArgs const &);
     void CloseSettingsHelp_Click(Windows::Foundation::IInspectable const &,
                                  Microsoft::UI::Xaml::RoutedEventArgs const &);
-    void NavigateForward_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
     void NavigateBack_Invoked(const Microsoft::UI::Xaml::Input::KeyboardAccelerator &,
                               const Microsoft::UI::Xaml::Input::KeyboardAcceleratorInvokedEventArgs &);
     void NavigateForward_Invoked(const Microsoft::UI::Xaml::Input::KeyboardAccelerator &,

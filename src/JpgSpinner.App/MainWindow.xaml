@@ -3,18 +3,20 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
     <!-- Transparent root lets the native backdrop/fallback show through. -->
-    <Grid x:Name="ShellRoot" Background="Transparent">
+    <!-- Global history shortcuts are input routes, not content tooltips.
+         https://learn.microsoft.com/windows/apps/develop/input/keyboard-accelerators -->
+    <Grid x:Name="ShellRoot" Background="Transparent" KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.Resources>
             <DataTemplate x:Key="SettingsArticleHeaderTemplate">
-                <Grid Background="{ThemeResource JpgSpinnerOrangeBrush}" Padding="24,16" ColumnSpacing="16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Button x:Uid="Shell_BackToSettings" Click="CloseSettingsHelp_Click" Background="Transparent" BorderThickness="0" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" AutomationProperties.AutomationId="BackToSettings">
-                        <SymbolIcon Symbol="Back" />
+                <!-- Material belongs to navigation; article text stays on a
+                     quiet content surface with native accessibility fallback. -->
+                <Grid Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}" Padding="24,12">
+                    <Button x:Uid="Shell_BackToSettings" Click="CloseSettingsHelp_Click" Style="{StaticResource SubtleButtonStyle}" AutomationProperties.AutomationId="BackToSettings" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <SymbolIcon Symbol="Back" />
+                            <TextBlock x:Uid="Shell_SettingsHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        </StackPanel>
                     </Button>
-                    <TextBlock Grid.Column="1" x:Uid="Shell_SettingsHeading" Style="{StaticResource TitleTextBlockStyle}" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" VerticalAlignment="Center" />
                 </Grid>
             </DataTemplate>
         </Grid.Resources>
@@ -26,13 +28,12 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TitleBar x:Name="AppTitleBar" Title="JPG Spinner" IsBackButtonVisible="True" IsBackButtonEnabled="{x:Bind ShellFrame.CanGoBack, Mode=OneWay}">
+        <TitleBar x:Name="AppTitleBar" Title="JPG Spinner" IsBackButtonVisible="False">
             <TitleBar.IconSource>
                 <ImageIconSource ImageSource="ms-appx:///Assets/Square44x44Logo.targetsize-32.png" />
             </TitleBar.IconSource>
             <TitleBar.RightHeader>
                 <CommandBar Background="Transparent" DefaultLabelPosition="Right" OverflowButtonVisibility="Collapsed">
-                    <AppBarButton Icon="Forward" IsEnabled="{x:Bind ShellFrame.CanGoForward, Mode=OneWay}" AutomationProperties.AutomationId="NavigateForward" Click="NavigateForward_Click" x:Uid="Shell_NavigateForward" />
                     <AppBarButton x:Uid="Shell_OpenSettings" Icon="Setting" Click="Settings_Click" AutomationProperties.AutomationId="OpenSettings" />
                 </CommandBar>
             </TitleBar.RightHeader>
@@ -308,7 +309,7 @@
                             <Button Grid.Row="1" x:Uid="Shell_SourcePicker" AutomationProperties.AutomationId="SourceFolderPicker" Click="SourcePicker_Click" IsEnabled="{x:Bind CanPickSourceFolder, Mode=OneWay}" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" Background="Transparent" BorderBrush="{ThemeResource JpgSpinnerBrandForegroundBrush}" BorderThickness="2" CornerRadius="0" FontSize="20" FontWeight="SemiBold" Padding="14,8" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             <StackPanel Grid.Row="2" Spacing="12" Margin="0,24,0,8">
                                 <ProgressRing IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Width="24" Height="24" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" />
-                                <TextBlock Text="© Hadden Industries Ltd" Foreground="{ThemeResource JpgSpinnerFooterForegroundBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                                <HyperlinkButton Content="© Hadden Industries Ltd" NavigateUri="https://haddenindustries.com/" Foreground="{ThemeResource JpgSpinnerFooterForegroundBrush}" HorizontalAlignment="Center" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
                             </StackPanel>
                         </Grid>
                         <Grid x:Name="LandingBackdrop" Grid.Column="1" Background="{ThemeResource JpgSpinnerPurpleBrush}">
@@ -318,66 +319,128 @@
                 </UserControl>
             </Grid>
             <Grid x:Name="SettingsView">
-                <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid Background="{ThemeResource JpgSpinnerOrangeBrush}" Padding="24,16" ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Button x:Uid="Shell_CloseSettings" Click="CloseSettings_Click" AutomationProperties.AutomationId="CloseSettings" Background="Transparent" BorderThickness="0" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}">
-                            <SymbolIcon Symbol="Back" />
-                        </Button>
-                        <TextBlock Grid.Column="1" x:Uid="Shell_SettingsHeading" Style="{StaticResource TitleTextBlockStyle}" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" VerticalAlignment="Center" />
+                <UserControl IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                    <Grid Background="Transparent">
+                        <Grid.Resources>
+                            <!-- Long localized choices wrap within their card; the
+                             native radio template still owns focus and input. -->
+                            <Style TargetType="RadioButton">
+                                <Setter Property="ContentTemplate" Value="{StaticResource WrappingTextContentTemplate}" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </Grid.Resources>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup>
+                                <VisualState x:Name="SettingsCompact">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="0" />
+                                    </VisualState.StateTriggers>
+                                </VisualState>
+                                <VisualState x:Name="SettingsWide">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="1000" />
+                                    </VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="SecondaryPreferenceColumn.Width" Value="*" />
+                                        <Setter Target="OutputPreferenceCard.(Grid.Column)" Value="1" />
+                                        <Setter Target="OutputPreferenceCard.(Grid.Row)" Value="0" />
+                                        <Setter Target="EdgePreferenceCard.(Grid.Row)" Value="1" />
+                                        <Setter Target="EncodingPreferenceCard.(Grid.Column)" Value="1" />
+                                        <Setter Target="EncodingPreferenceCard.(Grid.Row)" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Grid Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}" Padding="24,16" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Uid="Shell_CloseSettings" Click="CloseSettings_Click" AutomationProperties.AutomationId="CloseSettings" Style="{StaticResource SubtleButtonStyle}">
+                                <SymbolIcon Symbol="Back" />
+                            </Button>
+                            <TextBlock Grid.Column="1" x:Uid="Shell_SettingsHeading" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" TextWrapping="Wrap" />
+                        </Grid>
+                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+                            <StackPanel MaxWidth="960" Margin="24" Spacing="20" HorizontalAlignment="Stretch">
+                                <TextBlock x:Uid="Shell_SettingsDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                <!-- The same preferences stack at compact widths;
+                                 no setting disappears when the window shrinks. -->
+                                <Grid ColumnSpacing="12" RowSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition x:Name="SecondaryPreferenceColumn" Width="0" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Border Style="{StaticResource ContentCardBorderStyle}">
+                                        <StackPanel Spacing="12">
+                                            <RadioButtons x:Name="TraversalScopeControl" x:Uid="Shell_TraversalScope" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="TraversalScope" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                                <RadioButton x:Uid="Shell_SelectedFolderOnly" />
+                                                <RadioButton x:Uid="Shell_SelectedFolderAndDescendants" />
+                                            </RadioButtons>
+                                            <TextBlock x:Uid="Shell_FolderSettingsDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border x:Name="OutputPreferenceCard" Grid.Row="1" Style="{StaticResource ContentCardBorderStyle}">
+                                        <StackPanel Spacing="12">
+                                            <RadioButtons x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="OutputDisposition" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                                <RadioButton x:Uid="Shell_CreateCorrectedCopy" />
+                                                <RadioButton x:Uid="Shell_ReplaceWithVerifiedBackup" />
+                                            </RadioButtons>
+                                            <TextBlock x:Uid="Shell_OutputSettingsDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border x:Name="EdgePreferenceCard" Grid.Row="2" Style="{StaticResource ContentCardBorderStyle}">
+                                        <StackPanel Spacing="12">
+                                            <RadioButtons x:Name="EdgeHandlingControl" x:Uid="Shell_EdgeHandling" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="EdgeHandling" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                                <RadioButton x:Uid="Shell_RequirePerfectTransform" />
+                                                <RadioButton x:Uid="Shell_TrimPartialMinimumCodedUnits" />
+                                            </RadioButtons>
+                                            <TextBlock x:Uid="Shell_EdgeSettingsDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                            <HyperlinkButton x:Uid="Shell_CropHelpLink" Tag="Crop" Click="SettingsHelp_Click" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border x:Name="EncodingPreferenceCard" Grid.Row="3" Style="{StaticResource ContentCardBorderStyle}">
+                                        <StackPanel Spacing="12">
+                                            <RadioButtons x:Name="ScanOrganizationControl" x:Uid="Shell_ScanOrganization" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="ScanOrganization" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                                <RadioButton x:Uid="Shell_PreserveSourceScans" />
+                                                <RadioButton x:Uid="Shell_SequentialDct" />
+                                                <RadioButton x:Uid="Shell_ProgressiveDct" />
+                                            </RadioButtons>
+                                            <TextBlock x:Uid="Shell_EncodingSettingsDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                            <HyperlinkButton x:Uid="Shell_ProgressiveHelpLink" Tag="Progressive" Click="SettingsHelp_Click" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                                <InfoBar x:Name="SettingsSaveErrorBar" x:Uid="Shell_SettingsSaveError" Severity="Warning" IsOpen="False" IsClosable="True" />
+                                <Border Style="{StaticResource ContentCardBorderStyle}">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Uid="Shell_DiagnosticsHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                        <Button x:Uid="Shell_ExportDiagnostics" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind CanExportDiagnostics, Mode=OneWay}" AutomationProperties.AutomationId="ExportDiagnostics" Click="ExportDiagnostics_Click" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource ContentCardBorderStyle}">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Uid="Shell_AboutHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                        <TextBlock Text="JPG Spinner 2.0" />
+                                        <HyperlinkButton x:Uid="Shell_PrivacyLink" Tag="Privacy" Click="SettingsHelp_Click" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
                     </Grid>
-                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
-                        <StackPanel MaxWidth="1040" Padding="32,24" Spacing="24" HorizontalAlignment="Stretch">
-                            <TextBlock x:Uid="Shell_SettingsDescription" TextWrapping="Wrap" />
-                            <StackPanel Spacing="8">
-                                <RadioButtons x:Name="TraversalScopeControl" x:Uid="Shell_TraversalScope" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="TraversalScope" SelectionChanged="ProcessingOptions_SelectionChanged">
-                                    <RadioButton x:Uid="Shell_SelectedFolderOnly" />
-                                    <RadioButton x:Uid="Shell_SelectedFolderAndDescendants" />
-                                </RadioButtons>
-                                <TextBlock x:Uid="Shell_FolderSettingsDescription" TextWrapping="Wrap" />
-                            </StackPanel>
-                            <StackPanel Spacing="8">
-                                <RadioButtons x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="OutputDisposition" SelectionChanged="ProcessingOptions_SelectionChanged">
-                                    <RadioButton x:Uid="Shell_CreateCorrectedCopy" />
-                                    <RadioButton x:Uid="Shell_ReplaceWithVerifiedBackup" />
-                                </RadioButtons>
-                                <TextBlock x:Uid="Shell_OutputSettingsDescription" TextWrapping="Wrap" />
-                            </StackPanel>
-                            <StackPanel Spacing="8">
-                                <RadioButtons x:Name="EdgeHandlingControl" x:Uid="Shell_EdgeHandling" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="EdgeHandling" SelectionChanged="ProcessingOptions_SelectionChanged">
-                                    <RadioButton x:Uid="Shell_RequirePerfectTransform" />
-                                    <RadioButton x:Uid="Shell_TrimPartialMinimumCodedUnits" />
-                                </RadioButtons>
-                                <TextBlock x:Uid="Shell_EdgeSettingsDescription" TextWrapping="Wrap" />
-                                <HyperlinkButton x:Uid="Shell_CropHelpLink" Tag="Crop" Click="SettingsHelp_Click" />
-                            </StackPanel>
-                            <StackPanel Spacing="8">
-                                <RadioButtons x:Name="ScanOrganizationControl" x:Uid="Shell_ScanOrganization" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="ScanOrganization" SelectionChanged="ProcessingOptions_SelectionChanged">
-                                    <RadioButton x:Uid="Shell_PreserveSourceScans" />
-                                    <RadioButton x:Uid="Shell_SequentialDct" />
-                                    <RadioButton x:Uid="Shell_ProgressiveDct" />
-                                </RadioButtons>
-                                <TextBlock x:Uid="Shell_EncodingSettingsDescription" TextWrapping="Wrap" />
-                                <HyperlinkButton x:Uid="Shell_ProgressiveHelpLink" Tag="Progressive" Click="SettingsHelp_Click" />
-                            </StackPanel>
-                            <InfoBar x:Name="SettingsSaveErrorBar" x:Uid="Shell_SettingsSaveError" Severity="Warning" IsOpen="False" IsClosable="True" />
-                            <TextBlock x:Uid="Shell_DiagnosticsHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <Button x:Uid="Shell_ExportDiagnostics" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind CanExportDiagnostics, Mode=OneWay}" AutomationProperties.AutomationId="ExportDiagnostics" Click="ExportDiagnostics_Click" />
-                            <TextBlock x:Uid="Shell_AboutHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock Text="JPG Spinner 2.0" />
-                            <HyperlinkButton x:Uid="Shell_PrivacyLink" Tag="Privacy" Click="SettingsHelp_Click" />
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
+                </UserControl>
             </Grid>
-            <Grid AutomationProperties.AutomationId="CropExplanation" x:Name="CropExplanationView" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid AutomationProperties.AutomationId="CropExplanation" x:Name="CropExplanationView" Background="Transparent">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -396,7 +459,7 @@
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
-            <Grid AutomationProperties.AutomationId="ProgressiveExplanation" x:Name="ProgressiveExplanationView" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid AutomationProperties.AutomationId="ProgressiveExplanation" x:Name="ProgressiveExplanationView" Background="Transparent">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -436,36 +499,40 @@
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
-            <Grid AutomationProperties.AutomationId="PrivacyPolicy" x:Name="PrivacyView" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid AutomationProperties.AutomationId="PrivacyPolicy" x:Name="PrivacyView" Background="Transparent">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <ContentControl Content="header" HorizontalContentAlignment="Stretch" IsTabStop="False" ContentTemplate="{StaticResource SettingsArticleHeaderTemplate}" />
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Grid.Row="1">
-                    <StackPanel x:Name="PrivacyNoticeContent" MaxWidth="1040" Padding="32,24" Spacing="16">
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyHeading" Style="{StaticResource TitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level1" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyScope" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacySummary" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyProcessingHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyProcessing" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyLocalDataHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyLocalData" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyChoices" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyDiagnosticsHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyDiagnostics" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyDiagnosticExclusions" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyRetention" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExportHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExport" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExternalHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExternalServices" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyBrowserNotice" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyContactHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
-                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyContact" />
-                        <HyperlinkButton NavigateUri="https://haddenindustries.com/legal.html#privacy-policy" x:Uid="Shell_PublisherPrivacyLink" />
-                        <HyperlinkButton NavigateUri="https://www.microsoft.com/privacy/privacystatement" x:Uid="Shell_MicrosoftPrivacyLink" />
-                    </StackPanel>
+                    <!-- A bounded article measure and native type hierarchy
+                         keep long policy text readable on a maximized window. -->
+                    <Border Style="{StaticResource ContentCardBorderStyle}" MaxWidth="720" Margin="24" HorizontalAlignment="Stretch">
+                        <StackPanel x:Name="PrivacyNoticeContent" Spacing="12">
+                            <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyHeading" Style="{StaticResource TitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level1" />
+                            <TextBlock x:Uid="Shell_PrivacyScope" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacySummary" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyProcessingHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock x:Uid="Shell_PrivacyProcessing" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyLocalDataHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock x:Uid="Shell_PrivacyLocalData" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyChoices" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyDiagnosticsHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock x:Uid="Shell_PrivacyDiagnostics" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyDiagnosticExclusions" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyRetention" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyExportHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock x:Uid="Shell_PrivacyExport" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyExternalHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock x:Uid="Shell_PrivacyExternalServices" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyBrowserNotice" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <TextBlock x:Uid="Shell_PrivacyContactHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock x:Uid="Shell_PrivacyContact" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                            <HyperlinkButton NavigateUri="https://haddenindustries.com/legal.html#privacy-policy" x:Uid="Shell_PublisherPrivacyLink" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                            <HyperlinkButton NavigateUri="https://www.microsoft.com/privacy/privacystatement" x:Uid="Shell_MicrosoftPrivacyLink" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                        </StackPanel>
+                    </Border>
                 </ScrollViewer>
             </Grid>
         </Grid>
