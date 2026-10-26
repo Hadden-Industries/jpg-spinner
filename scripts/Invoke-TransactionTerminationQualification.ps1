@@ -3,7 +3,14 @@
 param(
     [ValidateSet('x64', 'x86')][string]$Architecture = 'x64',
     [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug',
-    [Parameter(Mandatory)][string]$EvidenceDirectory
+    [Parameter(Mandatory)][string]$EvidenceDirectory,
+    # Empty selects the complete matrix; an explicit selection must reach every
+    # requested case. This lets a repair run its affected scenarios first.
+    [string[]]$CaseNames = @(),
+    [string]$FixtureParentDirectory = (Join-Path ([IO.Path]::GetTempPath()) 'jpg-spinner-termination-tests'),
+    # Workflow callers can retain generated data for native evidence promotion
+    # and disposal instead of using the producer's default success cleanup.
+    [switch]$PreserveFixtures
 )
 
 Set-StrictMode -Version Latest
@@ -17,21 +24,27 @@ $executableSha256 = (Get-FileHash -LiteralPath $executable -Algorithm SHA256).Ha
 $evidenceRoot = [IO.Path]::GetFullPath($EvidenceDirectory)
 [void][IO.Directory]::CreateDirectory($evidenceRoot)
 $runIdentifier = [guid]::NewGuid().ToString('D')
-$fixtureParent = Join-Path ([IO.Path]::GetTempPath()) 'jpg-spinner-termination-tests'
+if (-not [IO.Path]::IsPathFullyQualified($FixtureParentDirectory)) { throw 'The fixture parent must be an absolute path.' }
+$fixtureParent = [IO.Path]::GetFullPath($FixtureParentDirectory)
 [void][IO.Directory]::CreateDirectory($fixtureParent)
 $fixtureRoot = Join-Path $fixtureParent $runIdentifier
 # New-Item without Force establishes exclusive ownership. Failed runs retain
 # their exact fixture root; no age-based scan or broad temporary-root deletion.
 [void](New-Item -ItemType Directory -Path $fixtureRoot)
 $completed = $false
+$remainingCaseNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$remainingCaseNames.UnionWith($CaseNames)
+$hasCaseSelection = $CaseNames.Count -ne 0
 
 function New-QualificationProcess {
     param([string]$Specification, [string]$Fixture, [string]$Disposition,
-          [int]$Generation, [string]$Boundary, [string]$EventName,
-          [string]$Expectation, [string]$Report)
+        [int]$Generation, [string]$Boundary, [string]$EventName,
+        [string]$Expectation, [string]$Report)
     $start = [Diagnostics.ProcessStartInfo]::new()
     $start.FileName = $executable
-    $start.WorkingDirectory = $repositoryRoot
+    # Delegate the exact owned directory through the native process creation
+    # boundary. The worker has no environment-selected filesystem root.
+    $start.WorkingDirectory = $Fixture
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.RedirectStandardOutput = $true
@@ -41,7 +54,7 @@ function New-QualificationProcess {
     foreach ($argument in @($Specification, '--reporter', "JUnit::out=$Report")) {
         [void]$start.ArgumentList.Add($argument)
     }
-    $start.Environment['JPG_SPINNER_TERMINATION_FIXTURE'] = $Fixture
+    [void]$start.Environment.Remove('JPG_SPINNER_TERMINATION_FIXTURE')
     $start.Environment['JPG_SPINNER_TERMINATION_DISPOSITION'] = $Disposition
     $start.Environment['JPG_SPINNER_TERMINATION_GENERATION'] = [string]$Generation
     $start.Environment['JPG_SPINNER_TERMINATION_BOUNDARY'] = $Boundary
@@ -72,8 +85,9 @@ try {
         $lastGeneration = if ($disposition -eq 'copy') { 5 } else { 6 }
         for ($generation = 1; $generation -le $lastGeneration; ++$generation) {
             foreach ($boundary in @('before-write', 'partial-write', 'after-write', 'after-flush',
-                                    'after-close', 'before-publish', 'after-publish', 'before-next-effect')) {
+                    'after-close', 'before-publish', 'after-publish', 'before-next-effect')) {
                 $caseName = "$disposition-$generation-$boundary"
+                if ($hasCaseSelection -and -not $remainingCaseNames.Contains($caseName)) { continue }
                 if ((Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant() -ne $executableSha256) {
                     throw 'The selected executable changed during qualification; do not combine candidate results.'
                 }
@@ -83,7 +97,7 @@ try {
                 $eventName = "Local\JpgSpinnerTermination-$([guid]::NewGuid().ToString('D'))"
                 $createdNew = $false
                 $reached = [Threading.EventWaitHandle]::new($false, [Threading.EventResetMode]::ManualReset,
-                                                          $eventName, [ref]$createdNew)
+                    $eventName, [ref]$createdNew)
                 if (-not $createdNew) { throw 'The qualification event was not exclusively created.' }
                 $child = $null
                 $recovery = $null
@@ -106,7 +120,7 @@ try {
                     $expectation = if ($generation -eq 1 -and $boundary -notin @('after-publish', 'before-next-effect')) {
                         'conflict'
                     } elseif (($disposition -eq 'copy' -and $generation -ge 4) -or
-                              ($disposition -eq 'replace' -and $generation -ge 5)) {
+                        ($disposition -eq 'replace' -and $generation -ge 5)) {
                         'committed'
                     } else { 'preserved' }
                     $report = Join-Path $evidenceRoot "$runIdentifier-$caseName-recovery.junit.xml"
@@ -116,8 +130,9 @@ try {
                         throw "Recovery failed: $caseName. Inspect $report. $($recovery.Error.GetAwaiter().GetResult())"
                     }
                     $observations.Add([ordered]@{ case = $caseName; expectation = $expectation;
-                        boundarySignaled = $observedBoundary; terminatedExitCode = $child.Process.ExitCode;
-                        recoveryExitCode = $recovery.Process.ExitCode; recoveryReport = $report })
+                            boundarySignaled = $observedBoundary; terminatedExitCode = $child.Process.ExitCode;
+                            recoveryExitCode = $recovery.Process.ExitCode; recoveryReport = $report })
+                    [void]$remainingCaseNames.Remove($caseName)
                 }
                 finally {
                     foreach ($ownedChild in @($child, $recovery)) {
@@ -130,6 +145,8 @@ try {
             }
         }
     }
+    if ($remainingCaseNames.Count -ne 0) { throw "Unknown or unreached termination case: $($remainingCaseNames -join ', ')" }
+    if ($observations.Count -eq 0) { throw 'No termination cases were executed.' }
     $completed = $true
 }
 finally {
@@ -140,7 +157,7 @@ finally {
     $receiptPath = Join-Path $evidenceRoot "$runIdentifier-termination.json"
     [IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
     Write-Output $receiptPath
-    if ($completed) {
+    if ($completed -and -not $PreserveFixtures) {
         # Remove only this producer's exclusive generated-data child, after all
         # child handles have exited and reports are retained elsewhere. Reject
         # link substitution and widened targets before recursive test-data cleanup.
@@ -149,8 +166,8 @@ finally {
             [IO.Path]::GetFileName($resolved) -ne $runIdentifier -or
             (Get-Item -LiteralPath $resolved).Attributes.HasFlag([IO.FileAttributes]::ReparsePoint) -or
             @(Get-ChildItem -LiteralPath $resolved -Recurse -Force | Where-Object {
-                $_.Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)
-            }).Count -ne 0) { throw "Generated fixture cleanup ownership changed: $resolved" }
+                    $_.Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)
+                }).Count -ne 0) { throw "Generated fixture cleanup ownership changed: $resolved" }
         Remove-Item -LiteralPath $resolved -Recurse
     }
 }

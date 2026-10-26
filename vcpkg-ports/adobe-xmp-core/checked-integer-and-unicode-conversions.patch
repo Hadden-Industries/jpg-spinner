@@ -1,0 +1,144 @@
+diff --git a/XMPCore/source/XMPUtils.cpp b/XMPCore/source/XMPUtils.cpp
+index c0f6e41..d40bfd8 100644
+--- a/XMPCore/source/XMPUtils.cpp
++++ b/XMPCore/source/XMPUtils.cpp
+@@ -15,6 +15,10 @@
+ 
+ 
+ #include <map>
++#include <bit>
++#include <cinttypes>
++#include <limits>
++#include <type_traits>
+ 
+ #include <time.h>
+ #include <string.h>
+@@ -2353,26 +2357,40 @@ XMPUtils::ConvertToBool ( XMP_StringPtr strValue )
+ // ConvertToInt
+ // ------------
+ 
++// The public integer APIs accept decimal values and hexadecimal bit patterns.
++// scanf does not provide an overflow-safe conversion contract. Use the native
++// checked conversions, retain complete-input validation and preserve the SDK's
++// existing signed hexadecimal representation without pointer aliasing.
++template <typename SignedInteger>
++static SignedInteger ConvertToSignedInteger ( XMP_StringPtr strValue )
++{
++    static_assert ( std::is_signed_v<SignedInteger> );
++    using UnsignedInteger = std::make_unsigned_t<SignedInteger>;
++    if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty convert-from string", kXMPErr_BadValue );
++
++    char * conversionEnd = nullptr;
++    errno = 0;
++    if ( XMP_LitNMatch ( strValue, "0x", 2 ) ) {
++        const auto value = std::strtoumax ( strValue, &conversionEnd, 16 );
++        if ( (errno == ERANGE) || (conversionEnd == strValue) || (*conversionEnd != 0) ||
++             (value > (std::numeric_limits<UnsignedInteger>::max)()) )
++            XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
++        return std::bit_cast<SignedInteger> ( static_cast<UnsignedInteger>(value) );
++    }
++
++    const auto value = std::strtoimax ( strValue, &conversionEnd, 10 );
++    if ( (errno == ERANGE) || (conversionEnd == strValue) || (*conversionEnd != 0) ||
++         (value < (std::numeric_limits<SignedInteger>::min)()) ||
++         (value > (std::numeric_limits<SignedInteger>::max)()) )
++        XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
++    return static_cast<SignedInteger>(value);
++}
++
+ /* class static */ XMP_Int32
+ XMPUtils::ConvertToInt ( XMP_StringPtr strValue )
+ {
+-	if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty convert-from string", kXMPErr_BadValue );
+-
+-	int count;
+-	char nextCh;
+-	XMP_Int32 result;
+-
+-	if ( ! XMP_LitNMatch ( strValue, "0x", 2 ) ) {
+-		count = sscanf ( strValue, "%d%c", &result, &nextCh );
+-	} else {
+-		count = sscanf ( strValue, "%x%c", &result, &nextCh );
+-	}
+-
+-	if ( count != 1 ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
+-
+-	return result;
+-
+-}	// ConvertToInt
++    return ConvertToSignedInteger<XMP_Int32> ( strValue );
++} // ConvertToInt
+ 
+ // -------------------------------------------------------------------------------------------------
+ // ConvertToInt64
+@@ -2381,23 +2399,8 @@ XMPUtils::ConvertToInt ( XMP_StringPtr strValue )
+ /* class static */ XMP_Int64
+ XMPUtils::ConvertToInt64 ( XMP_StringPtr strValue )
+ {
+-	if ( (strValue == 0) || (*strValue == 0) ) XMP_Throw ( "Empty convert-from string", kXMPErr_BadValue );
+-
+-	int count;
+-	char nextCh;
+-	XMP_Int64 result;
+-
+-	if ( ! XMP_LitNMatch ( strValue, "0x", 2 ) ) {
+-		count = sscanf ( strValue, "%lld%c", &result, &nextCh );
+-	} else {
+-		count = sscanf ( strValue, "%llx%c", &result, &nextCh );
+-	}
+-
+-	if ( count != 1 ) XMP_Throw ( "Invalid integer string", kXMPErr_BadParam );
+-
+-	return result;
+-
+-}	// ConvertToInt64
++    return ConvertToSignedInteger<XMP_Int64> ( strValue );
++} // ConvertToInt64
+ 
+ // -------------------------------------------------------------------------------------------------
+ // ConvertToFloat
+diff --git a/source/UnicodeConversions.cpp b/source/UnicodeConversions.cpp
+index 3c34153..872278d 100644
+--- a/source/UnicodeConversions.cpp
++++ b/source/UnicodeConversions.cpp
+@@ -56,7 +56,6 @@ UTF32_to_UTF16_Proc UTF32LE_to_UTF16LE = 0;
+ 
+ // -------------------------------------------------------------------------------------------------
+ 
+-static size_t swap32to16Offset = 0;	// Offset to "convert" a swapped UTF32 pointer into a swapped UTF16 pointer.
+ 
+ // -------------------------------------------------------------------------------------------------
+ 
+@@ -154,7 +153,6 @@ void InitializeUnicodeConversions()
+ 	
+ 	if ( bigEndian ) {
+ 	
+-		swap32to16Offset = 0;
+ 
+ 		CodePoint_to_UTF16BE = CodePoint_to_UTF16Nat;
+ 		CodePoint_to_UTF16LE = CodePoint_to_UTF16Swp;
+@@ -184,7 +182,6 @@ void InitializeUnicodeConversions()
+ 
+ 	} else {
+ 	
+-		swap32to16Offset = 1;	// ! Offset in UTF16 units!
+ 
+ 		CodePoint_to_UTF16BE = CodePoint_to_UTF16Swp;
+ 		CodePoint_to_UTF16LE = CodePoint_to_UTF16Nat;
+@@ -1404,7 +1401,6 @@ static void UTF32Swp_to_UTF16Swp ( const UTF32Unit * utf32In,   const size_t utf
+ 	size_t utf32Left = utf32Len;
+ 	size_t utf16Left = utf16Len;
+ 	
+-	const size_t k32to16Offset = swap32to16Offset;	// ! Make sure compiler treats as an invariant.
+ 	
+ 	UC_Assert ( (utf32In != 0) && (utf16Out != 0) && (utf32Read != 0) && (utf16Written != 0) );
+ 	
+@@ -1416,7 +1412,7 @@ static void UTF32Swp_to_UTF16Swp ( const UTF32Unit * utf32In,   const size_t utf
+ 		for ( i = 0; i < limit; ++i ) {
+ 			UTF32Unit inUnit = UTF32InSwap(utf32Pos);
+ 			if ( inUnit > 0xFFFF ) break;
+-			*utf16Pos = *(((UTF16Unit*)utf32Pos) + k32to16Offset);	// Better than: UTF16OutSwap ( utf16Pos, UTF16Unit(inUnit) );
++			UTF16OutSwap ( utf16Pos, static_cast<UTF16Unit>(inUnit) );	// Convert the already-loaded scalar; do not alias a UTF32 word as UTF16 storage.
+ 			++utf32Pos;
+ 			++utf16Pos;
+ 		}

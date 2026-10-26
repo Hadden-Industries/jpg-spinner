@@ -15,6 +15,10 @@ endif()
 string(TOUPPER "${ADOBE_XMP_ARCHITECTURE}" CMAKE_ARCH)
 add_subdirectory("${ADOBE_XMP_SOURCE}/XMPCore/build" sdk)
 target_link_libraries(XMPCoreStatic PRIVATE expat::expat)
+# The checked conversion repair uses C++20 bit_cast for the SDK's documented
+# hexadecimal signed bit patterns, avoiding aliasing or implementation-defined
+# signed narrowing. This requirement is private to the native implementation.
+target_compile_features(XMPCoreStatic PRIVATE cxx_std_20)
 # CMake derives the archive machine type from the selected compiler; do not
 # retain the SDK's hard-coded /machine:x64 when building ARM64.
 set_target_properties(XMPCoreStatic PROPERTIES

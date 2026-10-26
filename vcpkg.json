@@ -24,7 +24,7 @@
     "overrides": [
         {
             "name": "adobe-xmp-core",
-            "version": "2025.03#2"
+            "version": "2025.03#3"
         },
         {
             "name": "libjpeg-turbo",
@@ -32,11 +32,11 @@
         },
         {
             "name": "exiv2",
-            "version": "0.28.9#2"
+            "version": "0.28.9#3"
         },
         {
             "name": "catch2",
-            "version": "3.16.1"
+            "version": "3.16.1#1"
         }
     ]
 }

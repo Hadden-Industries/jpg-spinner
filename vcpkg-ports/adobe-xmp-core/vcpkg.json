@@ -1,7 +1,7 @@
 {
     "name": "adobe-xmp-core",
     "version-string": "2025.03",
-    "port-version": 2,
+    "port-version": 3,
     "description": "Adobe XMP metadata core with lossless language-alternative normalization",
     "homepage": "https://github.com/adobe/XMP-Toolkit-SDK",
     "license": "BSD-3-Clause AND RSA-MD",

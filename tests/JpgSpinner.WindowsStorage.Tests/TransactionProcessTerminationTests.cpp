@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include <windows.h>
 #include "DeterministicJpegFixtureFactory.h"
+#include "MultithreadedApartmentLifetime.h"
 #include "internal/RecoverableImageFileTransaction.h"
 #include <jpg_spinner/jpeg/JpegImageAnalyzer.h>
 #include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
@@ -56,7 +57,10 @@ std::vector<std::byte> readFixture(const std::filesystem::path &path)
 /// death must leave real artifacts for a separate recovery process to inspect.
 struct ProcessFixture final
 {
-    std::filesystem::path directory{requiredEnvironment(L"JPG_SPINNER_TERMINATION_FIXTURE")};
+    // ProcessStartInfo supplies an exclusive generated fixture as the child's
+    // working directory. Capture it once; an ambient environment variable must
+    // never redirect any of the fixed-name fixture reads or writes.
+    std::filesystem::path directory{std::filesystem::current_path()};
     const bool replacement{requiredEnvironment(L"JPG_SPINNER_TERMINATION_DISPOSITION") == L"replace"};
     const winrt::Windows::Storage::StorageFolder root =
         winrt::Windows::Storage::StorageFolder::GetFolderFromPathAsync(directory.wstring()).get();
@@ -160,16 +164,20 @@ struct TerminationBoundary final : storage::internal::FileTransactionOperations
 };
 } // namespace
 
+TEST_CASE("the termination worker uses its explicitly delegated directory rather than ambient path configuration",
+          "[.][termination-fixture-isolation]")
+{
+    test_support::MultithreadedApartmentLifetime apartment;
+    ProcessFixture fixture;
+    // The parent gives the real fixture the byte 'A' and the environment-selected
+    // decoy 'D'. This independent oracle exercises the same root and file read
+    // used by the crash/recovery cases, without reading any user data.
+    REQUIRE(readFixture(fixture.directory / "scope-marker.bin") == std::vector{std::byte{0x41}});
+}
+
 TEST_CASE("the transaction termination child holds a real native journal boundary", "[.][termination-child]")
 {
-    winrt::init_apartment(winrt::apartment_type::multi_threaded);
-    struct ApartmentLifetime final
-    {
-        ~ApartmentLifetime()
-        {
-            winrt::uninit_apartment();
-        }
-    } apartment;
+    test_support::MultithreadedApartmentLifetime apartment;
     ProcessFixture fixture;
     const auto sourceBytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
         test_support::JpegChromaSubsampling::ycbcr444, 3);
@@ -206,14 +214,7 @@ TEST_CASE("the transaction termination child holds a real native journal boundar
 
 TEST_CASE("a fresh recovery child reconciles terminated native transaction artifacts", "[.][termination-recovery]")
 {
-    winrt::init_apartment(winrt::apartment_type::multi_threaded);
-    struct ApartmentLifetime final
-    {
-        ~ApartmentLifetime()
-        {
-            winrt::uninit_apartment();
-        }
-    } apartment;
+    test_support::MultithreadedApartmentLifetime apartment;
     ProcessFixture fixture;
     const auto expectedSource = readFixture(fixture.directory / "expected-source.bin");
     const auto expectedOutput = readFixture(fixture.directory / "expected-output.bin");

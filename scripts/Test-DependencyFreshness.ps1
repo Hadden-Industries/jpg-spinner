@@ -97,7 +97,7 @@ function Read-OfficialJsonMetadata {
         return Invoke-JsonWebRequestWithUniqueObjectMembers `
             -Uri $Uri `
             -Headers @{
-            Accept       = 'application/json'
+            Accept = 'application/json'
             'User-Agent' = 'JPG-Spinner-Dependency-Freshness/2.0'
         } `
             -SourceDescription $Description `
@@ -205,10 +205,10 @@ function ConvertTo-StableVersionRecord {
     }
 
     return [pscustomobject]@{
-        originalVersion   = $CandidateVersion
+        originalVersion = $CandidateVersion
         normalizedVersion = $normalizedVersion
-        components        = $components
-        portVersion       = $portVersion
+        components = $components
+        portVersion = $portVersion
     }
 }
 
@@ -366,8 +366,8 @@ if ($vcpkgOverrides.Count -eq 0) {
 
 $upstreamGitHubRepositories = @{
     'libjpeg-turbo' = 'libjpeg-turbo/libjpeg-turbo'
-    exiv2           = 'Exiv2/exiv2'
-    catch2          = 'catchorg/Catch2'
+    exiv2 = 'Exiv2/exiv2'
+    catch2 = 'catchorg/Catch2'
 }
 
 # Overlay ports take precedence over registry version selection. Their local
@@ -464,15 +464,26 @@ foreach ($override in $vcpkgOverrides) {
     if ($isLocalCatchOverlay) {
         # Do not coerce JSON values into matching strings. An overlay's local
         # revision is a separate authority, not a revision of Microsoft's port.
+        $catchPackageName = $localCatchManifest.PSObject.Properties['name']
+        $catchSourceVersion = $localCatchManifest.PSObject.Properties['version-semver']
         $catchPortRevision = $localCatchManifest.PSObject.Properties['port-version']
-        if ($localCatchManifest.name -isnot [string] -or
-            $localCatchManifest.name -cne 'catch2' -or
-            $localCatchManifest.'version-semver' -isnot [string] -or
-            $pinnedVersion -cne $localCatchManifest.'version-semver' -or
-            ($null -ne $catchPortRevision -and
-            ($catchPortRevision.Value -isnot [long] -or $catchPortRevision.Value -ne 0))) {
+        $hasValidCatchPortRevision = $null -eq $catchPortRevision -or
+        ($catchPortRevision.Value -is [long] -and $catchPortRevision.Value -ge 0)
+        if ($null -eq $catchPackageName -or $catchPackageName.Value -isnot [string] -or
+            $catchPackageName.Value -cne 'catch2' -or
+            $null -eq $catchSourceVersion -or $catchSourceVersion.Value -isnot [string]) {
             throw 'The local catch2 overlay does not match the exact root override.'
         }
+        $expectedCatchPin = $catchSourceVersion.Value
+        if ($hasValidCatchPortRevision -and $null -ne $catchPortRevision -and $catchPortRevision.Value -gt 0) {
+            $expectedCatchPin = "$expectedCatchPin#$($catchPortRevision.Value)"
+        }
+        if (-not $hasValidCatchPortRevision -or $pinnedVersion -cne $expectedCatchPin) {
+            throw 'The local catch2 overlay does not match the exact root override.'
+        }
+        # Registry/upstream freshness compares source releases, not our private
+        # packaging revision. The root override was checked independently above.
+        $pinnedVersion = $catchSourceVersion.Value
     }
     if ($isLocalExivOverlay) {
         if ($localExivManifest.name -cne 'exiv2' -or

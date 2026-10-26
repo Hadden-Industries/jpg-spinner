@@ -45,6 +45,7 @@
     <ClCompile Include="ImageFileTransactionRecoveryCatalogTests.cpp" />
     <ClCompile Include="StorageProviderQualificationTests.cpp" />
     <ClCompile Include="TransactionProcessTerminationTests.cpp" />
+    <ClCompile Include="WinrtArrayProjectionTests.cpp" />
     <!-- Shared storage-only test adapter; keep neutral TestSupport free of WinRT. -->
     <ClCompile Include="..\TestSupport\DeterministicImageFileTransactionEngine.cpp" />
   </ItemGroup>

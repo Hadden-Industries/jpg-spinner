@@ -51,6 +51,7 @@
     <ClCompile Include="TurboJpegResourceLimitTests.cpp" />
     <ClCompile Include="LibJpegTurboCoefficientTransformerTests.cpp" />
     <ClCompile Include="MetadataReconcilerTests.cpp" />
+    <ClCompile Include="MetadataDependencyCapabilityTests.cpp" />
     <ClCompile Include="Exiv2CharsetConversionTests.cpp" />
     <ClCompile Include="ExtendedXmpPolicyTests.cpp" />
     <ClCompile Include="MarkerReconciliationTests.cpp" />

@@ -1,6 +1,8 @@
 # Derived from Microsoft's port at c748cb44f2a435fcf015c35225c9d5545fe0021c.
-# Only the upstream patch release and its archive hash change. Installation
-# retains native CMake/pkg-config integration, but deliberately omits the old
+# The upstream source is unchanged. Disable ambient environment configuration
+# through its supported option: inherited Bazel variables must not select files
+# to truncate before our harness starts. Explicit CLI reporters remain enabled.
+# Installation retains native CMake/pkg-config integration, but omits the old
 # generated catch.hpp compatibility wrapper: consumers use Catch2's v3 headers.
 if(VCPKG_TARGET_IS_WINDOWS)
     vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
@@ -23,6 +25,7 @@ vcpkg_cmake_configure(
     OPTIONS ${OPTIONS}
         -DCATCH_INSTALL_DOCS=OFF
         -DCMAKE_CXX_STANDARD=17
+        -DCATCH_CONFIG_NO_GETENV=ON
 )
 vcpkg_cmake_install()
 vcpkg_cmake_config_fixup(CONFIG_PATH lib/cmake/Catch2)

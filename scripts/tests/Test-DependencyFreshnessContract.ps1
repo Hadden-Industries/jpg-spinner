@@ -51,7 +51,7 @@ function Invoke-FreshnessCheck {
 
     return [pscustomobject]@{
         exitCode = $LASTEXITCODE
-        output   = $output -join "`n"
+        output = $output -join "`n"
     }
 }
 
@@ -113,15 +113,15 @@ try {
     [void][System.IO.Directory]::CreateDirectory($metadataSnapshotDirectory)
 
     Write-JsonFixture -Path (Join-Path $fixtureRepositoryRoot 'vcpkg.json') -Value ([ordered]@{
-            name               = 'jpg-spinner'
-            'version-string'   = '2.0.0'
+            name = 'jpg-spinner'
+            'version-string' = '2.0.0'
             'builtin-baseline' = '118bba14b94bc040c098c0c15e63c142148c05ca'
-            dependencies       = @(
+            dependencies = @(
                 [ordered]@{ name = 'libjpeg-turbo'; 'default-features' = $false },
                 [ordered]@{ name = 'exiv2'; 'default-features' = $false; features = @('xmp') },
                 [ordered]@{ name = 'catch2'; 'default-features' = $false }
             )
-            overrides          = @(
+            overrides = @(
                 [ordered]@{ name = 'libjpeg-turbo'; version = '3.2.0' },
                 [ordered]@{ name = 'exiv2'; version = '0.28.8' },
                 [ordered]@{ name = 'catch2'; version = '3.16.0' }
@@ -139,16 +139,16 @@ try {
 
     $vcpkgVersions = [ordered]@{
         'libjpeg-turbo' = '3.2.0'
-        exiv2           = '0.28.8'
-        catch2          = '3.16.0'
+        exiv2 = '0.28.8'
+        catch2 = '3.16.0'
     }
     foreach ($dependencyName in $vcpkgVersions.Keys) {
         Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory "vcpkg/$dependencyName.json") -Value ([ordered]@{
                 versions = @(
                     [ordered]@{
                         'version-semver' = $vcpkgVersions[$dependencyName]
-                        'port-version'   = 0
-                        'git-tree'       = '0123456789abcdef0123456789abcdef01234567'
+                        'port-version' = 0
+                        'git-tree' = '0123456789abcdef0123456789abcdef01234567'
                     }
                 )
             })
@@ -156,8 +156,8 @@ try {
 
     $githubRepositories = [ordered]@{
         'libjpeg-turbo' = '3.2.0'
-        exiv2           = '0.28.8'
-        catch2          = '3.16.0'
+        exiv2 = '0.28.8'
+        catch2 = '3.16.0'
     }
     foreach ($repositoryName in $githubRepositories.Keys) {
         Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory "github/$repositoryName.releases.json") -Value @(
@@ -171,17 +171,17 @@ try {
     # official-release boundary, including CodeQL's unrelated bundle tags.
     Write-JsonFixture -Path (Join-Path $fixtureRepositoryRoot 'eng/github-actions-lock.json') -Value @{
         schemaVersion = 1
-        actions       = @{'github/codeql-action' = @{version = '4.38.3'; commit = '0123456789abcdef0123456789abcdef01234567' } }
+        actions = @{'github/codeql-action' = @{version = '4.38.3'; commit = '0123456789abcdef0123456789abcdef01234567' } }
     }
     Write-JsonFixture -Path (Join-Path $fixtureRepositoryRoot 'eng/sbom-tools.json') -Value @{
-        schemaVersion      = 1
-        syftSdk            = @{module = 'github.com/anchore/syft'; version = 'v1.54.1' }
+        schemaVersion = 1
+        syftSdk = @{module = 'github.com/anchore/syft'; version = 'v1.54.1' }
         spdxWorkgroupTools = @{version = '2.0.7' }
     }
     $toolingReleases = [ordered]@{
         'github--codeql-action' = '4.38.3'
-        'anchore--syft'         = '1.54.1'
-        'spdx--tools-java'      = '2.0.7'
+        'anchore--syft' = '1.54.1'
+        'spdx--tools-java' = '2.0.7'
     }
     foreach ($repositoryName in $toolingReleases.Keys) {
         Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory "github/$repositoryName.releases.json") -Value @(
@@ -193,8 +193,8 @@ try {
     }
 
     $nuGetVersions = [ordered]@{
-        'microsoft.windowsappsdk'          = '2.4.0'
-        'microsoft.windows.cppwinrt'       = '3.0.260818.1'
+        'microsoft.windowsappsdk' = '2.4.0'
+        'microsoft.windows.cppwinrt' = '3.0.260818.1'
         'microsoft.windows.sdk.buildtools' = '10.0.28000.2705'
     }
     foreach ($packageId in $nuGetVersions.Keys) {
@@ -273,10 +273,25 @@ try {
     if ($overlayResult.output -notmatch 'approved local Catch2 overlay') {
         throw "Catch2 registry lag must name the actual approved resolution authority.`n$($overlayResult.output)"
     }
+    # A local packaging revision must not masquerade as a new upstream release.
+    # Match it exactly at the manifest boundary, then compare source versions.
+    $overlayManifest.overrides[2].version = '3.16.1#1'
+    Write-JsonFixture -Path $localCatchManifestPath -Value @{
+        name = 'catch2'; 'version-semver' = '3.16.1'; 'port-version' = 1; license = 'BSL-1.0'
+    }
+    Write-JsonFixture -Path $manifestPaths[0] -Value $overlayManifest
+    $revisedCatchResult = Invoke-FreshnessCheck
+    if ($revisedCatchResult.exitCode -ne 0) {
+        throw "An exact local Catch2 packaging revision must pass source freshness.`n$($revisedCatchResult.output)"
+    }
+    $overlayManifest.overrides[2].version = '3.16.1'
+    Write-JsonFixture -Path $manifestPaths[0] -Value $overlayManifest
     # Approval selects one native overlay, not arbitrary future versions,
     # malformed JSON or mismatching local identities. No registry assertion may
     # falsely claim that 3.16.1 is available in this 3.16.0 registry fixture.
     foreach ($invalidCatchManifest in @(
+            @{ 'version-semver' = '3.16.1' },
+            @{ name = 'catch2' },
             @{ name = 'another-package'; 'version-semver' = '3.16.1' },
             @{ name = @('catch2'); 'version-semver' = '3.16.1' },
             @{ name = 'catch2'; 'version-semver' = '3.16.0' },
@@ -463,13 +478,13 @@ try {
             versions = @(
                 [ordered]@{
                     'version-semver' = '3.2.0'
-                    'port-version'   = 0
-                    'git-tree'       = '0123456789abcdef0123456789abcdef01234567'
+                    'port-version' = 0
+                    'git-tree' = '0123456789abcdef0123456789abcdef01234567'
                 },
                 [ordered]@{
                     'version-semver' = '3.2.0'
-                    'port-version'   = 1
-                    'git-tree'       = '1123456789abcdef0123456789abcdef01234567'
+                    'port-version' = 1
+                    'git-tree' = '1123456789abcdef0123456789abcdef01234567'
                 }
             )
         })
@@ -530,8 +545,8 @@ try {
             versions = @(
                 [ordered]@{
                     'version-semver' = '3.2.0'
-                    'port-version'   = 0
-                    'git-tree'       = '0123456789abcdef0123456789abcdef01234567'
+                    'port-version' = 0
+                    'git-tree' = '0123456789abcdef0123456789abcdef01234567'
                 }
             )
         })

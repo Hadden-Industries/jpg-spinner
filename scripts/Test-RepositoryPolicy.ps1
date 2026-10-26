@@ -2017,9 +2017,9 @@ function Test-VcpkgManifest {
 
     $expectedOverrideVersions = [ordered]@{
         'libjpeg-turbo' = '3.2.0#1'
-        'exiv2'          = '0.28.9#2'
-        'catch2' = '3.16.1'
-        'adobe-xmp-core' = '2025.03#2'
+        'exiv2'          = '0.28.9#3'
+        'catch2' = '3.16.1#1'
+        'adobe-xmp-core' = '2025.03#3'
     }
 
     $dependencies = @($manifest.dependencies)

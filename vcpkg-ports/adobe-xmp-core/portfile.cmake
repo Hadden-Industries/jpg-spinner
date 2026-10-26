@@ -10,6 +10,7 @@ vcpkg_from_github(
         preserve-localized-text.patch
         use-packaged-expat.patch
         native-debug-information-format.patch
+        checked-integer-and-unicode-conversions.patch
 )
 
 # Keep upstream's source selection and compiler configuration. The package

@@ -125,13 +125,13 @@ try {
     $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
     $manifest.overrides = @($manifest.overrides | Where-Object name -CNE 'adobe-xmp-core')
     $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
-    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'adobe-xmp-core' must pin exact version '2025.03#2'"
+    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'adobe-xmp-core' must pin exact version '2025.03#3'"
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
 
     $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
     ($manifest.overrides | Where-Object name -CEQ 'adobe-xmp-core').version = '2025.03#1'
     $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
-    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'adobe-xmp-core' must pin exact version '2025.03#2'"
+    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'adobe-xmp-core' must pin exact version '2025.03#3'"
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
 
     # A transitive pin must not broaden the closed direct dependency set.

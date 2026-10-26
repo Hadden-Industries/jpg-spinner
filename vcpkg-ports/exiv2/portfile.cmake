@@ -24,6 +24,9 @@ vcpkg_cmake_configure(
         -DCMAKE_REQUIRED_FLAGS=/we4477
         -DEXIV2_ENABLE_XMP=OFF
         -DEXIV2_ENABLE_EXTERNAL_XMP=ON
+        # Only Windows Storage may open/replace user files. Exiv2 receives
+        # isolated metadata payloads; do not ship its independent FileIo path.
+        -DEXIV2_ENABLE_FILESYSTEM_ACCESS=OFF
         -DEXIV2_ENABLE_PNG=OFF
         -DEXIV2_ENABLE_BMFF=OFF
         -DEXIV2_ENABLE_BROTLI=OFF
@@ -34,6 +37,7 @@ vcpkg_cmake_configure(
         -DEXIV2_ENABLE_DYNAMIC_RUNTIME=ON
         -DEXIV2_BUILD_EXIV2_COMMAND=OFF
         -DEXIV2_BUILD_UNIT_TESTS=OFF
+        -DEXIV2_BUILD_FUZZ_TESTS=OFF
         -DEXIV2_BUILD_SAMPLES=OFF
         -DEXIV2_BUILD_DOC=OFF
         -DCMAKE_DISABLE_FIND_PACKAGE_Python3=ON
