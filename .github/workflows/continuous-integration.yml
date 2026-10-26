@@ -27,6 +27,13 @@ jobs:
               run: |
                   $tools = Join-Path $env:RUNNER_TEMP 'jpg-spinner-workflow-tools'
                   ./scripts/tests/Test-WorkflowVerificationToolContract.ps1 -ToolsDirectory $tools
+                  # UI source contracts need no desktop, SDK build or app install.
+                  ./scripts/tests/Test-ShellNavigationContract.ps1
+                  ./scripts/tests/Test-ShellNavigationPresentation.ps1
+                  ./scripts/tests/Test-LandingAndSettingsContract.ps1
+                  ./scripts/tests/Test-AppThemeResources.ps1
+                  ./scripts/tests/Test-AppPrivacyNotice.ps1
+                  ./scripts/Test-DocumentationPolicy.ps1
                   ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools
                   ./scripts/tests/Test-QualificationPolicy.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP
                   ./scripts/tests/Test-ManualWorkflowTriggers.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP

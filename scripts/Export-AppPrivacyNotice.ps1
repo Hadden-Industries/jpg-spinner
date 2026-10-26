@@ -16,9 +16,13 @@ $ns.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
 $notice = $shell.SelectSingleNode('//*[@x:Name="PrivacyNoticeContent"]', $ns)
 if ($null -eq $notice) { throw 'No packaged privacy notice was found.' }
 $paragraphs = [Collections.Generic.List[string]]::new()
-foreach ($node in $notice.ChildNodes) {
-    if ($node -isnot [Xml.XmlElement]) { continue }
-    if ($node.LocalName -cnotin @('TextBlock', 'HyperlinkButton')) { throw 'Unsupported privacy content element.' }
+# The native XML query preserves document order across summary cards and
+# expandable sections. Export every localized content element, including
+# collapsed details, without exporting decorative icons or layout containers.
+foreach ($node in $notice.SelectNodes('.//*[@x:Uid]', $ns)) {
+    if ($node.LocalName -cnotin @('TextBlock', 'HyperlinkButton')) {
+        throw 'Unsupported localized privacy content element; add an explicit projection before publishing.'
+    }
     $uid = $node.GetAttribute('Uid', 'http://schemas.microsoft.com/winfx/2006/xaml')
     $property = if ($node.LocalName -ceq 'HyperlinkButton') { 'Content' } else { 'Text' }
     $value = $resources.SelectSingleNode("/root/data[@name='$uid.$property']/value")
@@ -26,7 +30,10 @@ foreach ($node in $notice.ChildNodes) {
     $text = $value.InnerText
     if ($node.LocalName -ceq 'HyperlinkButton') {
         $uri = [Uri]$node.GetAttribute('NavigateUri')
-        if (-not $uri.IsAbsoluteUri -or $uri.Scheme -cne 'https') { throw 'Policy links must use HTTPS.' }
+        $isContactEmail = $uri.OriginalString -ceq 'mailto:info@haddenindustries.com'
+        if (-not $uri.IsAbsoluteUri -or ($uri.Scheme -cne 'https' -and -not $isContactEmail)) {
+            throw 'Privacy links must use HTTPS or the contact-only email URI.'
+        }
         $text = "[$text]($uri)"
     }
     elseif ($node.GetAttribute('AutomationProperties.HeadingLevel') -ceq 'Level1') { $text = "# $text" }

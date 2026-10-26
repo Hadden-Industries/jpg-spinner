@@ -12,6 +12,12 @@ $ns.AddNamespace('ui', 'http://schemas.microsoft.com/winfx/2006/xaml/presentatio
 $ns.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
 $notice = $shell.SelectSingleNode('//*[@x:Name="PrivacyNoticeContent"]', $ns)
 if ($null -eq $notice) { throw 'The complete app privacy notice must be packaged locally.' }
+$email = $notice.SelectNodes('.//ui:HyperlinkButton[@NavigateUri="mailto:info@haddenindustries.com"]', $ns)
+if ($email.Count -ne 1) { throw 'Privacy contact must offer one native email link without a subject, body or attachment.' }
+foreach ($heading in @('Shell_PrivacyProcessingHeading', 'Shell_PrivacyLocalDataHeading', 'Shell_PrivacyDiagnosticsHeading', 'Shell_PrivacyExportHeading', 'Shell_PrivacyExternalHeading')) {
+    $section = $notice.SelectSingleNode(".//ui:Expander[ui:Expander.Header//*[@x:Uid='$heading']]", $ns)
+    if ($null -eq $section) { throw "Keep $heading available in a native expandable offline section." }
+}
 foreach ($link in $notice.SelectNodes('.//ui:HyperlinkButton', $ns)) {
     if (([Uri]$link.GetAttribute('NavigateUri')).Host -ieq 'github.com') {
         throw 'The app notice must not send the reader to GitHub for its own privacy information.'

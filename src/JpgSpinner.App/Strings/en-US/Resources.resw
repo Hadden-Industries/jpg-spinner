@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <root>
     <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
     <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
@@ -793,7 +794,7 @@
         <value>Settings</value>
     </data>
     <data name="Shell_SettingsDescription.Text" xml:space="preserve">
-        <value>Choose how folders and photos are processed. Changes are saved automatically and apply to the next analysis. Choices are locked while work is running.</value>
+        <value>Choose the finishing touches for your photos. Changes are saved automatically for the next analysis; options stay locked while work is running.</value>
     </data>
     <data name="Shell_FolderSettingsDescription.Text" xml:space="preserve">
         <value>Choose whether to include photos inside subfolders.</value>
@@ -880,19 +881,19 @@
         <value>Original progressive JPEG example, fully decoded</value>
     </data>
     <data name="Shell_PrivacyHeading.Text" xml:space="preserve">
-        <value>JPG Spinner privacy notice</value>
+        <value>Privacy for your photos</value>
     </data>
     <data name="Shell_PrivacyProcessing.Text" xml:space="preserve">
-        <value>The app reads the folders you select, including photo content and metadata such as orientation, camera information and potentially location or other personal information. It uses this information to analyze and correct image orientation and preserve supported metadata. Image analysis does not change your files. Processing writes corrected copies, or replaces originals only through the reviewed backup workflow. The app does not send photos or metadata to Hadden Industries.</value>
+        <value>The app reads the folder you choose and uses photos and their metadata to find images that need rotating. Metadata can include camera details, location and other personal information.</value>
     </data>
     <data name="Shell_PrivacyLocalData.Text" xml:space="preserve">
-        <value>Processing preferences and retained Windows folder-access permissions are stored under this app's local identity. Recovery journals contain file identities, paths and transaction facts needed to recover interrupted work. Originals, corrected copies, verified backups and journals are operational data, not sanitized diagnostic logs. They are not covered by diagnostic rotation; backups do not expire automatically.</value>
+        <value>Preferences and retained Windows folder-access permissions are stored under this app's local identity. Recovery journals store file identities, paths and transaction facts so interrupted work can be reconciled.</value>
     </data>
     <data name="Shell_PrivacyDiagnostics.Text" xml:space="preserve">
-        <value>To help diagnose failures, the app records the UTC time, app version and architecture, a random per-operation identifier, processing stage, error code, elapsed time and resource-limit information when available. Missing optional values are recorded as null. The identifier groups one operation; it is not a stable device identifier. Records use UTF-8 JSON Lines (.jsonl) in the app-local LocalDiagnostics folder.</value>
+        <value>Local logs can record UTC time, app version and architecture, a random operation ID, processing stage, error code, elapsed time and resource limits. The ID connects records from one operation; it is not a stable device identifier. Missing optional values are recorded as null.</value>
     </data>
     <data name="Shell_PrivacyExternalServices.Text" xml:space="preserve">
-        <value>The app declares no network capability and adds no custom upload transport. Selecting a cloud-backed source, output or export location can nevertheless cause its provider to download or sync files, including photos or diagnostic exports. Windows and Microsoft Store may handle crash reporting, installation information or other diagnostics under your Windows choices and Microsoft's policies. These services operate separately from the app's local diagnostic log.</value>
+        <value>The app declares no network capability and adds no custom upload transport. A cloud provider can still download or sync selected source, output or export folders, including photos or diagnostic exports.</value>
     </data>
     <data name="Shell_PublisherPrivacyLink.Content" xml:space="preserve">
         <value>Hadden Industries privacy policy (opens browser)</value>
@@ -901,7 +902,7 @@
         <value>Microsoft Privacy Statement (opens browser)</value>
     </data>
     <data name="Shell_PrivacyBrowserNotice.Text" xml:space="preserve">
-        <value>The app's privacy notice is available here offline. Opening an external policy link launches your browser; the website receives ordinary connection information, such as your IP address, and may use cookies under its own policy. No photo or diagnostic export is attached to these links.</value>
+        <value>This notice works offline. Website links open your browser. A website receives ordinary connection information, such as your IP address, and may use cookies under its own policy. No photos or diagnostic exports are attached to these links.</value>
     </data>
     <data name="Shell_ProgressiveCarousel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
         <value>Progressive JPEG detail levels</value>
@@ -934,42 +935,93 @@
         <value>Forward</value>
     </data>
     <data name="Shell_PrivacyScope.Text" xml:space="preserve">
-        <value>Applies to JPG Spinner 2.0 by Hadden Industries Ltd. Last updated: 26 October 2026. This notice describes this version of the app; the historical Store version may behave differently.</value>
+        <value>JPG Spinner 2.0 · Hadden Industries Ltd. Updated 26 October 2026. Earlier app versions may behave differently.</value>
     </data>
     <data name="Shell_PrivacySummary.Text" xml:space="preserve">
-        <value>Your photos are processed on your device. JPG Spinner has no image-upload service, advertising, account system or custom network telemetry. Diagnostic records stay on your device unless you choose to export and share them.</value>
+        <value>JPG Spinner processes photos on this device. It has no upload service, adverts, accounts or custom network tracking. You decide whether to share diagnostic logs.</value>
     </data>
     <data name="Shell_PrivacyProcessingHeading.Text" xml:space="preserve">
-        <value>Photos and local processing</value>
+        <value>What does the app read?</value>
     </data>
     <data name="Shell_PrivacyLocalDataHeading.Text" xml:space="preserve">
-        <value>Settings, folder access and recovery</value>
+        <value>What stays on this device?</value>
     </data>
     <data name="Shell_PrivacyChoices.Text" xml:space="preserve">
-        <value>You choose the source folder, processing options and whether to start reviewed work. You can change preferences in Settings and manage Windows app permissions in Windows Settings. Manage photos, exported files and backups in their chosen folders. Keep recovery data and backups until interrupted work is reconciled and you no longer need recovery; deleting them can prevent recovery. Uninstalling or resetting an app is not a substitute for deleting copies or exports in other folders.</value>
+        <value>Choose the source folder and options, then review the proposed work before starting. Change app options in Settings and permissions in Windows Settings. Manage photos, exports and backups in their chosen folders.</value>
     </data>
     <data name="Shell_PrivacyDiagnosticsHeading.Text" xml:space="preserve">
-        <value>Local diagnostics and retention</value>
+        <value>What gets logged?</value>
     </data>
     <data name="Shell_PrivacyDiagnosticExclusions.Text" xml:space="preserve">
-        <value>These records exclude filenames, paths, photo bytes, thumbnails, Exif/XMP/IPTC metadata, GPS coordinates, arbitrary native exception messages, network endpoints and stable device identifiers. Windows crash reports are separate from these app diagnostic records.</value>
+        <value>Logs exclude filenames, paths, photos, thumbnails, Exif/XMP/IPTC metadata, GPS coordinates, arbitrary native exception messages, network endpoints and stable device identifiers. Windows crash reports are separate.</value>
     </data>
     <data name="Shell_PrivacyRetention.Text" xml:space="preserve">
-        <value>Diagnostic storage is limited by size and file count, rather than a fixed number of days: at most 256 KiB and 64 retained record files, with each record at most 4,096 bytes. The reserved pending slot counts toward the storage budget and is never exported; the empty writer lease is not a record. Rotation removes only recognized, validated diagnostic records. Unknown, corrupt or unsupported files are preserved and cause logging or export to refuse rather than silently delete or disclose them. A logging failure does not fail image processing.</value>
+        <value>Logs are limited by size and file count, without a fixed number of days: at most 256 KiB in total, 64 retained record files and 4,096 bytes per record.</value>
     </data>
     <data name="Shell_PrivacyExportHeading.Text" xml:space="preserve">
-        <value>Exporting and sharing diagnostics</value>
+        <value>What if I share a log?</value>
     </data>
     <data name="Shell_PrivacyExport.Text" xml:space="preserve">
-        <value>Export local diagnostics asks you to choose a destination using the Windows file picker. It exports a bounded, revalidated snapshot of sanitized records, not arbitrary files from the diagnostic folder. Nothing is submitted automatically. Review the export before sharing: times, outcomes and resource limits can still be sensitive. You control who receives it and when to delete it. A failed or cancelled export may leave a partial file at the chosen destination; export is not guaranteed to be atomic.</value>
+        <value>Export local diagnostics opens a Windows file picker so you can choose where to save a size-limited, revalidated snapshot of sanitized records. It does not export arbitrary files from the log folder. Nothing is sent automatically.</value>
     </data>
     <data name="Shell_PrivacyExternalHeading.Text" xml:space="preserve">
-        <value>Windows, cloud providers and websites</value>
+        <value>What about cloud folders and websites?</value>
     </data>
     <data name="Shell_PrivacyContactHeading.Text" xml:space="preserve">
-        <value>Questions and information you share with us</value>
+        <value>Questions? Get in touch</value>
     </data>
     <data name="Shell_PrivacyContact.Text" xml:space="preserve">
-        <value>For app privacy questions, contact Hadden Industries Ltd at info@haddenindustries.com. The publisher cannot retrieve photos or diagnostic files kept only on your device. If you contact us or choose to send us an export, that correspondence and any information you include are handled under the publisher's separate privacy policy, linked below. Do not send recovery journals, photos or other personal information unless you intend to share them.</value>
+        <value>Hadden Industries cannot retrieve files kept only on your device. If you email us or choose to share an export, your correspondence and anything you include are handled under the publisher's separate privacy policy. Share journals, photos or personal details only if you intend to do so.</value>
+    </data>
+    <data name="Shell_SettingsIntroHeading.Text" xml:space="preserve">
+        <value>Set up your next spin</value>
+    </data>
+    <data name="Shell_PrivacyQuickLocal.Text" xml:space="preserve">
+        <value>Photos are processed on this device</value>
+    </data>
+    <data name="Shell_PrivacyQuickUpload.Text" xml:space="preserve">
+        <value>No app upload service</value>
+    </data>
+    <data name="Shell_PrivacyQuickShare.Text" xml:space="preserve">
+        <value>Share logs only when you choose</value>
+    </data>
+    <data name="Shell_PrivacyCloudSummary.Text" xml:space="preserve">
+        <value>Cloud folders can still sync through their provider. Windows and Microsoft Store may collect diagnostics under their own settings and policies.</value>
+    </data>
+    <data name="Shell_PrivacyProcessingSafety.Text" xml:space="preserve">
+        <value>Analyzing photos does not alter them. After you review the proposed work, the app creates corrected copies or replaces originals through the verified-backup workflow. Hadden Industries receives neither photos nor metadata from the app.</value>
+    </data>
+    <data name="Shell_PrivacyOperationalData.Text" xml:space="preserve">
+        <value>Photos, corrected copies, verified backups and recovery journals are separate from diagnostic logs. The diagnostic cleanup limit does not apply to them. Backups do not expire automatically.</value>
+    </data>
+    <data name="Shell_PrivacyRecoverySafety.Text" xml:space="preserve">
+        <value>Keep backups and recovery data until interrupted work is reconciled and you no longer need recovery. Deleting them can prevent recovery. Resetting or uninstalling the app does not delete copies or exports in other folders.</value>
+    </data>
+    <data name="Shell_PrivacyDiagnosticsFormat.Text" xml:space="preserve">
+        <value>Logs use UTF-8 JSON Lines (.jsonl) files in the app-local LocalDiagnostics folder.</value>
+    </data>
+    <data name="Shell_PrivacyStorageDetails.Text" xml:space="preserve">
+        <value>A reserved pending record counts toward the storage budget and is never exported. The empty writer-lease file is not a record. Cleanup removes only recognized, validated diagnostic records.</value>
+    </data>
+    <data name="Shell_PrivacyUnknownFiles.Text" xml:space="preserve">
+        <value>Unknown, corrupt or unsupported files are left alone. If the app cannot validate a file, logging or export stops instead of deleting or sharing it. Photo processing can continue even when logging fails.</value>
+    </data>
+    <data name="Shell_PrivacyExportChoices.Text" xml:space="preserve">
+        <value>Review the export before sharing it: times, outcomes and resource limits may still be sensitive. You decide who receives it and when to delete it.</value>
+    </data>
+    <data name="Shell_PrivacyExportPartial.Text" xml:space="preserve">
+        <value>An error or cancellation may leave a partial file at the destination. Export is not guaranteed to be atomic.</value>
+    </data>
+    <data name="Shell_PrivacyWindowsServices.Text" xml:space="preserve">
+        <value>Windows and Microsoft Store can handle crash reporting, installation information and other diagnostics under their policies and your Windows choices. Those services are separate from the app's local logs.</value>
+    </data>
+    <data name="Shell_PrivacyEmailLink.Content" xml:space="preserve">
+        <value>info@haddenindustries.com</value>
+    </data>
+    <data name="Shell_PrivacyEmailLink.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Email Hadden Industries (opens email app)</value>
+    </data>
+    <data name="Shell_PrivacyEmailDisclosure.Text" xml:space="preserve">
+        <value>The email link opens a draft in your chosen mail app. It sends nothing and adds no attachments.</value>
     </data>
 </root>

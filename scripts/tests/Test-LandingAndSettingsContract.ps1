@@ -53,7 +53,9 @@ if ($null -eq $carousel -or $carousel.SelectNodes('ui:FlipViewItem', $ns).Count 
 }
 foreach ($link in $shell.SelectNodes('//ui:HyperlinkButton[@NavigateUri]', $ns)) {
     $uri = [Uri]$link.GetAttribute('NavigateUri')
-    if (-not $uri.IsAbsoluteUri -or $uri.Scheme -cne 'https') { throw 'Privacy web links require absolute HTTPS URLs.' }
+    if (-not $uri.IsAbsoluteUri -or ($uri.Scheme -cne 'https' -and $uri.OriginalString -cne 'mailto:info@haddenindustries.com')) {
+        throw 'External links require HTTPS; the privacy contact may open only its exact mailto address.'
+    }
 }
 foreach ($language in @('en-US', 'en-GB', 'ru')) {
     $resources = [Xml.XmlDocument]::new()

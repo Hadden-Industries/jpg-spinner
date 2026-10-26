@@ -19,6 +19,54 @@
                     </Button>
                 </Grid>
             </DataTemplate>
+            <DataTemplate x:Key="FolderPreferenceHeaderTemplate">
+                <Grid ColumnSpacing="12" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource SectionIconBadgeStyle}" Background="{ThemeResource JpgSpinnerOrangeIconBackgroundBrush}">
+                        <SymbolIcon Symbol="Folder" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding}" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="16" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+            <DataTemplate x:Key="OutputPreferenceHeaderTemplate">
+                <Grid ColumnSpacing="12" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource SectionIconBadgeStyle}" Background="{ThemeResource JpgSpinnerVioletIconBackgroundBrush}">
+                        <SymbolIcon Symbol="Save" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding}" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="16" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+            <DataTemplate x:Key="RotationPreferenceHeaderTemplate">
+                <Grid ColumnSpacing="12" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource SectionIconBadgeStyle}" Background="{ThemeResource JpgSpinnerOrangeIconBackgroundBrush}">
+                        <SymbolIcon Symbol="Rotate" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding}" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="16" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+            <DataTemplate x:Key="EncodingPreferenceHeaderTemplate">
+                <Grid ColumnSpacing="12" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource SectionIconBadgeStyle}" Background="{ThemeResource JpgSpinnerVioletIconBackgroundBrush}">
+                        <SymbolIcon Symbol="Pictures" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding}" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="16" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
         </Grid.Resources>
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Modifiers="Menu" Invoked="NavigateBack_Invoked" Key="Left" />
@@ -105,13 +153,26 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <StackPanel Spacing="8">
+                                    <Border Style="{StaticResource PageIntroBorderStyle}">
+                                        <Grid ColumnSpacing="16">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Style="{StaticResource SectionIconBadgeStyle}" Background="{ThemeResource JpgSpinnerOrangeIconBackgroundBrush}" VerticalAlignment="Top">
+                                                <SymbolIcon Symbol="Pictures" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="8">
+                                                <TextBlock x:Uid="Shell_SourceSelectionHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind SourceSelectionRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="SourceSelectionRegion" />
+                                                <TextBlock x:Uid="Shell_AnalysisHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind AnalysisRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="AnalysisStatus" AutomationProperties.LiveSetting="Polite" />
+                                                <TextBlock x:Uid="Shell_ReviewHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ReviewRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ReviewRegion" />
+                                                <TextBlock x:Uid="Shell_ProcessingHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ProcessingRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ProcessingRegion" AutomationProperties.LiveSetting="Polite" />
+                                                <TextBlock x:Uid="Shell_ResultsHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ResultsRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ResultsRegion" />
+                                                <TextBlock x:Uid="Shell_RecoveryRequiredHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="RecoveryRequiredRegion" AutomationProperties.LiveSetting="Assertive" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
                                     <!-- Exactly one semantic-state heading is in the automation tree. -->
-                                    <TextBlock x:Uid="Shell_SourceSelectionHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind SourceSelectionRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="SourceSelectionRegion" />
-                                    <TextBlock x:Uid="Shell_AnalysisHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind AnalysisRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="AnalysisStatus" AutomationProperties.LiveSetting="Polite" />
-                                    <TextBlock x:Uid="Shell_ReviewHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ReviewRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ReviewRegion" />
-                                    <TextBlock x:Uid="Shell_ProcessingHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ProcessingRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ProcessingRegion" AutomationProperties.LiveSetting="Polite" />
-                                    <TextBlock x:Uid="Shell_ResultsHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ResultsRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ResultsRegion" />
-                                    <TextBlock x:Uid="Shell_RecoveryRequiredHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="RecoveryRequiredRegion" AutomationProperties.LiveSetting="Assertive" />
                                     <TextBlock Text="{x:Bind ProcessingSettingsSummary, Mode=OneWay}" TextWrapping="Wrap" AutomationProperties.AutomationId="EffectiveProcessingSettings" />
                                     <TextBlock x:Uid="Shell_InitialInstruction" TextWrapping="Wrap" />
                                     <ProgressRing IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Width="32" Height="32" x:Uid="Shell_StartupRecoveryProgress" AutomationProperties.AutomationId="StartupRecoveryProgress" />
@@ -351,6 +412,7 @@
                                         <Setter Target="EdgePreferenceCard.(Grid.Row)" Value="1" />
                                         <Setter Target="EncodingPreferenceCard.(Grid.Column)" Value="1" />
                                         <Setter Target="EncodingPreferenceCard.(Grid.Row)" Value="1" />
+                                        <Setter Target="SettingsExamplePhoto.Visibility" Value="Visible" />
                                     </VisualState.Setters>
                                 </VisualState>
                             </VisualStateGroup>
@@ -367,7 +429,24 @@
                         </Grid>
                         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
                             <StackPanel MaxWidth="960" Margin="24" Spacing="20" HorizontalAlignment="Stretch">
-                                <TextBlock x:Uid="Shell_SettingsDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                <Border Style="{StaticResource PageIntroBorderStyle}">
+                                    <Grid ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="12">
+                                            <TextBlock x:Uid="Shell_SettingsIntroHeading" Style="{StaticResource PageIntroHeadingTextStyle}" />
+                                            <TextBlock x:Uid="Shell_SettingsDescription" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                        </StackPanel>
+                                        <Border x:Name="SettingsExamplePhoto" Grid.Column="1" Width="160" Height="112" Margin="12" Visibility="Collapsed" Background="{ThemeResource JpgSpinnerVioletIconBackgroundBrush}" Padding="6" CornerRadius="8" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" RenderTransformOrigin="0.5,0.5">
+                                            <Border.RenderTransform>
+                                                <RotateTransform Angle="-4" />
+                                            </Border.RenderTransform>
+                                            <Image Source="Assets/Help/ProgressiveEncodingExample.jpg" Stretch="UniformToFill" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
                                 <!-- The same preferences stack at compact widths;
                                  no setting disappears when the window shrinks. -->
                                 <Grid ColumnSpacing="12" RowSpacing="12">
@@ -383,7 +462,7 @@
                                     </Grid.RowDefinitions>
                                     <Border Style="{StaticResource ContentCardBorderStyle}">
                                         <StackPanel Spacing="12">
-                                            <RadioButtons x:Name="TraversalScopeControl" x:Uid="Shell_TraversalScope" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="TraversalScope" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                            <RadioButtons x:Name="TraversalScopeControl" x:Uid="Shell_TraversalScope" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="TraversalScope" SelectionChanged="ProcessingOptions_SelectionChanged" HeaderTemplate="{StaticResource FolderPreferenceHeaderTemplate}">
                                                 <RadioButton x:Uid="Shell_SelectedFolderOnly" />
                                                 <RadioButton x:Uid="Shell_SelectedFolderAndDescendants" />
                                             </RadioButtons>
@@ -392,7 +471,7 @@
                                     </Border>
                                     <Border x:Name="OutputPreferenceCard" Grid.Row="1" Style="{StaticResource ContentCardBorderStyle}">
                                         <StackPanel Spacing="12">
-                                            <RadioButtons x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="OutputDisposition" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                            <RadioButtons x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="OutputDisposition" SelectionChanged="ProcessingOptions_SelectionChanged" HeaderTemplate="{StaticResource OutputPreferenceHeaderTemplate}">
                                                 <RadioButton x:Uid="Shell_CreateCorrectedCopy" />
                                                 <RadioButton x:Uid="Shell_ReplaceWithVerifiedBackup" />
                                             </RadioButtons>
@@ -401,7 +480,7 @@
                                     </Border>
                                     <Border x:Name="EdgePreferenceCard" Grid.Row="2" Style="{StaticResource ContentCardBorderStyle}">
                                         <StackPanel Spacing="12">
-                                            <RadioButtons x:Name="EdgeHandlingControl" x:Uid="Shell_EdgeHandling" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="EdgeHandling" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                            <RadioButtons x:Name="EdgeHandlingControl" x:Uid="Shell_EdgeHandling" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="EdgeHandling" SelectionChanged="ProcessingOptions_SelectionChanged" HeaderTemplate="{StaticResource RotationPreferenceHeaderTemplate}">
                                                 <RadioButton x:Uid="Shell_RequirePerfectTransform" />
                                                 <RadioButton x:Uid="Shell_TrimPartialMinimumCodedUnits" />
                                             </RadioButtons>
@@ -411,7 +490,7 @@
                                     </Border>
                                     <Border x:Name="EncodingPreferenceCard" Grid.Row="3" Style="{StaticResource ContentCardBorderStyle}">
                                         <StackPanel Spacing="12">
-                                            <RadioButtons x:Name="ScanOrganizationControl" x:Uid="Shell_ScanOrganization" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="ScanOrganization" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                            <RadioButtons x:Name="ScanOrganizationControl" x:Uid="Shell_ScanOrganization" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="ScanOrganization" SelectionChanged="ProcessingOptions_SelectionChanged" HeaderTemplate="{StaticResource EncodingPreferenceHeaderTemplate}">
                                                 <RadioButton x:Uid="Shell_PreserveSourceScans" />
                                                 <RadioButton x:Uid="Shell_SequentialDct" />
                                                 <RadioButton x:Uid="Shell_ProgressiveDct" />
@@ -448,13 +527,26 @@
                 <ContentControl Content="header" HorizontalContentAlignment="Stretch" IsTabStop="False" ContentTemplate="{StaticResource SettingsArticleHeaderTemplate}" />
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Grid.Row="1">
                     <StackPanel MaxWidth="1040" Padding="32,24" Spacing="20">
-                        <TextBlock x:Uid="Shell_CropHelpHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
-                        <TextBlock x:Uid="Shell_CropHelpIntroduction" TextWrapping="Wrap" />
-                        <Image x:Uid="Shell_CropSourceImage" Source="Assets/Help/EdgeTrimmingSource.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        <Border Style="{StaticResource PageIntroBorderStyle}" Background="{ThemeResource JpgSpinnerOrangeSurfaceBrush}">
+                            <StackPanel Spacing="12">
+                                <SymbolIcon Symbol="Crop" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" HorizontalAlignment="Left" AutomationProperties.AccessibilityView="Raw" />
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Shell_CropHelpHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" />
+                                    <TextBlock x:Uid="Shell_CropHelpIntroduction" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource ContentCardBorderStyle}" Background="{ThemeResource JpgSpinnerVioletSurfaceBrush}" Padding="12" HorizontalAlignment="Left">
+                            <Image x:Uid="Shell_CropSourceImage" Source="Assets/Help/EdgeTrimmingSource.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        </Border>
                         <TextBlock x:Uid="Shell_CropHelpRotation" TextWrapping="Wrap" />
-                        <Image x:Uid="Shell_CropRotatedImage" Source="Assets/Help/EdgeTrimmingRotated.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        <Border Style="{StaticResource ContentCardBorderStyle}" Background="{ThemeResource JpgSpinnerVioletSurfaceBrush}" Padding="12" HorizontalAlignment="Left">
+                            <Image x:Uid="Shell_CropRotatedImage" Source="Assets/Help/EdgeTrimmingRotated.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        </Border>
                         <TextBlock x:Uid="Shell_CropHelpTrimming" TextWrapping="Wrap" />
-                        <Image x:Uid="Shell_CropResultImage" Source="Assets/Help/EdgeTrimmingResult.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        <Border Style="{StaticResource ContentCardBorderStyle}" Background="{ThemeResource JpgSpinnerVioletSurfaceBrush}" Padding="12" HorizontalAlignment="Left">
+                            <Image x:Uid="Shell_CropResultImage" Source="Assets/Help/EdgeTrimmingResult.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        </Border>
                         <TextBlock x:Uid="Shell_CropHelpChoices" TextWrapping="Wrap" />
                     </StackPanel>
                 </ScrollViewer>
@@ -467,31 +559,40 @@
                 <ContentControl Content="header" HorizontalContentAlignment="Stretch" IsTabStop="False" ContentTemplate="{StaticResource SettingsArticleHeaderTemplate}" />
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Grid.Row="1">
                     <StackPanel MaxWidth="1040" Padding="32,24" Spacing="20">
-                        <TextBlock x:Uid="Shell_ProgressiveHelpHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
-                        <TextBlock x:Uid="Shell_ProgressiveHelpIntroduction" TextWrapping="Wrap" />
+                        <Border Style="{StaticResource PageIntroBorderStyle}" Background="{ThemeResource JpgSpinnerVioletSurfaceBrush}">
+                            <StackPanel Spacing="12">
+                                <SymbolIcon Symbol="Pictures" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" HorizontalAlignment="Left" AutomationProperties.AccessibilityView="Raw" />
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Shell_ProgressiveHelpHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" />
+                                    <TextBlock x:Uid="Shell_ProgressiveHelpIntroduction" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                         <StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Spacing="12">
                             <ProgressRing x:Name="ProgressiveExampleProgress" IsActive="False" Width="32" Height="32" />
                             <InfoBar x:Name="ProgressiveExampleError" x:Uid="Shell_ProgressiveExampleError" Severity="Warning" IsOpen="False" IsClosable="True" />
-                            <FlipView x:Name="ProgressiveExampleCarousel" x:Uid="Shell_ProgressiveCarousel" Height="400" MaxWidth="900" AutomationProperties.AutomationId="ProgressiveExampleCarousel">
-                                <FlipViewItem>
-                                    <StackPanel Spacing="12">
-                                        <TextBlock x:Uid="Shell_ProgressiveFirstLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                        <Image x:Name="ProgressiveFirstImage" x:Uid="Shell_ProgressiveFirstImage" MaxHeight="350" Stretch="Uniform" />
-                                    </StackPanel>
-                                </FlipViewItem>
-                                <FlipViewItem>
-                                    <StackPanel Spacing="12">
-                                        <TextBlock x:Uid="Shell_ProgressiveMiddleLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                        <Image x:Name="ProgressiveMiddleImage" x:Uid="Shell_ProgressiveMiddleImage" MaxHeight="350" Stretch="Uniform" />
-                                    </StackPanel>
-                                </FlipViewItem>
-                                <FlipViewItem>
-                                    <StackPanel Spacing="12">
-                                        <TextBlock x:Uid="Shell_ProgressiveFinalLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                        <Image x:Name="ProgressiveFinalImage" x:Uid="Shell_ProgressiveFinalImage" MaxHeight="350" Stretch="Uniform" />
-                                    </StackPanel>
-                                </FlipViewItem>
-                            </FlipView>
+                            <Border Style="{StaticResource ContentCardBorderStyle}" Background="{ThemeResource JpgSpinnerVioletSurfaceBrush}" Padding="16">
+                                <FlipView x:Name="ProgressiveExampleCarousel" x:Uid="Shell_ProgressiveCarousel" Height="400" MaxWidth="900" AutomationProperties.AutomationId="ProgressiveExampleCarousel">
+                                    <FlipViewItem>
+                                        <StackPanel Spacing="12">
+                                            <TextBlock x:Uid="Shell_ProgressiveFirstLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <Image x:Name="ProgressiveFirstImage" x:Uid="Shell_ProgressiveFirstImage" MaxHeight="350" Stretch="Uniform" />
+                                        </StackPanel>
+                                    </FlipViewItem>
+                                    <FlipViewItem>
+                                        <StackPanel Spacing="12">
+                                            <TextBlock x:Uid="Shell_ProgressiveMiddleLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <Image x:Name="ProgressiveMiddleImage" x:Uid="Shell_ProgressiveMiddleImage" MaxHeight="350" Stretch="Uniform" />
+                                        </StackPanel>
+                                    </FlipViewItem>
+                                    <FlipViewItem>
+                                        <StackPanel Spacing="12">
+                                            <TextBlock x:Uid="Shell_ProgressiveFinalLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <Image x:Name="ProgressiveFinalImage" x:Uid="Shell_ProgressiveFinalImage" MaxHeight="350" Stretch="Uniform" />
+                                        </StackPanel>
+                                    </FlipViewItem>
+                                </FlipView>
+                            </Border>
                         </StackPanel>
                         <TextBlock x:Uid="Shell_ProgressiveHelpExample" TextWrapping="Wrap" />
                         <TextBlock x:Uid="Shell_ProgressiveHelpChoices" TextWrapping="Wrap" />
@@ -508,29 +609,151 @@
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Grid.Row="1">
                     <!-- A bounded article measure and native type hierarchy
                          keep long policy text readable on a maximized window. -->
-                    <Border Style="{StaticResource ContentCardBorderStyle}" MaxWidth="720" Margin="24" HorizontalAlignment="Stretch">
+                    <Border Style="{StaticResource ContentCardBorderStyle}" MaxWidth="900" Margin="24" HorizontalAlignment="Stretch" Background="Transparent" BorderThickness="0" Padding="0">
                         <StackPanel x:Name="PrivacyNoticeContent" Spacing="12">
-                            <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyHeading" Style="{StaticResource TitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level1" />
-                            <TextBlock x:Uid="Shell_PrivacyScope" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacySummary" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyProcessingHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                            <TextBlock x:Uid="Shell_PrivacyProcessing" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyLocalDataHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                            <TextBlock x:Uid="Shell_PrivacyLocalData" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyChoices" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyDiagnosticsHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                            <TextBlock x:Uid="Shell_PrivacyDiagnostics" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyDiagnosticExclusions" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyRetention" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyExportHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                            <TextBlock x:Uid="Shell_PrivacyExport" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyExternalHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                            <TextBlock x:Uid="Shell_PrivacyExternalServices" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyBrowserNotice" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <TextBlock x:Uid="Shell_PrivacyContactHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                            <TextBlock x:Uid="Shell_PrivacyContact" Style="{StaticResource PrivacyParagraphTextStyle}" />
-                            <HyperlinkButton NavigateUri="https://haddenindustries.com/legal.html#privacy-policy" x:Uid="Shell_PublisherPrivacyLink" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
-                            <HyperlinkButton NavigateUri="https://www.microsoft.com/privacy/privacystatement" x:Uid="Shell_MicrosoftPrivacyLink" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                            <Border Style="{StaticResource PageIntroBorderStyle}">
+                                <StackPanel Spacing="16">
+                                    <TextBlock x:Uid="Shell_PrivacyHeading" Style="{StaticResource TitleTextBlockStyle}" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" AutomationProperties.HeadingLevel="Level1" TextWrapping="Wrap" />
+                                    <TextBlock x:Uid="Shell_PrivacyScope" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacySummary" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <StackPanel Spacing="12">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <SymbolIcon Symbol="Pictures" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                            <TextBlock x:Uid="Shell_PrivacyQuickLocal" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" Grid.Column="1" />
+                                        </Grid>
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <SymbolIcon Symbol="ProtectedDocument" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                            <TextBlock x:Uid="Shell_PrivacyQuickUpload" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" Grid.Column="1" />
+                                        </Grid>
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <SymbolIcon Symbol="Mail" Foreground="{ThemeResource JpgSpinnerOrangeTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                            <TextBlock x:Uid="Shell_PrivacyQuickShare" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" Grid.Column="1" />
+                                        </Grid>
+                                    </StackPanel>
+                                    <TextBlock x:Uid="Shell_PrivacyCloudSummary" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                </StackPanel>
+                            </Border>
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <Expander.Header>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Style="{StaticResource SectionIconBadgeStyle}">
+                                            <SymbolIcon Symbol="Pictures" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" x:Uid="Shell_PrivacyProcessingHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Expander.Header>
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Shell_PrivacyProcessing" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyProcessingSafety" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                </StackPanel>
+                            </Expander>
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <Expander.Header>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Style="{StaticResource SectionIconBadgeStyle}">
+                                            <SymbolIcon Symbol="Folder" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" x:Uid="Shell_PrivacyLocalDataHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Expander.Header>
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Shell_PrivacyLocalData" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyOperationalData" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyChoices" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyRecoverySafety" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                </StackPanel>
+                            </Expander>
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <Expander.Header>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Style="{StaticResource SectionIconBadgeStyle}">
+                                            <SymbolIcon Symbol="Document" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" x:Uid="Shell_PrivacyDiagnosticsHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Expander.Header>
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Shell_PrivacyDiagnostics" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyDiagnosticsFormat" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyDiagnosticExclusions" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyRetention" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyStorageDetails" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyUnknownFiles" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                </StackPanel>
+                            </Expander>
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <Expander.Header>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Style="{StaticResource SectionIconBadgeStyle}">
+                                            <SymbolIcon Symbol="Send" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" x:Uid="Shell_PrivacyExportHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Expander.Header>
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Shell_PrivacyExport" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyExportChoices" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyExportPartial" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                </StackPanel>
+                            </Expander>
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <Expander.Header>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Style="{StaticResource SectionIconBadgeStyle}">
+                                            <SymbolIcon Symbol="World" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" x:Uid="Shell_PrivacyExternalHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Expander.Header>
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Uid="Shell_PrivacyExternalServices" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyWindowsServices" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <TextBlock x:Uid="Shell_PrivacyBrowserNotice" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                </StackPanel>
+                            </Expander>
+                            <Border Style="{StaticResource ContentCardBorderStyle}" Background="{ThemeResource JpgSpinnerVioletSurfaceBrush}">
+                                <StackPanel Spacing="12">
+                                    <SymbolIcon Symbol="Mail" HorizontalAlignment="Left" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                    <TextBlock x:Uid="Shell_PrivacyContactHeading" Style="{StaticResource PrivacySectionHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                                    <TextBlock x:Uid="Shell_PrivacyContact" Style="{StaticResource PrivacyParagraphTextStyle}" />
+                                    <HyperlinkButton x:Uid="Shell_PrivacyEmailLink" NavigateUri="mailto:info@haddenindustries.com" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                                    <TextBlock x:Uid="Shell_PrivacyEmailDisclosure" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                    <HyperlinkButton NavigateUri="https://haddenindustries.com/legal.html#privacy-policy" x:Uid="Shell_PublisherPrivacyLink" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                                    <HyperlinkButton NavigateUri="https://www.microsoft.com/privacy/privacystatement" x:Uid="Shell_MicrosoftPrivacyLink" HorizontalAlignment="Left" ContentTemplate="{StaticResource WrappingTextContentTemplate}" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
                 </ScrollViewer>
