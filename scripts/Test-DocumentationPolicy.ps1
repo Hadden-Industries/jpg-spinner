@@ -2,18 +2,22 @@
    This is not a Markdown parser, link checker, legal opinion or assertion that
    every sentence matches runtime behavior. Release sign-offs remain separate. #>
 [CmdletBinding()]
-param([string]$RepositoryRoot=(Split-Path -Parent $PSScriptRoot))
+param([string]$RepositoryRoot = (Split-Path -Parent $PSScriptRoot))
 Set-StrictMode -Version Latest
-$ErrorActionPreference='Stop'
+$ErrorActionPreference = 'Stop'
 $requirements = [ordered]@{
-    'README.md'=@('## Status','## Safe defaults','## Supported inputs','## Build and test','## License')
-    'SECURITY.md'=@('## Supported versions','## Private reporting','## Threat model','## Disclosure')
-    'docs/architecture.md'=@('## Modules','## Transaction invariants','## Security boundary','## Guarantee limits')
-    'docs/privacy.md'=@('## Local processing','## Diagnostic records','## Retention','## Export')
-    'docs/release-qualification.md'=@('## Gate register','## Evidence identity','## Release authorization')
-    'docs/releases/2.0.0.md'=@('## Qualification status','## Platforms and prerequisites','## User-visible changes','## Preservation and recovery','## Format limits','## Privacy','## Legacy cutover and upgrade')
-    'docs/corresponding-source.md'=@('## Scope and authority','## Release binding','## Source closure','## Reconstruction and delivery')
-    'THIRD_PARTY_NOTICES.md'=@('## Qualification status','## Native components','## Windows packages','## Engineering tools')
+    'README.md'=@('## Status', '## Safe defaults', '## Supported inputs', '## Build and test', '## License')
+    'SECURITY.md'=@('## Supported versions', '## Private reporting', '## Threat model', '## Disclosure')
+    'docs/architecture.md'=@('## Modules', '## Transaction invariants', '## Security boundary', '## Guarantee limits')
+    # Match the consolidated offline notice exported from the app resources.
+    # Diagnostics and their retention share a section; recovery data is separate.
+    'docs/privacy.md'=@('## Photos and local processing', '## Settings, folder access and recovery',
+        '## Local diagnostics and retention', '## Exporting and sharing diagnostics',
+        '## Windows, cloud providers and websites', '## Questions and information you share with us')
+    'docs/release-qualification.md'=@('## Gate register', '## Evidence identity', '## Release authorization')
+    'docs/releases/2.0.0.md'=@('## Qualification status', '## Platforms and prerequisites', '## User-visible changes', '## Preservation and recovery', '## Format limits', '## Privacy', '## Legacy cutover and upgrade')
+    'docs/corresponding-source.md'=@('## Scope and authority', '## Release binding', '## Source closure', '## Reconstruction and delivery')
+    'THIRD_PARTY_NOTICES.md'=@('## Qualification status', '## Native components', '## Windows packages', '## Engineering tools')
 }
 $failures = [Collections.Generic.List[string]]::new()
 foreach ($entry in $requirements.GetEnumerator()) {

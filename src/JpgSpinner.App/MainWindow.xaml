@@ -1,272 +1,474 @@
-<Window
-    x:Class="JpgSpinner.MainWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:presentation="using:JpgSpinner.Presentation"
-    Title="JPG Spinner">
-    <Window.SystemBackdrop><MicaBackdrop /></Window.SystemBackdrop>
+<Window x:Class="JpgSpinner.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:presentation="using:JpgSpinner.Presentation" Title="JPG Spinner">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
     <!-- Transparent root lets the native backdrop/fallback show through. -->
-    <Grid Background="Transparent">
-        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-        <TitleBar x:Name="AppTitleBar" Title="JPG Spinner">
-            <TitleBar.IconSource><FontIconSource Glyph="&#xEB9F;" /></TitleBar.IconSource>
+    <Grid x:Name="ShellRoot" Background="Transparent">
+        <Grid.Resources>
+            <DataTemplate x:Key="SettingsArticleHeaderTemplate">
+                <Grid Background="{ThemeResource JpgSpinnerOrangeBrush}" Padding="24,16" ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Uid="Shell_BackToSettings" Click="CloseSettingsHelp_Click" Background="Transparent" BorderThickness="0" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" AutomationProperties.AutomationId="BackToSettings">
+                        <SymbolIcon Symbol="Back" />
+                    </Button>
+                    <TextBlock Grid.Column="1" x:Uid="Shell_SettingsHeading" Style="{StaticResource TitleTextBlockStyle}" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" VerticalAlignment="Center" />
+                </Grid>
+            </DataTemplate>
+        </Grid.Resources>
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Menu" Invoked="NavigateBack_Invoked" Key="Left" />
+            <KeyboardAccelerator Modifiers="Menu" Invoked="NavigateForward_Invoked" Key="Right" />
+        </Grid.KeyboardAccelerators>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TitleBar x:Name="AppTitleBar" Title="JPG Spinner" IsBackButtonVisible="True" IsBackButtonEnabled="{x:Bind ShellFrame.CanGoBack, Mode=OneWay}">
+            <TitleBar.IconSource>
+                <ImageIconSource ImageSource="ms-appx:///Assets/Square44x44Logo.targetsize-32.png" />
+            </TitleBar.IconSource>
+            <TitleBar.RightHeader>
+                <CommandBar Background="Transparent" DefaultLabelPosition="Right" OverflowButtonVisibility="Collapsed">
+                    <AppBarButton Icon="Forward" IsEnabled="{x:Bind ShellFrame.CanGoForward, Mode=OneWay}" AutomationProperties.AutomationId="NavigateForward" Click="NavigateForward_Click" x:Uid="Shell_NavigateForward" />
+                    <AppBarButton x:Uid="Shell_OpenSettings" Icon="Setting" Click="Settings_Click" AutomationProperties.AutomationId="OpenSettings" />
+                </CommandBar>
+            </TitleBar.RightHeader>
         </TitleBar>
         <!-- UserControl owns the visual states on its direct content root,
              allowing native adaptive triggers to select the window layout.
              https://learn.microsoft.com/windows/apps/develop/ui/layouts-with-xaml -->
-        <UserControl Grid.Row="1" IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                     IsEnabled="{x:Bind IsWorkflowInteractionEnabled, Mode=OneWay}">
-        <Grid x:Name="WorkflowContent" Padding="16" RowSpacing="12"
-              Background="{ThemeResource LayerFillColorDefaultBrush}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" /><RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <VisualStateManager.VisualStateGroups>
-                <VisualStateGroup>
-                    <!-- Effective-pixel thresholds; essential localized prose always wraps. -->
-                    <VisualState x:Name="Narrow">
-                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
-                        <VisualState.Setters>
-                            <Setter Target="PolicySecondaryColumn.Width" Value="0" />
-                            <Setter Target="EdgeHandlingControl.(Grid.Column)" Value="0" />
-                            <Setter Target="EdgeHandlingControl.(Grid.Row)" Value="2" />
-                            <Setter Target="ScanOrganizationControl.(Grid.Column)" Value="0" />
-                            <Setter Target="ScanOrganizationControl.(Grid.Row)" Value="3" />
-                            <Setter Target="BackupDestinationColumn.Width" Value="0" />
-                            <Setter Target="ReviewContextColumn.Width" Value="0" />
-                            <Setter Target="ReviewFactsPanel.ColumnSpacing" Value="0" />
-                            <Setter Target="BackupDestinationPanel.(Grid.Column)" Value="0" />
-                            <Setter Target="BackupDestinationPanel.(Grid.Row)" Value="1" />
-                            <Setter Target="ReviewContextNotice.(Grid.Column)" Value="0" />
-                            <Setter Target="ReviewContextNotice.(Grid.Row)" Value="2" />
-                            <Setter Target="ReviewContextNotice.Visibility" Value="Collapsed" />
-                            <Setter Target="ActionButtons.Orientation" Value="Vertical" />
-                            <Setter Target="ResultsCounters.Orientation" Value="Vertical" />
-                            <Setter Target="SelectedSourcePanel.Orientation" Value="Vertical" />
-                        </VisualState.Setters>
-                    </VisualState>
-                    <VisualState x:Name="Compact">
-                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="640" /></VisualState.StateTriggers>
-                        <VisualState.Setters>
-                            <Setter Target="ReviewContextNotice.Visibility" Value="Collapsed" />
-                            <Setter Target="ReviewContextColumn.Width" Value="0" />
-                        </VisualState.Setters>
-                    </VisualState>
-                    <VisualState x:Name="Wide">
-                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="1008" /></VisualState.StateTriggers>
-                        <VisualState.Setters><Setter Target="ReviewContextNotice.Visibility" Value="Visible" /></VisualState.Setters>
-                    </VisualState>
-                </VisualStateGroup>
-            </VisualStateManager.VisualStateGroups>
-            <!-- Context and policy prose can exceed a minimum-height window.
+        <!-- Native visual-state hosts retain an adaptive, branded landing page
+             without changing the processing state machine. -->
+        <!-- Help is packaged locally and remains readable offline. A shared
+             native back route returns to Settings without resetting choices. -->
+        <Grid Visibility="Collapsed" x:Name="ShellViews">
+            <Grid x:Name="WorkflowView">
+                <UserControl IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsEnabled="{x:Bind IsWorkflowInteractionEnabled, Mode=OneWay}" Visibility="{x:Bind WorkflowRegionVisibility, Mode=OneWay}">
+                    <Grid x:Name="WorkflowContent" Padding="16" RowSpacing="12" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup>
+                                <!-- Effective-pixel thresholds; essential localized prose always wraps. -->
+                                <VisualState x:Name="Narrow">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="0" />
+                                    </VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="BackupDestinationColumn.Width" Value="0" />
+                                        <Setter Target="ReviewContextColumn.Width" Value="0" />
+                                        <Setter Target="ReviewFactsPanel.ColumnSpacing" Value="0" />
+                                        <Setter Target="BackupDestinationPanel.(Grid.Column)" Value="0" />
+                                        <Setter Target="BackupDestinationPanel.(Grid.Row)" Value="1" />
+                                        <Setter Target="ReviewContextNotice.(Grid.Column)" Value="0" />
+                                        <Setter Target="ReviewContextNotice.(Grid.Row)" Value="2" />
+                                        <Setter Target="ReviewContextNotice.Visibility" Value="Collapsed" />
+                                        <Setter Target="ActionButtons.Orientation" Value="Vertical" />
+                                        <Setter Target="ResultsCounters.Orientation" Value="Vertical" />
+                                        <Setter Target="SelectedSourcePanel.Orientation" Value="Vertical" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Compact">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="640" />
+                                    </VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="ReviewContextNotice.Visibility" Value="Collapsed" />
+                                        <Setter Target="ReviewContextColumn.Width" Value="0" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Wide">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="1008" />
+                                    </VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="ReviewContextNotice.Visibility" Value="Visible" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <!-- Context and policy prose can exceed a minimum-height window.
                  Keep native scrolling separate from the always-reachable actions. -->
-            <ScrollViewer x:Name="WorkflowContextViewport" VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled"
-                          AutomationProperties.AutomationId="WorkflowContextViewport">
-            <Grid RowSpacing="12">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-            <StackPanel Spacing="8">
-                <!-- Exactly one semantic-state heading is in the automation tree. -->
-                <TextBlock x:Uid="Shell_SourceSelectionHeading" Style="{StaticResource TitleTextBlockStyle}"
-                           TextWrapping="Wrap" Visibility="{x:Bind SourceSelectionRegionVisibility, Mode=OneWay}"
-                           AutomationProperties.AutomationId="SourceSelectionRegion" />
-                <TextBlock x:Uid="Shell_AnalysisHeading" Style="{StaticResource TitleTextBlockStyle}"
-                           TextWrapping="Wrap" Visibility="{x:Bind AnalysisRegionVisibility, Mode=OneWay}"
-                           AutomationProperties.AutomationId="AnalysisStatus" AutomationProperties.LiveSetting="Polite" />
-                <TextBlock x:Uid="Shell_ReviewHeading" Style="{StaticResource TitleTextBlockStyle}"
-                           TextWrapping="Wrap" Visibility="{x:Bind ReviewRegionVisibility, Mode=OneWay}"
-                           AutomationProperties.AutomationId="ReviewRegion" />
-                <TextBlock x:Uid="Shell_ProcessingHeading" Style="{StaticResource TitleTextBlockStyle}"
-                           TextWrapping="Wrap" Visibility="{x:Bind ProcessingRegionVisibility, Mode=OneWay}"
-                           AutomationProperties.AutomationId="ProcessingRegion" AutomationProperties.LiveSetting="Polite" />
-                <TextBlock x:Uid="Shell_ResultsHeading" Style="{StaticResource TitleTextBlockStyle}"
-                           TextWrapping="Wrap" Visibility="{x:Bind ResultsRegionVisibility, Mode=OneWay}"
-                           AutomationProperties.AutomationId="ResultsRegion" />
-                <TextBlock x:Uid="Shell_RecoveryRequiredHeading" Style="{StaticResource TitleTextBlockStyle}"
-                           TextWrapping="Wrap" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}"
-                           AutomationProperties.AutomationId="RecoveryRequiredRegion" AutomationProperties.LiveSetting="Assertive" />
-                <TextBlock x:Uid="Shell_InitialInstruction" TextWrapping="Wrap" />
-                <ProgressRing IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Width="32" Height="32"
-                              x:Uid="Shell_StartupRecoveryProgress" AutomationProperties.AutomationId="StartupRecoveryProgress" />
-                <InfoBar x:Uid="Shell_StartupRecoveryError" Severity="Error" IsClosable="False"
-                         Message="{x:Bind StartupRecoveryErrorMessage, Mode=OneWay}"
-                         IsOpen="{x:Bind HasStartupRecoveryError, Mode=OneWay}"
-                         AutomationProperties.AutomationId="StartupRecoveryError" AutomationProperties.LiveSetting="Assertive" />
-                <Button x:Uid="Shell_RestoreRecoverySource" ContentTemplate="{StaticResource WrappingTextContentTemplate}"
-                        IsEnabled="{x:Bind CanRestoreStartupSourceAccess, Mode=OneWay}"
-                        Click="RestoreRecoverySource_Click" AutomationProperties.AutomationId="RestoreRecoverySource" />
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock x:Uid="Shell_StartupRecoveredCount" TextWrapping="Wrap" />
-                    <TextBlock Text="{x:Bind StartupRecoveredTransactionCount, Mode=OneWay}" TextWrapping="Wrap"
-                               AutomationProperties.AutomationId="StartupRecoveredTransactionCount" />
-                </StackPanel>
-                <StackPanel x:Name="SelectedSourcePanel" Orientation="Horizontal" Spacing="12">
-                    <Button x:Uid="Shell_SourcePicker" ContentTemplate="{StaticResource WrappingTextContentTemplate}" AutomationProperties.AutomationId="SourceFolderPicker"
-                            IsEnabled="{x:Bind CanPickSourceFolder, Mode=OneWay}" Click="SourcePicker_Click" />
-                    <TextBlock Text="{x:Bind ViewModel.SourceFolderDisplayName, Mode=OneWay}" TextWrapping="Wrap"
-                               VerticalAlignment="Center" AutomationProperties.AutomationId="SelectedSourceFolder" />
-                </StackPanel>
-            </StackPanel>
-            <InfoBar x:Name="IntegrationErrorBar" Grid.Row="1" Severity="Error" IsOpen="False" IsClosable="True"
-                     AutomationProperties.AutomationId="IntegrationError" AutomationProperties.LiveSetting="Assertive" />
-            <InfoBar Grid.Row="2" Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
-                     Title="{x:Bind ViewModel.ErrorTitle, Mode=OneWay}" AutomationProperties.AutomationId="WorkflowError"
-                     AutomationProperties.LiveSetting="Assertive">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="{x:Bind ViewModel.ErrorExplanation, Mode=OneWay}" TextWrapping="Wrap" />
-                    <TextBlock Text="{x:Bind ViewModel.ErrorRemedy, Mode=OneWay}" TextWrapping="Wrap" />
-                </StackPanel>
-            </InfoBar>
-            <!-- Choice editing is a view-model command; changes invalidate review. -->
-            <Grid x:Name="PolicyGrid" Grid.Row="3" ColumnSpacing="16" RowSpacing="8">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="PolicySecondaryColumn" Width="*" /></Grid.ColumnDefinitions>
-                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                <ComboBox x:Name="TraversalScopeControl" x:Uid="Shell_TraversalScope" HorizontalAlignment="Stretch"
-                          IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
-                          AutomationProperties.AutomationId="TraversalScope" SelectedIndex="0" SelectionChanged="ProcessingOptions_SelectionChanged">
-                    <ComboBoxItem x:Uid="Shell_SelectedFolderOnly" />
-                    <ComboBoxItem x:Uid="Shell_SelectedFolderAndDescendants" />
-                </ComboBox>
-                <ComboBox x:Name="EdgeHandlingControl" x:Uid="Shell_EdgeHandling" Grid.Column="1" HorizontalAlignment="Stretch"
-                          IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
-                          AutomationProperties.AutomationId="EdgeHandling" SelectedIndex="0" SelectionChanged="ProcessingOptions_SelectionChanged">
-                    <ComboBoxItem x:Uid="Shell_RequirePerfectTransform" />
-                    <ComboBoxItem x:Uid="Shell_TrimPartialMinimumCodedUnits" />
-                </ComboBox>
-                <ComboBox x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" Grid.Row="1" HorizontalAlignment="Stretch"
-                          IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
-                          AutomationProperties.AutomationId="OutputDisposition" SelectedIndex="0" SelectionChanged="ProcessingOptions_SelectionChanged">
-                    <ComboBoxItem x:Uid="Shell_CreateCorrectedCopy" />
-                    <ComboBoxItem x:Uid="Shell_ReplaceWithVerifiedBackup" />
-                </ComboBox>
-                <ComboBox x:Name="ScanOrganizationControl" x:Uid="Shell_ScanOrganization" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch"
-                          IsEnabled="{x:Bind ViewModel.CanSelectSourceFolder, Mode=OneWay, FallbackValue=False}"
-                          AutomationProperties.AutomationId="ScanOrganization" SelectedIndex="0" SelectionChanged="ProcessingOptions_SelectionChanged">
-                    <ComboBoxItem x:Uid="Shell_PreserveSourceScans" />
-                    <ComboBoxItem x:Uid="Shell_SequentialDct" />
-                    <ComboBoxItem x:Uid="Shell_ProgressiveDct" />
-                </ComboBox>
-            </Grid>
-            <Grid Grid.Row="4" RowSpacing="8">
-                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                <!-- Star columns give long paths and localized prose finite
+                        <ScrollViewer x:Name="WorkflowContextViewport" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" AutomationProperties.AutomationId="WorkflowContextViewport">
+                            <Grid RowSpacing="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <StackPanel Spacing="8">
+                                    <!-- Exactly one semantic-state heading is in the automation tree. -->
+                                    <TextBlock x:Uid="Shell_SourceSelectionHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind SourceSelectionRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="SourceSelectionRegion" />
+                                    <TextBlock x:Uid="Shell_AnalysisHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind AnalysisRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="AnalysisStatus" AutomationProperties.LiveSetting="Polite" />
+                                    <TextBlock x:Uid="Shell_ReviewHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ReviewRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ReviewRegion" />
+                                    <TextBlock x:Uid="Shell_ProcessingHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ProcessingRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ProcessingRegion" AutomationProperties.LiveSetting="Polite" />
+                                    <TextBlock x:Uid="Shell_ResultsHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind ResultsRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ResultsRegion" />
+                                    <TextBlock x:Uid="Shell_RecoveryRequiredHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="RecoveryRequiredRegion" AutomationProperties.LiveSetting="Assertive" />
+                                    <TextBlock Text="{x:Bind ProcessingSettingsSummary, Mode=OneWay}" TextWrapping="Wrap" AutomationProperties.AutomationId="EffectiveProcessingSettings" />
+                                    <TextBlock x:Uid="Shell_InitialInstruction" TextWrapping="Wrap" />
+                                    <ProgressRing IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Width="32" Height="32" x:Uid="Shell_StartupRecoveryProgress" AutomationProperties.AutomationId="StartupRecoveryProgress" />
+                                    <InfoBar x:Uid="Shell_StartupRecoveryError" Severity="Error" IsClosable="False" Message="{x:Bind StartupRecoveryErrorMessage, Mode=OneWay}" IsOpen="{x:Bind HasStartupRecoveryError, Mode=OneWay}" AutomationProperties.AutomationId="StartupRecoveryError" AutomationProperties.LiveSetting="Assertive" />
+                                    <Button x:Uid="Shell_RestoreRecoverySource" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind CanRestoreStartupSourceAccess, Mode=OneWay}" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}" Click="RestoreRecoverySource_Click" AutomationProperties.AutomationId="RestoreRecoverySource" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind StartupRecoverySummaryVisibility, Mode=OneWay}">
+                                        <TextBlock x:Uid="Shell_StartupRecoveredCount" TextWrapping="Wrap" />
+                                        <TextBlock Text="{x:Bind StartupRecoveredTransactionCount, Mode=OneWay}" TextWrapping="Wrap" AutomationProperties.AutomationId="StartupRecoveredTransactionCount" />
+                                    </StackPanel>
+                                    <StackPanel x:Name="SelectedSourcePanel" Orientation="Horizontal" Spacing="12">
+                                        <Button x:Uid="Shell_ChangeSourceFolder" ContentTemplate="{StaticResource WrappingTextContentTemplate}" AutomationProperties.AutomationId="ChangeSourceFolder" IsEnabled="{x:Bind CanPickSourceFolder, Mode=OneWay}" Click="SourcePicker_Click" />
+                                        <TextBlock Text="{x:Bind ViewModel.SourceFolderDisplayName, Mode=OneWay}" TextWrapping="Wrap" VerticalAlignment="Center" AutomationProperties.AutomationId="SelectedSourceFolder" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <InfoBar x:Name="IntegrationErrorBar" Grid.Row="1" Severity="Error" IsOpen="False" IsClosable="True" AutomationProperties.AutomationId="IntegrationError" AutomationProperties.LiveSetting="Assertive" />
+                                <InfoBar Grid.Row="2" Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}" Title="{x:Bind ViewModel.ErrorTitle, Mode=OneWay}" AutomationProperties.AutomationId="WorkflowError" AutomationProperties.LiveSetting="Assertive">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{x:Bind ViewModel.ErrorExplanation, Mode=OneWay}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{x:Bind ViewModel.ErrorRemedy, Mode=OneWay}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </InfoBar>
+                                <Grid Grid.Row="4" RowSpacing="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <!-- Star columns give long paths and localized prose finite
                      widths. A horizontal StackPanel measures them without a
                      width bound and can push the review guidance offscreen. -->
-                <Grid x:Name="ReviewFactsPanel" ColumnSpacing="16" RowSpacing="8"
-                      Visibility="{x:Bind ProcessingRowsRegionVisibility, Mode=OneWay}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition x:Name="BackupDestinationColumn" Width="2*" />
-                        <ColumnDefinition x:Name="ReviewContextColumn" Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel Spacing="4">
-                        <TextBlock x:Uid="Shell_EligibleFilesLabel" TextWrapping="Wrap" />
-                        <TextBlock Text="{x:Bind ViewModel.EligibleFileCountText, Mode=OneWay}" AutomationProperties.AutomationId="EligibleFileCount" />
-                    </StackPanel>
-                    <StackPanel x:Name="BackupDestinationPanel" Grid.Column="1"
-                                Visibility="{x:Bind BackupDestinationVisibility, Mode=OneWay}" Spacing="4">
-                        <TextBlock x:Uid="Shell_BackupDestinationLabel" TextWrapping="Wrap" />
-                        <TextBlock Text="{x:Bind ViewModel.BackupRootDisplayPath, Mode=OneWay}" TextWrapping="Wrap"
-                                   AutomationProperties.AutomationId="BackupDestination" />
-                    </StackPanel>
-                    <TextBlock x:Name="ReviewContextNotice" x:Uid="Shell_ReviewInstruction" Grid.Column="2"
-                               MaxWidth="360" TextWrapping="Wrap" />
-                </Grid>
-                <Grid Grid.Row="1" Visibility="{x:Bind ProcessingRowsRegionVisibility, Mode=OneWay}">
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                    <TextBlock x:Uid="Shell_ProcessingRowsLabel" TextWrapping="Wrap" />
-                    <!-- A finite native viewport preserves ListView virtualization
+                                    <Grid x:Name="ReviewFactsPanel" ColumnSpacing="16" RowSpacing="8" Visibility="{x:Bind ProcessingRowsRegionVisibility, Mode=OneWay}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition x:Name="BackupDestinationColumn" Width="2*" />
+                                            <ColumnDefinition x:Name="ReviewContextColumn" Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Uid="Shell_EligibleFilesLabel" TextWrapping="Wrap" />
+                                            <TextBlock Text="{x:Bind ViewModel.EligibleFileCountText, Mode=OneWay}" AutomationProperties.AutomationId="EligibleFileCount" />
+                                        </StackPanel>
+                                        <StackPanel x:Name="BackupDestinationPanel" Grid.Column="1" Visibility="{x:Bind BackupDestinationVisibility, Mode=OneWay}" Spacing="4">
+                                            <TextBlock x:Uid="Shell_BackupDestinationLabel" TextWrapping="Wrap" />
+                                            <TextBlock Text="{x:Bind ViewModel.BackupRootDisplayPath, Mode=OneWay}" TextWrapping="Wrap" AutomationProperties.AutomationId="BackupDestination" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="ReviewContextNotice" x:Uid="Shell_ReviewInstruction" Grid.Column="2" MaxWidth="360" TextWrapping="Wrap" />
+                                    </Grid>
+                                    <Grid Grid.Row="1" Visibility="{x:Bind ProcessingRowsRegionVisibility, Mode=OneWay}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock x:Uid="Shell_ProcessingRowsLabel" TextWrapping="Wrap" />
+                                        <!-- A finite native viewport preserves ListView virtualization
                          inside the outer scroller; no mutable ItemsSource.
                          https://learn.microsoft.com/windows/apps/develop/performance/optimize-gridview-and-listview -->
-                    <ListView Grid.Row="1" ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" SelectionMode="None"
-                              MaxHeight="{Binding ViewportHeight, ElementName=WorkflowContextViewport}"
-                              AutomationProperties.AutomationId="ProcessingRows">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem"><Setter Property="HorizontalContentAlignment" Value="Stretch" /></Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="presentation:ImageProcessingRowViewModel">
-                                <StackPanel Spacing="4" Padding="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-                                    <TextBlock Text="{x:Bind DisplayName}" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                    <TextBlock Text="{x:Bind OutcomeDescription, Mode=OneWay}" TextWrapping="Wrap" />
-                                    <InfoBar Severity="Warning" IsClosable="False" IsOpen="{x:Bind HasError, Mode=OneWay}"
-                                             Title="{x:Bind ErrorTitle, Mode=OneWay}">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="{x:Bind ErrorExplanation, Mode=OneWay}" TextWrapping="Wrap" />
-                                            <TextBlock Text="{x:Bind ErrorRemedy, Mode=OneWay}" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </InfoBar>
-                                    <TextBlock x:Uid="Shell_DiscardedRightEdgeLabel" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind DiscardedSourceRightEdgeWidthInPixelsText}" AutomationProperties.AutomationId="DiscardedRightEdgePixels" />
-                                    <TextBlock x:Uid="Shell_DiscardedBottomEdgeLabel" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind DiscardedSourceBottomEdgeHeightInPixelsText}" AutomationProperties.AutomationId="DiscardedBottomEdgePixels" />
-                                    <!-- The row is the event's DataContext; the owning model checks exact identity/state. -->
-                                    <Button x:Uid="Shell_TrimConsent" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind RequiresEdgeTrimmingAcknowledgment, Mode=OneWay}"
-                                            AutomationProperties.AutomationId="AcknowledgeEdgeTrimming" Click="TrimConsent_Click" />
+                                        <ListView Grid.Row="1" ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" SelectionMode="None" MaxHeight="{Binding ViewportHeight, ElementName=WorkflowContextViewport}" AutomationProperties.AutomationId="ProcessingRows">
+                                            <ListView.ItemContainerStyle>
+                                                <Style TargetType="ListViewItem">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                </Style>
+                                            </ListView.ItemContainerStyle>
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate x:DataType="presentation:ImageProcessingRowViewModel">
+                                                    <StackPanel Spacing="4" Padding="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                                                        <TextBlock Text="{x:Bind DisplayName}" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                                        <TextBlock Text="{x:Bind OutcomeDescription, Mode=OneWay}" TextWrapping="Wrap" />
+                                                        <InfoBar Severity="Warning" IsClosable="False" IsOpen="{x:Bind HasError, Mode=OneWay}" Title="{x:Bind ErrorTitle, Mode=OneWay}">
+                                                            <StackPanel Spacing="4">
+                                                                <TextBlock Text="{x:Bind ErrorExplanation, Mode=OneWay}" TextWrapping="Wrap" />
+                                                                <TextBlock Text="{x:Bind ErrorRemedy, Mode=OneWay}" TextWrapping="Wrap" />
+                                                            </StackPanel>
+                                                        </InfoBar>
+                                                        <TextBlock x:Uid="Shell_DiscardedRightEdgeLabel" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{x:Bind DiscardedSourceRightEdgeWidthInPixelsText}" AutomationProperties.AutomationId="DiscardedRightEdgePixels" />
+                                                        <TextBlock x:Uid="Shell_DiscardedBottomEdgeLabel" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{x:Bind DiscardedSourceBottomEdgeHeightInPixelsText}" AutomationProperties.AutomationId="DiscardedBottomEdgePixels" />
+                                                        <!-- The row is the event's DataContext; the owning model checks exact identity/state. -->
+                                                        <Button x:Uid="Shell_TrimConsent" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind RequiresEdgeTrimmingAcknowledgment, Mode=OneWay}" AutomationProperties.AutomationId="AcknowledgeEdgeTrimming" Click="TrimConsent_Click" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                        <Expander x:Uid="Shell_DiscoveryObservations" Grid.Row="2" AutomationProperties.AutomationId="DiscoveryObservations">
+                                            <Expander.Header>
+                                                <TextBlock x:Uid="Shell_RecursiveExclusionNotice" TextWrapping="Wrap" />
+                                            </Expander.Header>
+                                            <ItemsControl ItemsSource="{x:Bind ViewModel.DiscoveryIssues, Mode=OneWay}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="presentation:ImageSourceDiscoveryIssueViewModel">
+                                                        <StackPanel Spacing="4">
+                                                            <TextBlock Text="{x:Bind RelativePath}" TextWrapping="Wrap" />
+                                                            <TextBlock Text="{x:Bind KindDescription}" TextWrapping="Wrap" />
+                                                            <TextBlock Text="{x:Bind ErrorTitle}" TextWrapping="Wrap" />
+                                                            <TextBlock Text="{x:Bind ErrorExplanation}" TextWrapping="Wrap" />
+                                                            <TextBlock Text="{x:Bind ErrorRemedy}" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </ScrollViewer>
+                        <StackPanel Grid.Row="1" Spacing="8">
+                            <ProgressBar Minimum="0" Maximum="100" Value="{x:Bind ViewModel.ProgressPercentageOrZero, Mode=OneWay, FallbackValue=0}" Visibility="{x:Bind OperationProgressVisibility, Mode=OneWay}" IsIndeterminate="{x:Bind ViewModel.IsProgressIndeterminate, Mode=OneWay, FallbackValue=True}" AutomationProperties.AutomationId="OperationProgress" />
+                            <StackPanel x:Name="ResultsCounters" Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ResultsRegionVisibility, Mode=OneWay}" AutomationProperties.AutomationId="ResultsSummary" AutomationProperties.LiveSetting="Polite">
+                                <StackPanel>
+                                    <TextBlock x:Uid="Shell_CompletedRowsLabel" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind ViewModel.CompletedFileCountText, Mode=OneWay}" />
                                 </StackPanel>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    <Expander x:Uid="Shell_DiscoveryObservations" Grid.Row="2" AutomationProperties.AutomationId="DiscoveryObservations">
-                        <Expander.Header><TextBlock x:Uid="Shell_RecursiveExclusionNotice" TextWrapping="Wrap" /></Expander.Header>
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.DiscoveryIssues, Mode=OneWay}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="presentation:ImageSourceDiscoveryIssueViewModel">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="{x:Bind RelativePath}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{x:Bind KindDescription}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{x:Bind ErrorTitle}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{x:Bind ErrorExplanation}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{x:Bind ErrorRemedy}" TextWrapping="Wrap" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </Expander>
+                                <StackPanel>
+                                    <TextBlock x:Uid="Shell_FailedFilesLabel" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind ViewModel.FailedFileCountText, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock x:Uid="Shell_CancelledFilesLabel" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind ViewModel.CancelledFileCountText, Mode=OneWay}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:Name="ActionButtons" Orientation="Horizontal" Spacing="8">
+                                <Button x:Uid="Shell_Analyze" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanAnalyzeSelectedSource, Mode=OneWay, FallbackValue=False}" AutomationProperties.AutomationId="AnalyzeSelectedSource" Click="Analyze_Click" />
+                                <Button x:Uid="Shell_StartProcessing" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanBeginProcessing, Mode=OneWay, FallbackValue=False}" AutomationProperties.AutomationId="StartProcessing" Click="StartProcessing_Click" />
+                                <Button x:Uid="Shell_CancelOperation" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanCancelCurrentOperation, Mode=OneWay, FallbackValue=False}" AutomationProperties.AutomationId="CancelOperation" Click="CancelOperation_Click" />
+                            </StackPanel>
+                            <Button x:Uid="Shell_ReturnToSourceSelection" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanReturnToSourceSelection, Mode=OneWay, FallbackValue=False}" AutomationProperties.AutomationId="ReturnToSourceSelection" Click="ReturnToSourceSelection_Click" />
+                            <InfoBar x:Uid="Shell_DiagnosticLogError" Severity="Warning" IsClosable="False" IsOpen="{x:Bind HasDiagnosticLogError, Mode=OneWay}" AutomationProperties.AutomationId="DiagnosticLogError" AutomationProperties.LiveSetting="Polite" />
+                            <Button x:Uid="Shell_RetryRecovery" ContentTemplate="{StaticResource WrappingTextContentTemplate}" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}" IsEnabled="{x:Bind CanRetryRecovery, Mode=OneWay}" AutomationProperties.AutomationId="RetryRecovery" Click="RetryRecovery_Click" />
+                        </StackPanel>
+                    </Grid>
+                </UserControl>
+                <UserControl IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Visibility="{x:Bind LandingRegionVisibility, Mode=OneWay}">
+                    <Grid x:Name="LandingPage">
+                        <Grid.Resources>
+                            <Storyboard x:Name="LogoSpin">
+                                <DoubleAnimation Storyboard.TargetName="BrandLogoRotation" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <SineEase EasingMode="EaseInOut" />
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </Grid.Resources>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="BrandSidebarColumn" Width="2*" MinWidth="240" MaxWidth="360" />
+                            <ColumnDefinition Width="8*" />
+                        </Grid.ColumnDefinitions>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup>
+                                <VisualState x:Name="LandingNarrow">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="0" />
+                                    </VisualState.StateTriggers>
+                                    <VisualState.Setters>
+                                        <Setter Target="BrandSidebarColumn.Width" Value="*" />
+                                        <Setter Target="BrandSidebarColumn.MinWidth" Value="0" />
+                                        <Setter Target="BrandSidebarColumn.MaxWidth" Value="10000" />
+                                        <Setter Target="LandingBackdrop.Visibility" Value="Collapsed" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="LandingWide">
+                                    <VisualState.StateTriggers>
+                                        <AdaptiveTrigger MinWindowWidth="640" />
+                                    </VisualState.StateTriggers>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Grid Background="{ThemeResource JpgSpinnerOrangeBrush}" Padding="24">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="2*" />
+                                <RowDefinition Height="3*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
+                                <Button x:Uid="Shell_SpinLogo" AutomationProperties.AutomationId="SpinLogo" Click="Logo_Click" Background="Transparent" BorderThickness="0" Padding="12" HorizontalAlignment="Center">
+                                    <!-- Keep the logo's Easter egg visually undisclosed. Scoped
+                   native brush overrides preserve button/keyboard behaviour
+                   and leave every other control's interaction styles intact. -->
+                                    <Button.Resources>
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent" />
+                                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="Transparent" />
+                                    </Button.Resources>
+                                    <ContentControl Width="100" Height="100" RenderTransformOrigin="0.5,0.5" ContentTemplate="{StaticResource JpgSpinnerLogoTemplate}" Content="logo" IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                                        <ContentControl.RenderTransform>
+                                            <RotateTransform x:Name="BrandLogoRotation" />
+                                        </ContentControl.RenderTransform>
+                                    </ContentControl>
+                                </Button>
+                                <TextBlock Text="JPG Spinner" FontSize="28" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button Grid.Row="1" x:Uid="Shell_SourcePicker" AutomationProperties.AutomationId="SourceFolderPicker" Click="SourcePicker_Click" IsEnabled="{x:Bind CanPickSourceFolder, Mode=OneWay}" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" Background="Transparent" BorderBrush="{ThemeResource JpgSpinnerBrandForegroundBrush}" BorderThickness="2" CornerRadius="0" FontSize="20" FontWeight="SemiBold" Padding="14,8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <StackPanel Grid.Row="2" Spacing="12" Margin="0,24,0,8">
+                                <ProgressRing IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Width="24" Height="24" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" />
+                                <TextBlock Text="© Hadden Industries Ltd" Foreground="{ThemeResource JpgSpinnerFooterForegroundBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid x:Name="LandingBackdrop" Grid.Column="1" Background="{ThemeResource JpgSpinnerPurpleBrush}">
+                            <ContentControl Margin="0,96,0,0" Opacity="0.02" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" ContentTemplate="{StaticResource JpgSpinnerLogoTemplate}" Content="logo" IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                        </Grid>
+                    </Grid>
+                </UserControl>
+            </Grid>
+            <Grid x:Name="SettingsView">
+                <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Background="{ThemeResource JpgSpinnerOrangeBrush}" Padding="24,16" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Uid="Shell_CloseSettings" Click="CloseSettings_Click" AutomationProperties.AutomationId="CloseSettings" Background="Transparent" BorderThickness="0" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}">
+                            <SymbolIcon Symbol="Back" />
+                        </Button>
+                        <TextBlock Grid.Column="1" x:Uid="Shell_SettingsHeading" Style="{StaticResource TitleTextBlockStyle}" Foreground="{ThemeResource JpgSpinnerBrandForegroundBrush}" VerticalAlignment="Center" />
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+                        <StackPanel MaxWidth="1040" Padding="32,24" Spacing="24" HorizontalAlignment="Stretch">
+                            <TextBlock x:Uid="Shell_SettingsDescription" TextWrapping="Wrap" />
+                            <StackPanel Spacing="8">
+                                <RadioButtons x:Name="TraversalScopeControl" x:Uid="Shell_TraversalScope" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="TraversalScope" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                    <RadioButton x:Uid="Shell_SelectedFolderOnly" />
+                                    <RadioButton x:Uid="Shell_SelectedFolderAndDescendants" />
+                                </RadioButtons>
+                                <TextBlock x:Uid="Shell_FolderSettingsDescription" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Spacing="8">
+                                <RadioButtons x:Name="OutputDispositionControl" x:Uid="Shell_OutputDisposition" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="OutputDisposition" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                    <RadioButton x:Uid="Shell_CreateCorrectedCopy" />
+                                    <RadioButton x:Uid="Shell_ReplaceWithVerifiedBackup" />
+                                </RadioButtons>
+                                <TextBlock x:Uid="Shell_OutputSettingsDescription" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Spacing="8">
+                                <RadioButtons x:Name="EdgeHandlingControl" x:Uid="Shell_EdgeHandling" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="EdgeHandling" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                    <RadioButton x:Uid="Shell_RequirePerfectTransform" />
+                                    <RadioButton x:Uid="Shell_TrimPartialMinimumCodedUnits" />
+                                </RadioButtons>
+                                <TextBlock x:Uid="Shell_EdgeSettingsDescription" TextWrapping="Wrap" />
+                                <HyperlinkButton x:Uid="Shell_CropHelpLink" Tag="Crop" Click="SettingsHelp_Click" />
+                            </StackPanel>
+                            <StackPanel Spacing="8">
+                                <RadioButtons x:Name="ScanOrganizationControl" x:Uid="Shell_ScanOrganization" MaxColumns="1" SelectedIndex="0" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" AutomationProperties.AutomationId="ScanOrganization" SelectionChanged="ProcessingOptions_SelectionChanged">
+                                    <RadioButton x:Uid="Shell_PreserveSourceScans" />
+                                    <RadioButton x:Uid="Shell_SequentialDct" />
+                                    <RadioButton x:Uid="Shell_ProgressiveDct" />
+                                </RadioButtons>
+                                <TextBlock x:Uid="Shell_EncodingSettingsDescription" TextWrapping="Wrap" />
+                                <HyperlinkButton x:Uid="Shell_ProgressiveHelpLink" Tag="Progressive" Click="SettingsHelp_Click" />
+                            </StackPanel>
+                            <InfoBar x:Name="SettingsSaveErrorBar" x:Uid="Shell_SettingsSaveError" Severity="Warning" IsOpen="False" IsClosable="True" />
+                            <TextBlock x:Uid="Shell_DiagnosticsHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <Button x:Uid="Shell_ExportDiagnostics" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind CanExportDiagnostics, Mode=OneWay}" AutomationProperties.AutomationId="ExportDiagnostics" Click="ExportDiagnostics_Click" />
+                            <TextBlock x:Uid="Shell_AboutHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock Text="JPG Spinner 2.0" />
+                            <HyperlinkButton x:Uid="Shell_PrivacyLink" Tag="Privacy" Click="SettingsHelp_Click" />
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
+            <Grid AutomationProperties.AutomationId="CropExplanation" x:Name="CropExplanationView" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <ContentControl Content="header" HorizontalContentAlignment="Stretch" IsTabStop="False" ContentTemplate="{StaticResource SettingsArticleHeaderTemplate}" />
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Grid.Row="1">
+                    <StackPanel MaxWidth="1040" Padding="32,24" Spacing="20">
+                        <TextBlock x:Uid="Shell_CropHelpHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
+                        <TextBlock x:Uid="Shell_CropHelpIntroduction" TextWrapping="Wrap" />
+                        <Image x:Uid="Shell_CropSourceImage" Source="Assets/Help/EdgeTrimmingSource.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        <TextBlock x:Uid="Shell_CropHelpRotation" TextWrapping="Wrap" />
+                        <Image x:Uid="Shell_CropRotatedImage" Source="Assets/Help/EdgeTrimmingRotated.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        <TextBlock x:Uid="Shell_CropHelpTrimming" TextWrapping="Wrap" />
+                        <Image x:Uid="Shell_CropResultImage" Source="Assets/Help/EdgeTrimmingResult.png" MaxWidth="320" MaxHeight="280" HorizontalAlignment="Left" Stretch="Uniform" />
+                        <TextBlock x:Uid="Shell_CropHelpChoices" TextWrapping="Wrap" />
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
-            </ScrollViewer>
-            <StackPanel Grid.Row="1" Spacing="8">
-                <ProgressBar Minimum="0" Maximum="100" Value="{x:Bind ViewModel.ProgressPercentageOrZero, Mode=OneWay, FallbackValue=0}"
-                             Visibility="{x:Bind OperationProgressVisibility, Mode=OneWay}"
-                             IsIndeterminate="{x:Bind ViewModel.IsProgressIndeterminate, Mode=OneWay, FallbackValue=True}"
-                             AutomationProperties.AutomationId="OperationProgress" />
-                <StackPanel x:Name="ResultsCounters" Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ResultsRegionVisibility, Mode=OneWay}"
-                            AutomationProperties.AutomationId="ResultsSummary" AutomationProperties.LiveSetting="Polite">
-                    <StackPanel><TextBlock x:Uid="Shell_CompletedRowsLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.CompletedFileCountText, Mode=OneWay}" /></StackPanel>
-                    <StackPanel><TextBlock x:Uid="Shell_FailedFilesLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.FailedFileCountText, Mode=OneWay}" /></StackPanel>
-                    <StackPanel><TextBlock x:Uid="Shell_CancelledFilesLabel" TextWrapping="Wrap" /><TextBlock Text="{x:Bind ViewModel.CancelledFileCountText, Mode=OneWay}" /></StackPanel>
-                </StackPanel>
-                <StackPanel x:Name="ActionButtons" Orientation="Horizontal" Spacing="8">
-                    <Button x:Uid="Shell_Analyze" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanAnalyzeSelectedSource, Mode=OneWay, FallbackValue=False}"
-                            AutomationProperties.AutomationId="AnalyzeSelectedSource" Click="Analyze_Click" />
-                    <Button x:Uid="Shell_StartProcessing" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanBeginProcessing, Mode=OneWay, FallbackValue=False}"
-                            AutomationProperties.AutomationId="StartProcessing" Click="StartProcessing_Click" />
-                    <Button x:Uid="Shell_CancelOperation" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanCancelCurrentOperation, Mode=OneWay, FallbackValue=False}"
-                            AutomationProperties.AutomationId="CancelOperation" Click="CancelOperation_Click" />
-                </StackPanel>
-                <Button x:Uid="Shell_ReturnToSourceSelection" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind ViewModel.CanReturnToSourceSelection, Mode=OneWay, FallbackValue=False}"
-                        AutomationProperties.AutomationId="ReturnToSourceSelection" Click="ReturnToSourceSelection_Click" />
-                <Button x:Uid="Shell_ExportDiagnostics" ContentTemplate="{StaticResource WrappingTextContentTemplate}"
-                        IsEnabled="{x:Bind CanExportDiagnostics, Mode=OneWay}"
-                        AutomationProperties.AutomationId="ExportDiagnostics" Click="ExportDiagnostics_Click" />
-                <InfoBar x:Uid="Shell_DiagnosticLogError" Severity="Warning" IsClosable="False"
-                         IsOpen="{x:Bind HasDiagnosticLogError, Mode=OneWay}"
-                         AutomationProperties.AutomationId="DiagnosticLogError" AutomationProperties.LiveSetting="Polite" />
-                <Button x:Uid="Shell_RetryRecovery" ContentTemplate="{StaticResource WrappingTextContentTemplate}" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}"
-                        IsEnabled="{x:Bind CanRetryRecovery, Mode=OneWay}"
-                        AutomationProperties.AutomationId="RetryRecovery" Click="RetryRecovery_Click" />
-            </StackPanel>
+            <Grid AutomationProperties.AutomationId="ProgressiveExplanation" x:Name="ProgressiveExplanationView" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <ContentControl Content="header" HorizontalContentAlignment="Stretch" IsTabStop="False" ContentTemplate="{StaticResource SettingsArticleHeaderTemplate}" />
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Grid.Row="1">
+                    <StackPanel MaxWidth="1040" Padding="32,24" Spacing="20">
+                        <TextBlock x:Uid="Shell_ProgressiveHelpHeading" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" />
+                        <TextBlock x:Uid="Shell_ProgressiveHelpIntroduction" TextWrapping="Wrap" />
+                        <StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Spacing="12">
+                            <ProgressRing x:Name="ProgressiveExampleProgress" IsActive="False" Width="32" Height="32" />
+                            <InfoBar x:Name="ProgressiveExampleError" x:Uid="Shell_ProgressiveExampleError" Severity="Warning" IsOpen="False" IsClosable="True" />
+                            <FlipView x:Name="ProgressiveExampleCarousel" x:Uid="Shell_ProgressiveCarousel" Height="400" MaxWidth="900" AutomationProperties.AutomationId="ProgressiveExampleCarousel">
+                                <FlipViewItem>
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Uid="Shell_ProgressiveFirstLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                        <Image x:Name="ProgressiveFirstImage" x:Uid="Shell_ProgressiveFirstImage" MaxHeight="350" Stretch="Uniform" />
+                                    </StackPanel>
+                                </FlipViewItem>
+                                <FlipViewItem>
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Uid="Shell_ProgressiveMiddleLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                        <Image x:Name="ProgressiveMiddleImage" x:Uid="Shell_ProgressiveMiddleImage" MaxHeight="350" Stretch="Uniform" />
+                                    </StackPanel>
+                                </FlipViewItem>
+                                <FlipViewItem>
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Uid="Shell_ProgressiveFinalLevel" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                        <Image x:Name="ProgressiveFinalImage" x:Uid="Shell_ProgressiveFinalImage" MaxHeight="350" Stretch="Uniform" />
+                                    </StackPanel>
+                                </FlipViewItem>
+                            </FlipView>
+                        </StackPanel>
+                        <TextBlock x:Uid="Shell_ProgressiveHelpExample" TextWrapping="Wrap" />
+                        <TextBlock x:Uid="Shell_ProgressiveHelpChoices" TextWrapping="Wrap" />
+                        <TextBlock x:Uid="Shell_ProgressiveHelpQuality" TextWrapping="Wrap" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+            <Grid AutomationProperties.AutomationId="PrivacyPolicy" x:Name="PrivacyView" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <ContentControl Content="header" HorizontalContentAlignment="Stretch" IsTabStop="False" ContentTemplate="{StaticResource SettingsArticleHeaderTemplate}" />
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" Grid.Row="1">
+                    <StackPanel x:Name="PrivacyNoticeContent" MaxWidth="1040" Padding="32,24" Spacing="16">
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyHeading" Style="{StaticResource TitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level1" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyScope" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacySummary" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyProcessingHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyProcessing" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyLocalDataHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyLocalData" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyChoices" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyDiagnosticsHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyDiagnostics" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyDiagnosticExclusions" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyRetention" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExportHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExport" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExternalHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyExternalServices" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyBrowserNotice" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyContactHeading" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True" x:Uid="Shell_PrivacyContact" />
+                        <HyperlinkButton NavigateUri="https://haddenindustries.com/legal.html#privacy-policy" x:Uid="Shell_PublisherPrivacyLink" />
+                        <HyperlinkButton NavigateUri="https://www.microsoft.com/privacy/privacystatement" x:Uid="Shell_MicrosoftPrivacyLink" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Grid>
-        </UserControl>
+        <Frame Grid.Row="1" x:Name="ShellFrame" />
     </Grid>
 </Window>

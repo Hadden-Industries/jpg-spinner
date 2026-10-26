@@ -1,12 +1,14 @@
 #include "pch.h"
 
 #include "MainWindow.xaml.h"
+#include "ShellContentPage.xaml.h"
 #include "ViewModels/MainWindowViewModel.h"
 #include "Composition/SelectedFolderBatchComposition.h"
 #include "Composition/StartupRecoveryComposition.h"
 #include "Localization/ImageProcessingErrorText.h"
 #include "Localization/UnsignedIntegerText.h"
 #include "Diagnostics/DiagnosticLogExport.h"
+#include "Imaging/ProgressiveJpegExample.h"
 #include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
 #include <winrt/Microsoft.UI.Dispatching.h>
 #include <winrt/Microsoft.UI.Windowing.h>
@@ -14,6 +16,13 @@
 #include <winrt/Windows.Storage.AccessCache.h>
 #include <winrt/Windows.Storage.Provider.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.UI.ViewManagement.h>
+#include <winrt/Microsoft.UI.Xaml.Media.Animation.h>
+#include <winrt/Microsoft.UI.Xaml.Media.Imaging.h>
+#include <winrt/Microsoft.UI.Xaml.Navigation.h>
+#include <winrt/Microsoft.UI.Input.h>
+#include <winrt/Windows.Storage.Streams.h>
+#include <cstring>
 #include <microsoft.ui.xaml.window.h>
 #include <shobjidl_core.h>
 #include <roapi.h>
@@ -22,6 +31,7 @@
 #include <bit>
 #include <cmath>
 #include <optional>
+#include <string_view>
 
 // MIDL emits the activation-factory entry point in this generated source.
 // Include it in the owning runtime class translation unit, as prescribed by
@@ -32,9 +42,95 @@
 
 namespace winrt::JpgSpinner::implementation
 {
+namespace
+{
+// Version-1 persisted selections use this explicit order and range contract.
+// Keep validation and native composite keys shared by loading, editing/saving
+// and conversion to domain-facing presentation options.
+constexpr std::array maximumProcessingOptionSelectionIndices{1, 1, 1, 2};
+constexpr std::array<std::wstring_view, 4> processingPreferenceSelectionKeys{
+    L"TraversalScopeSelection", L"OutputDispositionSelection", L"EdgeHandlingSelection", L"ScanOrganizationSelection"};
+bool areValidProcessingOptionSelections(const std::array<int, 4> &selections)
+{
+    for (std::size_t index = 0; index < selections.size(); ++index)
+        if (selections[index] < 0 || selections[index] > maximumProcessingOptionSelectionIndices[index])
+            return false;
+    return true;
+}
+} // namespace
 MainWindow::MainWindow()
 {
     InitializeComponent();
+    loadProcessingPreferences();
+    processingPreferencesReady_ = true;
+    // Compose each view once, then let Frame own page history. Basic string
+    // parameters follow Microsoft's recommendation and cannot retain another
+    // window/model through the journal. Navigation never starts image work.
+    // https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.frame.navigate
+    ShellViews().Children().Clear();
+    ShellFrame().Navigated([weak = get_weak()](const Windows::Foundation::IInspectable &,
+                                               const Microsoft::UI::Xaml::Navigation::NavigationEventArgs &arguments) {
+        if (auto window = weak.get())
+        {
+            const auto destination = unbox_value<hstring>(arguments.Parameter());
+            Microsoft::UI::Xaml::UIElement content{nullptr};
+            if (destination == L"Workflow")
+                content = window->WorkflowView();
+            else if (destination == L"Settings")
+                content = window->SettingsView();
+            else if (destination == L"Crop")
+                content = window->CropExplanationView();
+            else if (destination == L"Progressive")
+                content = window->ProgressiveExplanationView();
+            else if (destination == L"Privacy")
+                content = window->PrivacyView();
+            else
+                throw hresult_invalid_argument();
+            const auto page = window->ShellFrame().Content().as<Microsoft::UI::Xaml::Controls::Page>();
+            page.Tag(arguments.Parameter());
+            page.Content(content);
+        }
+    });
+    AppTitleBar().BackRequested([weak = get_weak()](auto const &, auto const &) {
+        if (auto window = weak.get())
+            window->tryNavigateBack();
+    });
+    // VirtualKey defines these browser/navigation keys, but WinUI's XAML
+    // converter does not accept their names. Use the documented native setter
+    // rather than numeric literals or a second window-message input path.
+    // https://learn.microsoft.com/windows/apps/develop/input/keyboard-accelerators
+    using Windows::System::VirtualKey;
+    for (const auto key : {VirtualKey::GoBack, VirtualKey::GoForward})
+    {
+        Microsoft::UI::Xaml::Input::KeyboardAccelerator accelerator;
+        accelerator.Key(key);
+        accelerator.Invoked([weak = get_weak(), key](auto const &, auto const &arguments) {
+            if (auto window = weak.get())
+                arguments.Handled(key == VirtualKey::GoBack ? window->tryNavigateBack() : window->tryNavigateForward());
+        });
+        ShellRoot().KeyboardAccelerators().Append(accelerator);
+    }
+    ShellRoot().AddHandler(
+        Microsoft::UI::Xaml::UIElement::PointerPressedEvent(),
+        box_value(Microsoft::UI::Xaml::Input::PointerEventHandler{
+            [weak = get_weak()](auto const &, const Microsoft::UI::Xaml::Input::PointerRoutedEventArgs &arguments) {
+                if (auto window = weak.get())
+                {
+                    const auto properties = arguments.GetCurrentPoint(window->ShellRoot()).Properties();
+                    // A discrete X-button press navigates once. Holding it while
+                    // pressing another mouse button must not navigate again.
+                    using Microsoft::UI::Input::PointerUpdateKind;
+                    if ((properties.IsXButton1Pressed() &&
+                         properties.PointerUpdateKind() == PointerUpdateKind::XButton1Pressed &&
+                         window->tryNavigateBack()) ||
+                        (properties.IsXButton2Pressed() &&
+                         properties.PointerUpdateKind() == PointerUpdateKind::XButton2Pressed &&
+                         window->tryNavigateForward()))
+                        arguments.Handled(true);
+                }
+            }}),
+        true); // Child controls may handle PointerPressed first.
+    navigateToShellPage(L"Workflow");
     // The native TitleBar owns caption/drag regions, RTL and material fallback.
     ExtendsContentIntoTitleBar(true);
     SetTitleBar(AppTitleBar());
@@ -43,7 +139,7 @@ MainWindow::MainWindow()
         if (auto window = weak.get())
             window->handleClosing(arguments);
     });
-    WorkflowContent().Loaded([weak = get_weak()](auto const &, auto const &) {
+    ShellRoot().Loaded([weak = get_weak()](auto const &, auto const &) {
         if (auto window = weak.get())
         {
             window->updatePreferredMinimumWindowSize();
@@ -56,7 +152,7 @@ MainWindow::MainWindow()
             // changes. Keep the effective-pixel minimum without a WndProc
             // replacement or a resize/SizeChanged feedback loop.
             window->xamlRootChangedSubscription_ =
-                window->WorkflowContent().XamlRoot().Changed(auto_revoke, [weak](auto const &, auto const &) {
+                window->ShellRoot().XamlRoot().Changed(auto_revoke, [weak](auto const &, auto const &) {
                     if (auto current = weak.get())
                         current->updatePreferredMinimumWindowSize();
                 });
@@ -72,7 +168,7 @@ void MainWindow::updatePreferredMinimumWindowSize()
     // effective pixels. Round upward so fractional display scales cannot make
     // the native minimum smaller than 360 by 480 effective pixels.
     // https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.window.sizechanged
-    const auto scale = WorkflowContent().XamlRoot().RasterizationScale();
+    const auto scale = ShellRoot().XamlRoot().RasterizationScale();
     const auto presenter = AppWindow().Presenter().as<Microsoft::UI::Windowing::OverlappedPresenter>();
     presenter.PreferredMinimumWidth(static_cast<int>(std::ceil(360 * scale)));
     presenter.PreferredMinimumHeight(static_cast<int>(std::ceil(480 * scale)));
@@ -155,6 +251,158 @@ bool MainWindow::HasDiagnosticLogError() const
     requireUiThread();
     return diagnosticLogError_;
 }
+bool MainWindow::CanEditProcessingSettings() const
+{
+    // Settings are available before selecting a folder. During analysis,
+    // processing and recovery the existing admission gate locks their editing.
+    return CanPickSourceFolder();
+}
+Microsoft::UI::Xaml::Visibility MainWindow::LandingRegionVisibility() const
+{
+    requireUiThread();
+    return !viewModel_ && !startupRecoveryError_ ? Microsoft::UI::Xaml::Visibility::Visible
+                                                 : Microsoft::UI::Xaml::Visibility::Collapsed;
+}
+Microsoft::UI::Xaml::Visibility MainWindow::WorkflowRegionVisibility() const
+{
+    requireUiThread();
+    return viewModel_ || startupRecoveryError_ ? Microsoft::UI::Xaml::Visibility::Visible
+                                               : Microsoft::UI::Xaml::Visibility::Collapsed;
+}
+Microsoft::UI::Xaml::Visibility MainWindow::StartupRecoverySummaryVisibility() const
+{
+    requireUiThread();
+    return startupRecoveredTransactionCount_ != 0 ? Microsoft::UI::Xaml::Visibility::Visible
+                                                  : Microsoft::UI::Xaml::Visibility::Collapsed;
+}
+void MainWindow::Settings_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    navigateToShellPage(L"Settings");
+}
+void MainWindow::CloseSettings_Click(Windows::Foundation::IInspectable const &,
+                                     Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    tryNavigateBack();
+}
+void MainWindow::navigateToShellPage(const hstring &destination)
+{
+    requireUiThread();
+    const auto current = ShellFrame().Content().try_as<Microsoft::UI::Xaml::Controls::Page>();
+    if (current && current.Tag() && unbox_value<hstring>(current.Tag()) == destination)
+        return; // Reopening Settings must not add duplicate history entries.
+    ShellFrame().Navigate(xaml_typename<JpgSpinner::ShellContentPage>(), box_value(destination));
+}
+bool MainWindow::tryNavigateBack()
+{
+    requireUiThread();
+    if (closeAdmission_.closeRequested() || pickerActive_ || !ShellFrame().CanGoBack())
+        return false;
+    ShellFrame().GoBack();
+    return true;
+}
+bool MainWindow::tryNavigateForward()
+{
+    requireUiThread();
+    if (closeAdmission_.closeRequested() || pickerActive_ || !ShellFrame().CanGoForward())
+        return false;
+    ShellFrame().GoForward();
+    return true;
+}
+void MainWindow::NavigateForward_Click(Windows::Foundation::IInspectable const &,
+                                       Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    tryNavigateForward();
+}
+void MainWindow::NavigateBack_Invoked(const Microsoft::UI::Xaml::Input::KeyboardAccelerator &,
+                                      const Microsoft::UI::Xaml::Input::KeyboardAcceleratorInvokedEventArgs &arguments)
+{
+    arguments.Handled(tryNavigateBack());
+}
+void MainWindow::NavigateForward_Invoked(
+    const Microsoft::UI::Xaml::Input::KeyboardAccelerator &,
+    const Microsoft::UI::Xaml::Input::KeyboardAcceleratorInvokedEventArgs &arguments)
+{
+    arguments.Handled(tryNavigateForward());
+}
+void MainWindow::Logo_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    // Keep the original two-second Easter egg as an explicit user action.
+    // Windows' reduced-motion preference also applies to decorative animation.
+    LogoSpin().Stop();
+    if (Windows::UI::ViewManagement::UISettings{}.AnimationsEnabled())
+        LogoSpin().Begin();
+}
+fire_and_forget MainWindow::SettingsHelp_Click(Windows::Foundation::IInspectable const &sender,
+                                               Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    auto lifetime = get_strong();
+    const auto topic = unbox_value<hstring>(sender.as<Microsoft::UI::Xaml::Controls::HyperlinkButton>().Tag());
+    navigateToShellPage(topic);
+    if (topic == L"Progressive" && !progressiveExamplesLoaded_)
+    {
+        ProgressiveExampleProgress().IsActive(true);
+        ProgressiveExampleError().IsOpen(false);
+        try
+        {
+            co_await loadProgressiveExamplesAsync();
+            progressiveExamplesLoaded_ = true;
+        }
+        catch (...)
+        {
+            ProgressiveExampleError().IsOpen(true);
+        }
+        ProgressiveExampleProgress().IsActive(false);
+    }
+}
+Windows::Foundation::IAsyncAction MainWindow::loadProgressiveExamplesAsync()
+{
+    auto lifetime = get_strong();
+    const auto queue = DispatcherQueue();
+    const auto file = co_await Windows::Storage::StorageFile::GetFileFromApplicationUriAsync(
+        Windows::Foundation::Uri{L"ms-appx:///Assets/Help/ProgressiveEncodingExample.jpg"});
+    const std::filesystem::path path{file.Path().c_str()};
+    co_await resume_background();
+    std::array<jpg_spinner::presentation::ProgressiveJpegExampleFrame, 3> frames;
+    {
+        auto apartment = wil::RoInitialize(RO_INIT_MULTITHREADED);
+        frames = jpg_spinner::presentation::decodeProgressiveJpegExample(path);
+    }
+    co_await wil::resume_foreground(queue);
+    const std::array images{ProgressiveFirstImage(), ProgressiveMiddleImage(), ProgressiveFinalImage()};
+    for (std::size_t index = 0; index < frames.size(); ++index)
+    {
+        const auto &frame = frames[index];
+        Microsoft::UI::Xaml::Media::Imaging::WriteableBitmap bitmap{static_cast<int32_t>(frame.widthInPixels),
+                                                                    static_cast<int32_t>(frame.heightInPixels)};
+        const auto buffer = bitmap.PixelBuffer();
+        if (buffer.Length() != frame.premultipliedBgraPixels.size())
+            throw hresult_invalid_argument();
+        std::memcpy(buffer.data(), frame.premultipliedBgraPixels.data(), frame.premultipliedBgraPixels.size());
+        bitmap.Invalidate();
+        images[index].Source(bitmap);
+    }
+}
+void MainWindow::CloseSettingsHelp_Click(Windows::Foundation::IInspectable const &,
+                                         Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    tryNavigateBack();
+}
+hstring MainWindow::ProcessingSettingsSummary()
+{
+    requireUiThread();
+    std::wstring summary;
+    for (const auto &control :
+         {TraversalScopeControl(), OutputDispositionControl(), EdgeHandlingControl(), ScanOrganizationControl()})
+    {
+        if (const auto selected = control.SelectedItem().try_as<Microsoft::UI::Xaml::Controls::RadioButton>())
+        {
+            if (!summary.empty())
+                summary += L" · ";
+            summary += unbox_value<hstring>(selected.Content());
+        }
+    }
+    return hstring{summary};
+}
 Microsoft::UI::Xaml::Visibility MainWindow::regionVisibility(Presentation::ImageProcessingExperienceState state) const
 {
     requireUiThread();
@@ -236,13 +484,30 @@ void MainWindow::setViewModel(Presentation::MainWindowViewModel const &viewModel
 void MainWindow::notifyShellState()
 {
     requireUiThread();
-    for (const auto *property :
-         {L"CanPickSourceFolder", L"IsWorkflowInteractionEnabled", L"CanRetryRecovery", L"IsStartupRecoveryPending",
-          L"HasStartupRecoveryError", L"StartupRecoveryErrorMessage", L"CanRestoreStartupSourceAccess",
-          L"StartupRecoveredTransactionCount", L"CanExportDiagnostics", L"HasDiagnosticLogError",
-          L"SourceSelectionRegionVisibility", L"AnalysisRegionVisibility", L"ReviewRegionVisibility",
-          L"ProcessingRegionVisibility", L"ResultsRegionVisibility", L"RecoveryRequiredRegionVisibility",
-          L"ProcessingRowsRegionVisibility", L"BackupDestinationVisibility", L"OperationProgressVisibility"})
+    for (const auto *property : {L"CanPickSourceFolder",
+                                 L"IsWorkflowInteractionEnabled",
+                                 L"CanRetryRecovery",
+                                 L"IsStartupRecoveryPending",
+                                 L"HasStartupRecoveryError",
+                                 L"StartupRecoveryErrorMessage",
+                                 L"CanRestoreStartupSourceAccess",
+                                 L"StartupRecoveredTransactionCount",
+                                 L"CanExportDiagnostics",
+                                 L"HasDiagnosticLogError",
+                                 L"SourceSelectionRegionVisibility",
+                                 L"AnalysisRegionVisibility",
+                                 L"ReviewRegionVisibility",
+                                 L"ProcessingRegionVisibility",
+                                 L"ResultsRegionVisibility",
+                                 L"RecoveryRequiredRegionVisibility",
+                                 L"ProcessingRowsRegionVisibility",
+                                 L"BackupDestinationVisibility",
+                                 L"OperationProgressVisibility",
+                                 L"LandingRegionVisibility",
+                                 L"WorkflowRegionVisibility",
+                                 L"StartupRecoverySummaryVisibility",
+                                 L"CanEditProcessingSettings",
+                                 L"ProcessingSettingsSummary"})
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{property});
     closeAfterWorkSettles();
 }
@@ -400,6 +665,9 @@ Windows::Foundation::IAsyncAction MainWindow::selectPickedSourceAsync(Windows::S
         queue, coordinator_, composition->transactionEngine, std::move(failureDiagnostics));
     model->selectSource(std::move(composition->request), composition->sourceFolderDisplayName,
                         composition->backupRootDisplayPath);
+    // The new folder receives the user's defaults. They are not copied from a
+    // previous batch's immutable review, identity or trimming acknowledgement.
+    applyProcessingOptions(model.as<Presentation::MainWindowViewModel>(), processingOptionSelections());
     selectedSourceFolder_ = std::move(selectedFolder);
     batchIdentity_ = newIdentity;
     transactionEngine_ = composition->transactionEngine;
@@ -469,23 +737,92 @@ void MainWindow::synchronizeProcessingOptionControls()
     }
     updatingProcessingOptionControls_ = false;
 }
+std::array<int, 4> MainWindow::processingOptionSelections()
+{
+    return {TraversalScopeControl().SelectedIndex(), OutputDispositionControl().SelectedIndex(),
+            EdgeHandlingControl().SelectedIndex(), ScanOrganizationControl().SelectedIndex()};
+}
+void MainWindow::applyProcessingOptions(const Presentation::MainWindowViewModel &model,
+                                        const std::array<int, 4> &selections) const
+{
+    const auto [traversal, disposition, edge, scans] = selections;
+    if (!areValidProcessingOptionSelections(selections))
+        throw hresult_invalid_argument();
+    using ScanOrganization = Presentation::OutputScanOrganization;
+    model.SetProcessingOptions(disposition == 0 ? Presentation::OutputDisposition::CreateCorrectedCopy
+                                                : Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
+                               traversal == 0 ? Presentation::TraversalScope::SelectedFolderOnly
+                                              : Presentation::TraversalScope::SelectedFolderAndDescendants,
+                               edge == 0 ? Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform
+                                         : Presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits,
+                               scans == 0
+                                   ? ScanOrganization::PreserveSource
+                                   : (scans == 1 ? ScanOrganization::SequentialDct : ScanOrganization::ProgressiveDct));
+}
+void MainWindow::loadProcessingPreferences()
+{
+    // The composite is one native app-local snapshot. Versioned UI selections
+    // are private persisted data, not native/domain enum wire values. Invalid
+    // or older data leaves all four safe authored defaults unchanged.
+    try
+    {
+        const auto values = Windows::Storage::ApplicationData::Current().LocalSettings().Values();
+        const auto stored = values.TryLookup(L"ImageProcessingPreferences.v1")
+                                .try_as<Windows::Storage::ApplicationDataCompositeValue>();
+        if (!stored)
+            return;
+        std::array<int, 4> selections{};
+        for (std::size_t index = 0; index < selections.size(); ++index)
+            selections[index] =
+                unbox_value_or<int32_t>(stored.TryLookup(hstring{processingPreferenceSelectionKeys[index]}), -1);
+        if (!areValidProcessingOptionSelections(selections))
+            return;
+        TraversalScopeControl().SelectedIndex(selections[0]);
+        OutputDispositionControl().SelectedIndex(selections[1]);
+        EdgeHandlingControl().SelectedIndex(selections[2]);
+        ScanOrganizationControl().SelectedIndex(selections[3]);
+    }
+    catch (const hresult_error &)
+    {
+        SettingsSaveErrorBar().IsOpen(true);
+    }
+}
+void MainWindow::saveProcessingPreferences(const std::array<int, 4> &selections)
+{
+    Windows::Storage::ApplicationDataCompositeValue preferences;
+    for (std::size_t index = 0; index < selections.size(); ++index)
+        preferences.Insert(hstring{processingPreferenceSelectionKeys[index]}, box_value(selections[index]));
+    try
+    {
+        Windows::Storage::ApplicationData::Current().LocalSettings().Values().Insert(L"ImageProcessingPreferences.v1",
+                                                                                     preferences);
+        SettingsSaveErrorBar().IsOpen(false);
+    }
+    catch (const hresult_error &)
+    {
+        // Session choices remain usable, but failure to remember them must be
+        // visible. No failure grants permission to change files or consent.
+        SettingsSaveErrorBar().IsOpen(true);
+    }
+}
 fire_and_forget MainWindow::ProcessingOptions_SelectionChanged(
     Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const &)
 {
     auto lifetime = get_strong();
     // XAML initialization can raise this before every named control exists.
-    if (closeAdmission_.closeRequested() || updatingProcessingOptionControls_ || pickerActive_ ||
-        operationEventActive_ || !viewModel_ || !viewModel_.CanSelectSourceFolder())
+    if (!processingPreferencesReady_ || updatingProcessingOptionControls_ || !CanEditProcessingSettings())
         co_return;
     try
     {
-        const int traversal = TraversalScopeControl().SelectedIndex();
-        const int disposition = OutputDispositionControl().SelectedIndex();
-        const int edge = EdgeHandlingControl().SelectedIndex();
-        const int scans = ScanOrganizationControl().SelectedIndex();
-        if (traversal < 0 || traversal > 1 || disposition < 0 || disposition > 1 || edge < 0 || edge > 1 || scans < 0 ||
-            scans > 2)
-            throw hresult_invalid_argument();
+        const auto selections = processingOptionSelections();
+        if (!areValidProcessingOptionSelections(selections))
+            co_return; // Native selection can transiently clear during initialization.
+        if (!viewModel_)
+        {
+            saveProcessingPreferences(selections);
+            notifyShellState();
+            co_return;
+        }
         if (viewModel_.State() == Presentation::ImageProcessingExperienceState::Results)
         {
             pickerActive_ = true;
@@ -495,16 +832,8 @@ fire_and_forget MainWindow::ProcessingOptions_SelectionChanged(
             // native batch before applying the user's newly selected choices.
             co_await selectPickedSourceAsync(selectedSourceFolder_);
         }
-        using ScanOrganization = Presentation::OutputScanOrganization;
-        viewModel_.SetProcessingOptions(
-            disposition == 0 ? Presentation::OutputDisposition::CreateCorrectedCopy
-                             : Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
-            traversal == 0 ? Presentation::TraversalScope::SelectedFolderOnly
-                           : Presentation::TraversalScope::SelectedFolderAndDescendants,
-            edge == 0 ? Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform
-                      : Presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits,
-            scans == 0 ? ScanOrganization::PreserveSource
-                       : (scans == 1 ? ScanOrganization::SequentialDct : ScanOrganization::ProgressiveDct));
+        applyProcessingOptions(viewModel_, selections);
+        saveProcessingPreferences(selections);
         synchronizeProcessingOptionControls();
     }
     catch (...)

@@ -1,261 +1,975 @@
-<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
-  <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
-  <!-- A minimum coded unit follows JPEG component sampling; it need not be an 8 by 8 pixel block. -->
-  <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve"><value>Source access denied</value></data>
-  <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve"><value>The selected image could not be read with the granted access.</value></data>
-  <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve"><value>Select a folder you can read and try again.</value></data>
-  <data name="ImageProcessingError_SourceSharingViolation_Title" xml:space="preserve"><value>Source file is in use</value></data>
-  <data name="ImageProcessingError_SourceSharingViolation_Explanation" xml:space="preserve"><value>Another application is holding a conflicting file access.</value></data>
-  <data name="ImageProcessingError_SourceSharingViolation_Remedy" xml:space="preserve"><value>Close applications using this image and try again.</value></data>
-  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Title" xml:space="preserve"><value>Source revision could not be captured</value></data>
-  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Explanation" xml:space="preserve"><value>A trustworthy observation of the source identity and bytes could not be obtained.</value></data>
-  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Remedy" xml:space="preserve"><value>Check access to the source and analyze the folder again.</value></data>
-  <data name="ImageProcessingError_SourceDiscoveryFailed_Title" xml:space="preserve"><value>Folder discovery failed</value></data>
-  <data name="ImageProcessingError_SourceDiscoveryFailed_Explanation" xml:space="preserve"><value>The granted folder could not be completely enumerated.</value></data>
-  <data name="ImageProcessingError_SourceDiscoveryFailed_Remedy" xml:space="preserve"><value>Check folder access and analyze again; no incomplete review can start processing.</value></data>
-  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Title" xml:space="preserve"><value>Processing choices are invalid</value></data>
-  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Explanation" xml:space="preserve"><value>The requested policies or resource limits are not supported.</value></data>
-  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Remedy" xml:space="preserve"><value>Return to source selection and choose supported settings.</value></data>
-  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Title" xml:space="preserve"><value>Source changed after analysis</value></data>
-  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Explanation" xml:space="preserve"><value>The current source does not match the reviewed revision.</value></data>
-  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Remedy" xml:space="preserve"><value>Analyze the folder again before processing.</value></data>
-  <data name="ImageProcessingError_DestinationAccessDenied_Title" xml:space="preserve"><value>Destination access denied</value></data>
-  <data name="ImageProcessingError_DestinationAccessDenied_Explanation" xml:space="preserve"><value>The app could not write to the granted output destination.</value></data>
-  <data name="ImageProcessingError_DestinationAccessDenied_Remedy" xml:space="preserve"><value>Check destination access and choose a writable folder.</value></data>
-  <data name="ImageProcessingError_EncodedFileTooLarge_Title" xml:space="preserve"><value>Encoded image exceeds the size limit</value></data>
-  <data name="ImageProcessingError_EncodedFileTooLarge_Explanation" xml:space="preserve"><value>The JPEG file is larger than the supported encoded-file limit.</value></data>
-  <data name="ImageProcessingError_EncodedFileTooLarge_Remedy" xml:space="preserve"><value>Use a smaller source file; the app will not bypass its resource limits.</value></data>
-  <data name="ImageProcessingError_PixelCountLimitExceeded_Title" xml:space="preserve"><value>Image exceeds the pixel limit</value></data>
-  <data name="ImageProcessingError_PixelCountLimitExceeded_Explanation" xml:space="preserve"><value>The declared image dimensions exceed the supported pixel count.</value></data>
-  <data name="ImageProcessingError_PixelCountLimitExceeded_Remedy" xml:space="preserve"><value>Use an image within the supported dimensions.</value></data>
-  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Title" xml:space="preserve"><value>Metadata exceeds the size limit</value></data>
-  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Explanation" xml:space="preserve"><value>The image metadata exceeds the bounded analysis limit.</value></data>
-  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Remedy" xml:space="preserve"><value>Use a source with metadata within the supported limit.</value></data>
-  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Title" xml:space="preserve"><value>Progressive JPEG has too many scans</value></data>
-  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Explanation" xml:space="preserve"><value>The progressive scan count exceeds the supported analysis limit.</value></data>
-  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Remedy" xml:space="preserve"><value>Use a JPEG with a supported scan count.</value></data>
-  <data name="ImageProcessingError_MalformedJpegStructure_Title" xml:space="preserve"><value>JPEG structure is invalid</value></data>
-  <data name="ImageProcessingError_MalformedJpegStructure_Explanation" xml:space="preserve"><value>The encoded file does not contain a supported, well-formed JPEG structure.</value></data>
-  <data name="ImageProcessingError_MalformedJpegStructure_Remedy" xml:space="preserve"><value>Use an intact JPEG source; changing its extension cannot repair its bytes.</value></data>
-  <data name="ImageProcessingError_MalformedImageMetadata_Title" xml:space="preserve"><value>Image metadata is invalid</value></data>
-  <data name="ImageProcessingError_MalformedImageMetadata_Explanation" xml:space="preserve"><value>The metadata cannot be decoded as a supported, well-formed payload.</value></data>
-  <data name="ImageProcessingError_MalformedImageMetadata_Remedy" xml:space="preserve"><value>Keep the source and obtain an intact image or repair metadata separately.</value></data>
-  <data name="ImageProcessingError_MetadataPreservationFailed_Title" xml:space="preserve"><value>Metadata could not be preserved</value></data>
-  <data name="ImageProcessingError_MetadataPreservationFailed_Explanation" xml:space="preserve"><value>Reconciliation could not retain the required metadata values.</value></data>
-  <data name="ImageProcessingError_MetadataPreservationFailed_Remedy" xml:space="preserve"><value>Keep the source unchanged and use a supported metadata layout.</value></data>
-  <data name="ImageProcessingError_InvalidOrientationMetadata_Title" xml:space="preserve"><value>Orientation metadata is invalid</value></data>
-  <data name="ImageProcessingError_InvalidOrientationMetadata_Explanation" xml:space="preserve"><value>The required orientation value is absent or outside the supported range.</value></data>
-  <data name="ImageProcessingError_InvalidOrientationMetadata_Remedy" xml:space="preserve"><value>Set a valid orientation with a metadata editor, then analyze again.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Title" xml:space="preserve"><value>JPEG coding process is not supported</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Explanation" xml:space="preserve"><value>This JPEG uses a coding process outside the supported DCT profile.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Remedy" xml:space="preserve"><value>Use a JPEG with a supported DCT coding process.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Title" xml:space="preserve"><value>JPEG sample precision is not supported</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Explanation" xml:space="preserve"><value>The encoded sample precision is outside the supported profile.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Remedy" xml:space="preserve"><value>Use a JPEG with supported sample precision.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Title" xml:space="preserve"><value>JPEG component layout is not supported</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Explanation" xml:space="preserve"><value>The component organization cannot be safely transformed by this profile.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Remedy" xml:space="preserve"><value>Use a JPEG with a supported component layout.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Title" xml:space="preserve"><value>Deferred JPEG height is not supported</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Explanation" xml:space="preserve"><value>This JPEG declares its image height after the frame header.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Remedy" xml:space="preserve"><value>Use a JPEG with its height declared in the frame header.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Title" xml:space="preserve"><value>Changing JPEG restart intervals is not supported</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Explanation" xml:space="preserve"><value>The file changes restart intervals within the encoded image.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Remedy" xml:space="preserve"><value>Use a JPEG with a supported restart-interval layout.</value></data>
-  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Title" xml:space="preserve"><value>Multi-picture JPEG is not supported</value></data>
-  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Explanation" xml:space="preserve"><value>The file contains multiple images whose relationships would need reconciliation.</value></data>
-  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Remedy" xml:space="preserve"><value>Keep the multi-picture source and use a supported single-image JPEG.</value></data>
-  <data name="ImageProcessingError_MotionPhotoNotSupported_Title" xml:space="preserve"><value>Motion photo is not supported</value></data>
-  <data name="ImageProcessingError_MotionPhotoNotSupported_Explanation" xml:space="preserve"><value>The image contains associated motion content that this app does not reconcile.</value></data>
-  <data name="ImageProcessingError_MotionPhotoNotSupported_Remedy" xml:space="preserve"><value>Keep the motion photo and use a supported still-image JPEG.</value></data>
-  <data name="ImageProcessingError_UnsupportedTrailingPayload_Title" xml:space="preserve"><value>Trailing image payload is not supported</value></data>
-  <data name="ImageProcessingError_UnsupportedTrailingPayload_Explanation" xml:space="preserve"><value>Additional content follows the JPEG image and cannot be safely preserved by this profile.</value></data>
-  <data name="ImageProcessingError_UnsupportedTrailingPayload_Remedy" xml:space="preserve"><value>Keep the original and use a JPEG without unsupported trailing content.</value></data>
-  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Title" xml:space="preserve"><value>Content credentials would be invalidated</value></data>
-  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Explanation" xml:space="preserve"><value>Changing this image would invalidate its content-authenticity information.</value></data>
-  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Remedy" xml:space="preserve"><value>Keep the signed source unchanged; use an appropriate credentials-aware workflow.</value></data>
-  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Title" xml:space="preserve"><value>JUMBF metadata is not supported</value></data>
-  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve"><value>The JUMBF payload is outside the app's supported preservation profile.</value></data>
-  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve"><value>Keep the source unchanged and use a supported metadata profile.</value></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve"><value>Embedded preview cannot be reconciled</value></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>An embedded preview layout cannot be safely updated or removed by this profile.</value><comment>Embedded thumbnail means a small image preview stored within image metadata, distinct from the primary JPEG. Unsupported preview structures are refused rather than silently discarded.</comment></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve"><value>Keep the source and use an image with a supported embedded preview layout.</value></data>
-  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve"><value>Extended XMP change is not supported</value></data>
-  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve"><value>The required metadata change would modify an unsupported extended-XMP payload.</value></data>
-  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Remedy" xml:space="preserve"><value>Keep the source unchanged and use a supported XMP layout.</value></data>
-  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Title" xml:space="preserve"><value>A perfect coefficient transform is unavailable</value></data>
-  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Explanation" xml:space="preserve"><value>The requested transform cannot retain all partial minimum-coded-unit edge pixels.</value></data>
-  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Remedy" xml:space="preserve"><value>Keep perfect-transform mode, or explicitly review and acknowledge the exact discarded edges in trim mode.</value></data>
-  <data name="ImageProcessingError_CoefficientTransformationFailed_Title" xml:space="preserve"><value>Coefficient transformation failed</value></data>
-  <data name="ImageProcessingError_CoefficientTransformationFailed_Explanation" xml:space="preserve"><value>The native JPEG transformation did not produce a validated output.</value></data>
-  <data name="ImageProcessingError_CoefficientTransformationFailed_Remedy" xml:space="preserve"><value>Keep the source and analyze again; no unvalidated output may be committed.</value></data>
-  <data name="ImageProcessingError_OutputBufferTooSmall_Title" xml:space="preserve"><value>Output exceeded the bounded buffer</value></data>
-  <data name="ImageProcessingError_OutputBufferTooSmall_Explanation" xml:space="preserve"><value>The encoded output did not fit within the allocated resource bound.</value></data>
-  <data name="ImageProcessingError_OutputBufferTooSmall_Remedy" xml:space="preserve"><value>Use a source within supported resource limits; do not bypass the bound.</value></data>
-  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Title" xml:space="preserve"><value>Working memory could not be allocated</value></data>
-  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Explanation" xml:space="preserve"><value>The operation could not obtain its required bounded working memory.</value></data>
-  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Remedy" xml:space="preserve"><value>Close memory-intensive applications and try again.</value></data>
-  <data name="ImageProcessingError_InsufficientStorageSpace_Title" xml:space="preserve"><value>Storage space is insufficient</value></data>
-  <data name="ImageProcessingError_InsufficientStorageSpace_Explanation" xml:space="preserve"><value>The destination does not have the space required for this operation.</value></data>
-  <data name="ImageProcessingError_InsufficientStorageSpace_Remedy" xml:space="preserve"><value>Free space or select another supported destination while retaining originals and backups.</value></data>
-  <data name="ImageProcessingError_OutputRelativePathCollision_Title" xml:space="preserve"><value>Output names collide</value></data>
-  <data name="ImageProcessingError_OutputRelativePathCollision_Explanation" xml:space="preserve"><value>Two reviewed source names resolve to the same output-relative name.</value></data>
-  <data name="ImageProcessingError_OutputRelativePathCollision_Remedy" xml:space="preserve"><value>Resolve the conflicting source names and analyze again.</value></data>
-  <data name="ImageProcessingError_StagingFileCreationFailed_Title" xml:space="preserve"><value>Staging file could not be created</value></data>
-  <data name="ImageProcessingError_StagingFileCreationFailed_Explanation" xml:space="preserve"><value>The app could not create its transaction-owned temporary output.</value></data>
-  <data name="ImageProcessingError_StagingFileCreationFailed_Remedy" xml:space="preserve"><value>Check destination access and available space, then retry after recovery if required.</value></data>
-  <data name="ImageProcessingError_StagingWriteFailed_Title" xml:space="preserve"><value>Staging write failed</value></data>
-  <data name="ImageProcessingError_StagingWriteFailed_Explanation" xml:space="preserve"><value>Writing the validated output to the transaction-owned staging file failed.</value></data>
-  <data name="ImageProcessingError_StagingWriteFailed_Remedy" xml:space="preserve"><value>Check destination access and available space; retain originals and backups.</value></data>
-  <data name="ImageProcessingError_StagingFlushFailed_Title" xml:space="preserve"><value>Staging flush failed</value></data>
-  <data name="ImageProcessingError_StagingFlushFailed_Explanation" xml:space="preserve"><value>The strongest supported flush request did not complete successfully.</value></data>
-  <data name="ImageProcessingError_StagingFlushFailed_Remedy" xml:space="preserve"><value>Check the storage device and retry only after any required recovery.</value></data>
-  <data name="ImageProcessingError_StagingCloseFailed_Title" xml:space="preserve"><value>Staging file could not be closed</value></data>
-  <data name="ImageProcessingError_StagingCloseFailed_Explanation" xml:space="preserve"><value>The transaction-owned staging file did not close successfully.</value></data>
-  <data name="ImageProcessingError_StagingCloseFailed_Remedy" xml:space="preserve"><value>Check the storage device and resolve any recovery requirement before retrying.</value></data>
-  <data name="ImageProcessingError_StagedOutputVerificationFailed_Title" xml:space="preserve"><value>Staged output could not be verified</value></data>
-  <data name="ImageProcessingError_StagedOutputVerificationFailed_Explanation" xml:space="preserve"><value>The closed staging file could not be reopened and independently verified.</value></data>
-  <data name="ImageProcessingError_StagedOutputVerificationFailed_Remedy" xml:space="preserve"><value>Keep originals and backups; check the destination before retrying.</value></data>
-  <data name="ImageProcessingError_StagedOutputHashMismatch_Title" xml:space="preserve"><value>Staged output bytes do not match</value></data>
-  <data name="ImageProcessingError_StagedOutputHashMismatch_Explanation" xml:space="preserve"><value>The observed staging bytes differ from the validated output hash.</value></data>
-  <data name="ImageProcessingError_StagedOutputHashMismatch_Remedy" xml:space="preserve"><value>Keep originals and backups; investigate storage changes before retrying.</value></data>
-  <data name="ImageProcessingError_OutputValidationFailed_Title" xml:space="preserve"><value>Output validation failed</value></data>
-  <data name="ImageProcessingError_OutputValidationFailed_Explanation" xml:space="preserve"><value>The transformed image did not satisfy the independent validation rules.</value></data>
-  <data name="ImageProcessingError_OutputValidationFailed_Remedy" xml:space="preserve"><value>Keep the source unchanged; do not use the rejected output.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Title" xml:space="preserve"><value>Corrected-copy destination could not be created</value></data>
-  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Explanation" xml:space="preserve"><value>The app could not create its owned destination for the corrected copy.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Remedy" xml:space="preserve"><value>Check output-folder access and available space, then analyze again.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Title" xml:space="preserve"><value>Corrected copy could not be committed</value></data>
-  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Explanation" xml:space="preserve"><value>The staged corrected copy could not be moved to its final destination.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Remedy" xml:space="preserve"><value>Retain the source and inspect any recovery requirement before retrying.</value></data>
-  <data name="ImageProcessingError_BackupCreationFailed_Title" xml:space="preserve"><value>Backup could not be created</value></data>
-  <data name="ImageProcessingError_BackupCreationFailed_Explanation" xml:space="preserve"><value>The required backup could not be created before original replacement.</value></data>
-  <data name="ImageProcessingError_BackupCreationFailed_Remedy" xml:space="preserve"><value>Retain the original; check backup-destination access and available space.</value></data>
-  <data name="ImageProcessingError_BackupVerificationFailed_Title" xml:space="preserve"><value>Backup could not be verified</value></data>
-  <data name="ImageProcessingError_BackupVerificationFailed_Explanation" xml:space="preserve"><value>The backup did not establish the required match with the source revision.</value></data>
-  <data name="ImageProcessingError_BackupVerificationFailed_Remedy" xml:space="preserve"><value>Retain the original and all backup evidence; resolve the mismatch before replacement.</value></data>
-  <data name="ImageProcessingError_OriginalReplacementFailed_Title" xml:space="preserve"><value>Original replacement did not complete successfully</value></data>
-  <data name="ImageProcessingError_OriginalReplacementFailed_Explanation" xml:space="preserve"><value>The native replacement failed; its observed outcome may require recovery.</value></data>
-  <data name="ImageProcessingError_OriginalReplacementFailed_Remedy" xml:space="preserve"><value>Retain originals and backups and complete any required recovery before retrying.</value></data>
-  <data name="ImageProcessingError_JournalPersistenceFailed_Title" xml:space="preserve"><value>Transaction journal could not be persisted</value></data>
-  <data name="ImageProcessingError_JournalPersistenceFailed_Explanation" xml:space="preserve"><value>The required immutable transaction record could not be published and verified.</value></data>
-  <data name="ImageProcessingError_JournalPersistenceFailed_Remedy" xml:space="preserve"><value>Retain originals, backups and journal files; resolve recovery before new processing.</value></data>
-  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Title" xml:space="preserve"><value>Storage provider is not qualified for recovery</value></data>
-  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Explanation" xml:space="preserve"><value>The selected provider or volume does not establish the required transaction-recovery contract.</value></data>
-  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Remedy" xml:space="preserve"><value>Select a qualified local NTFS destination; do not bypass the provider check.</value></data>
-  <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Title" xml:space="preserve"><value>Windows long-path support is unavailable</value></data>
-  <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Explanation" xml:space="preserve"><value>Generated transaction files can exceed ordinary Windows path limits. Processing and recovery have not started because the required Windows long-path policy is unavailable.</value></data>
-  <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Remedy" xml:space="preserve"><value>Ask your Windows administrator to verify the long-path prerequisite, then restart the app. No Windows settings were changed.</value></data>
-  <data name="ImageProcessingError_JournalStoreBusy_Title" xml:space="preserve"><value>Transaction journal is busy</value></data>
-  <data name="ImageProcessingError_JournalStoreBusy_Explanation" xml:space="preserve"><value>Another live owner holds the journal lease; recovery has not begun.</value></data>
-  <data name="ImageProcessingError_JournalStoreBusy_Remedy" xml:space="preserve"><value>Wait for the other operation to finish, then retry recovery.</value></data>
-  <data name="ImageProcessingError_RecoveryConflict_Title" xml:space="preserve"><value>Transaction recovery is unresolved</value></data>
-  <data name="ImageProcessingError_RecoveryConflict_Explanation" xml:space="preserve"><value>The retained records and observed files do not establish one safe outcome.</value></data>
-  <data name="ImageProcessingError_RecoveryConflict_Remedy" xml:space="preserve"><value>Preserve originals, backups and journals; resolve the conflict before new processing.</value></data>
-  <data name="ImageProcessingError_Cancelled_Title" xml:space="preserve"><value>Operation was cancelled</value></data>
-  <data name="ImageProcessingError_Cancelled_Explanation" xml:space="preserve"><value>Cooperative cancellation stopped further work; completed commits remain completed.</value></data>
-  <data name="ImageProcessingError_Cancelled_Remedy" xml:space="preserve"><value>Review the reported outcomes before starting a new operation.</value></data>
-  <data name="ImageProcessingError_Unknown_Title" xml:space="preserve"><value>Processing could not be completed</value></data>
-  <data name="ImageProcessingError_Unknown_Explanation" xml:space="preserve"><value>The operation failed for a reason that this version cannot describe.</value></data>
-  <data name="ImageProcessingError_Unknown_Remedy" xml:space="preserve"><value>Keep originals and backups, review any recovery requirement, and try again only when safe.</value></data>
-  <!-- Shell property identifiers follow native x:Uid/MRT syntax. Text may wrap;
+    <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
+    <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
+    <!-- A minimum coded unit follows JPEG component sampling; it need not be an 8 by 8 pixel block. -->
+    <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve">
+        <value>Source access denied</value>
+    </data>
+    <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve">
+        <value>The selected image could not be read with the granted access.</value>
+    </data>
+    <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve">
+        <value>Select a folder you can read and try again.</value>
+    </data>
+    <data name="ImageProcessingError_SourceSharingViolation_Title" xml:space="preserve">
+        <value>Source file is in use</value>
+    </data>
+    <data name="ImageProcessingError_SourceSharingViolation_Explanation" xml:space="preserve">
+        <value>Another application is holding a conflicting file access.</value>
+    </data>
+    <data name="ImageProcessingError_SourceSharingViolation_Remedy" xml:space="preserve">
+        <value>Close applications using this image and try again.</value>
+    </data>
+    <data name="ImageProcessingError_SourceRevisionCaptureFailed_Title" xml:space="preserve">
+        <value>Source revision could not be captured</value>
+    </data>
+    <data name="ImageProcessingError_SourceRevisionCaptureFailed_Explanation" xml:space="preserve">
+        <value>A trustworthy observation of the source identity and bytes could not be obtained.</value>
+    </data>
+    <data name="ImageProcessingError_SourceRevisionCaptureFailed_Remedy" xml:space="preserve">
+        <value>Check access to the source and analyze the folder again.</value>
+    </data>
+    <data name="ImageProcessingError_SourceDiscoveryFailed_Title" xml:space="preserve">
+        <value>Folder discovery failed</value>
+    </data>
+    <data name="ImageProcessingError_SourceDiscoveryFailed_Explanation" xml:space="preserve">
+        <value>The granted folder could not be completely enumerated.</value>
+    </data>
+    <data name="ImageProcessingError_SourceDiscoveryFailed_Remedy" xml:space="preserve">
+        <value>Check folder access and analyze again; no incomplete review can start processing.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidBatchProcessingRequest_Title" xml:space="preserve">
+        <value>Processing choices are invalid</value>
+    </data>
+    <data name="ImageProcessingError_InvalidBatchProcessingRequest_Explanation" xml:space="preserve">
+        <value>The requested policies or resource limits are not supported.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidBatchProcessingRequest_Remedy" xml:space="preserve">
+        <value>Return to source selection and choose supported settings.</value>
+    </data>
+    <data name="ImageProcessingError_SourceChangedAfterAnalysis_Title" xml:space="preserve">
+        <value>Source changed after analysis</value>
+    </data>
+    <data name="ImageProcessingError_SourceChangedAfterAnalysis_Explanation" xml:space="preserve">
+        <value>The current source does not match the reviewed revision.</value>
+    </data>
+    <data name="ImageProcessingError_SourceChangedAfterAnalysis_Remedy" xml:space="preserve">
+        <value>Analyze the folder again before processing.</value>
+    </data>
+    <data name="ImageProcessingError_DestinationAccessDenied_Title" xml:space="preserve">
+        <value>Destination access denied</value>
+    </data>
+    <data name="ImageProcessingError_DestinationAccessDenied_Explanation" xml:space="preserve">
+        <value>The app could not write to the granted output destination.</value>
+    </data>
+    <data name="ImageProcessingError_DestinationAccessDenied_Remedy" xml:space="preserve">
+        <value>Check destination access and choose a writable folder.</value>
+    </data>
+    <data name="ImageProcessingError_EncodedFileTooLarge_Title" xml:space="preserve">
+        <value>Encoded image exceeds the size limit</value>
+    </data>
+    <data name="ImageProcessingError_EncodedFileTooLarge_Explanation" xml:space="preserve">
+        <value>The JPEG file is larger than the supported encoded-file limit.</value>
+    </data>
+    <data name="ImageProcessingError_EncodedFileTooLarge_Remedy" xml:space="preserve">
+        <value>Use a smaller source file; the app will not bypass its resource limits.</value>
+    </data>
+    <data name="ImageProcessingError_PixelCountLimitExceeded_Title" xml:space="preserve">
+        <value>Image exceeds the pixel limit</value>
+    </data>
+    <data name="ImageProcessingError_PixelCountLimitExceeded_Explanation" xml:space="preserve">
+        <value>The declared image dimensions exceed the supported pixel count.</value>
+    </data>
+    <data name="ImageProcessingError_PixelCountLimitExceeded_Remedy" xml:space="preserve">
+        <value>Use an image within the supported dimensions.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataLengthLimitExceeded_Title" xml:space="preserve">
+        <value>Metadata exceeds the size limit</value>
+    </data>
+    <data name="ImageProcessingError_MetadataLengthLimitExceeded_Explanation" xml:space="preserve">
+        <value>The image metadata exceeds the bounded analysis limit.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataLengthLimitExceeded_Remedy" xml:space="preserve">
+        <value>Use a source with metadata within the supported limit.</value>
+    </data>
+    <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Title" xml:space="preserve">
+        <value>Progressive JPEG has too many scans</value>
+    </data>
+    <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Explanation" xml:space="preserve">
+        <value>The progressive scan count exceeds the supported analysis limit.</value>
+    </data>
+    <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Remedy" xml:space="preserve">
+        <value>Use a JPEG with a supported scan count.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedJpegStructure_Title" xml:space="preserve">
+        <value>JPEG structure is invalid</value>
+    </data>
+    <data name="ImageProcessingError_MalformedJpegStructure_Explanation" xml:space="preserve">
+        <value>The encoded file does not contain a supported, well-formed JPEG structure.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedJpegStructure_Remedy" xml:space="preserve">
+        <value>Use an intact JPEG source; changing its extension cannot repair its bytes.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedImageMetadata_Title" xml:space="preserve">
+        <value>Image metadata is invalid</value>
+    </data>
+    <data name="ImageProcessingError_MalformedImageMetadata_Explanation" xml:space="preserve">
+        <value>The metadata cannot be decoded as a supported, well-formed payload.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedImageMetadata_Remedy" xml:space="preserve">
+        <value>Keep the source and obtain an intact image or repair metadata separately.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataPreservationFailed_Title" xml:space="preserve">
+        <value>Metadata could not be preserved</value>
+    </data>
+    <data name="ImageProcessingError_MetadataPreservationFailed_Explanation" xml:space="preserve">
+        <value>Reconciliation could not retain the required metadata values.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataPreservationFailed_Remedy" xml:space="preserve">
+        <value>Keep the source unchanged and use a supported metadata layout.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidOrientationMetadata_Title" xml:space="preserve">
+        <value>Orientation metadata is invalid</value>
+    </data>
+    <data name="ImageProcessingError_InvalidOrientationMetadata_Explanation" xml:space="preserve">
+        <value>The required orientation value is absent or outside the supported range.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidOrientationMetadata_Remedy" xml:space="preserve">
+        <value>Set a valid orientation with a metadata editor, then analyze again.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Title" xml:space="preserve">
+        <value>JPEG coding process is not supported</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Explanation" xml:space="preserve">
+        <value>This JPEG uses a coding process outside the supported DCT profile.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Remedy" xml:space="preserve">
+        <value>Use a JPEG with a supported DCT coding process.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Title" xml:space="preserve">
+        <value>JPEG sample precision is not supported</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Explanation" xml:space="preserve">
+        <value>The encoded sample precision is outside the supported profile.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Remedy" xml:space="preserve">
+        <value>Use a JPEG with supported sample precision.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Title" xml:space="preserve">
+        <value>JPEG component layout is not supported</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Explanation" xml:space="preserve">
+        <value>The component organization cannot be safely transformed by this profile.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Remedy" xml:space="preserve">
+        <value>Use a JPEG with a supported component layout.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Title" xml:space="preserve">
+        <value>Deferred JPEG height is not supported</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Explanation" xml:space="preserve">
+        <value>This JPEG declares its image height after the frame header.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Remedy" xml:space="preserve">
+        <value>Use a JPEG with its height declared in the frame header.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Title" xml:space="preserve">
+        <value>Changing JPEG restart intervals is not supported</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Explanation" xml:space="preserve">
+        <value>The file changes restart intervals within the encoded image.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Remedy" xml:space="preserve">
+        <value>Use a JPEG with a supported restart-interval layout.</value>
+    </data>
+    <data name="ImageProcessingError_MultiPictureJpegNotSupported_Title" xml:space="preserve">
+        <value>Multi-picture JPEG is not supported</value>
+    </data>
+    <data name="ImageProcessingError_MultiPictureJpegNotSupported_Explanation" xml:space="preserve">
+        <value>The file contains multiple images whose relationships would need reconciliation.</value>
+    </data>
+    <data name="ImageProcessingError_MultiPictureJpegNotSupported_Remedy" xml:space="preserve">
+        <value>Keep the multi-picture source and use a supported single-image JPEG.</value>
+    </data>
+    <data name="ImageProcessingError_MotionPhotoNotSupported_Title" xml:space="preserve">
+        <value>Motion photo is not supported</value>
+    </data>
+    <data name="ImageProcessingError_MotionPhotoNotSupported_Explanation" xml:space="preserve">
+        <value>The image contains associated motion content that this app does not reconcile.</value>
+    </data>
+    <data name="ImageProcessingError_MotionPhotoNotSupported_Remedy" xml:space="preserve">
+        <value>Keep the motion photo and use a supported still-image JPEG.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedTrailingPayload_Title" xml:space="preserve">
+        <value>Trailing image payload is not supported</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedTrailingPayload_Explanation" xml:space="preserve">
+        <value>Additional content follows the JPEG image and cannot be safely preserved by this profile.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedTrailingPayload_Remedy" xml:space="preserve">
+        <value>Keep the original and use a JPEG without unsupported trailing content.</value>
+    </data>
+    <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Title" xml:space="preserve">
+        <value>Content credentials would be invalidated</value>
+    </data>
+    <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Explanation" xml:space="preserve">
+        <value>Changing this image would invalidate its content-authenticity information.</value>
+    </data>
+    <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Remedy" xml:space="preserve">
+        <value>Keep the signed source unchanged; use an appropriate credentials-aware workflow.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJumbfMetadata_Title" xml:space="preserve">
+        <value>JUMBF metadata is not supported</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve">
+        <value>The JUMBF payload is outside the app's supported preservation profile.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve">
+        <value>Keep the source unchanged and use a supported metadata profile.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve">
+        <value>Embedded preview cannot be reconciled</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve">
+        <value>An embedded preview layout cannot be safely updated or removed by this profile.</value>
+        <comment>Embedded thumbnail means a small image preview stored within image metadata, distinct from the primary JPEG. Unsupported preview structures are refused rather than silently discarded.</comment>
+    </data>
+    <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve">
+        <value>Keep the source and use an image with a supported embedded preview layout.</value>
+    </data>
+    <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve">
+        <value>Extended XMP change is not supported</value>
+    </data>
+    <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve">
+        <value>The required metadata change would modify an unsupported extended-XMP payload.</value>
+    </data>
+    <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Remedy" xml:space="preserve">
+        <value>Keep the source unchanged and use a supported XMP layout.</value>
+    </data>
+    <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Title" xml:space="preserve">
+        <value>A perfect coefficient transform is unavailable</value>
+    </data>
+    <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Explanation" xml:space="preserve">
+        <value>The requested transform cannot retain all partial minimum-coded-unit edge pixels.</value>
+    </data>
+    <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Remedy" xml:space="preserve">
+        <value>Keep perfect-transform mode, or explicitly review and acknowledge the exact discarded edges in trim mode.</value>
+    </data>
+    <data name="ImageProcessingError_CoefficientTransformationFailed_Title" xml:space="preserve">
+        <value>Coefficient transformation failed</value>
+    </data>
+    <data name="ImageProcessingError_CoefficientTransformationFailed_Explanation" xml:space="preserve">
+        <value>The native JPEG transformation did not produce a validated output.</value>
+    </data>
+    <data name="ImageProcessingError_CoefficientTransformationFailed_Remedy" xml:space="preserve">
+        <value>Keep the source and analyze again; no unvalidated output may be committed.</value>
+    </data>
+    <data name="ImageProcessingError_OutputBufferTooSmall_Title" xml:space="preserve">
+        <value>Output exceeded the bounded buffer</value>
+    </data>
+    <data name="ImageProcessingError_OutputBufferTooSmall_Explanation" xml:space="preserve">
+        <value>The encoded output did not fit within the allocated resource bound.</value>
+    </data>
+    <data name="ImageProcessingError_OutputBufferTooSmall_Remedy" xml:space="preserve">
+        <value>Use a source within supported resource limits; do not bypass the bound.</value>
+    </data>
+    <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Title" xml:space="preserve">
+        <value>Working memory could not be allocated</value>
+    </data>
+    <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Explanation" xml:space="preserve">
+        <value>The operation could not obtain its required bounded working memory.</value>
+    </data>
+    <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Remedy" xml:space="preserve">
+        <value>Close memory-intensive applications and try again.</value>
+    </data>
+    <data name="ImageProcessingError_InsufficientStorageSpace_Title" xml:space="preserve">
+        <value>Storage space is insufficient</value>
+    </data>
+    <data name="ImageProcessingError_InsufficientStorageSpace_Explanation" xml:space="preserve">
+        <value>The destination does not have the space required for this operation.</value>
+    </data>
+    <data name="ImageProcessingError_InsufficientStorageSpace_Remedy" xml:space="preserve">
+        <value>Free space or select another supported destination while retaining originals and backups.</value>
+    </data>
+    <data name="ImageProcessingError_OutputRelativePathCollision_Title" xml:space="preserve">
+        <value>Output names collide</value>
+    </data>
+    <data name="ImageProcessingError_OutputRelativePathCollision_Explanation" xml:space="preserve">
+        <value>Two reviewed source names resolve to the same output-relative name.</value>
+    </data>
+    <data name="ImageProcessingError_OutputRelativePathCollision_Remedy" xml:space="preserve">
+        <value>Resolve the conflicting source names and analyze again.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFileCreationFailed_Title" xml:space="preserve">
+        <value>Staging file could not be created</value>
+    </data>
+    <data name="ImageProcessingError_StagingFileCreationFailed_Explanation" xml:space="preserve">
+        <value>The app could not create its transaction-owned temporary output.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFileCreationFailed_Remedy" xml:space="preserve">
+        <value>Check destination access and available space, then retry after recovery if required.</value>
+    </data>
+    <data name="ImageProcessingError_StagingWriteFailed_Title" xml:space="preserve">
+        <value>Staging write failed</value>
+    </data>
+    <data name="ImageProcessingError_StagingWriteFailed_Explanation" xml:space="preserve">
+        <value>Writing the validated output to the transaction-owned staging file failed.</value>
+    </data>
+    <data name="ImageProcessingError_StagingWriteFailed_Remedy" xml:space="preserve">
+        <value>Check destination access and available space; retain originals and backups.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFlushFailed_Title" xml:space="preserve">
+        <value>Staging flush failed</value>
+    </data>
+    <data name="ImageProcessingError_StagingFlushFailed_Explanation" xml:space="preserve">
+        <value>The strongest supported flush request did not complete successfully.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFlushFailed_Remedy" xml:space="preserve">
+        <value>Check the storage device and retry only after any required recovery.</value>
+    </data>
+    <data name="ImageProcessingError_StagingCloseFailed_Title" xml:space="preserve">
+        <value>Staging file could not be closed</value>
+    </data>
+    <data name="ImageProcessingError_StagingCloseFailed_Explanation" xml:space="preserve">
+        <value>The transaction-owned staging file did not close successfully.</value>
+    </data>
+    <data name="ImageProcessingError_StagingCloseFailed_Remedy" xml:space="preserve">
+        <value>Check the storage device and resolve any recovery requirement before retrying.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputVerificationFailed_Title" xml:space="preserve">
+        <value>Staged output could not be verified</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputVerificationFailed_Explanation" xml:space="preserve">
+        <value>The closed staging file could not be reopened and independently verified.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputVerificationFailed_Remedy" xml:space="preserve">
+        <value>Keep originals and backups; check the destination before retrying.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputHashMismatch_Title" xml:space="preserve">
+        <value>Staged output bytes do not match</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputHashMismatch_Explanation" xml:space="preserve">
+        <value>The observed staging bytes differ from the validated output hash.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputHashMismatch_Remedy" xml:space="preserve">
+        <value>Keep originals and backups; investigate storage changes before retrying.</value>
+    </data>
+    <data name="ImageProcessingError_OutputValidationFailed_Title" xml:space="preserve">
+        <value>Output validation failed</value>
+    </data>
+    <data name="ImageProcessingError_OutputValidationFailed_Explanation" xml:space="preserve">
+        <value>The transformed image did not satisfy the independent validation rules.</value>
+    </data>
+    <data name="ImageProcessingError_OutputValidationFailed_Remedy" xml:space="preserve">
+        <value>Keep the source unchanged; do not use the rejected output.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Title" xml:space="preserve">
+        <value>Corrected-copy destination could not be created</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Explanation" xml:space="preserve">
+        <value>The app could not create its owned destination for the corrected copy.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Remedy" xml:space="preserve">
+        <value>Check output-folder access and available space, then analyze again.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyCommitFailed_Title" xml:space="preserve">
+        <value>Corrected copy could not be committed</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyCommitFailed_Explanation" xml:space="preserve">
+        <value>The staged corrected copy could not be moved to its final destination.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyCommitFailed_Remedy" xml:space="preserve">
+        <value>Retain the source and inspect any recovery requirement before retrying.</value>
+    </data>
+    <data name="ImageProcessingError_BackupCreationFailed_Title" xml:space="preserve">
+        <value>Backup could not be created</value>
+    </data>
+    <data name="ImageProcessingError_BackupCreationFailed_Explanation" xml:space="preserve">
+        <value>The required backup could not be created before original replacement.</value>
+    </data>
+    <data name="ImageProcessingError_BackupCreationFailed_Remedy" xml:space="preserve">
+        <value>Retain the original; check backup-destination access and available space.</value>
+    </data>
+    <data name="ImageProcessingError_BackupVerificationFailed_Title" xml:space="preserve">
+        <value>Backup could not be verified</value>
+    </data>
+    <data name="ImageProcessingError_BackupVerificationFailed_Explanation" xml:space="preserve">
+        <value>The backup did not establish the required match with the source revision.</value>
+    </data>
+    <data name="ImageProcessingError_BackupVerificationFailed_Remedy" xml:space="preserve">
+        <value>Retain the original and all backup evidence; resolve the mismatch before replacement.</value>
+    </data>
+    <data name="ImageProcessingError_OriginalReplacementFailed_Title" xml:space="preserve">
+        <value>Original replacement did not complete successfully</value>
+    </data>
+    <data name="ImageProcessingError_OriginalReplacementFailed_Explanation" xml:space="preserve">
+        <value>The native replacement failed; its observed outcome may require recovery.</value>
+    </data>
+    <data name="ImageProcessingError_OriginalReplacementFailed_Remedy" xml:space="preserve">
+        <value>Retain originals and backups and complete any required recovery before retrying.</value>
+    </data>
+    <data name="ImageProcessingError_JournalPersistenceFailed_Title" xml:space="preserve">
+        <value>Transaction journal could not be persisted</value>
+    </data>
+    <data name="ImageProcessingError_JournalPersistenceFailed_Explanation" xml:space="preserve">
+        <value>The required immutable transaction record could not be published and verified.</value>
+    </data>
+    <data name="ImageProcessingError_JournalPersistenceFailed_Remedy" xml:space="preserve">
+        <value>Retain originals, backups and journal files; resolve recovery before new processing.</value>
+    </data>
+    <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Title" xml:space="preserve">
+        <value>Storage provider is not qualified for recovery</value>
+    </data>
+    <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Explanation" xml:space="preserve">
+        <value>The selected provider or volume does not establish the required transaction-recovery contract.</value>
+    </data>
+    <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Remedy" xml:space="preserve">
+        <value>Select a qualified local NTFS destination; do not bypass the provider check.</value>
+    </data>
+    <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Title" xml:space="preserve">
+        <value>Windows long-path support is unavailable</value>
+    </data>
+    <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Explanation" xml:space="preserve">
+        <value>Generated transaction files can exceed ordinary Windows path limits. Processing and recovery have not started because the required Windows long-path policy is unavailable.</value>
+    </data>
+    <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Remedy" xml:space="preserve">
+        <value>Ask your Windows administrator to verify the long-path prerequisite, then restart the app. No Windows settings were changed.</value>
+    </data>
+    <data name="ImageProcessingError_JournalStoreBusy_Title" xml:space="preserve">
+        <value>Transaction journal is busy</value>
+    </data>
+    <data name="ImageProcessingError_JournalStoreBusy_Explanation" xml:space="preserve">
+        <value>Another live owner holds the journal lease; recovery has not begun.</value>
+    </data>
+    <data name="ImageProcessingError_JournalStoreBusy_Remedy" xml:space="preserve">
+        <value>Wait for the other operation to finish, then retry recovery.</value>
+    </data>
+    <data name="ImageProcessingError_RecoveryConflict_Title" xml:space="preserve">
+        <value>Transaction recovery is unresolved</value>
+    </data>
+    <data name="ImageProcessingError_RecoveryConflict_Explanation" xml:space="preserve">
+        <value>The retained records and observed files do not establish one safe outcome.</value>
+    </data>
+    <data name="ImageProcessingError_RecoveryConflict_Remedy" xml:space="preserve">
+        <value>Preserve originals, backups and journals; resolve the conflict before new processing.</value>
+    </data>
+    <data name="ImageProcessingError_Cancelled_Title" xml:space="preserve">
+        <value>Operation was cancelled</value>
+    </data>
+    <data name="ImageProcessingError_Cancelled_Explanation" xml:space="preserve">
+        <value>Cooperative cancellation stopped further work; completed commits remain completed.</value>
+    </data>
+    <data name="ImageProcessingError_Cancelled_Remedy" xml:space="preserve">
+        <value>Review the reported outcomes before starting a new operation.</value>
+    </data>
+    <data name="ImageProcessingError_Unknown_Title" xml:space="preserve">
+        <value>Processing could not be completed</value>
+    </data>
+    <data name="ImageProcessingError_Unknown_Explanation" xml:space="preserve">
+        <value>The operation failed for a reason that this version cannot describe.</value>
+    </data>
+    <data name="ImageProcessingError_Unknown_Remedy" xml:space="preserve">
+        <value>Keep originals and backups, review any recovery requirement, and try again only when safe.</value>
+    </data>
+    <!-- Shell property identifiers follow native x:Uid/MRT syntax. Text may wrap;
        translations must not prescribe fixed widths or heights. -->
-  <data name="Shell_SourceSelectionHeading.Text" xml:space="preserve"><value>Choose a source folder</value></data>
-  <data name="Shell_AnalysisHeading.Text" xml:space="preserve"><value>Analyzing the selected folder</value></data>
-  <data name="Shell_ReviewHeading.Text" xml:space="preserve"><value>Review before processing</value></data>
-  <data name="Shell_ProcessingHeading.Text" xml:space="preserve"><value>Processing reviewed images</value></data>
-  <data name="Shell_ResultsHeading.Text" xml:space="preserve"><value>Review the results</value></data>
-  <data name="Shell_RecoveryRequiredHeading.Text" xml:space="preserve"><value>Recovery must finish before new processing</value></data>
-  <data name="Shell_SourcePicker.Content" xml:space="preserve"><value>Choose source folder</value></data>
-  <data name="Shell_Analyze.Content" xml:space="preserve"><value>Analyze selected folder</value></data>
-  <data name="Shell_TraversalScope.Header" xml:space="preserve"><value>Folders to analyze</value></data>
-  <data name="Shell_OutputDisposition.Header" xml:space="preserve"><value>Output destination policy</value></data>
-  <data name="Shell_EdgeHandling.Header" xml:space="preserve"><value>Partial JPEG coding blocks</value></data>
-  <data name="Shell_ScanOrganization.Header" xml:space="preserve"><value>Output JPEG scan organization</value></data>
-  <data name="Shell_SelectedFolderOnly.Content" xml:space="preserve"><value>Selected folder only</value></data>
-  <data name="Shell_SelectedFolderAndDescendants.Content" xml:space="preserve"><value>Selected folder and descendants</value></data>
-  <data name="Shell_CreateCorrectedCopy.Content" xml:space="preserve"><value>Create corrected copies; retain originals</value></data>
-  <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve"><value>Replace originals; retain verified backups</value><comment>Verified backup means retained bytes were reopened and checked against the observed source revision before replacement. It is not a guarantee against physical-media or device loss.</comment></data>
-  <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve"><value>Require a perfect coefficient transform</value><comment>Lossless means transforming existing quantized JPEG coefficients without decoding/re-encoding or new quantization. It does not promise identical file bytes, and partial coding units may prevent a perfect transform.</comment></data>
-  <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve"><value>Trim partial minimum coded units</value><comment>Minimum coded unit is JPEG's component-sampling coding unit, not necessarily an 8 by 8 pixel block. Trimming permanently discards the exact source-space edge pixels shown in review; consent is required.</comment></data>
-  <data name="Shell_PreserveSourceScans.Content" xml:space="preserve"><value>Preserve source scans</value></data>
-  <data name="Shell_SequentialDct.Content" xml:space="preserve"><value>Sequential DCT scans</value></data>
-  <data name="Shell_ProgressiveDct.Content" xml:space="preserve"><value>Progressive DCT scans</value><comment>Progressive DCT stores frequency coefficients across multiple JPEG scans. This choice reorganizes scans without re-quantization; it does not increase image quality or describe animation.</comment></data>
-  <data name="Shell_ReviewInstruction.Text" xml:space="preserve"><value>Changing any processing choice requires a new analysis and fresh trimming consent.</value></data>
-  <data name="Shell_RecursiveExclusionNotice.Text" xml:space="preserve"><value>Recursive analysis excludes proven app-owned output and backup folders. Traversal observations appear with the review.</value></data>
-  <data name="Shell_BackupDestinationLabel.Text" xml:space="preserve"><value>Verified backups will be retained at:</value></data>
-  <data name="Shell_TrimConsent.Content" xml:space="preserve"><value>I acknowledge these exact discarded source-edge pixels</value></data>
-  <data name="Shell_DiscardedRightEdgeLabel.Text" xml:space="preserve"><value>Discarded source right-edge width (pixels)</value></data>
-  <data name="Shell_DiscardedBottomEdgeLabel.Text" xml:space="preserve"><value>Discarded source bottom-edge height (pixels)</value></data>
-  <data name="Shell_StartProcessing.Content" xml:space="preserve"><value>Start reviewed processing</value></data>
-  <data name="Shell_CancelOperation.Content" xml:space="preserve"><value>Cancel further work</value></data>
-  <data name="Shell_ReturnToSourceSelection.Content" xml:space="preserve"><value>Return to source selection</value></data>
-  <data name="Shell_RetryRecovery.Content" xml:space="preserve"><value>Retry recovery</value></data>
-  <data name="Shell_ProcessingRowsLabel.Text" xml:space="preserve"><value>Image review and outcomes</value></data>
-  <data name="Shell_EligibleFilesLabel.Text" xml:space="preserve"><value>Planned image transformations</value></data>
-  <data name="Shell_CompletedRowsLabel.Text" xml:space="preserve"><value>Rows with terminal outcomes</value></data>
-  <data name="Shell_FailedFilesLabel.Text" xml:space="preserve"><value>Failed files</value></data>
-  <data name="Shell_CancelledFilesLabel.Text" xml:space="preserve"><value>Cancelled files</value></data>
-  <data name="Shell_InitialInstruction.Text" xml:space="preserve"><value>Select a folder, analyze it, then review the proposed work. Analysis does not change your images.</value></data>
-  <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Choose source folder</value></data>
-  <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Choose only the folder whose images you want to review.</value></data>
-  <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Analyze selected folder</value></data>
-  <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Read-only analysis; no transformation or commit occurs.</value></data>
-  <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Folders to analyze</value></data>
-  <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Recursive traversal retains exclusions and access observations in the review.</value></data>
-  <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Output destination policy</value></data>
-  <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Replacement requires a displayed verified-backup destination before processing.</value></data>
-  <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Partial JPEG coding blocks</value></data>
-  <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Trimming permanently discards the displayed source-edge pixels and needs explicit consent.</value></data>
-  <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Output JPEG scan organization</value></data>
-  <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Changing scan organization invalidates the current review.</value></data>
-  <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Start reviewed processing</value></data>
-  <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Execute only this reviewed batch under its confirmed choices.</value></data>
-  <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Cancel further work</value></data>
-  <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Request cooperative cancellation. Completed commits are not undone.</value></data>
-  <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Retry recovery</value></data>
-  <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Preserve originals, backups and journals while reconciling incomplete transactions.</value></data>
-  <data name="ImageProcessingOutcome_Pending" xml:space="preserve"><value>No terminal outcome yet</value></data>
-  <data name="ImageProcessingOutcome_CorrectedCopyCreated" xml:space="preserve"><value>Corrected copy created</value></data>
-  <data name="ImageProcessingOutcome_OriginalReplacedWithVerifiedBackup" xml:space="preserve"><value>Original replaced; verified backup retained</value></data>
-  <data name="ImageProcessingOutcome_NoOrientationNormalizationRequired" xml:space="preserve"><value>No orientation correction required</value></data>
-  <data name="ImageProcessingOutcome_UnsupportedSourceSkipped" xml:space="preserve"><value>Unsupported image skipped</value></data>
-  <data name="ImageProcessingOutcome_ProcessingFailed" xml:space="preserve"><value>Processing failed</value></data>
-  <data name="ImageProcessingOutcome_CancelledBeforeTransformation" xml:space="preserve"><value>Cancelled before transformation</value></data>
-  <data name="ImageProcessingOutcome_CancelledBeforeCommit" xml:space="preserve"><value>Cancelled before commit</value></data>
-  <data name="ImageSourceDiscoveryObservation_ReparsePointSkipped" xml:space="preserve"><value>Reparse point skipped</value></data>
-  <data name="ImageSourceDiscoveryObservation_SourceAccessFailed" xml:space="preserve"><value>Source access failed</value></data>
-  <data name="ImageSourceDiscoveryObservation_ApplicationOwnedFolderExcluded" xml:space="preserve"><value>Application-owned folder excluded</value></data>
-  <data name="Shell_StartupRecoveryProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Checking incomplete transactions</value></data>
-  <data name="Shell_StartupRecoveryError.Title" xml:space="preserve"><value>Recovery requires attention</value></data>
-  <data name="StartupRecovery_PreservationNotice" xml:space="preserve"><value>Normal processing is disabled. Keep your originals, verified backups, staged outputs and application transaction records intact. Ambiguous artifacts are never automatically replaced or deleted.</value></data>
-  <data name="Shell_StartupRecoveredCount.Text" xml:space="preserve"><value>Transactions reconciled at startup:</value></data>
-  <data name="Shell_RestoreRecoverySource.Content" xml:space="preserve"><value>Restore source folder access for recovery</value></data>
-  <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore source folder access for recovery</value></data>
-  <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Choose the original source folder. This grants recovery access only; normal processing remains disabled until all transactions are reconciled.</value></data>
-  <data name="Shell_ExportDiagnostics.Content" xml:space="preserve"><value>Export local diagnostics</value></data>
-  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Export local diagnostics</value></data>
-  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Choose a destination for sanitized local diagnostic records. Nothing is uploaded; source paths, image metadata and native exception messages are excluded.</value></data>
-  <data name="Shell_DiagnosticFileType" xml:space="preserve"><value>JSON Lines diagnostic records</value></data>
-  <data name="Shell_DiagnosticLogError.Title" xml:space="preserve"><value>Local diagnostics unavailable or export incomplete</value></data>
-  <data name="Shell_DiagnosticLogError.Message" xml:space="preserve"><value>Image processing can continue. Export does not change retained local records, but a chosen export file may be incomplete. No image data or private source paths are collected.</value></data>
-  <data name="Shell_SourcePicker.AccessKey" xml:space="preserve"><value>F</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_Analyze.AccessKey" xml:space="preserve"><value>A</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_StartProcessing.AccessKey" xml:space="preserve"><value>S</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_CancelOperation.AccessKey" xml:space="preserve"><value>C</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ReturnToSourceSelection.AccessKey" xml:space="preserve"><value>B</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_RetryRecovery.AccessKey" xml:space="preserve"><value>R</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_RestoreRecoverySource.AccessKey" xml:space="preserve"><value>U</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ExportDiagnostics.AccessKey" xml:space="preserve"><value>E</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_TraversalScope.AccessKey" xml:space="preserve"><value>T</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_OutputDisposition.AccessKey" xml:space="preserve"><value>O</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_EdgeHandling.AccessKey" xml:space="preserve"><value>H</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ScanOrganization.AccessKey" xml:space="preserve"><value>D</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Return to source selection</value></data>
-  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Discard the current review and choose source images again; this does not undo a completed transaction.</value></data>
-  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Acknowledge exact discarded edge pixels</value></data>
-  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Acknowledge only this row's displayed source-edge loss before its reviewed transformation.</value></data>
-  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Folder traversal observations</value></data>
-  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Expand to read skipped folders and source-access observations; these are not successful image transformations.</value></data>
+    <data name="Shell_SourceSelectionHeading.Text" xml:space="preserve">
+        <value>Choose a source folder</value>
+    </data>
+    <data name="Shell_AnalysisHeading.Text" xml:space="preserve">
+        <value>Analyzing the selected folder</value>
+    </data>
+    <data name="Shell_ReviewHeading.Text" xml:space="preserve">
+        <value>Review before processing</value>
+    </data>
+    <data name="Shell_ProcessingHeading.Text" xml:space="preserve">
+        <value>Processing reviewed images</value>
+    </data>
+    <data name="Shell_ResultsHeading.Text" xml:space="preserve">
+        <value>Review the results</value>
+    </data>
+    <data name="Shell_RecoveryRequiredHeading.Text" xml:space="preserve">
+        <value>Recovery must finish before new processing</value>
+    </data>
+    <data name="Shell_SourcePicker.Content" xml:space="preserve">
+        <value>Select Folder</value>
+    </data>
+    <data name="Shell_Analyze.Content" xml:space="preserve">
+        <value>Analyze selected folder</value>
+    </data>
+    <data name="Shell_TraversalScope.Header" xml:space="preserve">
+        <value>Folders</value>
+    </data>
+    <data name="Shell_OutputDisposition.Header" xml:space="preserve">
+        <value>Output</value>
+    </data>
+    <data name="Shell_EdgeHandling.Header" xml:space="preserve">
+        <value>Rotation</value>
+    </data>
+    <data name="Shell_ScanOrganization.Header" xml:space="preserve">
+        <value>JPEG encoding</value>
+    </data>
+    <data name="Shell_SelectedFolderOnly.Content" xml:space="preserve">
+        <value>Selected folder only</value>
+    </data>
+    <data name="Shell_SelectedFolderAndDescendants.Content" xml:space="preserve">
+        <value>Include subfolders</value>
+    </data>
+    <data name="Shell_CreateCorrectedCopy.Content" xml:space="preserve">
+        <value>Create corrected copies; retain originals</value>
+    </data>
+    <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve">
+        <value>Replace originals; retain verified backups</value>
+        <comment>Verified backup means retained bytes were reopened and checked against the observed source revision before replacement. It is not a guarantee against physical-media or device loss.</comment>
+    </data>
+    <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve">
+        <value>Keep all image edges</value>
+        <comment>Lossless means transforming existing quantized JPEG coefficients without decoding/re-encoding or new quantization. It does not promise identical file bytes, and partial coding units may prevent a perfect transform.</comment>
+    </data>
+    <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve">
+        <value>Allow edge trimming, with confirmation</value>
+        <comment>Minimum coded unit is JPEG's component-sampling coding unit, not necessarily an 8 by 8 pixel block. Trimming permanently discards the exact source-space edge pixels shown in review; consent is required.</comment>
+    </data>
+    <data name="Shell_PreserveSourceScans.Content" xml:space="preserve">
+        <value>Keep existing scan organization</value>
+    </data>
+    <data name="Shell_SequentialDct.Content" xml:space="preserve">
+        <value>Sequential</value>
+    </data>
+    <data name="Shell_ProgressiveDct.Content" xml:space="preserve">
+        <value>Progressive</value>
+        <comment>Progressive DCT stores frequency coefficients across multiple JPEG scans. This choice reorganizes scans without re-quantization; it does not increase image quality or describe animation.</comment>
+    </data>
+    <data name="Shell_ReviewInstruction.Text" xml:space="preserve">
+        <value>Changing any processing choice requires a new analysis and fresh trimming consent.</value>
+    </data>
+    <data name="Shell_RecursiveExclusionNotice.Text" xml:space="preserve">
+        <value>Recursive analysis excludes proven app-owned output and backup folders. Traversal observations appear with the review.</value>
+    </data>
+    <data name="Shell_BackupDestinationLabel.Text" xml:space="preserve">
+        <value>Verified backups will be retained at:</value>
+    </data>
+    <data name="Shell_TrimConsent.Content" xml:space="preserve">
+        <value>I acknowledge these exact discarded source-edge pixels</value>
+    </data>
+    <data name="Shell_DiscardedRightEdgeLabel.Text" xml:space="preserve">
+        <value>Discarded source right-edge width (pixels)</value>
+    </data>
+    <data name="Shell_DiscardedBottomEdgeLabel.Text" xml:space="preserve">
+        <value>Discarded source bottom-edge height (pixels)</value>
+    </data>
+    <data name="Shell_StartProcessing.Content" xml:space="preserve">
+        <value>Start reviewed processing</value>
+    </data>
+    <data name="Shell_CancelOperation.Content" xml:space="preserve">
+        <value>Cancel further work</value>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.Content" xml:space="preserve">
+        <value>Return to source selection</value>
+    </data>
+    <data name="Shell_RetryRecovery.Content" xml:space="preserve">
+        <value>Retry recovery</value>
+    </data>
+    <data name="Shell_ProcessingRowsLabel.Text" xml:space="preserve">
+        <value>Image review and outcomes</value>
+    </data>
+    <data name="Shell_EligibleFilesLabel.Text" xml:space="preserve">
+        <value>Planned image transformations</value>
+    </data>
+    <data name="Shell_CompletedRowsLabel.Text" xml:space="preserve">
+        <value>Rows with terminal outcomes</value>
+    </data>
+    <data name="Shell_FailedFilesLabel.Text" xml:space="preserve">
+        <value>Failed files</value>
+    </data>
+    <data name="Shell_CancelledFilesLabel.Text" xml:space="preserve">
+        <value>Cancelled files</value>
+    </data>
+    <data name="Shell_InitialInstruction.Text" xml:space="preserve">
+        <value>Select a folder, analyze it, then review the proposed work. Analysis does not change your images.</value>
+    </data>
+    <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Choose source folder</value>
+    </data>
+    <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Choose only the folder whose images you want to review.</value>
+    </data>
+    <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Analyze selected folder</value>
+    </data>
+    <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Read-only analysis; no transformation or commit occurs.</value>
+    </data>
+    <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Folders to analyze</value>
+    </data>
+    <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Recursive traversal retains exclusions and access observations in the review.</value>
+    </data>
+    <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Output destination policy</value>
+    </data>
+    <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Replacement requires a displayed verified-backup destination before processing.</value>
+    </data>
+    <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Partial JPEG coding blocks</value>
+    </data>
+    <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Trimming permanently discards the displayed source-edge pixels and needs explicit consent.</value>
+    </data>
+    <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Output JPEG scan organization</value>
+    </data>
+    <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Changing scan organization invalidates the current review.</value>
+    </data>
+    <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Start reviewed processing</value>
+    </data>
+    <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Execute only this reviewed batch under its confirmed choices.</value>
+    </data>
+    <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Cancel further work</value>
+    </data>
+    <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Request cooperative cancellation. Completed commits are not undone.</value>
+    </data>
+    <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Retry recovery</value>
+    </data>
+    <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Preserve originals, backups and journals while reconciling incomplete transactions.</value>
+    </data>
+    <data name="ImageProcessingOutcome_Pending" xml:space="preserve">
+        <value>No terminal outcome yet</value>
+    </data>
+    <data name="ImageProcessingOutcome_CorrectedCopyCreated" xml:space="preserve">
+        <value>Corrected copy created</value>
+    </data>
+    <data name="ImageProcessingOutcome_OriginalReplacedWithVerifiedBackup" xml:space="preserve">
+        <value>Original replaced; verified backup retained</value>
+    </data>
+    <data name="ImageProcessingOutcome_NoOrientationNormalizationRequired" xml:space="preserve">
+        <value>No orientation correction required</value>
+    </data>
+    <data name="ImageProcessingOutcome_UnsupportedSourceSkipped" xml:space="preserve">
+        <value>Unsupported image skipped</value>
+    </data>
+    <data name="ImageProcessingOutcome_ProcessingFailed" xml:space="preserve">
+        <value>Processing failed</value>
+    </data>
+    <data name="ImageProcessingOutcome_CancelledBeforeTransformation" xml:space="preserve">
+        <value>Cancelled before transformation</value>
+    </data>
+    <data name="ImageProcessingOutcome_CancelledBeforeCommit" xml:space="preserve">
+        <value>Cancelled before commit</value>
+    </data>
+    <data name="ImageSourceDiscoveryObservation_ReparsePointSkipped" xml:space="preserve">
+        <value>Reparse point skipped</value>
+    </data>
+    <data name="ImageSourceDiscoveryObservation_SourceAccessFailed" xml:space="preserve">
+        <value>Source access failed</value>
+    </data>
+    <data name="ImageSourceDiscoveryObservation_ApplicationOwnedFolderExcluded" xml:space="preserve">
+        <value>Application-owned folder excluded</value>
+    </data>
+    <data name="Shell_StartupRecoveryProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Checking incomplete transactions</value>
+    </data>
+    <data name="Shell_StartupRecoveryError.Title" xml:space="preserve">
+        <value>Recovery requires attention</value>
+    </data>
+    <data name="StartupRecovery_PreservationNotice" xml:space="preserve">
+        <value>Normal processing is disabled. Keep your originals, verified backups, staged outputs and application transaction records intact. Ambiguous artifacts are never automatically replaced or deleted.</value>
+    </data>
+    <data name="Shell_StartupRecoveredCount.Text" xml:space="preserve">
+        <value>Transactions reconciled at startup:</value>
+    </data>
+    <data name="Shell_RestoreRecoverySource.Content" xml:space="preserve">
+        <value>Restore source folder access for recovery</value>
+    </data>
+    <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Restore source folder access for recovery</value>
+    </data>
+    <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Choose the original source folder. This grants recovery access only; normal processing remains disabled until all transactions are reconciled.</value>
+    </data>
+    <data name="Shell_ExportDiagnostics.Content" xml:space="preserve">
+        <value>Export local diagnostics</value>
+    </data>
+    <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Export local diagnostics</value>
+    </data>
+    <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Choose a destination for sanitized local diagnostic records. Nothing is uploaded; source paths, image metadata and native exception messages are excluded.</value>
+    </data>
+    <data name="Shell_DiagnosticFileType" xml:space="preserve">
+        <value>JSON Lines diagnostic records</value>
+    </data>
+    <data name="Shell_DiagnosticLogError.Title" xml:space="preserve">
+        <value>Local diagnostics unavailable or export incomplete</value>
+    </data>
+    <data name="Shell_DiagnosticLogError.Message" xml:space="preserve">
+        <value>Image processing can continue. Export does not change retained local records, but a chosen export file may be incomplete. No image data or private source paths are collected.</value>
+    </data>
+    <data name="Shell_SourcePicker.AccessKey" xml:space="preserve">
+        <value>F</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_Analyze.AccessKey" xml:space="preserve">
+        <value>A</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_StartProcessing.AccessKey" xml:space="preserve">
+        <value>S</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_CancelOperation.AccessKey" xml:space="preserve">
+        <value>C</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.AccessKey" xml:space="preserve">
+        <value>B</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_RetryRecovery.AccessKey" xml:space="preserve">
+        <value>R</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_RestoreRecoverySource.AccessKey" xml:space="preserve">
+        <value>U</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ExportDiagnostics.AccessKey" xml:space="preserve">
+        <value>E</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_TraversalScope.AccessKey" xml:space="preserve">
+        <value>T</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_OutputDisposition.AccessKey" xml:space="preserve">
+        <value>O</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_EdgeHandling.AccessKey" xml:space="preserve">
+        <value>H</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ScanOrganization.AccessKey" xml:space="preserve">
+        <value>D</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Return to source selection</value>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Discard the current review and choose source images again; this does not undo a completed transaction.</value>
+    </data>
+    <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Acknowledge exact discarded edge pixels</value>
+    </data>
+    <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Acknowledge only this row's displayed source-edge loss before its reviewed transformation.</value>
+    </data>
+    <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Folder traversal observations</value>
+    </data>
+    <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Expand to read skipped folders and source-access observations; these are not successful image transformations.</value>
+    </data>
+    <data name="Shell_OpenSettings.Label" xml:space="preserve">
+        <value>Settings</value>
+    </data>
+    <data name="Shell_OpenSettings.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Settings</value>
+    </data>
+    <data name="Shell_CloseSettings.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Back from Settings</value>
+    </data>
+    <data name="Shell_SettingsHeading.Text" xml:space="preserve">
+        <value>Settings</value>
+    </data>
+    <data name="Shell_SettingsDescription.Text" xml:space="preserve">
+        <value>Choose how folders and photos are processed. Changes are saved automatically and apply to the next analysis. Choices are locked while work is running.</value>
+    </data>
+    <data name="Shell_FolderSettingsDescription.Text" xml:space="preserve">
+        <value>Choose whether to include photos inside subfolders.</value>
+    </data>
+    <data name="Shell_OutputSettingsDescription.Text" xml:space="preserve">
+        <value>Keep your originals by creating corrected copies. Replacing originals requires verified backups and a review before processing.</value>
+    </data>
+    <data name="Shell_EdgeSettingsDescription.Text" xml:space="preserve">
+        <value>Some rotations need to remove pixels at an image edge. Keep all edges to skip those images, or allow trimming and confirm the exact pixels during review.</value>
+    </data>
+    <data name="Shell_EncodingSettingsDescription.Text" xml:space="preserve">
+        <value>Progressive JPEGs display in successive passes while loading. This choice changes scan organization without changing image quality.</value>
+    </data>
+    <data name="Shell_SettingsSaveError.Title" xml:space="preserve">
+        <value>Preferences could not be saved</value>
+    </data>
+    <data name="Shell_SettingsSaveError.Message" xml:space="preserve">
+        <value>Your choices work in this session, but might not be remembered next time.</value>
+    </data>
+    <data name="Shell_DiagnosticsHeading.Text" xml:space="preserve">
+        <value>Diagnostics</value>
+    </data>
+    <data name="Shell_SpinLogo.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Spin the JPG Spinner logo</value>
+    </data>
+    <data name="Shell_ChangeSourceFolder.Content" xml:space="preserve">
+        <value>Change folder</value>
+    </data>
+    <data name="Shell_CropHelpLink.Content" xml:space="preserve">
+        <value>Why might a rotation need trimming?</value>
+    </data>
+    <data name="Shell_ProgressiveHelpLink.Content" xml:space="preserve">
+        <value>What is progressive JPEG?</value>
+    </data>
+    <data name="Shell_AboutHeading.Text" xml:space="preserve">
+        <value>About</value>
+    </data>
+    <data name="Shell_PrivacyLink.Content" xml:space="preserve">
+        <value>Privacy</value>
+    </data>
+    <data name="Shell_BackToSettings.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Back to Settings</value>
+    </data>
+    <data name="Shell_CropHelpHeading.Text" xml:space="preserve">
+        <value>Rotation and edge trimming</value>
+    </data>
+    <data name="Shell_CropHelpIntroduction.Text" xml:space="preserve">
+        <value>JPEG stores image details in blocks. Depending on how colour samples are stored, these are grouped into larger coding units. The right or bottom edge can contain an incomplete unit when the image dimensions do not align with that grid.</value>
+    </data>
+    <data name="Shell_CropHelpRotation.Text" xml:space="preserve">
+        <value>A rotation can move an incomplete edge to a position that cannot be transformed perfectly in the coefficient domain. This original illustration shows why rotating only the complete region would leave an incorrect strip.</value>
+    </data>
+    <data name="Shell_CropHelpTrimming.Text" xml:space="preserve">
+        <value>Trimming removes the affected source-edge pixels so the remaining image can be rotated without re-quantizing its JPEG coefficients. Those removed pixels are lost from the result: trimming is not preservation of the complete image.</value>
+    </data>
+    <data name="Shell_CropHelpChoices.Text" xml:space="preserve">
+        <value>Keep all image edges skips images whose requested transform would require trimming. Allow edge trimming requires you to review and confirm the exact discarded right and bottom source-edge pixels for each affected image. Choosing the setting alone never grants that consent.</value>
+    </data>
+    <data name="Shell_CropSourceImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Original illustration with a partial edge region</value>
+    </data>
+    <data name="Shell_CropRotatedImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Illustration of an incomplete region after rotation</value>
+    </data>
+    <data name="Shell_CropResultImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Illustration of rotation after the affected edge has been trimmed</value>
+    </data>
+    <data name="Shell_ProgressiveHelpHeading.Text" xml:space="preserve">
+        <value>Progressive JPEG</value>
+    </data>
+    <data name="Shell_ProgressiveHelpIntroduction.Text" xml:space="preserve">
+        <value>A progressive JPEG stores its coefficients across several scans. A compatible viewer can show a rough preview before later scans add detail. A sequential JPEG delivers coefficients in sequential scans instead.</value>
+    </data>
+    <data name="Shell_ProgressiveHelpExample.Text" xml:space="preserve">
+        <value>Use the carousel arrows, swipe, or press the left and right arrow keys to compare the first, middle and final detail levels of the original example. Windows decodes the actual progressive levels.</value>
+    </data>
+    <data name="Shell_ProgressiveHelpChoices.Text" xml:space="preserve">
+        <value>Keep existing scan organization preserves the source arrangement. Sequential and Progressive explicitly choose a new arrangement for the output. Compatibility and file size depend on the image and the software reading it; there is no guaranteed percentage saving.</value>
+    </data>
+    <data name="Shell_ProgressiveHelpQuality.Text" xml:space="preserve">
+        <value>These choices do not re-quantize JPEG coefficients or increase image quality. Rotation may still require edge trimming as explained separately. Changing an option invalidates an existing review and requires a fresh analysis.</value>
+    </data>
+    <data name="Shell_ProgressiveExampleImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Original progressive JPEG example, fully decoded</value>
+    </data>
+    <data name="Shell_PrivacyHeading.Text" xml:space="preserve">
+        <value>JPG Spinner privacy notice</value>
+    </data>
+    <data name="Shell_PrivacyProcessing.Text" xml:space="preserve">
+        <value>The app reads the folders you select, including photo content and metadata such as orientation, camera information and potentially location or other personal information. It uses this information to analyze and correct image orientation and preserve supported metadata. Image analysis does not change your files. Processing writes corrected copies, or replaces originals only through the reviewed backup workflow. The app does not send photos or metadata to Hadden Industries.</value>
+    </data>
+    <data name="Shell_PrivacyLocalData.Text" xml:space="preserve">
+        <value>Processing preferences and retained Windows folder-access permissions are stored under this app's local identity. Recovery journals contain file identities, paths and transaction facts needed to recover interrupted work. Originals, corrected copies, verified backups and journals are operational data, not sanitized diagnostic logs. They are not covered by diagnostic rotation; backups do not expire automatically.</value>
+    </data>
+    <data name="Shell_PrivacyDiagnostics.Text" xml:space="preserve">
+        <value>To help diagnose failures, the app records the UTC time, app version and architecture, a random per-operation identifier, processing stage, error code, elapsed time and resource-limit information when available. Missing optional values are recorded as null. The identifier groups one operation; it is not a stable device identifier. Records use UTF-8 JSON Lines (.jsonl) in the app-local LocalDiagnostics folder.</value>
+    </data>
+    <data name="Shell_PrivacyExternalServices.Text" xml:space="preserve">
+        <value>The app declares no network capability and adds no custom upload transport. Selecting a cloud-backed source, output or export location can nevertheless cause its provider to download or sync files, including photos or diagnostic exports. Windows and Microsoft Store may handle crash reporting, installation information or other diagnostics under your Windows choices and Microsoft's policies. These services operate separately from the app's local diagnostic log.</value>
+    </data>
+    <data name="Shell_PublisherPrivacyLink.Content" xml:space="preserve">
+        <value>Hadden Industries privacy policy (opens browser)</value>
+    </data>
+    <data name="Shell_MicrosoftPrivacyLink.Content" xml:space="preserve">
+        <value>Microsoft Privacy Statement (opens browser)</value>
+    </data>
+    <data name="Shell_PrivacyBrowserNotice.Text" xml:space="preserve">
+        <value>The app's privacy notice is available here offline. Opening an external policy link launches your browser; the website receives ordinary connection information, such as your IP address, and may use cookies under its own policy. No photo or diagnostic export is attached to these links.</value>
+    </data>
+    <data name="Shell_ProgressiveCarousel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Progressive JPEG detail levels</value>
+    </data>
+    <data name="Shell_ProgressiveFirstLevel.Text" xml:space="preserve">
+        <value>1 of 3 — First preview</value>
+    </data>
+    <data name="Shell_ProgressiveMiddleLevel.Text" xml:space="preserve">
+        <value>2 of 3 — More detail</value>
+    </data>
+    <data name="Shell_ProgressiveFinalLevel.Text" xml:space="preserve">
+        <value>3 of 3 — Complete image</value>
+    </data>
+    <data name="Shell_ProgressiveFirstImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Original example decoded at the first progressive level</value>
+    </data>
+    <data name="Shell_ProgressiveMiddleImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Original example decoded at a middle progressive level</value>
+    </data>
+    <data name="Shell_ProgressiveFinalImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Original example decoded at the final progressive level</value>
+    </data>
+    <data name="Shell_ProgressiveExampleError.Title" xml:space="preserve">
+        <value>The example could not be loaded</value>
+    </data>
+    <data name="Shell_ProgressiveExampleError.Message" xml:space="preserve">
+        <value>The explanation remains available. Reopen this page to try loading the bundled example again.</value>
+    </data>
+    <data name="Shell_NavigateForward.Label" xml:space="preserve">
+        <value>Forward</value>
+    </data>
+    <data name="Shell_PrivacyScope.Text" xml:space="preserve">
+        <value>Applies to JPG Spinner 2.0 by Hadden Industries Ltd. Last updated: 26 October 2026. This notice describes this version of the app; the historical Store version may behave differently.</value>
+    </data>
+    <data name="Shell_PrivacySummary.Text" xml:space="preserve">
+        <value>Your photos are processed on your device. JPG Spinner has no image-upload service, advertising, account system or custom network telemetry. Diagnostic records stay on your device unless you choose to export and share them.</value>
+    </data>
+    <data name="Shell_PrivacyProcessingHeading.Text" xml:space="preserve">
+        <value>Photos and local processing</value>
+    </data>
+    <data name="Shell_PrivacyLocalDataHeading.Text" xml:space="preserve">
+        <value>Settings, folder access and recovery</value>
+    </data>
+    <data name="Shell_PrivacyChoices.Text" xml:space="preserve">
+        <value>You choose the source folder, processing options and whether to start reviewed work. You can change preferences in Settings and manage Windows app permissions in Windows Settings. Manage photos, exported files and backups in their chosen folders. Keep recovery data and backups until interrupted work is reconciled and you no longer need recovery; deleting them can prevent recovery. Uninstalling or resetting an app is not a substitute for deleting copies or exports in other folders.</value>
+    </data>
+    <data name="Shell_PrivacyDiagnosticsHeading.Text" xml:space="preserve">
+        <value>Local diagnostics and retention</value>
+    </data>
+    <data name="Shell_PrivacyDiagnosticExclusions.Text" xml:space="preserve">
+        <value>These records exclude filenames, paths, photo bytes, thumbnails, Exif/XMP/IPTC metadata, GPS coordinates, arbitrary native exception messages, network endpoints and stable device identifiers. Windows crash reports are separate from these app diagnostic records.</value>
+    </data>
+    <data name="Shell_PrivacyRetention.Text" xml:space="preserve">
+        <value>Diagnostic storage is limited by size and file count, rather than a fixed number of days: at most 256 KiB and 64 retained record files, with each record at most 4,096 bytes. The reserved pending slot counts toward the storage budget and is never exported; the empty writer lease is not a record. Rotation removes only recognized, validated diagnostic records. Unknown, corrupt or unsupported files are preserved and cause logging or export to refuse rather than silently delete or disclose them. A logging failure does not fail image processing.</value>
+    </data>
+    <data name="Shell_PrivacyExportHeading.Text" xml:space="preserve">
+        <value>Exporting and sharing diagnostics</value>
+    </data>
+    <data name="Shell_PrivacyExport.Text" xml:space="preserve">
+        <value>Export local diagnostics asks you to choose a destination using the Windows file picker. It exports a bounded, revalidated snapshot of sanitized records, not arbitrary files from the diagnostic folder. Nothing is submitted automatically. Review the export before sharing: times, outcomes and resource limits can still be sensitive. You control who receives it and when to delete it. A failed or cancelled export may leave a partial file at the chosen destination; export is not guaranteed to be atomic.</value>
+    </data>
+    <data name="Shell_PrivacyExternalHeading.Text" xml:space="preserve">
+        <value>Windows, cloud providers and websites</value>
+    </data>
+    <data name="Shell_PrivacyContactHeading.Text" xml:space="preserve">
+        <value>Questions and information you share with us</value>
+    </data>
+    <data name="Shell_PrivacyContact.Text" xml:space="preserve">
+        <value>For app privacy questions, contact Hadden Industries Ltd at info@haddenindustries.com. The publisher cannot retrieve photos or diagnostic files kept only on your device. If you contact us or choose to send us an export, that correspondence and any information you include are handled under the publisher's separate privacy policy, linked below. Do not send recovery journals, photos or other personal information unless you intend to share them.</value>
+    </data>
 </root>

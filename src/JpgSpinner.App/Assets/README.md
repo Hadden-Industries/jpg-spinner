@@ -1,5 +1,8 @@
 # Packaged JPG Spinner artwork
 
+The `Help/` subdirectory separately retains the original offline settings
+illustrations; its [provenance](Help/README.md) is independent of icon generation.
+
 The generated PNGs preserve the repository's existing orange/white JPG Spinner
 brand. Generation inputs and exact provenance live in
 [`assets-source`](../../../assets-source/README.md), outside the shipping payload.

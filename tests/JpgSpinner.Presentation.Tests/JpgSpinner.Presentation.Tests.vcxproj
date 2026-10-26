@@ -47,12 +47,14 @@
     <Midl><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></Midl>
     <ClCompile><AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\TestSupport;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.App;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.Domain\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.BatchProcessing\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.JpegTransformation\include;$(MSBuildThisFileDirectory)..\..\src\JpgSpinner.WindowsStorage\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>
     <!-- The native Exiv2 dependency uses PSAPI for its version inventory. -->
-    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>psapi.lib;wtsapi32.lib;uiautomationcore.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+    <Link><SubSystem>Console</SubSystem><AdditionalDependencies>psapi.lib;wtsapi32.lib;uiautomationcore.lib;shlwapi.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="PresentationTestMain.cpp" />
     <Manifest Include="PresentationTestHost.manifest" />
     <ClCompile Include="MainWindowViewModelTests.cpp" />
+    <ClCompile Include="ProgressiveJpegExampleTests.cpp" />
+    <ClCompile Include="..\..\src\JpgSpinner.App\Imaging\ProgressiveJpegExample.cpp" />
     <ClCompile Include="LocalizationCompletenessTests.cpp" />
     <ClCompile Include="UnsignedIntegerTextTests.cpp" />
     <ClCompile Include="AccessibilityContractTests.cpp" />

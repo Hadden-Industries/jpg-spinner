@@ -1,261 +1,975 @@
-<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
-  <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
-  <!-- A minimum coded unit follows JPEG component sampling; it need not be an 8 by 8 pixel block. -->
-  <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve"><value>Нет доступа к исходному файлу</value></data>
-  <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve"><value>Предоставленного доступа недостаточно для чтения выбранного изображения.</value></data>
-  <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve"><value>Выберите папку, файлы которой доступны для чтения, и повторите попытку.</value></data>
-  <data name="ImageProcessingError_SourceSharingViolation_Title" xml:space="preserve"><value>Исходный файл занят</value></data>
-  <data name="ImageProcessingError_SourceSharingViolation_Explanation" xml:space="preserve"><value>Другая программа удерживает файл с несовместимыми правами доступа.</value></data>
-  <data name="ImageProcessingError_SourceSharingViolation_Remedy" xml:space="preserve"><value>Закройте программы, использующие изображение, и повторите попытку.</value></data>
-  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Title" xml:space="preserve"><value>Не удалось зафиксировать версию исходного файла</value></data>
-  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Explanation" xml:space="preserve"><value>Не удалось надёжно определить идентификатор и содержимое исходного файла.</value></data>
-  <data name="ImageProcessingError_SourceRevisionCaptureFailed_Remedy" xml:space="preserve"><value>Проверьте доступ к исходному файлу и повторите анализ папки.</value></data>
-  <data name="ImageProcessingError_SourceDiscoveryFailed_Title" xml:space="preserve"><value>Не удалось просмотреть папку</value></data>
-  <data name="ImageProcessingError_SourceDiscoveryFailed_Explanation" xml:space="preserve"><value>Не удалось полностью перечислить содержимое выбранной папки.</value></data>
-  <data name="ImageProcessingError_SourceDiscoveryFailed_Remedy" xml:space="preserve"><value>Проверьте доступ к папке и повторите анализ; обработка по неполному списку запрещена.</value></data>
-  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Title" xml:space="preserve"><value>Недопустимые параметры обработки</value></data>
-  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Explanation" xml:space="preserve"><value>Запрошенные правила или ограничения ресурсов не поддерживаются.</value></data>
-  <data name="ImageProcessingError_InvalidBatchProcessingRequest_Remedy" xml:space="preserve"><value>Вернитесь к выбору источника и задайте поддерживаемые параметры.</value></data>
-  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Title" xml:space="preserve"><value>Исходный файл изменился после анализа</value></data>
-  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Explanation" xml:space="preserve"><value>Текущая версия исходного файла не соответствует проверенной версии.</value></data>
-  <data name="ImageProcessingError_SourceChangedAfterAnalysis_Remedy" xml:space="preserve"><value>Повторите анализ папки перед обработкой.</value></data>
-  <data name="ImageProcessingError_DestinationAccessDenied_Title" xml:space="preserve"><value>Нет доступа к папке назначения</value></data>
-  <data name="ImageProcessingError_DestinationAccessDenied_Explanation" xml:space="preserve"><value>Приложение не смогло записать данные в предоставленную папку назначения.</value></data>
-  <data name="ImageProcessingError_DestinationAccessDenied_Remedy" xml:space="preserve"><value>Проверьте права доступа и выберите папку, доступную для записи.</value></data>
-  <data name="ImageProcessingError_EncodedFileTooLarge_Title" xml:space="preserve"><value>Файл изображения превышает ограничение размера</value></data>
-  <data name="ImageProcessingError_EncodedFileTooLarge_Explanation" xml:space="preserve"><value>Размер файла JPEG превышает поддерживаемое ограничение.</value></data>
-  <data name="ImageProcessingError_EncodedFileTooLarge_Remedy" xml:space="preserve"><value>Используйте файл меньшего размера; приложение не обходит ограничения ресурсов.</value></data>
-  <data name="ImageProcessingError_PixelCountLimitExceeded_Title" xml:space="preserve"><value>Превышено ограничение числа пикселей</value></data>
-  <data name="ImageProcessingError_PixelCountLimitExceeded_Explanation" xml:space="preserve"><value>Заявленные размеры изображения превышают поддерживаемое число пикселей.</value></data>
-  <data name="ImageProcessingError_PixelCountLimitExceeded_Remedy" xml:space="preserve"><value>Используйте изображение с поддерживаемыми размерами.</value></data>
-  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Title" xml:space="preserve"><value>Метаданные превышают ограничение размера</value></data>
-  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Explanation" xml:space="preserve"><value>Объём метаданных превышает установленное ограничение анализа.</value></data>
-  <data name="ImageProcessingError_MetadataLengthLimitExceeded_Remedy" xml:space="preserve"><value>Используйте файл с допустимым объёмом метаданных.</value></data>
-  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Title" xml:space="preserve"><value>Слишком много проходов прогрессивного JPEG</value></data>
-  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Explanation" xml:space="preserve"><value>Число проходов прогрессивного JPEG превышает ограничение анализа.</value></data>
-  <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемым числом проходов.</value></data>
-  <data name="ImageProcessingError_MalformedJpegStructure_Title" xml:space="preserve"><value>Неверная структура JPEG</value></data>
-  <data name="ImageProcessingError_MalformedJpegStructure_Explanation" xml:space="preserve"><value>Файл не содержит корректной поддерживаемой структуры JPEG.</value></data>
-  <data name="ImageProcessingError_MalformedJpegStructure_Remedy" xml:space="preserve"><value>Используйте неповреждённый JPEG; изменение расширения не исправляет содержимое.</value></data>
-  <data name="ImageProcessingError_MalformedImageMetadata_Title" xml:space="preserve"><value>Повреждены метаданные изображения</value></data>
-  <data name="ImageProcessingError_MalformedImageMetadata_Explanation" xml:space="preserve"><value>Не удалось прочитать метаданные как корректный поддерживаемый блок.</value></data>
-  <data name="ImageProcessingError_MalformedImageMetadata_Remedy" xml:space="preserve"><value>Сохраните исходный файл и получите исправное изображение либо исправьте метаданные отдельно.</value></data>
-  <data name="ImageProcessingError_MetadataPreservationFailed_Title" xml:space="preserve"><value>Не удалось сохранить метаданные</value></data>
-  <data name="ImageProcessingError_MetadataPreservationFailed_Explanation" xml:space="preserve"><value>При согласовании не удалось сохранить необходимые значения метаданных.</value></data>
-  <data name="ImageProcessingError_MetadataPreservationFailed_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и используйте поддерживаемую структуру метаданных.</value></data>
-  <data name="ImageProcessingError_InvalidOrientationMetadata_Title" xml:space="preserve"><value>Неверные метаданные ориентации</value></data>
-  <data name="ImageProcessingError_InvalidOrientationMetadata_Explanation" xml:space="preserve"><value>Необходимое значение ориентации отсутствует или выходит за допустимый диапазон.</value></data>
-  <data name="ImageProcessingError_InvalidOrientationMetadata_Remedy" xml:space="preserve"><value>Задайте допустимую ориентацию редактором метаданных и повторите анализ.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Title" xml:space="preserve"><value>Не поддерживается способ кодирования JPEG</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Explanation" xml:space="preserve"><value>Способ кодирования этого JPEG не входит в поддерживаемый профиль ДКП.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемым способом кодирования ДКП.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Title" xml:space="preserve"><value>Не поддерживается точность отсчётов JPEG</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Explanation" xml:space="preserve"><value>Точность закодированных отсчётов не входит в поддерживаемый профиль.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемой точностью отсчётов.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Title" xml:space="preserve"><value>Не поддерживается структура компонентов JPEG</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Explanation" xml:space="preserve"><value>Компоненты изображения нельзя безопасно преобразовать в рамках этого профиля.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемой структурой компонентов.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Title" xml:space="preserve"><value>Не поддерживается отложенное объявление высоты JPEG</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Explanation" xml:space="preserve"><value>Высота изображения указана после заголовка кадра.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Remedy" xml:space="preserve"><value>Используйте JPEG, высота которого указана в заголовке кадра.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Title" xml:space="preserve"><value>Не поддерживается изменение интервалов перезапуска JPEG</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Explanation" xml:space="preserve"><value>Интервалы перезапуска меняются внутри закодированного изображения.</value></data>
-  <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Remedy" xml:space="preserve"><value>Используйте JPEG с поддерживаемой структурой интервалов перезапуска.</value></data>
-  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Title" xml:space="preserve"><value>Не поддерживается JPEG с несколькими изображениями</value></data>
-  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Explanation" xml:space="preserve"><value>Файл содержит несколько изображений, связи между которыми требуют согласования.</value></data>
-  <data name="ImageProcessingError_MultiPictureJpegNotSupported_Remedy" xml:space="preserve"><value>Сохраните исходный файл с несколькими изображениями и используйте поддерживаемый JPEG с одним изображением.</value></data>
-  <data name="ImageProcessingError_MotionPhotoNotSupported_Title" xml:space="preserve"><value>Не поддерживается фотография с движением</value></data>
-  <data name="ImageProcessingError_MotionPhotoNotSupported_Explanation" xml:space="preserve"><value>Изображение содержит связанный видеоматериал, который приложение не согласовывает.</value></data>
-  <data name="ImageProcessingError_MotionPhotoNotSupported_Remedy" xml:space="preserve"><value>Сохраните фотографию с движением и используйте поддерживаемый обычный JPEG.</value></data>
-  <data name="ImageProcessingError_UnsupportedTrailingPayload_Title" xml:space="preserve"><value>Не поддерживаются дополнительные данные после JPEG</value></data>
-  <data name="ImageProcessingError_UnsupportedTrailingPayload_Explanation" xml:space="preserve"><value>После изображения JPEG имеются данные, которые нельзя безопасно сохранить в этом профиле.</value></data>
-  <data name="ImageProcessingError_UnsupportedTrailingPayload_Remedy" xml:space="preserve"><value>Сохраните оригинал и используйте JPEG без неподдерживаемых дополнительных данных.</value></data>
-  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Title" xml:space="preserve"><value>Будут нарушены сведения о подлинности</value></data>
-  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Explanation" xml:space="preserve"><value>Изменение изображения сделает недействительными сведения о его подлинности.</value></data>
-  <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Remedy" xml:space="preserve"><value>Не изменяйте подписанный исходный файл; используйте процесс обработки с поддержкой сведений о подлинности.</value></data>
-  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Title" xml:space="preserve"><value>Не поддерживаются метаданные JUMBF</value></data>
-  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve"><value>Блок JUMBF не входит в поддерживаемый профиль сохранения метаданных.</value></data>
-  <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и используйте поддерживаемый профиль метаданных.</value></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve"><value>Не удалось согласовать встроенный предпросмотр</value></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve"><value>Структуру встроенного предпросмотра нельзя безопасно обновить или удалить в этом профиле.</value><comment>Embedded thumbnail means a small image preview stored within image metadata, distinct from the primary JPEG. Unsupported preview structures are refused rather than silently discarded.</comment></data>
-  <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve"><value>Сохраните исходный файл и используйте изображение с поддерживаемой структурой предпросмотра.</value></data>
-  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve"><value>Не поддерживается изменение расширенного XMP</value></data>
-  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve"><value>Необходимое изменение метаданных затрагивает неподдерживаемый блок расширенного XMP.</value></data>
-  <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и используйте поддерживаемую структуру XMP.</value></data>
-  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Title" xml:space="preserve"><value>Недоступно преобразование коэффициентов без обрезки</value></data>
-  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Explanation" xml:space="preserve"><value>Запрошенное преобразование не сохраняет все краевые пиксели неполных минимальных кодируемых блоков.</value></data>
-  <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Remedy" xml:space="preserve"><value>Сохраните режим без обрезки либо явно проверьте и подтвердите точные размеры удаляемых краёв в режиме обрезки.</value></data>
-  <data name="ImageProcessingError_CoefficientTransformationFailed_Title" xml:space="preserve"><value>Не удалось преобразовать коэффициенты</value></data>
-  <data name="ImageProcessingError_CoefficientTransformationFailed_Explanation" xml:space="preserve"><value>Преобразование JPEG не создало проверенный результат.</value></data>
-  <data name="ImageProcessingError_CoefficientTransformationFailed_Remedy" xml:space="preserve"><value>Сохраните исходный файл и повторите анализ; запись непроверенного результата запрещена.</value></data>
-  <data name="ImageProcessingError_OutputBufferTooSmall_Title" xml:space="preserve"><value>Результат превышает размер буфера</value></data>
-  <data name="ImageProcessingError_OutputBufferTooSmall_Explanation" xml:space="preserve"><value>Закодированный результат не поместился в выделенный ограниченный буфер.</value></data>
-  <data name="ImageProcessingError_OutputBufferTooSmall_Remedy" xml:space="preserve"><value>Используйте файл в пределах поддерживаемых ограничений; не обходите ограничение.</value></data>
-  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Title" xml:space="preserve"><value>Не удалось выделить рабочую память</value></data>
-  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Explanation" xml:space="preserve"><value>Для операции не удалось выделить необходимую рабочую память в установленных пределах.</value></data>
-  <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Remedy" xml:space="preserve"><value>Закройте программы, потребляющие много памяти, и повторите попытку.</value></data>
-  <data name="ImageProcessingError_InsufficientStorageSpace_Title" xml:space="preserve"><value>Недостаточно места на накопителе</value></data>
-  <data name="ImageProcessingError_InsufficientStorageSpace_Explanation" xml:space="preserve"><value>В папке назначения недостаточно места для операции.</value></data>
-  <data name="ImageProcessingError_InsufficientStorageSpace_Remedy" xml:space="preserve"><value>Освободите место или выберите другую поддерживаемую папку, сохранив оригиналы и резервные копии.</value></data>
-  <data name="ImageProcessingError_OutputRelativePathCollision_Title" xml:space="preserve"><value>Совпадают имена результатов</value></data>
-  <data name="ImageProcessingError_OutputRelativePathCollision_Explanation" xml:space="preserve"><value>Два проверенных имени источников соответствуют одному относительному имени результата.</value></data>
-  <data name="ImageProcessingError_OutputRelativePathCollision_Remedy" xml:space="preserve"><value>Устраните конфликт имён исходных файлов и повторите анализ.</value></data>
-  <data name="ImageProcessingError_StagingFileCreationFailed_Title" xml:space="preserve"><value>Не удалось создать промежуточный файл</value></data>
-  <data name="ImageProcessingError_StagingFileCreationFailed_Explanation" xml:space="preserve"><value>Приложение не смогло создать промежуточный результат, принадлежащий транзакции.</value></data>
-  <data name="ImageProcessingError_StagingFileCreationFailed_Remedy" xml:space="preserve"><value>Проверьте доступ и свободное место; при необходимости выполните восстановление перед повторной попыткой.</value></data>
-  <data name="ImageProcessingError_StagingWriteFailed_Title" xml:space="preserve"><value>Не удалось записать промежуточный файл</value></data>
-  <data name="ImageProcessingError_StagingWriteFailed_Explanation" xml:space="preserve"><value>Не удалось записать проверенный результат в промежуточный файл транзакции.</value></data>
-  <data name="ImageProcessingError_StagingWriteFailed_Remedy" xml:space="preserve"><value>Проверьте доступ и свободное место; сохраните оригиналы и резервные копии.</value></data>
-  <data name="ImageProcessingError_StagingFlushFailed_Title" xml:space="preserve"><value>Не удалось сбросить данные промежуточного файла</value></data>
-  <data name="ImageProcessingError_StagingFlushFailed_Explanation" xml:space="preserve"><value>Самый надёжный поддерживаемый запрос сброса данных завершился неудачно.</value></data>
-  <data name="ImageProcessingError_StagingFlushFailed_Remedy" xml:space="preserve"><value>Проверьте накопитель; перед повторной попыткой выполните необходимое восстановление.</value></data>
-  <data name="ImageProcessingError_StagingCloseFailed_Title" xml:space="preserve"><value>Не удалось закрыть промежуточный файл</value></data>
-  <data name="ImageProcessingError_StagingCloseFailed_Explanation" xml:space="preserve"><value>Промежуточный файл транзакции не удалось закрыть.</value></data>
-  <data name="ImageProcessingError_StagingCloseFailed_Remedy" xml:space="preserve"><value>Проверьте накопитель и выполните необходимое восстановление перед повторной попыткой.</value></data>
-  <data name="ImageProcessingError_StagedOutputVerificationFailed_Title" xml:space="preserve"><value>Не удалось проверить промежуточный результат</value></data>
-  <data name="ImageProcessingError_StagedOutputVerificationFailed_Explanation" xml:space="preserve"><value>Закрытый промежуточный файл не удалось повторно открыть и независимо проверить.</value></data>
-  <data name="ImageProcessingError_StagedOutputVerificationFailed_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии; проверьте папку назначения перед повторной попыткой.</value></data>
-  <data name="ImageProcessingError_StagedOutputHashMismatch_Title" xml:space="preserve"><value>Не совпадает содержимое промежуточного результата</value></data>
-  <data name="ImageProcessingError_StagedOutputHashMismatch_Explanation" xml:space="preserve"><value>Наблюдаемое содержимое промежуточного файла не соответствует хешу проверенного результата.</value></data>
-  <data name="ImageProcessingError_StagedOutputHashMismatch_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии; выясните причину изменения данных перед повторной попыткой.</value></data>
-  <data name="ImageProcessingError_OutputValidationFailed_Title" xml:space="preserve"><value>Результат не прошёл проверку</value></data>
-  <data name="ImageProcessingError_OutputValidationFailed_Explanation" xml:space="preserve"><value>Преобразованное изображение не соответствует правилам независимой проверки.</value></data>
-  <data name="ImageProcessingError_OutputValidationFailed_Remedy" xml:space="preserve"><value>Не изменяйте исходный файл и не используйте отклонённый результат.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Title" xml:space="preserve"><value>Не удалось создать папку исправленной копии</value></data>
-  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Explanation" xml:space="preserve"><value>Приложение не смогло создать принадлежащую ему папку для исправленной копии.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Remedy" xml:space="preserve"><value>Проверьте доступ к папке результатов и свободное место, затем повторите анализ.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Title" xml:space="preserve"><value>Не удалось завершить запись исправленной копии</value></data>
-  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Explanation" xml:space="preserve"><value>Промежуточную исправленную копию не удалось переместить в конечную папку.</value></data>
-  <data name="ImageProcessingError_CorrectedCopyCommitFailed_Remedy" xml:space="preserve"><value>Сохраните исходный файл и проверьте необходимость восстановления перед повторной попыткой.</value></data>
-  <data name="ImageProcessingError_BackupCreationFailed_Title" xml:space="preserve"><value>Не удалось создать резервную копию</value></data>
-  <data name="ImageProcessingError_BackupCreationFailed_Explanation" xml:space="preserve"><value>Перед заменой оригинала не удалось создать обязательную резервную копию.</value></data>
-  <data name="ImageProcessingError_BackupCreationFailed_Remedy" xml:space="preserve"><value>Сохраните оригинал; проверьте доступ к папке резервных копий и свободное место.</value></data>
-  <data name="ImageProcessingError_BackupVerificationFailed_Title" xml:space="preserve"><value>Не удалось проверить резервную копию</value></data>
-  <data name="ImageProcessingError_BackupVerificationFailed_Explanation" xml:space="preserve"><value>Резервная копия не подтвердила необходимое соответствие исходной версии.</value></data>
-  <data name="ImageProcessingError_BackupVerificationFailed_Remedy" xml:space="preserve"><value>Сохраните оригинал и все данные резервной копии; устраните несоответствие до замены.</value></data>
-  <data name="ImageProcessingError_OriginalReplacementFailed_Title" xml:space="preserve"><value>Замена оригинала завершилась неудачно</value></data>
-  <data name="ImageProcessingError_OriginalReplacementFailed_Explanation" xml:space="preserve"><value>Ошибка операции замены может потребовать восстановления по наблюдаемому состоянию файлов.</value></data>
-  <data name="ImageProcessingError_OriginalReplacementFailed_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии и выполните необходимое восстановление перед повторной попыткой.</value></data>
-  <data name="ImageProcessingError_JournalPersistenceFailed_Title" xml:space="preserve"><value>Не удалось сохранить журнал транзакции</value></data>
-  <data name="ImageProcessingError_JournalPersistenceFailed_Explanation" xml:space="preserve"><value>Не удалось опубликовать и проверить обязательную неизменяемую запись транзакции.</value></data>
-  <data name="ImageProcessingError_JournalPersistenceFailed_Remedy" xml:space="preserve"><value>Сохраните оригиналы, резервные копии и журнал; выполните восстановление перед новой обработкой.</value></data>
-  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Title" xml:space="preserve"><value>Не подтверждены условия восстановления для накопителя</value></data>
-  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Explanation" xml:space="preserve"><value>Выбранный поставщик хранения или том не обеспечивает необходимые условия восстановления транзакций.</value></data>
-  <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Remedy" xml:space="preserve"><value>Выберите проверенную локальную папку NTFS; не обходите проверку поставщика хранения.</value></data>
-  <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Title" xml:space="preserve"><value>Поддержка длинных путей Windows недоступна</value></data>
-  <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Explanation" xml:space="preserve"><value>Создаваемые файлы транзакций могут превышать обычное ограничение длины пути Windows. Обработка и восстановление не начались, поскольку необходимая политика длинных путей Windows недоступна.</value></data>
-  <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Remedy" xml:space="preserve"><value>Попросите администратора Windows проверить необходимую настройку длинных путей, затем перезапустите приложение. Настройки Windows не изменялись.</value></data>
-  <data name="ImageProcessingError_JournalStoreBusy_Title" xml:space="preserve"><value>Журнал транзакций занят</value></data>
-  <data name="ImageProcessingError_JournalStoreBusy_Explanation" xml:space="preserve"><value>Другая действующая операция удерживает журнал; восстановление не началось.</value></data>
-  <data name="ImageProcessingError_JournalStoreBusy_Remedy" xml:space="preserve"><value>Дождитесь завершения другой операции и повторите восстановление.</value></data>
-  <data name="ImageProcessingError_RecoveryConflict_Title" xml:space="preserve"><value>Не удалось однозначно восстановить транзакцию</value></data>
-  <data name="ImageProcessingError_RecoveryConflict_Explanation" xml:space="preserve"><value>Сохранённые записи и наблюдаемые файлы не подтверждают единственный безопасный исход.</value></data>
-  <data name="ImageProcessingError_RecoveryConflict_Remedy" xml:space="preserve"><value>Сохраните оригиналы, резервные копии и журнал; разрешите конфликт перед новой обработкой.</value></data>
-  <data name="ImageProcessingError_Cancelled_Title" xml:space="preserve"><value>Операция отменена</value></data>
-  <data name="ImageProcessingError_Cancelled_Explanation" xml:space="preserve"><value>Отмена остановила дальнейшую работу; завершённые записи остаются завершёнными.</value></data>
-  <data name="ImageProcessingError_Cancelled_Remedy" xml:space="preserve"><value>Проверьте результаты перед началом новой операции.</value></data>
-  <data name="ImageProcessingError_Unknown_Title" xml:space="preserve"><value>Не удалось завершить обработку</value></data>
-  <data name="ImageProcessingError_Unknown_Explanation" xml:space="preserve"><value>Операция завершилась ошибкой, которую эта версия не может описать.</value></data>
-  <data name="ImageProcessingError_Unknown_Remedy" xml:space="preserve"><value>Сохраните оригиналы и резервные копии, проверьте необходимость восстановления и повторяйте обработку только после устранения риска.</value></data>
-  <!-- Shell property identifiers follow native x:Uid/MRT syntax. Text may wrap;
+    <!-- Symbolic error messages only: never interpolate full paths or native diagnostics. -->
+    <!-- A verified backup means reopened bytes match the source revision, not survival of device loss. -->
+    <!-- A minimum coded unit follows JPEG component sampling; it need not be an 8 by 8 pixel block. -->
+    <data name="ImageProcessingError_SourceAccessDenied_Title" xml:space="preserve">
+        <value>Нет доступа к исходному файлу</value>
+    </data>
+    <data name="ImageProcessingError_SourceAccessDenied_Explanation" xml:space="preserve">
+        <value>Предоставленного доступа недостаточно для чтения выбранного изображения.</value>
+    </data>
+    <data name="ImageProcessingError_SourceAccessDenied_Remedy" xml:space="preserve">
+        <value>Выберите папку, файлы которой доступны для чтения, и повторите попытку.</value>
+    </data>
+    <data name="ImageProcessingError_SourceSharingViolation_Title" xml:space="preserve">
+        <value>Исходный файл занят</value>
+    </data>
+    <data name="ImageProcessingError_SourceSharingViolation_Explanation" xml:space="preserve">
+        <value>Другая программа удерживает файл с несовместимыми правами доступа.</value>
+    </data>
+    <data name="ImageProcessingError_SourceSharingViolation_Remedy" xml:space="preserve">
+        <value>Закройте программы, использующие изображение, и повторите попытку.</value>
+    </data>
+    <data name="ImageProcessingError_SourceRevisionCaptureFailed_Title" xml:space="preserve">
+        <value>Не удалось зафиксировать версию исходного файла</value>
+    </data>
+    <data name="ImageProcessingError_SourceRevisionCaptureFailed_Explanation" xml:space="preserve">
+        <value>Не удалось надёжно определить идентификатор и содержимое исходного файла.</value>
+    </data>
+    <data name="ImageProcessingError_SourceRevisionCaptureFailed_Remedy" xml:space="preserve">
+        <value>Проверьте доступ к исходному файлу и повторите анализ папки.</value>
+    </data>
+    <data name="ImageProcessingError_SourceDiscoveryFailed_Title" xml:space="preserve">
+        <value>Не удалось просмотреть папку</value>
+    </data>
+    <data name="ImageProcessingError_SourceDiscoveryFailed_Explanation" xml:space="preserve">
+        <value>Не удалось полностью перечислить содержимое выбранной папки.</value>
+    </data>
+    <data name="ImageProcessingError_SourceDiscoveryFailed_Remedy" xml:space="preserve">
+        <value>Проверьте доступ к папке и повторите анализ; обработка по неполному списку запрещена.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidBatchProcessingRequest_Title" xml:space="preserve">
+        <value>Недопустимые параметры обработки</value>
+    </data>
+    <data name="ImageProcessingError_InvalidBatchProcessingRequest_Explanation" xml:space="preserve">
+        <value>Запрошенные правила или ограничения ресурсов не поддерживаются.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidBatchProcessingRequest_Remedy" xml:space="preserve">
+        <value>Вернитесь к выбору источника и задайте поддерживаемые параметры.</value>
+    </data>
+    <data name="ImageProcessingError_SourceChangedAfterAnalysis_Title" xml:space="preserve">
+        <value>Исходный файл изменился после анализа</value>
+    </data>
+    <data name="ImageProcessingError_SourceChangedAfterAnalysis_Explanation" xml:space="preserve">
+        <value>Текущая версия исходного файла не соответствует проверенной версии.</value>
+    </data>
+    <data name="ImageProcessingError_SourceChangedAfterAnalysis_Remedy" xml:space="preserve">
+        <value>Повторите анализ папки перед обработкой.</value>
+    </data>
+    <data name="ImageProcessingError_DestinationAccessDenied_Title" xml:space="preserve">
+        <value>Нет доступа к папке назначения</value>
+    </data>
+    <data name="ImageProcessingError_DestinationAccessDenied_Explanation" xml:space="preserve">
+        <value>Приложение не смогло записать данные в предоставленную папку назначения.</value>
+    </data>
+    <data name="ImageProcessingError_DestinationAccessDenied_Remedy" xml:space="preserve">
+        <value>Проверьте права доступа и выберите папку, доступную для записи.</value>
+    </data>
+    <data name="ImageProcessingError_EncodedFileTooLarge_Title" xml:space="preserve">
+        <value>Файл изображения превышает ограничение размера</value>
+    </data>
+    <data name="ImageProcessingError_EncodedFileTooLarge_Explanation" xml:space="preserve">
+        <value>Размер файла JPEG превышает поддерживаемое ограничение.</value>
+    </data>
+    <data name="ImageProcessingError_EncodedFileTooLarge_Remedy" xml:space="preserve">
+        <value>Используйте файл меньшего размера; приложение не обходит ограничения ресурсов.</value>
+    </data>
+    <data name="ImageProcessingError_PixelCountLimitExceeded_Title" xml:space="preserve">
+        <value>Превышено ограничение числа пикселей</value>
+    </data>
+    <data name="ImageProcessingError_PixelCountLimitExceeded_Explanation" xml:space="preserve">
+        <value>Заявленные размеры изображения превышают поддерживаемое число пикселей.</value>
+    </data>
+    <data name="ImageProcessingError_PixelCountLimitExceeded_Remedy" xml:space="preserve">
+        <value>Используйте изображение с поддерживаемыми размерами.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataLengthLimitExceeded_Title" xml:space="preserve">
+        <value>Метаданные превышают ограничение размера</value>
+    </data>
+    <data name="ImageProcessingError_MetadataLengthLimitExceeded_Explanation" xml:space="preserve">
+        <value>Объём метаданных превышает установленное ограничение анализа.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataLengthLimitExceeded_Remedy" xml:space="preserve">
+        <value>Используйте файл с допустимым объёмом метаданных.</value>
+    </data>
+    <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Title" xml:space="preserve">
+        <value>Слишком много проходов прогрессивного JPEG</value>
+    </data>
+    <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Explanation" xml:space="preserve">
+        <value>Число проходов прогрессивного JPEG превышает ограничение анализа.</value>
+    </data>
+    <data name="ImageProcessingError_ProgressiveScanCountLimitExceeded_Remedy" xml:space="preserve">
+        <value>Используйте JPEG с поддерживаемым числом проходов.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedJpegStructure_Title" xml:space="preserve">
+        <value>Неверная структура JPEG</value>
+    </data>
+    <data name="ImageProcessingError_MalformedJpegStructure_Explanation" xml:space="preserve">
+        <value>Файл не содержит корректной поддерживаемой структуры JPEG.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedJpegStructure_Remedy" xml:space="preserve">
+        <value>Используйте неповреждённый JPEG; изменение расширения не исправляет содержимое.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedImageMetadata_Title" xml:space="preserve">
+        <value>Повреждены метаданные изображения</value>
+    </data>
+    <data name="ImageProcessingError_MalformedImageMetadata_Explanation" xml:space="preserve">
+        <value>Не удалось прочитать метаданные как корректный поддерживаемый блок.</value>
+    </data>
+    <data name="ImageProcessingError_MalformedImageMetadata_Remedy" xml:space="preserve">
+        <value>Сохраните исходный файл и получите исправное изображение либо исправьте метаданные отдельно.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataPreservationFailed_Title" xml:space="preserve">
+        <value>Не удалось сохранить метаданные</value>
+    </data>
+    <data name="ImageProcessingError_MetadataPreservationFailed_Explanation" xml:space="preserve">
+        <value>При согласовании не удалось сохранить необходимые значения метаданных.</value>
+    </data>
+    <data name="ImageProcessingError_MetadataPreservationFailed_Remedy" xml:space="preserve">
+        <value>Не изменяйте исходный файл и используйте поддерживаемую структуру метаданных.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidOrientationMetadata_Title" xml:space="preserve">
+        <value>Неверные метаданные ориентации</value>
+    </data>
+    <data name="ImageProcessingError_InvalidOrientationMetadata_Explanation" xml:space="preserve">
+        <value>Необходимое значение ориентации отсутствует или выходит за допустимый диапазон.</value>
+    </data>
+    <data name="ImageProcessingError_InvalidOrientationMetadata_Remedy" xml:space="preserve">
+        <value>Задайте допустимую ориентацию редактором метаданных и повторите анализ.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Title" xml:space="preserve">
+        <value>Не поддерживается способ кодирования JPEG</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Explanation" xml:space="preserve">
+        <value>Способ кодирования этого JPEG не входит в поддерживаемый профиль ДКП.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegCodingProcess_Remedy" xml:space="preserve">
+        <value>Используйте JPEG с поддерживаемым способом кодирования ДКП.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Title" xml:space="preserve">
+        <value>Не поддерживается точность отсчётов JPEG</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Explanation" xml:space="preserve">
+        <value>Точность закодированных отсчётов не входит в поддерживаемый профиль.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegSamplePrecision_Remedy" xml:space="preserve">
+        <value>Используйте JPEG с поддерживаемой точностью отсчётов.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Title" xml:space="preserve">
+        <value>Не поддерживается структура компонентов JPEG</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Explanation" xml:space="preserve">
+        <value>Компоненты изображения нельзя безопасно преобразовать в рамках этого профиля.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegComponentOrganization_Remedy" xml:space="preserve">
+        <value>Используйте JPEG с поддерживаемой структурой компонентов.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Title" xml:space="preserve">
+        <value>Не поддерживается отложенное объявление высоты JPEG</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Explanation" xml:space="preserve">
+        <value>Высота изображения указана после заголовка кадра.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegDeferredHeight_Remedy" xml:space="preserve">
+        <value>Используйте JPEG, высота которого указана в заголовке кадра.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Title" xml:space="preserve">
+        <value>Не поддерживается изменение интервалов перезапуска JPEG</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Explanation" xml:space="preserve">
+        <value>Интервалы перезапуска меняются внутри закодированного изображения.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJpegRestartIntervalChanges_Remedy" xml:space="preserve">
+        <value>Используйте JPEG с поддерживаемой структурой интервалов перезапуска.</value>
+    </data>
+    <data name="ImageProcessingError_MultiPictureJpegNotSupported_Title" xml:space="preserve">
+        <value>Не поддерживается JPEG с несколькими изображениями</value>
+    </data>
+    <data name="ImageProcessingError_MultiPictureJpegNotSupported_Explanation" xml:space="preserve">
+        <value>Файл содержит несколько изображений, связи между которыми требуют согласования.</value>
+    </data>
+    <data name="ImageProcessingError_MultiPictureJpegNotSupported_Remedy" xml:space="preserve">
+        <value>Сохраните исходный файл с несколькими изображениями и используйте поддерживаемый JPEG с одним изображением.</value>
+    </data>
+    <data name="ImageProcessingError_MotionPhotoNotSupported_Title" xml:space="preserve">
+        <value>Не поддерживается фотография с движением</value>
+    </data>
+    <data name="ImageProcessingError_MotionPhotoNotSupported_Explanation" xml:space="preserve">
+        <value>Изображение содержит связанный видеоматериал, который приложение не согласовывает.</value>
+    </data>
+    <data name="ImageProcessingError_MotionPhotoNotSupported_Remedy" xml:space="preserve">
+        <value>Сохраните фотографию с движением и используйте поддерживаемый обычный JPEG.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedTrailingPayload_Title" xml:space="preserve">
+        <value>Не поддерживаются дополнительные данные после JPEG</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedTrailingPayload_Explanation" xml:space="preserve">
+        <value>После изображения JPEG имеются данные, которые нельзя безопасно сохранить в этом профиле.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedTrailingPayload_Remedy" xml:space="preserve">
+        <value>Сохраните оригинал и используйте JPEG без неподдерживаемых дополнительных данных.</value>
+    </data>
+    <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Title" xml:space="preserve">
+        <value>Будут нарушены сведения о подлинности</value>
+    </data>
+    <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Explanation" xml:space="preserve">
+        <value>Изменение изображения сделает недействительными сведения о его подлинности.</value>
+    </data>
+    <data name="ImageProcessingError_ContentCredentialsWouldBeInvalidated_Remedy" xml:space="preserve">
+        <value>Не изменяйте подписанный исходный файл; используйте процесс обработки с поддержкой сведений о подлинности.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJumbfMetadata_Title" xml:space="preserve">
+        <value>Не поддерживаются метаданные JUMBF</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJumbfMetadata_Explanation" xml:space="preserve">
+        <value>Блок JUMBF не входит в поддерживаемый профиль сохранения метаданных.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedJumbfMetadata_Remedy" xml:space="preserve">
+        <value>Не изменяйте исходный файл и используйте поддерживаемый профиль метаданных.</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Title" xml:space="preserve">
+        <value>Не удалось согласовать встроенный предпросмотр</value>
+    </data>
+    <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Explanation" xml:space="preserve">
+        <value>Структуру встроенного предпросмотра нельзя безопасно обновить или удалить в этом профиле.</value>
+        <comment>Embedded thumbnail means a small image preview stored within image metadata, distinct from the primary JPEG. Unsupported preview structures are refused rather than silently discarded.</comment>
+    </data>
+    <data name="ImageProcessingError_UnsupportedEmbeddedPreviewMetadata_Remedy" xml:space="preserve">
+        <value>Сохраните исходный файл и используйте изображение с поддерживаемой структурой предпросмотра.</value>
+    </data>
+    <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Title" xml:space="preserve">
+        <value>Не поддерживается изменение расширенного XMP</value>
+    </data>
+    <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Explanation" xml:space="preserve">
+        <value>Необходимое изменение метаданных затрагивает неподдерживаемый блок расширенного XMP.</value>
+    </data>
+    <data name="ImageProcessingError_ExtendedXmpMutationNotSupported_Remedy" xml:space="preserve">
+        <value>Не изменяйте исходный файл и используйте поддерживаемую структуру XMP.</value>
+    </data>
+    <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Title" xml:space="preserve">
+        <value>Недоступно преобразование коэффициентов без обрезки</value>
+    </data>
+    <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Explanation" xml:space="preserve">
+        <value>Запрошенное преобразование не сохраняет все краевые пиксели неполных минимальных кодируемых блоков.</value>
+    </data>
+    <data name="ImageProcessingError_PerfectCoefficientTransformUnavailable_Remedy" xml:space="preserve">
+        <value>Сохраните режим без обрезки либо явно проверьте и подтвердите точные размеры удаляемых краёв в режиме обрезки.</value>
+    </data>
+    <data name="ImageProcessingError_CoefficientTransformationFailed_Title" xml:space="preserve">
+        <value>Не удалось преобразовать коэффициенты</value>
+    </data>
+    <data name="ImageProcessingError_CoefficientTransformationFailed_Explanation" xml:space="preserve">
+        <value>Преобразование JPEG не создало проверенный результат.</value>
+    </data>
+    <data name="ImageProcessingError_CoefficientTransformationFailed_Remedy" xml:space="preserve">
+        <value>Сохраните исходный файл и повторите анализ; запись непроверенного результата запрещена.</value>
+    </data>
+    <data name="ImageProcessingError_OutputBufferTooSmall_Title" xml:space="preserve">
+        <value>Результат превышает размер буфера</value>
+    </data>
+    <data name="ImageProcessingError_OutputBufferTooSmall_Explanation" xml:space="preserve">
+        <value>Закодированный результат не поместился в выделенный ограниченный буфер.</value>
+    </data>
+    <data name="ImageProcessingError_OutputBufferTooSmall_Remedy" xml:space="preserve">
+        <value>Используйте файл в пределах поддерживаемых ограничений; не обходите ограничение.</value>
+    </data>
+    <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Title" xml:space="preserve">
+        <value>Не удалось выделить рабочую память</value>
+    </data>
+    <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Explanation" xml:space="preserve">
+        <value>Для операции не удалось выделить необходимую рабочую память в установленных пределах.</value>
+    </data>
+    <data name="ImageProcessingError_WorkingMemoryAllocationFailed_Remedy" xml:space="preserve">
+        <value>Закройте программы, потребляющие много памяти, и повторите попытку.</value>
+    </data>
+    <data name="ImageProcessingError_InsufficientStorageSpace_Title" xml:space="preserve">
+        <value>Недостаточно места на накопителе</value>
+    </data>
+    <data name="ImageProcessingError_InsufficientStorageSpace_Explanation" xml:space="preserve">
+        <value>В папке назначения недостаточно места для операции.</value>
+    </data>
+    <data name="ImageProcessingError_InsufficientStorageSpace_Remedy" xml:space="preserve">
+        <value>Освободите место или выберите другую поддерживаемую папку, сохранив оригиналы и резервные копии.</value>
+    </data>
+    <data name="ImageProcessingError_OutputRelativePathCollision_Title" xml:space="preserve">
+        <value>Совпадают имена результатов</value>
+    </data>
+    <data name="ImageProcessingError_OutputRelativePathCollision_Explanation" xml:space="preserve">
+        <value>Два проверенных имени источников соответствуют одному относительному имени результата.</value>
+    </data>
+    <data name="ImageProcessingError_OutputRelativePathCollision_Remedy" xml:space="preserve">
+        <value>Устраните конфликт имён исходных файлов и повторите анализ.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFileCreationFailed_Title" xml:space="preserve">
+        <value>Не удалось создать промежуточный файл</value>
+    </data>
+    <data name="ImageProcessingError_StagingFileCreationFailed_Explanation" xml:space="preserve">
+        <value>Приложение не смогло создать промежуточный результат, принадлежащий транзакции.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFileCreationFailed_Remedy" xml:space="preserve">
+        <value>Проверьте доступ и свободное место; при необходимости выполните восстановление перед повторной попыткой.</value>
+    </data>
+    <data name="ImageProcessingError_StagingWriteFailed_Title" xml:space="preserve">
+        <value>Не удалось записать промежуточный файл</value>
+    </data>
+    <data name="ImageProcessingError_StagingWriteFailed_Explanation" xml:space="preserve">
+        <value>Не удалось записать проверенный результат в промежуточный файл транзакции.</value>
+    </data>
+    <data name="ImageProcessingError_StagingWriteFailed_Remedy" xml:space="preserve">
+        <value>Проверьте доступ и свободное место; сохраните оригиналы и резервные копии.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFlushFailed_Title" xml:space="preserve">
+        <value>Не удалось сбросить данные промежуточного файла</value>
+    </data>
+    <data name="ImageProcessingError_StagingFlushFailed_Explanation" xml:space="preserve">
+        <value>Самый надёжный поддерживаемый запрос сброса данных завершился неудачно.</value>
+    </data>
+    <data name="ImageProcessingError_StagingFlushFailed_Remedy" xml:space="preserve">
+        <value>Проверьте накопитель; перед повторной попыткой выполните необходимое восстановление.</value>
+    </data>
+    <data name="ImageProcessingError_StagingCloseFailed_Title" xml:space="preserve">
+        <value>Не удалось закрыть промежуточный файл</value>
+    </data>
+    <data name="ImageProcessingError_StagingCloseFailed_Explanation" xml:space="preserve">
+        <value>Промежуточный файл транзакции не удалось закрыть.</value>
+    </data>
+    <data name="ImageProcessingError_StagingCloseFailed_Remedy" xml:space="preserve">
+        <value>Проверьте накопитель и выполните необходимое восстановление перед повторной попыткой.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputVerificationFailed_Title" xml:space="preserve">
+        <value>Не удалось проверить промежуточный результат</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputVerificationFailed_Explanation" xml:space="preserve">
+        <value>Закрытый промежуточный файл не удалось повторно открыть и независимо проверить.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputVerificationFailed_Remedy" xml:space="preserve">
+        <value>Сохраните оригиналы и резервные копии; проверьте папку назначения перед повторной попыткой.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputHashMismatch_Title" xml:space="preserve">
+        <value>Не совпадает содержимое промежуточного результата</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputHashMismatch_Explanation" xml:space="preserve">
+        <value>Наблюдаемое содержимое промежуточного файла не соответствует хешу проверенного результата.</value>
+    </data>
+    <data name="ImageProcessingError_StagedOutputHashMismatch_Remedy" xml:space="preserve">
+        <value>Сохраните оригиналы и резервные копии; выясните причину изменения данных перед повторной попыткой.</value>
+    </data>
+    <data name="ImageProcessingError_OutputValidationFailed_Title" xml:space="preserve">
+        <value>Результат не прошёл проверку</value>
+    </data>
+    <data name="ImageProcessingError_OutputValidationFailed_Explanation" xml:space="preserve">
+        <value>Преобразованное изображение не соответствует правилам независимой проверки.</value>
+    </data>
+    <data name="ImageProcessingError_OutputValidationFailed_Remedy" xml:space="preserve">
+        <value>Не изменяйте исходный файл и не используйте отклонённый результат.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Title" xml:space="preserve">
+        <value>Не удалось создать папку исправленной копии</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Explanation" xml:space="preserve">
+        <value>Приложение не смогло создать принадлежащую ему папку для исправленной копии.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyDestinationCreationFailed_Remedy" xml:space="preserve">
+        <value>Проверьте доступ к папке результатов и свободное место, затем повторите анализ.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyCommitFailed_Title" xml:space="preserve">
+        <value>Не удалось завершить запись исправленной копии</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyCommitFailed_Explanation" xml:space="preserve">
+        <value>Промежуточную исправленную копию не удалось переместить в конечную папку.</value>
+    </data>
+    <data name="ImageProcessingError_CorrectedCopyCommitFailed_Remedy" xml:space="preserve">
+        <value>Сохраните исходный файл и проверьте необходимость восстановления перед повторной попыткой.</value>
+    </data>
+    <data name="ImageProcessingError_BackupCreationFailed_Title" xml:space="preserve">
+        <value>Не удалось создать резервную копию</value>
+    </data>
+    <data name="ImageProcessingError_BackupCreationFailed_Explanation" xml:space="preserve">
+        <value>Перед заменой оригинала не удалось создать обязательную резервную копию.</value>
+    </data>
+    <data name="ImageProcessingError_BackupCreationFailed_Remedy" xml:space="preserve">
+        <value>Сохраните оригинал; проверьте доступ к папке резервных копий и свободное место.</value>
+    </data>
+    <data name="ImageProcessingError_BackupVerificationFailed_Title" xml:space="preserve">
+        <value>Не удалось проверить резервную копию</value>
+    </data>
+    <data name="ImageProcessingError_BackupVerificationFailed_Explanation" xml:space="preserve">
+        <value>Резервная копия не подтвердила необходимое соответствие исходной версии.</value>
+    </data>
+    <data name="ImageProcessingError_BackupVerificationFailed_Remedy" xml:space="preserve">
+        <value>Сохраните оригинал и все данные резервной копии; устраните несоответствие до замены.</value>
+    </data>
+    <data name="ImageProcessingError_OriginalReplacementFailed_Title" xml:space="preserve">
+        <value>Замена оригинала завершилась неудачно</value>
+    </data>
+    <data name="ImageProcessingError_OriginalReplacementFailed_Explanation" xml:space="preserve">
+        <value>Ошибка операции замены может потребовать восстановления по наблюдаемому состоянию файлов.</value>
+    </data>
+    <data name="ImageProcessingError_OriginalReplacementFailed_Remedy" xml:space="preserve">
+        <value>Сохраните оригиналы и резервные копии и выполните необходимое восстановление перед повторной попыткой.</value>
+    </data>
+    <data name="ImageProcessingError_JournalPersistenceFailed_Title" xml:space="preserve">
+        <value>Не удалось сохранить журнал транзакции</value>
+    </data>
+    <data name="ImageProcessingError_JournalPersistenceFailed_Explanation" xml:space="preserve">
+        <value>Не удалось опубликовать и проверить обязательную неизменяемую запись транзакции.</value>
+    </data>
+    <data name="ImageProcessingError_JournalPersistenceFailed_Remedy" xml:space="preserve">
+        <value>Сохраните оригиналы, резервные копии и журнал; выполните восстановление перед новой обработкой.</value>
+    </data>
+    <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Title" xml:space="preserve">
+        <value>Не подтверждены условия восстановления для накопителя</value>
+    </data>
+    <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Explanation" xml:space="preserve">
+        <value>Выбранный поставщик хранения или том не обеспечивает необходимые условия восстановления транзакций.</value>
+    </data>
+    <data name="ImageProcessingError_StorageProviderRecoveryContractNotEstablished_Remedy" xml:space="preserve">
+        <value>Выберите проверенную локальную папку NTFS; не обходите проверку поставщика хранения.</value>
+    </data>
+    <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Title" xml:space="preserve">
+        <value>Поддержка длинных путей Windows недоступна</value>
+    </data>
+    <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Explanation" xml:space="preserve">
+        <value>Создаваемые файлы транзакций могут превышать обычное ограничение длины пути Windows. Обработка и восстановление не начались, поскольку необходимая политика длинных путей Windows недоступна.</value>
+    </data>
+    <data name="ImageProcessingError_WindowsLongPathSupportUnavailable_Remedy" xml:space="preserve">
+        <value>Попросите администратора Windows проверить необходимую настройку длинных путей, затем перезапустите приложение. Настройки Windows не изменялись.</value>
+    </data>
+    <data name="ImageProcessingError_JournalStoreBusy_Title" xml:space="preserve">
+        <value>Журнал транзакций занят</value>
+    </data>
+    <data name="ImageProcessingError_JournalStoreBusy_Explanation" xml:space="preserve">
+        <value>Другая действующая операция удерживает журнал; восстановление не началось.</value>
+    </data>
+    <data name="ImageProcessingError_JournalStoreBusy_Remedy" xml:space="preserve">
+        <value>Дождитесь завершения другой операции и повторите восстановление.</value>
+    </data>
+    <data name="ImageProcessingError_RecoveryConflict_Title" xml:space="preserve">
+        <value>Не удалось однозначно восстановить транзакцию</value>
+    </data>
+    <data name="ImageProcessingError_RecoveryConflict_Explanation" xml:space="preserve">
+        <value>Сохранённые записи и наблюдаемые файлы не подтверждают единственный безопасный исход.</value>
+    </data>
+    <data name="ImageProcessingError_RecoveryConflict_Remedy" xml:space="preserve">
+        <value>Сохраните оригиналы, резервные копии и журнал; разрешите конфликт перед новой обработкой.</value>
+    </data>
+    <data name="ImageProcessingError_Cancelled_Title" xml:space="preserve">
+        <value>Операция отменена</value>
+    </data>
+    <data name="ImageProcessingError_Cancelled_Explanation" xml:space="preserve">
+        <value>Отмена остановила дальнейшую работу; завершённые записи остаются завершёнными.</value>
+    </data>
+    <data name="ImageProcessingError_Cancelled_Remedy" xml:space="preserve">
+        <value>Проверьте результаты перед началом новой операции.</value>
+    </data>
+    <data name="ImageProcessingError_Unknown_Title" xml:space="preserve">
+        <value>Не удалось завершить обработку</value>
+    </data>
+    <data name="ImageProcessingError_Unknown_Explanation" xml:space="preserve">
+        <value>Операция завершилась ошибкой, которую эта версия не может описать.</value>
+    </data>
+    <data name="ImageProcessingError_Unknown_Remedy" xml:space="preserve">
+        <value>Сохраните оригиналы и резервные копии, проверьте необходимость восстановления и повторяйте обработку только после устранения риска.</value>
+    </data>
+    <!-- Shell property identifiers follow native x:Uid/MRT syntax. Text may wrap;
        translations must not prescribe fixed widths or heights. -->
-  <data name="Shell_SourceSelectionHeading.Text" xml:space="preserve"><value>Выберите исходную папку</value></data>
-  <data name="Shell_AnalysisHeading.Text" xml:space="preserve"><value>Анализ выбранной папки</value></data>
-  <data name="Shell_ReviewHeading.Text" xml:space="preserve"><value>Проверка перед обработкой</value></data>
-  <data name="Shell_ProcessingHeading.Text" xml:space="preserve"><value>Обработка проверенных изображений</value></data>
-  <data name="Shell_ResultsHeading.Text" xml:space="preserve"><value>Проверьте результаты</value></data>
-  <data name="Shell_RecoveryRequiredHeading.Text" xml:space="preserve"><value>Завершите восстановление перед новой обработкой</value></data>
-  <data name="Shell_SourcePicker.Content" xml:space="preserve"><value>Выбрать исходную папку</value></data>
-  <data name="Shell_Analyze.Content" xml:space="preserve"><value>Проанализировать папку</value></data>
-  <data name="Shell_TraversalScope.Header" xml:space="preserve"><value>Папки для анализа</value></data>
-  <data name="Shell_OutputDisposition.Header" xml:space="preserve"><value>Способ сохранения результата</value></data>
-  <data name="Shell_EdgeHandling.Header" xml:space="preserve"><value>Неполные блоки кодирования JPEG</value></data>
-  <data name="Shell_ScanOrganization.Header" xml:space="preserve"><value>Организация сканов выходного JPEG</value></data>
-  <data name="Shell_SelectedFolderOnly.Content" xml:space="preserve"><value>Только выбранная папка</value></data>
-  <data name="Shell_SelectedFolderAndDescendants.Content" xml:space="preserve"><value>Выбранная папка и вложенные папки</value></data>
-  <data name="Shell_CreateCorrectedCopy.Content" xml:space="preserve"><value>Создать исправленные копии; сохранить оригиналы</value></data>
-  <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve"><value>Заменить оригиналы; сохранить проверенные резервные копии</value><comment>Verified backup means retained bytes were reopened and checked against the observed source revision before replacement. It is not a guarantee against physical-media or device loss.</comment></data>
-  <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve"><value>Требовать точное преобразование коэффициентов</value><comment>Lossless means transforming existing quantized JPEG coefficients without decoding/re-encoding or new quantization. It does not promise identical file bytes, and partial coding units may prevent a perfect transform.</comment></data>
-  <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve"><value>Обрезать неполные минимальные кодируемые блоки</value><comment>Minimum coded unit is JPEG's component-sampling coding unit, not necessarily an 8 by 8 pixel block. Trimming permanently discards the exact source-space edge pixels shown in review; consent is required.</comment></data>
-  <data name="Shell_PreserveSourceScans.Content" xml:space="preserve"><value>Сохранить исходные сканы</value></data>
-  <data name="Shell_SequentialDct.Content" xml:space="preserve"><value>Последовательные сканы ДКП</value></data>
-  <data name="Shell_ProgressiveDct.Content" xml:space="preserve"><value>Прогрессивные сканы ДКП</value><comment>Progressive DCT stores frequency coefficients across multiple JPEG scans. This choice reorganizes scans without re-quantization; it does not increase image quality or describe animation.</comment></data>
-  <data name="Shell_ReviewInstruction.Text" xml:space="preserve"><value>Изменение параметров требует нового анализа и повторного согласия на обрезку.</value></data>
-  <data name="Shell_RecursiveExclusionNotice.Text" xml:space="preserve"><value>Рекурсивный анализ исключает папки результатов и резервных копий, принадлежность которых приложению подтверждена. Замечания обхода отображаются при проверке.</value></data>
-  <data name="Shell_BackupDestinationLabel.Text" xml:space="preserve"><value>Проверенные резервные копии будут сохранены в:</value></data>
-  <data name="Shell_TrimConsent.Content" xml:space="preserve"><value>Я согласен с удалением указанного количества пикселей на краях оригинала</value></data>
-  <data name="Shell_DiscardedRightEdgeLabel.Text" xml:space="preserve"><value>Удаляемая ширина правого края оригинала (пиксели)</value></data>
-  <data name="Shell_DiscardedBottomEdgeLabel.Text" xml:space="preserve"><value>Удаляемая высота нижнего края оригинала (пиксели)</value></data>
-  <data name="Shell_StartProcessing.Content" xml:space="preserve"><value>Начать проверенную обработку</value></data>
-  <data name="Shell_CancelOperation.Content" xml:space="preserve"><value>Отменить дальнейшую обработку</value></data>
-  <data name="Shell_ReturnToSourceSelection.Content" xml:space="preserve"><value>Вернуться к выбору исходной папки</value></data>
-  <data name="Shell_RetryRecovery.Content" xml:space="preserve"><value>Повторить восстановление</value></data>
-  <data name="Shell_ProcessingRowsLabel.Text" xml:space="preserve"><value>Проверка изображений и результаты</value></data>
-  <data name="Shell_EligibleFilesLabel.Text" xml:space="preserve"><value>Запланированные преобразования изображений</value></data>
-  <data name="Shell_CompletedRowsLabel.Text" xml:space="preserve"><value>Строки с окончательным результатом</value></data>
-  <data name="Shell_FailedFilesLabel.Text" xml:space="preserve"><value>Файлы с ошибками</value></data>
-  <data name="Shell_CancelledFilesLabel.Text" xml:space="preserve"><value>Отменённые файлы</value></data>
-  <data name="Shell_InitialInstruction.Text" xml:space="preserve"><value>Выберите папку, проанализируйте её и проверьте предложенные действия. Анализ не изменяет изображения.</value></data>
-  <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Выбрать исходную папку</value></data>
-  <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Выберите только папку с изображениями, которые требуется проверить.</value></data>
-  <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Проанализировать папку</value></data>
-  <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Анализ только читает данные; преобразование и сохранение не выполняются.</value></data>
-  <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Папки для анализа</value></data>
-  <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>При рекурсивном обходе исключения и ошибки доступа сохраняются для проверки.</value></data>
-  <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Способ сохранения результата</value></data>
-  <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Замена требует отображения места проверенной резервной копии перед обработкой.</value></data>
-  <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Неполные блоки кодирования JPEG</value></data>
-  <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Обрезка необратимо удаляет указанное количество пикселей на краях оригинала и требует явного согласия.</value></data>
-  <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Организация сканов выходного JPEG</value></data>
-  <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Изменение организации сканов отменяет текущую проверку.</value></data>
-  <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Начать проверенную обработку</value></data>
-  <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Выполнить только эту проверенную группу с подтверждёнными параметрами.</value></data>
-  <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Отменить дальнейшую обработку</value></data>
-  <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Запросить согласованную отмену. Завершённое сохранение не отменяется.</value></data>
-  <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Повторить восстановление</value></data>
-  <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Сохранить оригиналы, резервные копии и журналы при восстановлении незавершённых транзакций.</value></data>
-  <data name="ImageProcessingOutcome_Pending" xml:space="preserve"><value>Итог ещё не получен</value></data>
-  <data name="ImageProcessingOutcome_CorrectedCopyCreated" xml:space="preserve"><value>Создана исправленная копия</value></data>
-  <data name="ImageProcessingOutcome_OriginalReplacedWithVerifiedBackup" xml:space="preserve"><value>Оригинал заменён; проверенная резервная копия сохранена</value></data>
-  <data name="ImageProcessingOutcome_NoOrientationNormalizationRequired" xml:space="preserve"><value>Исправление ориентации не требуется</value></data>
-  <data name="ImageProcessingOutcome_UnsupportedSourceSkipped" xml:space="preserve"><value>Неподдерживаемое изображение пропущено</value></data>
-  <data name="ImageProcessingOutcome_ProcessingFailed" xml:space="preserve"><value>Обработка завершилась ошибкой</value></data>
-  <data name="ImageProcessingOutcome_CancelledBeforeTransformation" xml:space="preserve"><value>Отменено до преобразования</value></data>
-  <data name="ImageProcessingOutcome_CancelledBeforeCommit" xml:space="preserve"><value>Отменено до фиксации результата</value></data>
-  <data name="ImageSourceDiscoveryObservation_ReparsePointSkipped" xml:space="preserve"><value>Точка повторной обработки пропущена</value></data>
-  <data name="ImageSourceDiscoveryObservation_SourceAccessFailed" xml:space="preserve"><value>Не удалось получить доступ к источнику</value></data>
-  <data name="ImageSourceDiscoveryObservation_ApplicationOwnedFolderExcluded" xml:space="preserve"><value>Папка, созданная приложением, исключена</value></data>
-  <data name="Shell_StartupRecoveryProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Проверка незавершённых транзакций</value></data>
-  <data name="Shell_StartupRecoveryError.Title" xml:space="preserve"><value>Восстановление требует внимания</value></data>
-  <data name="StartupRecovery_PreservationNotice" xml:space="preserve"><value>Обработка отключена. Сохраните оригиналы, проверенные резервные копии, временные результаты и записи транзакций приложения. Неоднозначные файлы не заменяются и не удаляются автоматически.</value></data>
-  <data name="Shell_StartupRecoveredCount.Text" xml:space="preserve"><value>Транзакций согласовано при запуске:</value></data>
-  <data name="Shell_RestoreRecoverySource.Content" xml:space="preserve"><value>Восстановить доступ к исходной папке</value></data>
-  <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Восстановить доступ к исходной папке</value></data>
-  <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Выберите исходную папку. Доступ используется только для восстановления; обработка остаётся отключённой до согласования всех транзакций.</value></data>
-  <data name="Shell_ExportDiagnostics.Content" xml:space="preserve"><value>Экспортировать локальную диагностику</value></data>
-  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Экспортировать локальную диагностику</value></data>
-  <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Выберите место для безопасных локальных записей диагностики. Ничего не отправляется; пути к исходникам, метаданные изображений и сообщения исключений не включаются.</value></data>
-  <data name="Shell_DiagnosticFileType" xml:space="preserve"><value>Записи диагностики JSON Lines</value></data>
-  <data name="Shell_DiagnosticLogError.Title" xml:space="preserve"><value>Диагностика недоступна или экспорт не завершён</value></data>
-  <data name="Shell_DiagnosticLogError.Message" xml:space="preserve"><value>Обработку изображений можно продолжить. Экспорт не меняет локальные записи, но выбранный файл экспорта может быть неполным. Изображения и личные пути к исходникам не собираются.</value></data>
-  <data name="Shell_SourcePicker.AccessKey" xml:space="preserve"><value>П</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_Analyze.AccessKey" xml:space="preserve"><value>А</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_StartProcessing.AccessKey" xml:space="preserve"><value>З</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_CancelOperation.AccessKey" xml:space="preserve"><value>О</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ReturnToSourceSelection.AccessKey" xml:space="preserve"><value>Н</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_RetryRecovery.AccessKey" xml:space="preserve"><value>В</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_RestoreRecoverySource.AccessKey" xml:space="preserve"><value>Д</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ExportDiagnostics.AccessKey" xml:space="preserve"><value>Э</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_TraversalScope.AccessKey" xml:space="preserve"><value>У</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_OutputDisposition.AccessKey" xml:space="preserve"><value>Р</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_EdgeHandling.AccessKey" xml:space="preserve"><value>К</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ScanOrganization.AccessKey" xml:space="preserve"><value>С</value><comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment></data>
-  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Вернуться к выбору исходной папки</value></data>
-  <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Сбросить текущую проверку и снова выбрать исходные изображения; завершённая операция не отменяется.</value></data>
-  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Подтвердить удаление указанных пикселей на краях</value></data>
-  <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Подтвердить только показанную для этого изображения потерю пикселей на краях перед проверенным преобразованием.</value></data>
-  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Замечания обхода папок</value></data>
-  <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve"><value>Развернуть сведения о пропущенных папках и доступе к исходным файлам; это не успешные преобразования изображений.</value></data>
+    <data name="Shell_SourceSelectionHeading.Text" xml:space="preserve">
+        <value>Выберите исходную папку</value>
+    </data>
+    <data name="Shell_AnalysisHeading.Text" xml:space="preserve">
+        <value>Анализ выбранной папки</value>
+    </data>
+    <data name="Shell_ReviewHeading.Text" xml:space="preserve">
+        <value>Проверка перед обработкой</value>
+    </data>
+    <data name="Shell_ProcessingHeading.Text" xml:space="preserve">
+        <value>Обработка проверенных изображений</value>
+    </data>
+    <data name="Shell_ResultsHeading.Text" xml:space="preserve">
+        <value>Проверьте результаты</value>
+    </data>
+    <data name="Shell_RecoveryRequiredHeading.Text" xml:space="preserve">
+        <value>Завершите восстановление перед новой обработкой</value>
+    </data>
+    <data name="Shell_SourcePicker.Content" xml:space="preserve">
+        <value>Выбрать папку</value>
+    </data>
+    <data name="Shell_Analyze.Content" xml:space="preserve">
+        <value>Проанализировать папку</value>
+    </data>
+    <data name="Shell_TraversalScope.Header" xml:space="preserve">
+        <value>Папки</value>
+    </data>
+    <data name="Shell_OutputDisposition.Header" xml:space="preserve">
+        <value>Результат</value>
+    </data>
+    <data name="Shell_EdgeHandling.Header" xml:space="preserve">
+        <value>Поворот</value>
+    </data>
+    <data name="Shell_ScanOrganization.Header" xml:space="preserve">
+        <value>Кодирование JPEG</value>
+    </data>
+    <data name="Shell_SelectedFolderOnly.Content" xml:space="preserve">
+        <value>Только выбранная папка</value>
+    </data>
+    <data name="Shell_SelectedFolderAndDescendants.Content" xml:space="preserve">
+        <value>Включить вложенные папки</value>
+    </data>
+    <data name="Shell_CreateCorrectedCopy.Content" xml:space="preserve">
+        <value>Создать исправленные копии; сохранить оригиналы</value>
+    </data>
+    <data name="Shell_ReplaceWithVerifiedBackup.Content" xml:space="preserve">
+        <value>Заменить оригиналы; сохранить проверенные резервные копии</value>
+        <comment>Verified backup means retained bytes were reopened and checked against the observed source revision before replacement. It is not a guarantee against physical-media or device loss.</comment>
+    </data>
+    <data name="Shell_RequirePerfectTransform.Content" xml:space="preserve">
+        <value>Сохранять все края изображения</value>
+        <comment>Lossless means transforming existing quantized JPEG coefficients without decoding/re-encoding or new quantization. It does not promise identical file bytes, and partial coding units may prevent a perfect transform.</comment>
+    </data>
+    <data name="Shell_TrimPartialMinimumCodedUnits.Content" xml:space="preserve">
+        <value>Разрешить обрезку краёв с подтверждением</value>
+        <comment>Minimum coded unit is JPEG's component-sampling coding unit, not necessarily an 8 by 8 pixel block. Trimming permanently discards the exact source-space edge pixels shown in review; consent is required.</comment>
+    </data>
+    <data name="Shell_PreserveSourceScans.Content" xml:space="preserve">
+        <value>Сохранять организацию сканов</value>
+    </data>
+    <data name="Shell_SequentialDct.Content" xml:space="preserve">
+        <value>Последовательное</value>
+    </data>
+    <data name="Shell_ProgressiveDct.Content" xml:space="preserve">
+        <value>Прогрессивное</value>
+        <comment>Progressive DCT stores frequency coefficients across multiple JPEG scans. This choice reorganizes scans without re-quantization; it does not increase image quality or describe animation.</comment>
+    </data>
+    <data name="Shell_ReviewInstruction.Text" xml:space="preserve">
+        <value>Изменение параметров требует нового анализа и повторного согласия на обрезку.</value>
+    </data>
+    <data name="Shell_RecursiveExclusionNotice.Text" xml:space="preserve">
+        <value>Рекурсивный анализ исключает папки результатов и резервных копий, принадлежность которых приложению подтверждена. Замечания обхода отображаются при проверке.</value>
+    </data>
+    <data name="Shell_BackupDestinationLabel.Text" xml:space="preserve">
+        <value>Проверенные резервные копии будут сохранены в:</value>
+    </data>
+    <data name="Shell_TrimConsent.Content" xml:space="preserve">
+        <value>Я согласен с удалением указанного количества пикселей на краях оригинала</value>
+    </data>
+    <data name="Shell_DiscardedRightEdgeLabel.Text" xml:space="preserve">
+        <value>Удаляемая ширина правого края оригинала (пиксели)</value>
+    </data>
+    <data name="Shell_DiscardedBottomEdgeLabel.Text" xml:space="preserve">
+        <value>Удаляемая высота нижнего края оригинала (пиксели)</value>
+    </data>
+    <data name="Shell_StartProcessing.Content" xml:space="preserve">
+        <value>Начать проверенную обработку</value>
+    </data>
+    <data name="Shell_CancelOperation.Content" xml:space="preserve">
+        <value>Отменить дальнейшую обработку</value>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.Content" xml:space="preserve">
+        <value>Вернуться к выбору исходной папки</value>
+    </data>
+    <data name="Shell_RetryRecovery.Content" xml:space="preserve">
+        <value>Повторить восстановление</value>
+    </data>
+    <data name="Shell_ProcessingRowsLabel.Text" xml:space="preserve">
+        <value>Проверка изображений и результаты</value>
+    </data>
+    <data name="Shell_EligibleFilesLabel.Text" xml:space="preserve">
+        <value>Запланированные преобразования изображений</value>
+    </data>
+    <data name="Shell_CompletedRowsLabel.Text" xml:space="preserve">
+        <value>Строки с окончательным результатом</value>
+    </data>
+    <data name="Shell_FailedFilesLabel.Text" xml:space="preserve">
+        <value>Файлы с ошибками</value>
+    </data>
+    <data name="Shell_CancelledFilesLabel.Text" xml:space="preserve">
+        <value>Отменённые файлы</value>
+    </data>
+    <data name="Shell_InitialInstruction.Text" xml:space="preserve">
+        <value>Выберите папку, проанализируйте её и проверьте предложенные действия. Анализ не изменяет изображения.</value>
+    </data>
+    <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Выбрать исходную папку</value>
+    </data>
+    <data name="Shell_SourcePicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Выберите только папку с изображениями, которые требуется проверить.</value>
+    </data>
+    <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Проанализировать папку</value>
+    </data>
+    <data name="Shell_Analyze.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Анализ только читает данные; преобразование и сохранение не выполняются.</value>
+    </data>
+    <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Папки для анализа</value>
+    </data>
+    <data name="Shell_TraversalScope.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>При рекурсивном обходе исключения и ошибки доступа сохраняются для проверки.</value>
+    </data>
+    <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Способ сохранения результата</value>
+    </data>
+    <data name="Shell_OutputDisposition.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Замена требует отображения места проверенной резервной копии перед обработкой.</value>
+    </data>
+    <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Неполные блоки кодирования JPEG</value>
+    </data>
+    <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Обрезка необратимо удаляет указанное количество пикселей на краях оригинала и требует явного согласия.</value>
+    </data>
+    <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Организация сканов выходного JPEG</value>
+    </data>
+    <data name="Shell_ScanOrganization.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Изменение организации сканов отменяет текущую проверку.</value>
+    </data>
+    <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Начать проверенную обработку</value>
+    </data>
+    <data name="Shell_StartProcessing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Выполнить только эту проверенную группу с подтверждёнными параметрами.</value>
+    </data>
+    <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Отменить дальнейшую обработку</value>
+    </data>
+    <data name="Shell_CancelOperation.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Запросить согласованную отмену. Завершённое сохранение не отменяется.</value>
+    </data>
+    <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Повторить восстановление</value>
+    </data>
+    <data name="Shell_RetryRecovery.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Сохранить оригиналы, резервные копии и журналы при восстановлении незавершённых транзакций.</value>
+    </data>
+    <data name="ImageProcessingOutcome_Pending" xml:space="preserve">
+        <value>Итог ещё не получен</value>
+    </data>
+    <data name="ImageProcessingOutcome_CorrectedCopyCreated" xml:space="preserve">
+        <value>Создана исправленная копия</value>
+    </data>
+    <data name="ImageProcessingOutcome_OriginalReplacedWithVerifiedBackup" xml:space="preserve">
+        <value>Оригинал заменён; проверенная резервная копия сохранена</value>
+    </data>
+    <data name="ImageProcessingOutcome_NoOrientationNormalizationRequired" xml:space="preserve">
+        <value>Исправление ориентации не требуется</value>
+    </data>
+    <data name="ImageProcessingOutcome_UnsupportedSourceSkipped" xml:space="preserve">
+        <value>Неподдерживаемое изображение пропущено</value>
+    </data>
+    <data name="ImageProcessingOutcome_ProcessingFailed" xml:space="preserve">
+        <value>Обработка завершилась ошибкой</value>
+    </data>
+    <data name="ImageProcessingOutcome_CancelledBeforeTransformation" xml:space="preserve">
+        <value>Отменено до преобразования</value>
+    </data>
+    <data name="ImageProcessingOutcome_CancelledBeforeCommit" xml:space="preserve">
+        <value>Отменено до фиксации результата</value>
+    </data>
+    <data name="ImageSourceDiscoveryObservation_ReparsePointSkipped" xml:space="preserve">
+        <value>Точка повторной обработки пропущена</value>
+    </data>
+    <data name="ImageSourceDiscoveryObservation_SourceAccessFailed" xml:space="preserve">
+        <value>Не удалось получить доступ к источнику</value>
+    </data>
+    <data name="ImageSourceDiscoveryObservation_ApplicationOwnedFolderExcluded" xml:space="preserve">
+        <value>Папка, созданная приложением, исключена</value>
+    </data>
+    <data name="Shell_StartupRecoveryProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Проверка незавершённых транзакций</value>
+    </data>
+    <data name="Shell_StartupRecoveryError.Title" xml:space="preserve">
+        <value>Восстановление требует внимания</value>
+    </data>
+    <data name="StartupRecovery_PreservationNotice" xml:space="preserve">
+        <value>Обработка отключена. Сохраните оригиналы, проверенные резервные копии, временные результаты и записи транзакций приложения. Неоднозначные файлы не заменяются и не удаляются автоматически.</value>
+    </data>
+    <data name="Shell_StartupRecoveredCount.Text" xml:space="preserve">
+        <value>Транзакций согласовано при запуске:</value>
+    </data>
+    <data name="Shell_RestoreRecoverySource.Content" xml:space="preserve">
+        <value>Восстановить доступ к исходной папке</value>
+    </data>
+    <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Восстановить доступ к исходной папке</value>
+    </data>
+    <data name="Shell_RestoreRecoverySource.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Выберите исходную папку. Доступ используется только для восстановления; обработка остаётся отключённой до согласования всех транзакций.</value>
+    </data>
+    <data name="Shell_ExportDiagnostics.Content" xml:space="preserve">
+        <value>Экспортировать локальную диагностику</value>
+    </data>
+    <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Экспортировать локальную диагностику</value>
+    </data>
+    <data name="Shell_ExportDiagnostics.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Выберите место для безопасных локальных записей диагностики. Ничего не отправляется; пути к исходникам, метаданные изображений и сообщения исключений не включаются.</value>
+    </data>
+    <data name="Shell_DiagnosticFileType" xml:space="preserve">
+        <value>Записи диагностики JSON Lines</value>
+    </data>
+    <data name="Shell_DiagnosticLogError.Title" xml:space="preserve">
+        <value>Диагностика недоступна или экспорт не завершён</value>
+    </data>
+    <data name="Shell_DiagnosticLogError.Message" xml:space="preserve">
+        <value>Обработку изображений можно продолжить. Экспорт не меняет локальные записи, но выбранный файл экспорта может быть неполным. Изображения и личные пути к исходникам не собираются.</value>
+    </data>
+    <data name="Shell_SourcePicker.AccessKey" xml:space="preserve">
+        <value>П</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_Analyze.AccessKey" xml:space="preserve">
+        <value>А</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_StartProcessing.AccessKey" xml:space="preserve">
+        <value>З</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_CancelOperation.AccessKey" xml:space="preserve">
+        <value>О</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.AccessKey" xml:space="preserve">
+        <value>Н</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_RetryRecovery.AccessKey" xml:space="preserve">
+        <value>В</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_RestoreRecoverySource.AccessKey" xml:space="preserve">
+        <value>Д</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ExportDiagnostics.AccessKey" xml:space="preserve">
+        <value>Э</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_TraversalScope.AccessKey" xml:space="preserve">
+        <value>У</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_OutputDisposition.AccessKey" xml:space="preserve">
+        <value>Р</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_EdgeHandling.AccessKey" xml:space="preserve">
+        <value>К</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ScanOrganization.AccessKey" xml:space="preserve">
+        <value>С</value>
+        <comment>Single-character native access key. Keep unique among top-level commands and choices in this locale; Windows supplies Alt keytips.</comment>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Вернуться к выбору исходной папки</value>
+    </data>
+    <data name="Shell_ReturnToSourceSelection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Сбросить текущую проверку и снова выбрать исходные изображения; завершённая операция не отменяется.</value>
+    </data>
+    <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Подтвердить удаление указанных пикселей на краях</value>
+    </data>
+    <data name="Shell_TrimConsent.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Подтвердить только показанную для этого изображения потерю пикселей на краях перед проверенным преобразованием.</value>
+    </data>
+    <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Замечания обхода папок</value>
+    </data>
+    <data name="Shell_DiscoveryObservations.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+        <value>Развернуть сведения о пропущенных папках и доступе к исходным файлам; это не успешные преобразования изображений.</value>
+    </data>
+    <data name="Shell_OpenSettings.Label" xml:space="preserve">
+        <value>Параметры</value>
+    </data>
+    <data name="Shell_OpenSettings.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Параметры</value>
+    </data>
+    <data name="Shell_CloseSettings.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Вернуться из параметров</value>
+    </data>
+    <data name="Shell_SettingsHeading.Text" xml:space="preserve">
+        <value>Параметры</value>
+    </data>
+    <data name="Shell_SettingsDescription.Text" xml:space="preserve">
+        <value>Выберите способ обработки папок и фотографий. Параметры сохраняются автоматически и применяются при следующем анализе. Во время работы изменять их нельзя.</value>
+    </data>
+    <data name="Shell_FolderSettingsDescription.Text" xml:space="preserve">
+        <value>Выберите, следует ли включать фотографии из вложенных папок.</value>
+    </data>
+    <data name="Shell_OutputSettingsDescription.Text" xml:space="preserve">
+        <value>Создание исправленных копий сохраняет оригиналы. Для замены оригиналов необходимы проверенные резервные копии и предварительная проверка.</value>
+    </data>
+    <data name="Shell_EdgeSettingsDescription.Text" xml:space="preserve">
+        <value>Для некоторых поворотов требуется удалить пиксели с края изображения. Сохраняйте все края, пропуская такие файлы, или разрешите обрезку с подтверждением точных размеров при проверке.</value>
+    </data>
+    <data name="Shell_EncodingSettingsDescription.Text" xml:space="preserve">
+        <value>Прогрессивные JPEG отображаются постепенно по мере загрузки. Этот параметр меняет организацию сканов без изменения качества изображения.</value>
+    </data>
+    <data name="Shell_SettingsSaveError.Title" xml:space="preserve">
+        <value>Не удалось сохранить параметры</value>
+    </data>
+    <data name="Shell_SettingsSaveError.Message" xml:space="preserve">
+        <value>Выбранные параметры действуют в этом сеансе, но могут не сохраниться до следующего запуска.</value>
+    </data>
+    <data name="Shell_DiagnosticsHeading.Text" xml:space="preserve">
+        <value>Диагностика</value>
+    </data>
+    <data name="Shell_SpinLogo.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Повернуть логотип JPG Spinner</value>
+    </data>
+    <data name="Shell_ChangeSourceFolder.Content" xml:space="preserve">
+        <value>Изменить папку</value>
+    </data>
+    <data name="Shell_CropHelpLink.Content" xml:space="preserve">
+        <value>Почему при повороте может потребоваться обрезка?</value>
+    </data>
+    <data name="Shell_ProgressiveHelpLink.Content" xml:space="preserve">
+        <value>Что такое прогрессивный JPEG?</value>
+    </data>
+    <data name="Shell_AboutHeading.Text" xml:space="preserve">
+        <value>О приложении</value>
+    </data>
+    <data name="Shell_PrivacyLink.Content" xml:space="preserve">
+        <value>Конфиденциальность</value>
+    </data>
+    <data name="Shell_BackToSettings.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Назад к параметрам</value>
+    </data>
+    <data name="Shell_CropHelpHeading.Text" xml:space="preserve">
+        <value>Поворот и обрезка краёв</value>
+    </data>
+    <data name="Shell_CropHelpIntroduction.Text" xml:space="preserve">
+        <value>JPEG хранит детали изображения в блоках. В зависимости от представления цвета блоки объединяются в более крупные единицы кодирования. Правый или нижний край может содержать неполную единицу, если размеры изображения не совпадают с этой сеткой.</value>
+    </data>
+    <data name="Shell_CropHelpRotation.Text" xml:space="preserve">
+        <value>После поворота неполный край может оказаться в позиции, где точное преобразование коэффициентов невозможно. Исходная иллюстрация показывает, почему поворот только полной области оставил бы некорректную полосу.</value>
+    </data>
+    <data name="Shell_CropHelpTrimming.Text" xml:space="preserve">
+        <value>Обрезка удаляет затронутые пиксели исходного края, позволяя повернуть оставшуюся часть без повторного квантования коэффициентов JPEG. Удалённые пиксели не сохраняются в результате: обрезка не сохраняет изображение целиком.</value>
+    </data>
+    <data name="Shell_CropHelpChoices.Text" xml:space="preserve">
+        <value>Сохранение всех краёв пропускает изображения, для поворота которых нужна обрезка. Разрешение обрезки требует отдельно проверить и подтвердить точное число удаляемых пикселей справа и снизу для каждого изображения. Сам выбор параметра не является таким подтверждением.</value>
+    </data>
+    <data name="Shell_CropSourceImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Исходная иллюстрация с неполной областью края</value>
+    </data>
+    <data name="Shell_CropRotatedImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Иллюстрация неполной области после поворота</value>
+    </data>
+    <data name="Shell_CropResultImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Иллюстрация поворота после обрезки затронутого края</value>
+    </data>
+    <data name="Shell_ProgressiveHelpHeading.Text" xml:space="preserve">
+        <value>Прогрессивный JPEG</value>
+    </data>
+    <data name="Shell_ProgressiveHelpIntroduction.Text" xml:space="preserve">
+        <value>Прогрессивный JPEG хранит коэффициенты в нескольких сканах. Совместимый просмотрщик может показать приблизительное изображение, добавляя детали при получении следующих сканов. Последовательный JPEG передаёт коэффициенты в последовательных сканах.</value>
+    </data>
+    <data name="Shell_ProgressiveHelpExample.Text" xml:space="preserve">
+        <value>Используйте стрелки карусели, жест смахивания или клавиши влево и вправо, чтобы сравнить первый, средний и последний уровни исходного примера. Windows декодирует реальные прогрессивные уровни JPEG.</value>
+    </data>
+    <data name="Shell_ProgressiveHelpChoices.Text" xml:space="preserve">
+        <value>Сохранение организации сканов оставляет исходный порядок. Последовательный и прогрессивный режимы задают новую организацию результата. Совместимость и размер файла зависят от изображения и просмотрщика; фиксированная экономия размера не гарантируется.</value>
+    </data>
+    <data name="Shell_ProgressiveHelpQuality.Text" xml:space="preserve">
+        <value>Эти параметры не выполняют повторное квантование коэффициентов JPEG и не увеличивают качество изображения. Для поворота всё равно может потребоваться обрезка краёв. Изменение параметра отменяет текущую проверку и требует нового анализа.</value>
+    </data>
+    <data name="Shell_ProgressiveExampleImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Исходный пример прогрессивного JPEG после полного декодирования</value>
+    </data>
+    <data name="Shell_PrivacyHeading.Text" xml:space="preserve">
+        <value>Конфиденциальность в JPG Spinner</value>
+    </data>
+    <data name="Shell_PrivacyProcessing.Text" xml:space="preserve">
+        <value>Приложение читает выбранные вами папки, содержимое фотографий и метаданные: ориентацию, сведения о камере и, возможно, местоположение или другие персональные данные. Эти сведения нужны для анализа, исправления ориентации и сохранения поддерживаемых метаданных. Анализ не изменяет файлы. Обработка создаёт исправленные копии либо заменяет оригиналы только в рамках проверяемой процедуры с резервным копированием. Приложение не отправляет фотографии или метаданные в Hadden Industries.</value>
+    </data>
+    <data name="Shell_PrivacyLocalData.Text" xml:space="preserve">
+        <value>Настройки обработки и сохранённые разрешения Windows на доступ к папкам хранятся локально для этого приложения. Журналы восстановления содержат идентификаторы файлов, пути и сведения об операциях, необходимые для восстановления прерванной работы. Оригиналы, исправленные копии, проверенные резервные копии и журналы — рабочие данные, а не очищенная диагностика. Ограничения диагностического хранилища на них не распространяются; резервные копии не удаляются автоматически по сроку хранения.</value>
+    </data>
+    <data name="Shell_PrivacyDiagnostics.Text" xml:space="preserve">
+        <value>Для поиска причин сбоев приложение записывает время UTC, версию и архитектуру приложения, случайный идентификатор операции, этап обработки, код ошибки, длительность и сведения об ограничениях ресурсов, если они доступны. Отсутствующие необязательные значения записываются как null. Идентификатор объединяет записи одной операции и не является постоянным идентификатором устройства. Записи хранятся в формате UTF-8 JSON Lines (.jsonl) в локальной папке LocalDiagnostics приложения.</value>
+    </data>
+    <data name="Shell_PrivacyExternalServices.Text" xml:space="preserve">
+        <value>Приложение не объявляет сетевых возможностей и не добавляет собственного канала отправки. Однако выбор облачной исходной папки, папки вывода или назначения экспорта может вызвать загрузку или синхронизацию файлов поставщиком, включая фотографии и диагностические экспорты. Windows и Microsoft Store могут обрабатывать отчёты о сбоях, сведения об установке и другую диагностику в соответствии с вашими параметрами Windows и политиками Microsoft. Эти службы работают отдельно от локального диагностического журнала приложения.</value>
+    </data>
+    <data name="Shell_PublisherPrivacyLink.Content" xml:space="preserve">
+        <value>Политика конфиденциальности Hadden Industries (в браузере)</value>
+    </data>
+    <data name="Shell_MicrosoftPrivacyLink.Content" xml:space="preserve">
+        <value>Заявление о конфиденциальности Microsoft (в браузере)</value>
+    </data>
+    <data name="Shell_PrivacyBrowserNotice.Text" xml:space="preserve">
+        <value>Это уведомление доступно в приложении без интернета. Внешние ссылки открывают браузер; сайт получает обычные сведения о соединении, например IP-адрес, и может использовать cookie по своей политике. Фотографии и диагностические экспорты к ссылкам не прикрепляются.</value>
+    </data>
+    <data name="Shell_ProgressiveCarousel.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Уровни детализации прогрессивного JPEG</value>
+    </data>
+    <data name="Shell_ProgressiveFirstLevel.Text" xml:space="preserve">
+        <value>1 из 3 — Первое приближение</value>
+    </data>
+    <data name="Shell_ProgressiveMiddleLevel.Text" xml:space="preserve">
+        <value>2 из 3 — Больше деталей</value>
+    </data>
+    <data name="Shell_ProgressiveFinalLevel.Text" xml:space="preserve">
+        <value>3 из 3 — Полное изображение</value>
+    </data>
+    <data name="Shell_ProgressiveFirstImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Исходный пример на первом прогрессивном уровне</value>
+    </data>
+    <data name="Shell_ProgressiveMiddleImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Исходный пример на среднем прогрессивном уровне</value>
+    </data>
+    <data name="Shell_ProgressiveFinalImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Исходный пример на последнем прогрессивном уровне</value>
+    </data>
+    <data name="Shell_ProgressiveExampleError.Title" xml:space="preserve">
+        <value>Не удалось загрузить пример</value>
+    </data>
+    <data name="Shell_ProgressiveExampleError.Message" xml:space="preserve">
+        <value>Описание доступно. Откройте страницу повторно, чтобы попробовать загрузить встроенный пример ещё раз.</value>
+    </data>
+    <data name="Shell_NavigateForward.Label" xml:space="preserve">
+        <value>Вперёд</value>
+    </data>
+    <data name="Shell_PrivacyScope.Text" xml:space="preserve">
+        <value>Относится к JPG Spinner 2.0 от Hadden Industries Ltd. Обновлено: 26 октября 2026 года. Здесь описана эта версия приложения; поведение старой версии из Store может отличаться.</value>
+    </data>
+    <data name="Shell_PrivacySummary.Text" xml:space="preserve">
+        <value>Фотографии обрабатываются на вашем устройстве. В JPG Spinner нет загрузки фотографий на сервер, рекламы, учётных записей или собственной сетевой телеметрии. Диагностические записи остаются на устройстве, пока вы сами не экспортируете и не передадите их.</value>
+    </data>
+    <data name="Shell_PrivacyProcessingHeading.Text" xml:space="preserve">
+        <value>Фотографии и локальная обработка</value>
+    </data>
+    <data name="Shell_PrivacyLocalDataHeading.Text" xml:space="preserve">
+        <value>Настройки, доступ к папкам и восстановление</value>
+    </data>
+    <data name="Shell_PrivacyChoices.Text" xml:space="preserve">
+        <value>Вы выбираете исходную папку, параметры обработки и момент запуска проверенной работы. Параметры меняются в настройках приложения, а разрешения — в параметрах Windows. Фотографии, экспортированные файлы и резервные копии находятся в выбранных папках. Сохраняйте данные восстановления и резервные копии до завершения восстановления и пока они вам нужны: удаление может помешать восстановлению. Удаление или сброс приложения не удаляет копии и экспортированные файлы из других папок.</value>
+    </data>
+    <data name="Shell_PrivacyDiagnosticsHeading.Text" xml:space="preserve">
+        <value>Локальная диагностика и хранение</value>
+    </data>
+    <data name="Shell_PrivacyDiagnosticExclusions.Text" xml:space="preserve">
+        <value>Записи не содержат имён файлов, путей, байтов фотографий, миниатюр, метаданных Exif/XMP/IPTC, координат GPS, произвольных сообщений системных исключений, сетевых адресов или постоянных идентификаторов устройств. Отчёты Windows о сбоях не относятся к этим записям приложения.</value>
+    </data>
+    <data name="Shell_PrivacyRetention.Text" xml:space="preserve">
+        <value>Диагностика ограничивается размером и числом файлов, а не сроком в днях: не более 256 КиБ и 64 сохранённых файлов записей, до 4096 байт на запись. Зарезервированный промежуточный файл входит в лимит и никогда не экспортируется; пустой файл блокировки записи не является диагностической записью. Ротация удаляет только распознанные и проверенные записи. Неизвестные, повреждённые или неподдерживаемые файлы сохраняются; запись или экспорт отклоняется вместо скрытого удаления или раскрытия этих файлов. Ошибка ведения журнала не прерывает обработку изображений.</value>
+    </data>
+    <data name="Shell_PrivacyExportHeading.Text" xml:space="preserve">
+        <value>Экспорт и передача диагностики</value>
+    </data>
+    <data name="Shell_PrivacyExport.Text" xml:space="preserve">
+        <value>Команда экспорта локальной диагностики предлагает выбрать назначение в системном окне Windows. Экспортируется ограниченный повторно проверенный снимок очищенных записей, а не произвольные файлы диагностической папки. Автоматической отправки нет. Просмотрите экспорт перед передачей: время, результаты и ограничения ресурсов тоже могут быть чувствительными данными. Вы выбираете получателей и момент удаления. Ошибка или отмена экспорта может оставить неполный файл; атомарность экспорта не гарантируется.</value>
+    </data>
+    <data name="Shell_PrivacyExternalHeading.Text" xml:space="preserve">
+        <value>Windows, облачные службы и сайты</value>
+    </data>
+    <data name="Shell_PrivacyContactHeading.Text" xml:space="preserve">
+        <value>Вопросы и сведения, которые вы нам передаёте</value>
+    </data>
+    <data name="Shell_PrivacyContact.Text" xml:space="preserve">
+        <value>По вопросам конфиденциальности приложения обращайтесь в Hadden Industries Ltd: info@haddenindustries.com. Издатель не может получить фотографии или диагностические файлы, находящиеся только на вашем устройстве. Если вы свяжетесь с нами или передадите экспорт, переписка и включённые сведения обрабатываются по отдельной политике издателя, ссылка на которую приведена ниже. Не отправляйте журналы восстановления, фотографии или другие персональные данные, если не намерены ими поделиться.</value>
+    </data>
 </root>

@@ -4,6 +4,7 @@
 #include <winrt/JpgSpinner.Presentation.h>
 #include <winrt/Microsoft.UI.Xaml.Data.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.UI.Xaml.Input.h>
 #include <winrt/Windows.Storage.h>
 #include <jpg_spinner/batch/BatchProcessingCoordinator.h>
 #include <jpg_spinner/storage/WindowsStorageImageFileTransactionEngine.h>
@@ -12,6 +13,7 @@
 #include "Diagnostics/LocalDiagnosticLog.h"
 #include <winrt/Microsoft.UI.Windowing.h>
 #include <optional>
+#include <array>
 
 namespace winrt::JpgSpinner::implementation
 {
@@ -33,6 +35,23 @@ struct MainWindow : MainWindowT<MainWindow>
     bool CanExportDiagnostics() const;
     bool HasDiagnosticLogError() const;
     winrt::hstring StartupRecoveredTransactionCount() const;
+    bool CanEditProcessingSettings() const;
+    winrt::hstring ProcessingSettingsSummary();
+    Microsoft::UI::Xaml::Visibility LandingRegionVisibility() const;
+    Microsoft::UI::Xaml::Visibility WorkflowRegionVisibility() const;
+    Microsoft::UI::Xaml::Visibility StartupRecoverySummaryVisibility() const;
+    void Settings_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
+    void CloseSettings_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
+    void Logo_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
+    fire_and_forget SettingsHelp_Click(Windows::Foundation::IInspectable const &,
+                                       Microsoft::UI::Xaml::RoutedEventArgs const &);
+    void CloseSettingsHelp_Click(Windows::Foundation::IInspectable const &,
+                                 Microsoft::UI::Xaml::RoutedEventArgs const &);
+    void NavigateForward_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
+    void NavigateBack_Invoked(const Microsoft::UI::Xaml::Input::KeyboardAccelerator &,
+                              const Microsoft::UI::Xaml::Input::KeyboardAcceleratorInvokedEventArgs &);
+    void NavigateForward_Invoked(const Microsoft::UI::Xaml::Input::KeyboardAccelerator &,
+                                 const Microsoft::UI::Xaml::Input::KeyboardAcceleratorInvokedEventArgs &);
     Microsoft::UI::Xaml::Visibility SourceSelectionRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility AnalysisRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility ReviewRegionVisibility() const;
@@ -65,6 +84,9 @@ struct MainWindow : MainWindowT<MainWindow>
     void PropertyChanged(event_token const &token);
 
   private:
+    void navigateToShellPage(const winrt::hstring &destination);
+    bool tryNavigateBack();
+    bool tryNavigateForward();
     /// Applies the effective-pixel UX minimum through the native presenter at
     /// the current XamlRoot display scale. Requires the loaded UI-thread root.
     void updatePreferredMinimumWindowSize();
@@ -74,6 +96,14 @@ struct MainWindow : MainWindowT<MainWindow>
     void notifyShellState();
     Windows::Foundation::IAsyncAction selectPickedSourceAsync(Windows::Storage::StorageFolder selectedFolder);
     void synchronizeProcessingOptionControls();
+    /// Native app-local preferences are defaults, never trimming consent or an
+    /// instruction to mutate a previously analyzed plan without new analysis.
+    void loadProcessingPreferences();
+    Windows::Foundation::IAsyncAction loadProgressiveExamplesAsync();
+    void saveProcessingPreferences(const std::array<int, 4> &selections);
+    std::array<int, 4> processingOptionSelections();
+    void applyProcessingOptions(const Presentation::MainWindowViewModel &model,
+                                const std::array<int, 4> &selections) const;
     void showIntegrationError();
     void retainSelectedSourceForTransaction();
     void releaseReconciledSourceAccess();
@@ -97,6 +127,8 @@ struct MainWindow : MainWindowT<MainWindow>
     bool pickerActive_{};
     bool operationEventActive_{};
     bool updatingProcessingOptionControls_{};
+    bool processingPreferencesReady_{};
+    bool progressiveExamplesLoaded_{};
     bool startupRecoveryPending_{true};
     bool startupRecoveryStarted_{};
     std::optional<jpg_spinner::domain::ImageProcessingError> startupRecoveryError_;

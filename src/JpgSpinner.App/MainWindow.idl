@@ -2,35 +2,121 @@ import "Presentation.idl";
 
 namespace JpgSpinner
 {
-    [default_interface]
-    runtimeclass MainWindow : Microsoft.UI.Xaml.Window, Microsoft.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        MainWindow();
-        // Null until a real selected-folder batch has been composed. Absence of
-        // a grant is not represented by a fake transaction engine or source.
-        JpgSpinner.Presentation.MainWindowViewModel ViewModel{ get; };
-        Boolean CanPickSourceFolder{ get; };
-        Boolean IsWorkflowInteractionEnabled{ get; };
-        Boolean CanRetryRecovery{ get; };
-        // Startup is a pre-selection gate, not a fabricated selected-source
-        // view model. A missing grant keeps normal interaction disabled.
-        Boolean IsStartupRecoveryPending{ get; };
-        Boolean HasStartupRecoveryError{ get; };
-        String StartupRecoveryErrorMessage{ get; };
-        Boolean CanRestoreStartupSourceAccess{ get; };
-        Boolean CanExportDiagnostics{ get; };
-        Boolean HasDiagnosticLogError{ get; };
-        String StartupRecoveredTransactionCount{ get; };
-        // Window-only projection of the model's semantic state, not additional
-        // processing states or a second workflow decision engine.
-        Microsoft.UI.Xaml.Visibility SourceSelectionRegionVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility AnalysisRegionVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility ReviewRegionVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility ProcessingRegionVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility ResultsRegionVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility RecoveryRequiredRegionVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility ProcessingRowsRegionVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility BackupDestinationVisibility{ get; };
-        Microsoft.UI.Xaml.Visibility OperationProgressVisibility{ get; };
-    }
+[default_interface] runtimeclass ShellContentPage : Microsoft.UI.Xaml.Controls.Page
+{
+    ShellContentPage();
 }
+
+[default_interface] runtimeclass MainWindow : Microsoft.UI.Xaml.Window, Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+{
+    MainWindow();
+    // Null until a real selected-folder batch has been composed. Absence of
+    // a grant is not represented by a fake transaction engine or source.
+    JpgSpinner.Presentation.MainWindowViewModel ViewModel
+    {
+        get;
+    };
+    Boolean CanPickSourceFolder
+    {
+        get;
+    };
+    Boolean IsWorkflowInteractionEnabled
+    {
+        get;
+    };
+    Boolean CanRetryRecovery
+    {
+        get;
+    };
+    // Startup is a pre-selection gate, not a fabricated selected-source
+    // view model. A missing grant keeps normal interaction disabled.
+    Boolean IsStartupRecoveryPending
+    {
+        get;
+    };
+    Boolean HasStartupRecoveryError
+    {
+        get;
+    };
+    String StartupRecoveryErrorMessage
+    {
+        get;
+    };
+    Boolean CanRestoreStartupSourceAccess
+    {
+        get;
+    };
+    Boolean CanExportDiagnostics
+    {
+        get;
+    };
+    Boolean HasDiagnosticLogError
+    {
+        get;
+    };
+    String StartupRecoveredTransactionCount
+    {
+        get;
+    };
+    // Navigation projects existing workflow state; opening Settings never
+    // creates a second processing state or changes a reviewed batch.
+    Boolean CanEditProcessingSettings
+    {
+        get;
+    };
+    String ProcessingSettingsSummary
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility LandingRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility WorkflowRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility StartupRecoverySummaryVisibility
+    {
+        get;
+    };
+    // Window-only projection of the model's semantic state, not additional
+    // processing states or a second workflow decision engine.
+    Microsoft.UI.Xaml.Visibility SourceSelectionRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility AnalysisRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility ReviewRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility ProcessingRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility ResultsRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility RecoveryRequiredRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility ProcessingRowsRegionVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility BackupDestinationVisibility
+    {
+        get;
+    };
+    Microsoft.UI.Xaml.Visibility OperationProgressVisibility
+    {
+        get;
+    };
+}
+} // namespace JpgSpinner

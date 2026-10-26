@@ -80,7 +80,7 @@
   <ItemDefinitionGroup>
     <!-- Actual coordinator use pulls Exiv2's existing config-path/version objects
          from the static dependency; its upstream native imports need these SDK libraries. -->
-    <Link><AdditionalDependencies>shell32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+    <Link><AdditionalDependencies>shell32.lib;psapi.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -96,6 +96,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ShellContentPage.xaml.h"><DependentUpon>ShellContentPage.xaml</DependentUpon></ClInclude>
+    <ClInclude Include="Imaging\ProgressiveJpegExample.h" />
     <ClInclude Include="ViewModels\MainWindowViewModel.h" />
     <ClInclude Include="ViewModels\ImageProcessingRowViewModel.h" />
     <ClInclude Include="ViewModels\ImageSourceDiscoveryIssueViewModel.h" />
@@ -113,11 +115,14 @@
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml" />
     <Page Include="MainWindow.xaml" />
+    <Page Include="ShellContentPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp"><PrecompiledHeader>Create</PrecompiledHeader></ClCompile>
     <ClCompile Include="App.xaml.cpp"><DependentUpon>App.xaml</DependentUpon></ClCompile>
     <ClCompile Include="MainWindow.xaml.cpp"><DependentUpon>MainWindow.xaml</DependentUpon></ClCompile>
+    <ClCompile Include="Imaging\ProgressiveJpegExample.cpp" />
+    <ClCompile Include="ShellContentPage.xaml.cpp"><DependentUpon>ShellContentPage.xaml</DependentUpon></ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="ViewModels\MainWindowViewModel.cpp" />
     <ClCompile Include="ViewModels\ImageProcessingRowViewModel.cpp" />
@@ -145,6 +150,8 @@
          Retained masters are outside the project/payload; qualify the exact
          dimensions and brand with Test-PackageArtwork before release. -->
     <Image Include="Assets\*.png" />
+    <Image Include="Assets\Help\*.png" />
+    <Image Include="Assets\Help\*.jpg" />
     <None Include="Assets\README.md" />
   </ItemGroup>
   <ItemGroup>
