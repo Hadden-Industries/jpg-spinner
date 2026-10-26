@@ -368,6 +368,32 @@ $upstreamGitHubRepositories = @{
     'libjpeg-turbo' = 'libjpeg-turbo/libjpeg-turbo'
     exiv2 = 'Exiv2/exiv2'
     catch2 = 'catchorg/Catch2'
+    zlib = 'madler/zlib'
+}
+
+function Get-LocalOverlaySourceVersion {
+    param(
+        [Parameter(Mandatory)][object]$Manifest,
+        [Parameter(Mandatory)][string]$DependencyName,
+        [Parameter(Mandatory)][string]$VersionPropertyName,
+        [Parameter(Mandatory)][string]$PinnedVersion
+    )
+    # Keep JSON identity/type checks shared by native source-release overlays.
+    # A private packaging revision is never an upstream release number.
+    $name = $Manifest.PSObject.Properties['name']
+    $version = $Manifest.PSObject.Properties[$VersionPropertyName]
+    $revision = $Manifest.PSObject.Properties['port-version']
+    if ($null -eq $name -or $name.Value -isnot [string] -or $name.Value -cne $DependencyName -or
+        $null -eq $version -or $version.Value -isnot [string] -or
+        ($null -ne $revision -and ($revision.Value -isnot [long] -or $revision.Value -lt 0))) {
+        throw "The local $DependencyName overlay does not match the exact root override."
+    }
+    $expectedPin = $version.Value
+    if ($null -ne $revision -and $revision.Value -gt 0) { $expectedPin += "#$($revision.Value)" }
+    if ($PinnedVersion -cne $expectedPin) {
+        throw "The local $DependencyName overlay does not match the exact root override."
+    }
+    return $version.Value
 }
 
 # Overlay ports take precedence over registry version selection. Their local
@@ -391,12 +417,13 @@ if ($null -ne $resolutionConfiguration) {
     $overlayProperty = $resolutionConfiguration.PSObject.Properties['overlay-ports']
     if ($null -ne $overlayProperty) {
         $paths = $overlayProperty.Value
-        if ($paths -isnot [array] -or $paths.Count -ne 3 -or
+        if ($paths -isnot [array] -or $paths.Count -ne 4 -or
             $paths[0] -isnot [string] -or $paths[1] -isnot [string] -or $paths[2] -isnot [string] -or
+            $paths[3] -isnot [string] -or
             $paths[0] -cne 'vcpkg-ports/adobe-xmp-core' -or
             $paths[1] -cne 'vcpkg-ports/exiv2' -or
-            $paths[2] -cne 'vcpkg-ports/catch2') {
-            throw 'Dependency freshness supports only the exact approved metadata and Catch2 overlay paths.'
+            $paths[2] -cne 'vcpkg-ports/catch2' -or $paths[3] -cne 'vcpkg-ports/zlib') {
+            throw 'Dependency freshness supports only the exact approved metadata, Catch2 and zlib overlay paths.'
         }
         $usesMetadataOverlays = $true
         $usesCatch2Overlay = $true
@@ -407,6 +434,9 @@ if ($usesMetadataOverlays) {
     $localExivManifest = Read-JsonFile `
         -Path (Join-Path $resolvedRepositoryRoot 'vcpkg-ports/exiv2/vcpkg.json') `
         -Description 'local Exiv2 overlay manifest' -RequiredRootValueKind Object
+    $localZlibManifest = Read-JsonFile `
+        -Path (Join-Path $resolvedRepositoryRoot 'vcpkg-ports/zlib/vcpkg.json') `
+        -Description 'local zlib overlay manifest' -RequiredRootValueKind Object
     $adobeManifest = Read-JsonFile `
         -Path (Join-Path $resolvedRepositoryRoot 'vcpkg-ports/adobe-xmp-core/vcpkg.json') `
         -Description 'local Adobe XMP overlay manifest' -RequiredRootValueKind Object
@@ -461,29 +491,14 @@ foreach ($override in $vcpkgOverrides) {
     }
     $isLocalExivOverlay = $usesMetadataOverlays -and $dependencyName -ceq 'exiv2'
     $isLocalCatchOverlay = $usesCatch2Overlay -and $dependencyName -ceq 'catch2'
+    $isLocalZlibOverlay = $usesMetadataOverlays -and $dependencyName -ceq 'zlib'
     if ($isLocalCatchOverlay) {
-        # Do not coerce JSON values into matching strings. An overlay's local
-        # revision is a separate authority, not a revision of Microsoft's port.
-        $catchPackageName = $localCatchManifest.PSObject.Properties['name']
-        $catchSourceVersion = $localCatchManifest.PSObject.Properties['version-semver']
-        $catchPortRevision = $localCatchManifest.PSObject.Properties['port-version']
-        $hasValidCatchPortRevision = $null -eq $catchPortRevision -or
-        ($catchPortRevision.Value -is [long] -and $catchPortRevision.Value -ge 0)
-        if ($null -eq $catchPackageName -or $catchPackageName.Value -isnot [string] -or
-            $catchPackageName.Value -cne 'catch2' -or
-            $null -eq $catchSourceVersion -or $catchSourceVersion.Value -isnot [string]) {
-            throw 'The local catch2 overlay does not match the exact root override.'
-        }
-        $expectedCatchPin = $catchSourceVersion.Value
-        if ($hasValidCatchPortRevision -and $null -ne $catchPortRevision -and $catchPortRevision.Value -gt 0) {
-            $expectedCatchPin = "$expectedCatchPin#$($catchPortRevision.Value)"
-        }
-        if (-not $hasValidCatchPortRevision -or $pinnedVersion -cne $expectedCatchPin) {
-            throw 'The local catch2 overlay does not match the exact root override.'
-        }
-        # Registry/upstream freshness compares source releases, not our private
-        # packaging revision. The root override was checked independently above.
-        $pinnedVersion = $catchSourceVersion.Value
+        $pinnedVersion = Get-LocalOverlaySourceVersion -Manifest $localCatchManifest -DependencyName catch2 `
+            -VersionPropertyName version-semver -PinnedVersion $pinnedVersion
+    }
+    if ($isLocalZlibOverlay) {
+        $pinnedVersion = Get-LocalOverlaySourceVersion -Manifest $localZlibManifest -DependencyName zlib `
+            -VersionPropertyName version -PinnedVersion $pinnedVersion
     }
     if ($isLocalExivOverlay) {
         if ($localExivManifest.name -cne 'exiv2' -or
@@ -546,7 +561,7 @@ foreach ($override in $vcpkgOverrides) {
             }
         }
     )
-    if ($isLocalExivOverlay) {
+    if ($isLocalExivOverlay -or $isLocalZlibOverlay) {
         $registryVersions = @($registryVersions | ForEach-Object { ($_ -split '#')[0] })
     }
     if (-not $isLocalCatchOverlay) {
@@ -588,7 +603,7 @@ foreach ($override in $vcpkgOverrides) {
             }
         }
         if ((Compare-StableVersion -Left $newestGitHubVersion -Right $pinnedVersionRecord) -gt 0) {
-            if ($isLocalExivOverlay -or $isLocalCatchOverlay -or
+            if ($isLocalExivOverlay -or $isLocalCatchOverlay -or $isLocalZlibOverlay -or
                 (Compare-StableVersion -Left $newestRegistryVersion -Right $newestGitHubVersion) -ge 0) {
                 Add-AvailableUpdate `
                     -DependencyName $dependencyName `

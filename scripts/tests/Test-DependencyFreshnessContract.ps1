@@ -239,11 +239,22 @@ try {
     # agrees with the root pin. Upstream releases must still be monitored.
     $overlayManifest = $originalVcpkgManifestContent | ConvertFrom-Json -AsHashtable
     $overlayManifest.configuration = @{ 'overlay-ports' = @(
-            'vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2'
+            'vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2', 'vcpkg-ports/zlib'
         )
     }
     $overlayManifest.overrides[1].version = '0.28.8#1'
     $overlayManifest.overrides[2].version = '3.16.1'
+    $overlayManifest.overrides += @{ name = 'zlib'; version = '1.3.2#3' }
+    $localZlibManifestPath = Join-Path $fixtureRepositoryRoot 'vcpkg-ports/zlib/vcpkg.json'
+    Write-JsonFixture -Path $localZlibManifestPath -Value @{
+        name = 'zlib'; version = '1.3.2'; 'port-version' = 3
+    }
+    Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory 'vcpkg/zlib.json') -Value @{
+        versions = @(@{version = '1.3.2'; 'port-version' = 2; 'git-tree' = '0123456789abcdef0123456789abcdef01234567' })
+    }
+    Write-JsonFixture -Path (Join-Path $metadataSnapshotDirectory 'github/zlib.releases.json') -Value @(
+        @{tag_name = 'v1.3.2'; draft = $false; prerelease = $false }
+    )
     $localCatchManifestPath = Join-Path $fixtureRepositoryRoot 'vcpkg-ports/catch2/vcpkg.json'
     Write-JsonFixture -Path $localCatchManifestPath -Value @{
         name = 'catch2'; 'version-semver' = '3.16.1'; license = 'BSL-1.0'
@@ -272,6 +283,22 @@ try {
     }
     if ($overlayResult.output -notmatch 'approved local Catch2 overlay') {
         throw "Catch2 registry lag must name the actual approved resolution authority.`n$($overlayResult.output)"
+    }
+    foreach ($invalidZlibManifest in @(
+            @{ name = 'zlib'; version = '1.3.2'; 'port-version' = '3' },
+            @{ name = 'zlib'; version = '1.3.2'; 'port-version' = 2 },
+            @{ name = @('zlib'); version = '1.3.2'; 'port-version' = 3 },
+            @{ name = 'zlib'; 'port-version' = 3 }
+        )) {
+        Write-JsonFixture -Path $localZlibManifestPath -Value $invalidZlibManifest
+        $invalidZlibResult = Invoke-FreshnessCheck
+        if ($invalidZlibResult.exitCode -eq 0 -or
+            $invalidZlibResult.output -notmatch 'local zlib overlay does not match') {
+            throw "A malformed or mismatching zlib overlay was not refused precisely.`n$($invalidZlibResult.output)"
+        }
+    }
+    Write-JsonFixture -Path $localZlibManifestPath -Value @{
+        name = 'zlib'; version = '1.3.2'; 'port-version' = 3
     }
     # A local packaging revision must not masquerade as a new upstream release.
     # Match it exactly at the manifest boundary, then compare source versions.

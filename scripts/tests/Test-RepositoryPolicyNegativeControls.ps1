@@ -64,7 +64,7 @@ function Assert-RejectedMutation {
     # child process's stderr. Remove that presentation delimiter before
     # matching semantic diagnostics, then collapse ordinary whitespace.
     $normalizedOutput =
-        $result.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
+    $result.output -replace '\s+\|\s+', ' ' -replace '\s+', ' '
     foreach ($expectedDiagnostic in $ExpectedDiagnostics) {
         if ($normalizedOutput.IndexOf($expectedDiagnostic, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) {
             throw "Repository policy rejected the mutation without the required '$expectedDiagnostic' diagnostic.`n$($result.output)"
@@ -80,20 +80,20 @@ try {
     }
 
     foreach ($relativeFilePath in @(
-        '.vsconfig',
-        '.editorconfig',
-        '.clang-format',
-        '.clang-tidy',
-        '.gitignore',
-        'Directory.Build.props',
-        'Directory.Build.targets',
-        'NuGet.config',
-        'vcpkg.json',
-        'README.md',
-        'SECURITY.md',
-        'THIRD_PARTY_NOTICES.md',
-        'JpgSpinner.sln'
-    )) {
+            '.vsconfig',
+            '.editorconfig',
+            '.clang-format',
+            '.clang-tidy',
+            '.gitignore',
+            'Directory.Build.props',
+            'Directory.Build.targets',
+            'NuGet.config',
+            'vcpkg.json',
+            'README.md',
+            'SECURITY.md',
+            'THIRD_PARTY_NOTICES.md',
+            'JpgSpinner.sln'
+        )) {
         $destinationPath = Join-Path $temporaryRoot $relativeFilePath
         [void][System.IO.Directory]::CreateDirectory((Split-Path -Parent $destinationPath))
         Copy-Item -LiteralPath (Join-Path $repositoryRoot $relativeFilePath) -Destination $destinationPath
@@ -105,10 +105,10 @@ try {
     # NUL-delimited names retain spaces literally. This native Windows test
     # runner cannot encounter newline-containing Windows filenames.
     $sourceInventory = @(& git -C $repositoryRoot ls-files -z --cached --others --exclude-standard -- `
-        eng docs vcpkg-triplets vcpkg-ports src tests fuzz)
+            eng docs vcpkg-triplets vcpkg-ports src tests fuzz)
     if ($LASTEXITCODE -ne 0) { throw 'Cannot enumerate the current policy fixture source.' }
     foreach ($relativePath in (($sourceInventory -join "`n").Split([char]0, [StringSplitOptions]::RemoveEmptyEntries) |
-        Sort-Object -Unique)) {
+                Sort-Object -Unique)) {
         $sourcePath = Join-Path $repositoryRoot $relativePath
         if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) { continue }
         $destinationPath = Join-Path $temporaryRoot $relativePath
@@ -134,6 +134,20 @@ try {
     Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'adobe-xmp-core' must pin exact version '2025.03#3'"
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
 
+    # The native allocator repair is a distinct local packaging revision, not
+    # the registry's unpatched zlib. Its exact selected authority stays closed.
+    $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
+    ($manifest.overrides | Where-Object name -CEQ 'zlib').version = '1.3.2#2'
+    $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
+    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'zlib' must pin exact version '1.3.2#3'"
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
+
+    $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
+    $manifest.configuration.'overlay-ports' = @($manifest.configuration.'overlay-ports' | Where-Object { $_ -cne 'vcpkg-ports/zlib' })
+    $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
+    Assert-RejectedMutation -ExpectedDiagnostics 'all four ports are required'
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
+
     # A transitive pin must not broaden the closed direct dependency set.
     $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
     $manifest.dependencies += [pscustomobject]@{name = 'adobe-xmp-core'; 'default-features' = $false }
@@ -145,9 +159,9 @@ try {
     # parsing and interpreting the resulting ActiveCfg/Build.0 contract.
     $fixtureSolutionPath = Join-Path $temporaryRoot 'JpgSpinner.sln'
     foreach ($mappingLine in @(
-        '{06C4AF87-6B1B-47EE-9B25-CCFCF58D80BA}.Release|ARM64.ActiveCfg = Fuzz|x64',
-        '{76087416-906E-4697-ADBD-F2A6C9049085}.Debug|Win32.ActiveCfg = Fuzz|x64'
-    )) {
+            '{06C4AF87-6B1B-47EE-9B25-CCFCF58D80BA}.Release|ARM64.ActiveCfg = Fuzz|x64',
+            '{76087416-906E-4697-ADBD-F2A6C9049085}.Debug|Win32.ActiveCfg = Fuzz|x64'
+        )) {
         $lines = [IO.File]::ReadAllLines($fixtureSolutionPath)
         if (@($lines | Where-Object { $_.Trim() -ceq $mappingLine }).Count -ne 1) {
             throw 'The valid solution fixture lacks its expected unselected mapping.'
@@ -157,7 +171,7 @@ try {
         Copy-Item -LiteralPath (Join-Path $repositoryRoot 'JpgSpinner.sln') -Destination $fixtureSolutionPath -Force
     }
     if ($NativeDependencyIntegrationControlsOnly) {
-        Write-Output 'PASS: explicit Adobe revision and unselected fuzz mappings are required; the direct dependency set remains closed.'
+        Write-Output 'PASS: explicit Adobe/zlib revisions, closed overlays and unselected fuzz mappings are required; the direct dependency set remains closed.'
         return
     }
 
@@ -229,7 +243,7 @@ try {
             [void]$projectDocument.DocumentElement.AppendChild($itemGroup)
         } else {
             $reference = @($projectDocument.SelectNodes('//*[local-name()="ProjectReference"]') |
-                Where-Object { $_.GetAttribute('Include') -ceq $control.includePath })
+                    Where-Object { $_.GetAttribute('Include') -ceq $control.includePath })
             if ($reference.Count -ne 1) {
                 throw 'The valid Storage test fixture must contain exactly one real JPEG capability reference.'
             }
@@ -253,9 +267,9 @@ try {
     Assert-RejectedMutation -ExpectedDiagnostics 'VCPKG_CXX_FLAGS'
     [System.IO.File]::WriteAllText($sanitizerTripletPath, $sanitizerTripletText)
     $directoryBuildPropertiesPath =
-        Join-Path $temporaryRoot $directoryBuildPropertiesRelativePath
+    Join-Path $temporaryRoot $directoryBuildPropertiesRelativePath
     $directoryBuildPropertiesSourcePath =
-        Join-Path $repositoryRoot $directoryBuildPropertiesRelativePath
+    Join-Path $repositoryRoot $directoryBuildPropertiesRelativePath
     $directoryBuildPropertiesDocument = [System.Xml.XmlDocument]::new()
     $directoryBuildPropertiesDocument.PreserveWhitespace = $true
 
@@ -270,7 +284,7 @@ try {
         throw 'The valid Directory.Build.props fixture lacks VcpkgAdditionalInstallOptions.'
     }
     $vcpkgInstallOptionsNode.InnerText =
-        '--overlay-triplets="C:\unapproved-triplets"'
+    '--overlay-triplets="C:\unapproved-triplets"'
     $directoryBuildPropertiesDocument.Save($directoryBuildPropertiesPath)
     Assert-RejectedMutation -ExpectedDiagnostics (
         'VcpkgAdditionalInstallOptions must be'
@@ -395,7 +409,7 @@ try {
     Assert-RejectedMutation -ExpectedDiagnostics @(
         "$domainProjectRelativePath must not redeclare root-owned property 'UseEnv'"
         "$domainProjectRelativePath contains unapproved project reference " +
-            "'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj'"
+        "'src/JpgSpinner.BatchProcessing/JpgSpinner.BatchProcessing.vcxproj'"
     )
     Copy-Item -LiteralPath $domainProjectSourcePath -Destination $domainProjectPath -Force
 
@@ -435,9 +449,9 @@ try {
     $solutionText = [System.IO.File]::ReadAllText($solutionPath)
     $domainProjectGuid = '{004936AC-71F4-4208-A8A2-B0AE7B18291E}'
     $expectedActiveConfigurationLine =
-        "`t$domainProjectGuid.Release|ARM64.ActiveCfg = Release|ARM64"
+    "`t$domainProjectGuid.Release|ARM64.ActiveCfg = Release|ARM64"
     $expectedBuildParticipationLine =
-        "`t$domainProjectGuid.Release|ARM64.Build.0 = Release|ARM64"
+    "`t$domainProjectGuid.Release|ARM64.Build.0 = Release|ARM64"
     $solutionLineEnding = if ($solutionText.Contains("`r`n")) { "`r`n" } else { "`n" }
     $mutatedSolutionText = $solutionText.Replace(
         $expectedActiveConfigurationLine,
@@ -714,14 +728,14 @@ try {
     $buildPropertiesDocument.Load($buildPropertiesPath)
     $duplicateSelectionPropertyGroup = $buildPropertiesDocument.CreateElement('PropertyGroup')
     foreach ($duplicateSelectionProperty in @(
-        [pscustomobject]@{ name = 'PlatformToolset'; value = 'JpgSpinnerInvalidToolset' },
-        [pscustomobject]@{ name = 'VCToolsVersion'; value = '0.0.0' },
-        [pscustomobject]@{ name = 'WindowsTargetPlatformVersion'; value = '0.0.0.0' },
-        [pscustomobject]@{ name = 'UseEnv'; value = 'true' },
-        [pscustomobject]@{ name = 'EnableNativePackageReferenceSupport'; value = 'false' }
-    )) {
+            [pscustomobject]@{ name = 'PlatformToolset'; value = 'JpgSpinnerInvalidToolset' },
+            [pscustomobject]@{ name = 'VCToolsVersion'; value = '0.0.0' },
+            [pscustomobject]@{ name = 'WindowsTargetPlatformVersion'; value = '0.0.0.0' },
+            [pscustomobject]@{ name = 'UseEnv'; value = 'true' },
+            [pscustomobject]@{ name = 'EnableNativePackageReferenceSupport'; value = 'false' }
+        )) {
         $duplicateSelectionPropertyNode =
-            $buildPropertiesDocument.CreateElement($duplicateSelectionProperty.name)
+        $buildPropertiesDocument.CreateElement($duplicateSelectionProperty.name)
         $duplicateSelectionPropertyNode.InnerText = $duplicateSelectionProperty.value
         [void]$duplicateSelectionPropertyGroup.AppendChild($duplicateSelectionPropertyNode)
     }
@@ -752,17 +766,17 @@ try {
     )
     $conditionalPropertyGroup = $buildPropertiesDocument.CreateElement('PropertyGroup')
     foreach ($conditionalSelectionProperty in @(
-        [pscustomobject]@{ name = 'PlatformToolset'; value = 'JpgSpinnerConditionallyMaskedToolset' },
-        # MSBuild property names are case-insensitive. Vary the spelling here so
-        # the control also proves that policy follows MSBuild semantics rather
-        # than XML element-name casing.
-        [pscustomobject]@{ name = 'vctoolsversion'; value = '0.0.0' },
-        [pscustomobject]@{ name = 'WindowsTargetPlatformVersion'; value = '0.0.0.0' },
-        [pscustomobject]@{ name = 'useenv'; value = 'true' },
-        [pscustomobject]@{ name = 'enablenativepackagereferencesupport'; value = 'false' }
-    )) {
+            [pscustomobject]@{ name = 'PlatformToolset'; value = 'JpgSpinnerConditionallyMaskedToolset' },
+            # MSBuild property names are case-insensitive. Vary the spelling here so
+            # the control also proves that policy follows MSBuild semantics rather
+            # than XML element-name casing.
+            [pscustomobject]@{ name = 'vctoolsversion'; value = '0.0.0' },
+            [pscustomobject]@{ name = 'WindowsTargetPlatformVersion'; value = '0.0.0.0' },
+            [pscustomobject]@{ name = 'useenv'; value = 'true' },
+            [pscustomobject]@{ name = 'enablenativepackagereferencesupport'; value = 'false' }
+        )) {
         $conditionalSelectionPropertyNode =
-            $buildPropertiesDocument.CreateElement($conditionalSelectionProperty.name)
+        $buildPropertiesDocument.CreateElement($conditionalSelectionProperty.name)
         $conditionalSelectionPropertyNode.InnerText = $conditionalSelectionProperty.value
         [void]$conditionalPropertyGroup.AppendChild($conditionalSelectionPropertyNode)
     }
@@ -811,7 +825,7 @@ try {
 
     $visualStudioConfigurationPath = Join-Path $temporaryRoot '.vsconfig'
     $visualStudioConfiguration =
-        Get-Content -LiteralPath $visualStudioConfigurationPath -Raw |
+    Get-Content -LiteralPath $visualStudioConfigurationPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $visualStudioConfiguration.components += 'Microsoft.VisualStudio.Component.VC.Tools.ARM'
     $mutatedVisualStudioConfiguration = $visualStudioConfiguration | ConvertTo-Json -Depth 20
@@ -979,20 +993,20 @@ try {
     $vcpkgManifestPath = Join-Path $temporaryRoot 'vcpkg.json'
     $validOverlayManifestText = [System.IO.File]::ReadAllText($vcpkgManifestPath)
     foreach ($invalidOverlayPaths in @(
-        @{ value = $null },
-        @{ value = 'vcpkg-ports/exiv2' },
-        @{ value = @{} },
-        @{ value = @() },
-        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2') },
-        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'VCPKG-PORTS/catch2') },
-        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 42) },
-        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2', 'unapproved') },
-        @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/adobe-xmp-core') },
-        @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/exiv2') },
-        @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'unapproved') },
-        @{ value = @('VCPKG-PORTS/adobe-xmp-core', 'vcpkg-ports/exiv2') },
-        @{ value = @('vcpkg-ports/adobe-xmp-core', 42) }
-    )) {
+            @{ value = $null },
+            @{ value = 'vcpkg-ports/exiv2' },
+            @{ value = @{} },
+            @{ value = @() },
+            @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2') },
+            @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'VCPKG-PORTS/catch2') },
+            @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 42) },
+            @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2', 'unapproved') },
+            @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/adobe-xmp-core') },
+            @{ value = @('vcpkg-ports/exiv2', 'vcpkg-ports/exiv2') },
+            @{ value = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'unapproved') },
+            @{ value = @('VCPKG-PORTS/adobe-xmp-core', 'vcpkg-ports/exiv2') },
+            @{ value = @('vcpkg-ports/adobe-xmp-core', 42) }
+        )) {
         $manifestMutation = $validOverlayManifestText | ConvertFrom-Json -AsHashtable
         $manifestMutation.configuration['overlay-ports'] = $invalidOverlayPaths.value
         [System.IO.File]::WriteAllText(
@@ -1040,7 +1054,7 @@ try {
 
     $vcpkgManifestPath = Join-Path $temporaryRoot 'vcpkg.json'
     $vcpkgManifest =
-        Get-Content -LiteralPath $vcpkgManifestPath -Raw |
+    Get-Content -LiteralPath $vcpkgManifestPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $vcpkgManifest['configuration'] = [ordered]@{}
     [System.IO.File]::WriteAllText(
@@ -1060,7 +1074,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $vcpkgManifestPath -Force
 
     $vcpkgManifest =
-        Get-Content -LiteralPath $vcpkgManifestPath -Raw |
+    Get-Content -LiteralPath $vcpkgManifestPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $vcpkgManifest['configuration'] = $unapprovedVcpkgConfiguration
     [System.IO.File]::WriteAllText(
@@ -1072,7 +1086,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $vcpkgManifestPath -Force
 
     $vcpkgManifest =
-        Get-Content -LiteralPath $vcpkgManifestPath -Raw |
+    Get-Content -LiteralPath $vcpkgManifestPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $vcpkgManifest['vcpkg-configuration'] = $unapprovedVcpkgConfiguration
     [System.IO.File]::WriteAllText(
@@ -1099,7 +1113,7 @@ try {
     $manifestDocument = [System.Text.Json.JsonDocument]::Parse($validVcpkgManifestText)
     try {
         $libjpegDependencies = @($manifestDocument.RootElement.GetProperty('dependencies').EnumerateArray() |
-            Where-Object { $_.GetProperty('name').ValueEquals('libjpeg-turbo') })
+                Where-Object { $_.GetProperty('name').ValueEquals('libjpeg-turbo') })
         if ($libjpegDependencies.Count -ne 1) {
             throw 'The valid manifest fixture must contain exactly one libjpeg-turbo dependency.'
         }
@@ -1168,7 +1182,7 @@ try {
     # as its name. Close each approved entry shape so conditional, host-only,
     # feature, and alternate-version semantics cannot bypass the reviewed graph.
     $vcpkgManifest =
-        Get-Content -LiteralPath $vcpkgManifestPath -Raw |
+    Get-Content -LiteralPath $vcpkgManifestPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $libjpegDependency = @(
         $vcpkgManifest.dependencies |
@@ -1199,7 +1213,7 @@ try {
     # comparison and array operators can coerce strings into apparently valid
     # booleans or one-item collections. The policy must validate types first.
     $vcpkgManifest =
-        Get-Content -LiteralPath $vcpkgManifestPath -Raw |
+    Get-Content -LiteralPath $vcpkgManifestPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $libjpegDependency = @(
         $vcpkgManifest.dependencies |
@@ -1238,7 +1252,7 @@ try {
     # become part of the product merely by appearing alongside the three pinned
     # packages, even when it disables default features.
     $vcpkgManifest =
-        Get-Content -LiteralPath $vcpkgManifestPath -Raw |
+    Get-Content -LiteralPath $vcpkgManifestPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $vcpkgManifest.dependencies += [ordered]@{
         name = 'zlib'
@@ -1262,7 +1276,7 @@ try {
     # feature declares without changing the top-level `dependencies` array.
     # The application manifest is intentionally non-extensible at this layer.
     $vcpkgManifest =
-        Get-Content -LiteralPath $vcpkgManifestPath -Raw |
+    Get-Content -LiteralPath $vcpkgManifestPath -Raw |
         ConvertFrom-Json -AsHashtable -Depth 20
     $vcpkgManifest['default-features'] = @('unapproved-dependency')
     $vcpkgManifest.features = [ordered]@{
@@ -1294,7 +1308,7 @@ try {
     $nuGetConfiguration.PreserveWhitespace = $true
     $nuGetConfiguration.Load($nuGetConfigurationPath)
     $disabledPackageSources =
-        $nuGetConfiguration.SelectSingleNode('/configuration/disabledPackageSources')
+    $nuGetConfiguration.SelectSingleNode('/configuration/disabledPackageSources')
     if ($null -eq $disabledPackageSources) {
         $disabledPackageSources = $nuGetConfiguration.CreateElement('disabledPackageSources')
         [void]$nuGetConfiguration.DocumentElement.AppendChild($disabledPackageSources)
@@ -1325,9 +1339,9 @@ finally {
         $resolvedTemporaryRoot = [System.IO.Path]::GetFullPath($temporaryRoot)
         $resolvedOperatingSystemTemporaryRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
         if (-not $resolvedTemporaryRoot.StartsWith(
-            $resolvedOperatingSystemTemporaryRoot,
-            [System.StringComparison]::OrdinalIgnoreCase
-        )) {
+                $resolvedOperatingSystemTemporaryRoot,
+                [System.StringComparison]::OrdinalIgnoreCase
+            )) {
             throw "Refusing to remove test directory outside the operating-system temporary root: $resolvedTemporaryRoot"
         }
         Remove-Item -LiteralPath $resolvedTemporaryRoot -Recurse -Force

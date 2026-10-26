@@ -732,7 +732,7 @@ function Test-VcpkgResolutionAuthorityConfiguration {
         }
     }
 
-    $approvedOverlayPorts = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2')
+    $approvedOverlayPorts = @('vcpkg-ports/adobe-xmp-core', 'vcpkg-ports/exiv2', 'vcpkg-ports/catch2', 'vcpkg-ports/zlib')
     $overlayPorts = $Configuration['overlay-ports']
     $hasExactApprovedPorts = $overlayPorts -is [System.Collections.IList] -and
         $overlayPorts.Count -eq $approvedOverlayPorts.Count
@@ -747,7 +747,7 @@ function Test-VcpkgResolutionAuthorityConfiguration {
     if (-not $hasExactApprovedPorts) {
         Add-PolicyFailure -Message (
             "$SourceDescription must not declare 'overlay-ports' outside the exact approved " +
-            'JSON array [vcpkg-ports/adobe-xmp-core, vcpkg-ports/exiv2, vcpkg-ports/catch2]; all three ports are required.'
+            'JSON array [vcpkg-ports/adobe-xmp-core, vcpkg-ports/exiv2, vcpkg-ports/catch2, vcpkg-ports/zlib]; all four ports are required.'
         )
     }
 }
@@ -2003,7 +2003,7 @@ function Test-VcpkgManifest {
             -SourceDescription 'vcpkg.json embedded configuration'
     }
     elseif (-not (Test-Path -LiteralPath (Get-RepositoryPath -RelativePath 'vcpkg-configuration.json'))) {
-        Add-PolicyFailure -Message 'vcpkg configuration must select the exact approved metadata and Catch2 overlay ports.'
+        Add-PolicyFailure -Message 'vcpkg configuration must select the exact approved metadata, Catch2 and zlib overlay ports.'
     }
     if ($manifest.Contains('vcpkg-configuration')) {
         Add-PolicyFailure -Message (
@@ -2020,6 +2020,7 @@ function Test-VcpkgManifest {
         'exiv2'          = '0.28.9#3'
         'catch2' = '3.16.1#1'
         'adobe-xmp-core' = '2025.03#3'
+        'zlib' = '1.3.2#3'
     }
 
     $dependencies = @($manifest.dependencies)
@@ -2313,9 +2314,10 @@ foreach ($override in @($verifiedVcpkgManifest.overrides)) {
 # locked restore graphs exist; naming a planned pin here would be a false claim.
 Write-Output (
     ('Repository policy verified: Visual Studio 2026/v145, MSVC {0}, C++20, Windows SDK 10.0.28000.0, ' +
-    'libjpeg-turbo {1}, Exiv2 {2}+xmp, and Catch2 {3}.') -f
+    'libjpeg-turbo {1}, Exiv2 {2}+xmp, Catch2 {3}, and zlib {4}.') -f
         $verifiedToolchainLock.vcToolsVersion,
         $verifiedVcpkgVersions['libjpeg-turbo'],
         $verifiedVcpkgVersions.exiv2,
-        $verifiedVcpkgVersions.catch2
+        $verifiedVcpkgVersions.catch2,
+        $verifiedVcpkgVersions.zlib
 )

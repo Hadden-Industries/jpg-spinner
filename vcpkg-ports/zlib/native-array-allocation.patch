@@ -1,0 +1,16 @@
+diff --git a/zutil.c b/zutil.c
+--- a/zutil.c
++++ b/zutil.c
+@@ -299,8 +299,10 @@ extern void free(voidpf ptr);
+ 
+ voidpf ZLIB_INTERNAL zcalloc(voidpf opaque, unsigned items, unsigned size) {
+     (void)opaque;
+-    return sizeof(uInt) > 2 ? (voidpf)malloc(items * size) :
+-                              (voidpf)calloc(items, size);
++    /* JPG Spinner repair: preserve the element count and size until the native
++       allocator checks their product. Unsigned multiplication here can wrap
++       before malloc receives its wider size_t argument. */
++    return (voidpf)calloc(items, size);
+ }
+ 
+ void ZLIB_INTERNAL zcfree(voidpf opaque, voidpf ptr) {
