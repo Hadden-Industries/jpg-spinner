@@ -12,7 +12,7 @@ $ns.AddNamespace('ui', 'http://schemas.microsoft.com/winfx/2006/xaml/presentatio
 $ns.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
 $notice = $shell.SelectSingleNode('//*[@x:Name="PrivacyNoticeContent"]', $ns)
 if ($null -eq $notice) { throw 'The complete app privacy notice must be packaged locally.' }
-$email = $notice.SelectNodes('.//ui:HyperlinkButton[@NavigateUri="mailto:info@haddenindustries.com"]', $ns)
+$email = $notice.SelectNodes('.//ui:HyperlinkButton[@Tag="mailto:info@haddenindustries.com"][@Click="PrivacyEmail_Click"]', $ns)
 if ($email.Count -ne 1) { throw 'Privacy contact must offer one native email link without a subject, body or attachment.' }
 foreach ($heading in @('Shell_PrivacyProcessingHeading', 'Shell_PrivacyLocalDataHeading', 'Shell_PrivacyDiagnosticsHeading', 'Shell_PrivacyExportHeading', 'Shell_PrivacyExternalHeading')) {
     $section = $notice.SelectSingleNode(".//ui:Expander[ui:Expander.Header//*[@x:Uid='$heading']]", $ns)
@@ -28,7 +28,7 @@ foreach ($language in @('en-US', 'en-GB', 'ru')) {
     $resources.Load((Join-Path $repositoryRoot "src/JpgSpinner.App/Strings/$language/Resources.resw"))
     foreach ($node in $notice.SelectNodes('.//*[@x:Uid]', $ns)) {
         $uid = $node.GetAttribute('Uid', 'http://schemas.microsoft.com/winfx/2006/xaml')
-        $property = if ($node.LocalName -ceq 'HyperlinkButton') { 'Content' } else { 'Text' }
+        $property = if ($node.LocalName -cin @('HyperlinkButton', 'Button')) { 'Content' } else { 'Text' }
         $value = $resources.SelectSingleNode("/root/data[@name='$uid.$property']/value")
         if ($null -eq $value -or [string]::IsNullOrWhiteSpace($value.InnerText)) {
             throw "Incomplete $language privacy notice: $uid.$property"

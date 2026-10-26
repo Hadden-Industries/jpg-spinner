@@ -505,7 +505,7 @@
         <value>Output</value>
     </data>
     <data name="Shell_EdgeHandling.Header" xml:space="preserve">
-        <value>Rotation</value>
+        <value>Edge trimming</value>
     </data>
     <data name="Shell_ScanOrganization.Header" xml:space="preserve">
         <value>JPEG encoding</value>
@@ -614,7 +614,7 @@
         <value>Replacement requires a displayed verified-backup destination before processing.</value>
     </data>
     <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-        <value>Partial JPEG coding blocks</value>
+        <value>Edge trimming</value>
     </data>
     <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
         <value>Trimming permanently discards the displayed source-edge pixels and needs explicit consent.</value>
@@ -800,7 +800,7 @@
         <value>Choose whether to include photos inside subfolders.</value>
     </data>
     <data name="Shell_OutputSettingsDescription.Text" xml:space="preserve">
-        <value>Keep your originals by creating corrected copies. Replacing originals requires verified backups and a review before processing.</value>
+        <value>Create corrected copies to keep your originals. You can also replace originals, with or without a verified backup. Without a backup, the original bytes cannot be recovered by this app. Review the proposed changes before processing.</value>
     </data>
     <data name="Shell_EdgeSettingsDescription.Text" xml:space="preserve">
         <value>Some rotations need to remove pixels at an image edge. Keep all edges to skip those images, or allow trimming and confirm the exact pixels during review.</value>
@@ -824,7 +824,7 @@
         <value>Change folder</value>
     </data>
     <data name="Shell_CropHelpLink.Content" xml:space="preserve">
-        <value>Why might a rotation need trimming?</value>
+        <value>Why trim edges?</value>
     </data>
     <data name="Shell_ProgressiveHelpLink.Content" xml:space="preserve">
         <value>What is progressive JPEG?</value>
@@ -839,7 +839,7 @@
         <value>Back to Settings</value>
     </data>
     <data name="Shell_CropHelpHeading.Text" xml:space="preserve">
-        <value>Rotation and edge trimming</value>
+        <value>Edge trimming</value>
     </data>
     <data name="Shell_CropHelpIntroduction.Text" xml:space="preserve">
         <value>JPEG stores image details in blocks. Depending on how colour samples are stored, these are grouped into larger coding units. The right or bottom edge can contain an incomplete unit when the image dimensions do not align with that grid.</value>
@@ -1022,6 +1022,27 @@
         <value>Email Hadden Industries (opens email app)</value>
     </data>
     <data name="Shell_PrivacyEmailDisclosure.Text" xml:space="preserve">
-        <value>The email link opens a draft in your chosen mail app. It sends nothing and adds no attachments.</value>
+        <value>Open a draft in your chosen mail app, or copy the address into webmail. If no mail app is available, use Copy email address. The app sends nothing and adds no attachments.</value>
+    </data>
+    <data name="Shell_ReplaceOriginals.Content" xml:space="preserve">
+        <value>Replace originals</value>
+    </data>
+    <data name="Shell_OutputSummaryNoBackup" xml:space="preserve">
+        <value>Replace originals; no backup retained</value>
+    </data>
+    <data name="ImageProcessingOutcome_OriginalReplacedWithoutRetainedBackup" xml:space="preserve">
+        <value>Original replaced; no backup retained</value>
+    </data>
+    <data name="Shell_CopyContactEmail.Content" xml:space="preserve">
+        <value>Copy email address</value>
+    </data>
+    <data name="Shell_EmailUnavailable" xml:space="preserve">
+        <value>We could not open an email app. Choose Copy email address, then paste it into your preferred email service.</value>
+    </data>
+    <data name="Shell_EmailCopied" xml:space="preserve">
+        <value>Email address copied. Paste it into your preferred email service.</value>
+    </data>
+    <data name="Shell_EmailCopyFailed" xml:space="preserve">
+        <value>The clipboard is unavailable. Enter the address shown above in your preferred email service.</value>
     </data>
 </root>

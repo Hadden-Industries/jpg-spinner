@@ -18,6 +18,7 @@ enum class BatchFileOutcome
     ProcessingFailed,
     CancelledBeforeTransformation,
     CancelledBeforeCommit,
+    OriginalReplacedWithoutRetainedBackup,
 };
 
 /// One terminal result for every discovered extension candidate. Successful

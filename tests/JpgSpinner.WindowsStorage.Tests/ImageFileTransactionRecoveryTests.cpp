@@ -119,12 +119,14 @@ struct RecoveryFixture final
                 std::wstring{outputFolder.Path()} + L"\\camera.jpg"};
     }
 
-    storage::internal::ImageFileTransactionJournalRecord publishPrepared(const bool replacement) const
+    storage::internal::ImageFileTransactionJournalRecord publishPrepared(const bool replacement,
+                                                                         const bool retainBackup = true) const
     {
         auto record = initialized();
         if (replacement)
         {
-            record.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+            record.outputDisposition = retainBackup ? domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+                                                    : domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup;
             record.destinationPath = record.sourcePath;
         }
         storage::internal::ImageFileTransactionJournal journal{transactionFolder, identifier};
@@ -135,7 +137,7 @@ struct RecoveryFixture final
         record.generation = 3;
         record.state = storage::internal::ImageFileTransactionState::StagedOutputHashVerified;
         journal.publish(record);
-        if (replacement)
+        if (replacement && retainBackup)
         {
             const auto backupParent = root.CreateFolderAsync(L"JPG Spinner Backups")
                                           .get()
@@ -156,6 +158,51 @@ struct RecoveryFixture final
     }
 };
 } // namespace
+
+TEST_CASE("unbacked replacement recovery reconciles native commit and refusal without inventing a backup",
+          "[storage][transaction][recovery][replace-without-backup]")
+{
+    const RecoveryTestApartment apartment;
+    const RecoveryFixture fixture;
+    const auto record = fixture.publishPrepared(true, false);
+    const bool committed = GENERATE(false, true);
+    if (committed)
+        fixture.stage.MoveAndReplaceAsync(fixture.source).get();
+    const storage::WindowsStorageStartupRecovery startup{fixture.store};
+    const std::array grants{fixture.root};
+    const auto recovered = startup.recover(grants);
+    REQUIRE(recovered.valueIfPresent());
+    REQUIRE(recovered.valueIfPresent()->recoveredTransactions.size() == 1);
+    CHECK(recovered.valueIfPresent()->recoveredTransactions.front().outcome ==
+          (committed ? storage::ImageFileTransactionRecoveryOutcome::OutputCommitted
+                     : storage::ImageFileTransactionRecoveryOutcome::OriginalPreserved));
+    const auto source = winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(record.sourcePath).get();
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(source).get() ==
+          (committed ? L"corrected encoded bytes" : L"original encoded bytes"));
+    CHECK_FALSE(fixture.root.TryGetItemAsync(L"JPG Spinner Backups").get());
+    CHECK_FALSE(fixture.outputFolder.TryGetItemAsync(fixture.stageName).get());
+    const auto repeated = startup.recover(grants);
+    REQUIRE(repeated.valueIfPresent());
+    CHECK(repeated.valueIfPresent()->recoveredTransactions.empty());
+}
+
+TEST_CASE("unbacked replacement recovery refuses changed committed bytes without rollback",
+          "[storage][transaction][recovery][replace-without-backup]")
+{
+    const RecoveryTestApartment apartment;
+    const RecoveryFixture fixture;
+    const auto record = fixture.publishPrepared(true, false);
+    fixture.stage.MoveAndReplaceAsync(fixture.source).get();
+    winrt::Windows::Storage::FileIO::WriteTextAsync(fixture.stage, L"later external edit").get();
+    const storage::WindowsStorageStartupRecovery startup{fixture.store};
+    const std::array grants{fixture.root};
+    const auto recovered = startup.recover(grants);
+    REQUIRE(recovered.errorIfPresent());
+    CHECK(recovered.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
+    CHECK(winrt::Windows::Storage::FileIO::ReadTextAsync(fixture.stage).get() == L"later external edit");
+    CHECK_FALSE(fixture.root.TryGetItemAsync(L"JPG Spinner Backups").get());
+    CHECK(fixture.transactionFolder.GetFilesAsync().get().Size() == 3);
+}
 
 TEST_CASE("Startup restores a granted source and reconciles a prepared transaction before admitting work",
           "[storage][startup-recovery][orchestration]")
@@ -331,7 +378,8 @@ TEST_CASE("only the disposition-specific monotonic journal graph can be publishe
     RecoveryTestApartment apartment;
     JournalFixture fixture;
     const auto disposition = GENERATE(domain::OutputDisposition::CreateCorrectedCopy,
-                                      domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup);
+                                      domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
+                                      domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup);
     storage::internal::ImageFileTransactionJournal journal{fixture.folder, fixture.identifier};
     auto record = fixture.initialized();
     record.outputDisposition = disposition;
@@ -344,7 +392,8 @@ TEST_CASE("only the disposition-specific monotonic journal graph can be publishe
          std::array{State::TransactionInitialized, State::StagedOutputWritten, State::StagedOutputHashVerified,
                     State::VerifiedBackupCreated, State::OutputCommitted, State::OwnedStagingArtifactsCleaned})
     {
-        if (state == State::VerifiedBackupCreated && disposition == domain::OutputDisposition::CreateCorrectedCopy)
+        if (state == State::VerifiedBackupCreated &&
+            disposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup)
             continue;
         record.state = state;
         if (state == State::VerifiedBackupCreated)

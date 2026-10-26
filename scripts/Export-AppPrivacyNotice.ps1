@@ -20,6 +20,9 @@ $paragraphs = [Collections.Generic.List[string]]::new()
 # expandable sections. Export every localized content element, including
 # collapsed details, without exporting decorative icons or layout containers.
 foreach ($node in $notice.SelectNodes('.//*[@x:Uid]', $ns)) {
+    # Copy is an interaction, not another policy paragraph. The complete
+    # selectable contact text and checked email link remain in the notice.
+    if ($node.LocalName -ceq 'Button' -and $node.GetAttribute('Click') -ceq 'CopyContactEmail_Click') { continue }
     if ($node.LocalName -cnotin @('TextBlock', 'HyperlinkButton')) {
         throw 'Unsupported localized privacy content element; add an explicit projection before publishing.'
     }
@@ -29,7 +32,7 @@ foreach ($node in $notice.SelectNodes('.//*[@x:Uid]', $ns)) {
     if ($null -eq $value -or [string]::IsNullOrWhiteSpace($value.InnerText)) { throw "Missing resource: $uid.$property" }
     $text = $value.InnerText
     if ($node.LocalName -ceq 'HyperlinkButton') {
-        $uri = [Uri]$node.GetAttribute('NavigateUri')
+        $uri = [Uri]$(if ($node.GetAttribute('Click') -ceq 'PrivacyEmail_Click') { $node.GetAttribute('Tag') } else { $node.GetAttribute('NavigateUri') })
         $isContactEmail = $uri.OriginalString -ceq 'mailto:info@haddenindustries.com'
         if (-not $uri.IsAbsoluteUri -or ($uri.Scheme -cne 'https' -and -not $isContactEmail)) {
             throw 'Privacy links must use HTTPS or the contact-only email URI.'

@@ -102,7 +102,8 @@ domain::ImageProcessingResult<AnalyzedImageBatch> BatchProcessingCoordinator::an
             (request.traversalScope != domain::TraversalScope::SelectedFolderOnly &&
              request.traversalScope != domain::TraversalScope::SelectedFolderAndDescendants) ||
             (request.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy &&
-             request.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup) ||
+             request.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup &&
+             request.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup) ||
             (request.edgeHandlingPolicy != domain::EdgeHandlingPolicy::RequirePerfectCoefficientTransform &&
              request.edgeHandlingPolicy != domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits) ||
             (request.outputScanOrganization != domain::OutputScanOrganization::PreserveSource &&
@@ -331,9 +332,12 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
             }
             // No token check here: a reported native commit is real, even if
             // cancellation arrived while finishing its journal transition.
-            terminal.outcome = reviewedBatch.disposition_ == domain::OutputDisposition::CreateCorrectedCopy
-                                   ? CorrectedCopyCreated
-                                   : OriginalReplacedWithVerifiedBackup;
+            terminal.outcome =
+                reviewedBatch.disposition_ == domain::OutputDisposition::CreateCorrectedCopy
+                    ? CorrectedCopyCreated
+                    : (reviewedBatch.disposition_ == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+                           ? OriginalReplacedWithVerifiedBackup
+                           : OriginalReplacedWithoutRetainedBackup);
         };
         try
         {
@@ -360,6 +364,7 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
             break;
         case CorrectedCopyCreated:
         case OriginalReplacedWithVerifiedBackup:
+        case OriginalReplacedWithoutRetainedBackup:
             break;
         }
         reportProgress(progress, observer);

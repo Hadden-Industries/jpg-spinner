@@ -97,7 +97,8 @@ void validateRecord(const Record &record)
     if (record.transactionIdentifier == winrt::guid{} || record.generation == 0 ||
         record.generation > maximumGeneration || static_cast<unsigned>(record.state) >= stateNames.size() ||
         (record.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy &&
-         record.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup) ||
+         record.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup &&
+         record.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup) ||
         record.sourceRevision.encodedLengthBytes == 0 || record.outputLengthBytes == 0)
         rejectRecord();
     for (const auto *path : {&record.selectedRootPath, &record.sourcePath, &record.stagePath, &record.destinationPath})
@@ -111,22 +112,22 @@ void validateRecord(const Record &record)
         rejectRecord();
     if (hasBackup)
         validateIdentity(record.backupIdentity);
-    const bool replacement = record.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    const bool retainsBackup = record.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
     const auto stateIndex = static_cast<unsigned>(record.state);
     if (record.state == State::TransactionAbandonedBeforeCommit)
     {
         // Abandonment branches after one of the precommit observations; it is
         // not the seventh successful-commit milestone. A backup fact survives
         // exactly when abandonment follows the verified-backup generation.
-        if (record.generation < 2 || record.generation > (replacement ? 5u : 4u) ||
-            hasBackup != (replacement && record.generation == 5))
+        if (record.generation < 2 || record.generation > (retainsBackup ? 5u : 4u) ||
+            hasBackup != (retainsBackup && record.generation == 5))
             rejectRecord();
         return;
     }
-    if ((!replacement && (hasBackup || record.state == State::VerifiedBackupCreated)) ||
-        (replacement && hasBackup != (stateIndex >= static_cast<unsigned>(State::VerifiedBackupCreated))))
+    if ((!retainsBackup && (hasBackup || record.state == State::VerifiedBackupCreated)) ||
+        (retainsBackup && hasBackup != (stateIndex >= static_cast<unsigned>(State::VerifiedBackupCreated))))
         rejectRecord();
-    const auto expectedGeneration = stateIndex + 1 - (!replacement && stateIndex >= 4 ? 1 : 0);
+    const auto expectedGeneration = stateIndex + 1 - (!retainsBackup && stateIndex >= 4 ? 1 : 0);
     if (record.generation != expectedGeneration)
         rejectRecord();
 }
@@ -146,11 +147,12 @@ void validateSuccessor(const Record &prior, const Record &next)
     {
         // Exact graph adjacency, including the copy-only skipped backup, is
         // required now that generations are also shared by a terminal branch.
-        const auto expectedState = priorIndex + 1 +
-                                   (prior.outputDisposition == domain::OutputDisposition::CreateCorrectedCopy &&
-                                            prior.state == State::StagedOutputHashVerified
-                                        ? 1u
-                                        : 0u);
+        const auto expectedState =
+            priorIndex + 1 +
+            (prior.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup &&
+                     prior.state == State::StagedOutputHashVerified
+                 ? 1u
+                 : 0u);
         if (expectedState > static_cast<unsigned>(State::OwnedStagingArtifactsCleaned) ||
             static_cast<unsigned>(next.state) != expectedState)
             rejectRecord();
@@ -185,7 +187,9 @@ winrt::hstring serialize(const Record &record, const domain::Sha256Digest &prede
     append(winrt::hstring{stateNames[static_cast<unsigned>(record.state)]});
     append(record.outputDisposition == domain::OutputDisposition::CreateCorrectedCopy
                ? L"CreateCorrectedCopy"
-               : L"ReplaceOriginalWithVerifiedBackup");
+               : (record.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+                      ? L"ReplaceOriginalWithVerifiedBackup"
+                      : L"ReplaceOriginalWithoutRetainedBackup"));
     append(record.selectedRootPath);
     append(record.selectedRootIdentity);
     append(record.sourcePath);
@@ -243,11 +247,14 @@ Record parse(const winrt::hstring &text, domain::Sha256Digest &predecessor)
     if (!recognizedState)
         rejectRecord();
     const auto dispositionText = values.GetStringAt(4);
-    if (dispositionText != L"CreateCorrectedCopy" && dispositionText != L"ReplaceOriginalWithVerifiedBackup")
+    if (dispositionText != L"CreateCorrectedCopy" && dispositionText != L"ReplaceOriginalWithVerifiedBackup" &&
+        dispositionText != L"ReplaceOriginalWithoutRetainedBackup")
         rejectRecord();
     const auto disposition = dispositionText == L"CreateCorrectedCopy"
                                  ? domain::OutputDisposition::CreateCorrectedCopy
-                                 : domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+                                 : (dispositionText == L"ReplaceOriginalWithVerifiedBackup"
+                                        ? domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+                                        : domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup);
     using RevisionClock = decltype(domain::SourceFileRevision::lastWriteTimeUtc);
     Record record{identifier,
                   static_cast<std::uint32_t>(generation),

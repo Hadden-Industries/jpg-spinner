@@ -138,6 +138,8 @@ Presentation::OutputDisposition MainWindowViewModel::OutputDisposition() const
         return Presentation::OutputDisposition::CreateCorrectedCopy;
     case jpg_spinner::domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup:
         return Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    case jpg_spinner::domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup:
+        return Presentation::OutputDisposition::ReplaceOriginalWithoutRetainedBackup;
     default:
         throw hresult_invalid_argument();
     }
@@ -380,6 +382,9 @@ void MainWindowViewModel::SetProcessingOptions(Presentation::OutputDisposition d
         break;
     case Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup:
         request.outputDisposition = jpg_spinner::domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+        break;
+    case Presentation::OutputDisposition::ReplaceOriginalWithoutRetainedBackup:
+        request.outputDisposition = jpg_spinner::domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup;
         break;
     default:
         throw hresult_invalid_argument();

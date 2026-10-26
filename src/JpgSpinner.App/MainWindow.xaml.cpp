@@ -22,6 +22,8 @@
 #include <winrt/Microsoft.UI.Xaml.Navigation.h>
 #include <winrt/Microsoft.UI.Input.h>
 #include <winrt/Windows.Storage.Streams.h>
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+#include <winrt/Windows.System.h>
 #include <cstring>
 #include <microsoft.ui.xaml.window.h>
 #include <shobjidl_core.h>
@@ -47,7 +49,7 @@ namespace
 // Version-1 persisted selections use this explicit order and range contract.
 // Keep validation and native composite keys shared by loading, editing/saving
 // and conversion to domain-facing presentation options.
-constexpr std::array maximumProcessingOptionSelectionIndices{1, 1, 1, 2};
+constexpr std::array maximumProcessingOptionSelectionIndices{1, 2, 1, 2};
 constexpr std::array<std::wstring_view, 4> processingPreferenceSelectionKeys{
     L"TraversalScopeSelection", L"OutputDispositionSelection", L"EdgeHandlingSelection", L"ScanOrganizationSelection"};
 bool areValidProcessingOptionSelections(const std::array<int, 4> &selections)
@@ -323,6 +325,61 @@ void MainWindow::Logo_Click(Windows::Foundation::IInspectable const &, Microsoft
     if (Windows::UI::ViewManagement::UISettings{}.AnimationsEnabled())
         LogoSpin().Begin();
 }
+void MainWindow::showContactFeedback(const wchar_t *resourceKey,
+                                     Microsoft::UI::Xaml::Controls::InfoBarSeverity severity)
+{
+    using namespace Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    PrivacyContactFeedback().Message(manager.MainResourceMap()
+                                         .GetSubtree(L"Resources")
+                                         .GetValue(resourceKey, manager.CreateResourceContext())
+                                         .ValueAsString());
+    PrivacyContactFeedback().Severity(severity);
+    PrivacyContactFeedback().IsOpen(true);
+}
+fire_and_forget MainWindow::PrivacyEmail_Click(Windows::Foundation::IInspectable const &sender,
+                                               Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    auto lifetime = get_strong();
+    const Windows::Foundation::Uri uri{
+        unbox_value<hstring>(sender.as<Microsoft::UI::Xaml::Controls::HyperlinkButton>().Tag())};
+    PrivacyContactFeedback().IsOpen(false);
+    try
+    {
+        // Query avoids Windows' acquire-an-app prompt when no mail handler is
+        // installed. Still check launch completion: associations can change
+        // between query and activation. Copying remains an explicit user action.
+        const auto support =
+            co_await Windows::System::Launcher::QueryUriSupportAsync(uri, Windows::System::LaunchQuerySupportType::Uri);
+        if (support == Windows::System::LaunchQuerySupportStatus::Available &&
+            co_await Windows::System::Launcher::LaunchUriAsync(uri))
+            co_return;
+    }
+    catch (const hresult_error &)
+    {
+        // A refused or failed activation has the same useful local fallback;
+        // native exception details do not become privacy-page prose.
+    }
+    showContactFeedback(L"Shell_EmailUnavailable", Microsoft::UI::Xaml::Controls::InfoBarSeverity::Informational);
+}
+void MainWindow::CopyContactEmail_Click(Windows::Foundation::IInspectable const &,
+                                        Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    try
+    {
+        using namespace Windows::ApplicationModel::DataTransfer;
+        // The contact URI is the single source for launch, copy and publication.
+        const Windows::Foundation::Uri uri{unbox_value<hstring>(PrivacyEmailLink().Tag())};
+        DataPackage contact;
+        contact.SetText(uri.Path());
+        Clipboard::SetContent(contact);
+        showContactFeedback(L"Shell_EmailCopied", Microsoft::UI::Xaml::Controls::InfoBarSeverity::Success);
+    }
+    catch (const hresult_error &)
+    {
+        showContactFeedback(L"Shell_EmailCopyFailed", Microsoft::UI::Xaml::Controls::InfoBarSeverity::Warning);
+    }
+}
 fire_and_forget MainWindow::SettingsHelp_Click(Windows::Foundation::IInspectable const &sender,
                                                Microsoft::UI::Xaml::RoutedEventArgs const &)
 {
@@ -389,7 +446,17 @@ hstring MainWindow::ProcessingSettingsSummary()
         {
             if (!summary.empty())
                 summary += L" · ";
-            summary += unbox_value<hstring>(selected.Content());
+            if (control == OutputDispositionControl() && control.SelectedIndex() == 2)
+            {
+                using namespace Microsoft::Windows::ApplicationModel::Resources;
+                ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+                summary += manager.MainResourceMap()
+                               .GetSubtree(L"Resources")
+                               .GetValue(L"Shell_OutputSummaryNoBackup", manager.CreateResourceContext())
+                               .ValueAsString();
+            }
+            else
+                summary += unbox_value<hstring>(selected.Content());
         }
     }
     return hstring{summary};
@@ -707,8 +774,11 @@ void MainWindow::synchronizeProcessingOptionControls()
     // Indices are local control positions, never native enum wire values.
     TraversalScopeControl().SelectedIndex(
         viewModel_.TraversalScope() == Presentation::TraversalScope::SelectedFolderOnly ? 0 : 1);
+    using Disposition = Presentation::OutputDisposition;
     OutputDispositionControl().SelectedIndex(
-        viewModel_.OutputDisposition() == Presentation::OutputDisposition::CreateCorrectedCopy ? 0 : 1);
+        viewModel_.OutputDisposition() == Disposition::CreateCorrectedCopy
+            ? 0
+            : (viewModel_.OutputDisposition() == Disposition::ReplaceOriginalWithVerifiedBackup ? 1 : 2));
     EdgeHandlingControl().SelectedIndex(
         viewModel_.EdgeHandlingPolicy() == Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform ? 0
                                                                                                                 : 1);
@@ -740,15 +810,16 @@ void MainWindow::applyProcessingOptions(const Presentation::MainWindowViewModel 
     if (!areValidProcessingOptionSelections(selections))
         throw hresult_invalid_argument();
     using ScanOrganization = Presentation::OutputScanOrganization;
-    model.SetProcessingOptions(disposition == 0 ? Presentation::OutputDisposition::CreateCorrectedCopy
-                                                : Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
-                               traversal == 0 ? Presentation::TraversalScope::SelectedFolderOnly
-                                              : Presentation::TraversalScope::SelectedFolderAndDescendants,
-                               edge == 0 ? Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform
-                                         : Presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits,
-                               scans == 0
-                                   ? ScanOrganization::PreserveSource
-                                   : (scans == 1 ? ScanOrganization::SequentialDct : ScanOrganization::ProgressiveDct));
+    model.SetProcessingOptions(
+        disposition == 0 ? Presentation::OutputDisposition::CreateCorrectedCopy
+                         : (disposition == 1 ? Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+                                             : Presentation::OutputDisposition::ReplaceOriginalWithoutRetainedBackup),
+        traversal == 0 ? Presentation::TraversalScope::SelectedFolderOnly
+                       : Presentation::TraversalScope::SelectedFolderAndDescendants,
+        edge == 0 ? Presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform
+                  : Presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits,
+        scans == 0 ? ScanOrganization::PreserveSource
+                   : (scans == 1 ? ScanOrganization::SequentialDct : ScanOrganization::ProgressiveDct));
 }
 void MainWindow::loadProcessingPreferences()
 {

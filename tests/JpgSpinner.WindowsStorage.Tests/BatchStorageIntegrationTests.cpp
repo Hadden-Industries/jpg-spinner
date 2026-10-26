@@ -97,7 +97,8 @@ TEST_CASE("Batch composition uses real native capture JPEG validation and correc
     using namespace batch_processing;
     using namespace winrt::Windows::Storage;
     const auto disposition = GENERATE(domain::OutputDisposition::CreateCorrectedCopy,
-                                      domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup);
+                                      domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
+                                      domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup);
     const BatchStorageApartment apartment;
     const test_support::TemporaryDirectory fixture{std::filesystem::temp_directory_path() /
                                                    L"jpg-spinner-batch-integration"};
@@ -152,7 +153,9 @@ TEST_CASE("Batch composition uses real native capture JPEG validation and correc
     REQUIRE(summary.valueIfPresent()->fileResults[2].outcome ==
             (disposition == domain::OutputDisposition::CreateCorrectedCopy
                  ? BatchFileOutcome::CorrectedCopyCreated
-                 : BatchFileOutcome::OriginalReplacedWithVerifiedBackup));
+                 : (disposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+                        ? BatchFileOutcome::OriginalReplacedWithVerifiedBackup
+                        : BatchFileOutcome::OriginalReplacedWithoutRetainedBackup)));
     REQUIRE_FALSE(summary.valueIfPresent()->transactionIntegrityUncertain);
     REQUIRE(summary.valueIfPresent()->finalProgress.completed == 3);
     REQUIRE(summary.valueIfPresent()->finalProgress.skipped == 2);
@@ -181,7 +184,7 @@ TEST_CASE("Batch composition uses real native capture JPEG validation and correc
         }
     }
     REQUIRE(retainedOutputs == (disposition == domain::OutputDisposition::CreateCorrectedCopy ? 1U : 0U));
-    REQUIRE(retainedBackups == (disposition == domain::OutputDisposition::CreateCorrectedCopy ? 0U : 1U));
+    REQUIRE(retainedBackups == (disposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup ? 1U : 0U));
     const auto recovered = transactions->recoverIncompleteTransactions();
     REQUIRE(recovered.valueIfPresent() != nullptr);
     REQUIRE(recovered.valueIfPresent()->recoveredTransactions.empty());

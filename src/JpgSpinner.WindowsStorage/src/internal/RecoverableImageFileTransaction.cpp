@@ -207,7 +207,8 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
                            domain::WindowsHResult{E_INVALIDARG});
         if (!selectedSourceRoot || !batch.journalStore || !request.sourceFile ||
             (request.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy &&
-             request.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup))
+             request.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup &&
+             request.outputDisposition != domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup))
             return failure(ImageProcessingErrorCode::StagingFileCreationFailed, phase,
                            domain::WindowsHResult{E_INVALIDARG});
 
@@ -322,7 +323,7 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             std::wstring{request.sourceFile.Path()}, storageItemIdentityText(sourceProof.identity),
             request.expectedSourceRevision, std::wstring{stage.file.Path()}, storageItemIdentityText(*stage.identity),
             validatedOutput.encodedBytes().size(), validatedOutput.encodedSha256(), L"", L"",
-            request.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+            request.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy
                 ? std::wstring{request.sourceFile.Path()}
                 : (std::filesystem::path{destinationFolder.Path().c_str()} / relativePath.filename()).wstring()});
         journal->publish(*journalRecord, operations);
@@ -529,6 +530,21 @@ TransactionResult RecoverableImageFileTransaction::execute(ImageFileTransactionB
             if (!persistedBackup || *persistedBackup != *journalRecord ||
                 persistedBackup->state != ImageFileTransactionState::VerifiedBackupCreated)
                 throw winrt::hresult_invalid_argument();
+        }
+        if (request.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy)
+        {
+            // Without a retained backup, the independently reread hash-verified
+            // stage is commit intent. Reuse the native replacement effect and
+            // identity/hash reconciliation, never overwrite bytes in place.
+            if (request.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup &&
+                cancellationToken.stop_requested())
+            {
+                cleanupAndAbandon();
+                return failure(ImageProcessingErrorCode::Cancelled, phase);
+            }
+            const auto intent = journal->readLatest(operations);
+            if (!intent || *intent != *journalRecord)
+                throw winrt::hresult_invalid_argument();
             // Publication is commit intent. Finish this file non-interruptibly,
             // while rechecking source bytes immediately before the native effect.
             // A failed recheck is refusal, never a blind replacement or rollback.
@@ -731,6 +747,8 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                                 L".jpg-spinner-staged-" + std::wstring{winrt::to_hstring(identifier)} + L".jpg")
                             return conflict();
                         const bool replacement =
+                            record.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy;
+                        const bool retainsBackup =
                             record.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
                         const auto destinationParent =
                             StorageFolder::GetFolderFromPathAsync(
@@ -783,7 +801,7 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                             storageItemIdentityText(sourceProof.identity) == record.sourceIdentity;
                         bool outputCommitted = replacement && hasTransformedBytes &&
                                                storageItemIdentityText(sourceProof.identity) == record.stageIdentity &&
-                                               !record.backupPath.empty();
+                                               (!retainsBackup || !record.backupPath.empty());
                         if (!replacement)
                         {
                             const auto destinationItem =
@@ -811,10 +829,11 @@ domain::ImageProcessingResult<ImageFileTransactionRecoverySummary> RecoverableIm
                             // A native move transfers this exact file ID to the output
                             // path. Both names remaining, an earlier unverified state,
                             // missing backup, or hash disagreement is not a retry signal.
-                            if (stageItem || static_cast<unsigned>(record.state) <
-                                                 static_cast<unsigned>(
-                                                     replacement ? ImageFileTransactionState::VerifiedBackupCreated
-                                                                 : ImageFileTransactionState::StagedOutputHashVerified))
+                            if (stageItem ||
+                                static_cast<unsigned>(record.state) <
+                                    static_cast<unsigned>(retainsBackup
+                                                              ? ImageFileTransactionState::VerifiedBackupCreated
+                                                              : ImageFileTransactionState::StagedOutputHashVerified))
                                 return conflict();
                             auto terminal = record;
                             if (terminal.state != ImageFileTransactionState::OutputCommitted &&

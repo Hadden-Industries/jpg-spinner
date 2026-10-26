@@ -152,8 +152,9 @@ class FileTransactionOperations
     {
         stage.MoveAsync(destination, name, winrt::Windows::Storage::NameCollisionOption::FailIfExists).get();
     }
-    /// This effect is reachable only after a published, independently reread
-    /// VerifiedBackupCreated generation. Completion is not power-fail atomicity.
+    /// Reachable only after reread commit intent: VerifiedBackupCreated when
+    /// retaining originals, StagedOutputHashVerified for explicit unbacked
+    /// replacement. Completion is not a guarantee of power-fail atomicity.
     virtual void replaceOriginalWithStage(const winrt::Windows::Storage::StorageFile &stage,
                                           const winrt::Windows::Storage::StorageFile &source) const
     {

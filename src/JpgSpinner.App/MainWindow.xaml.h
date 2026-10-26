@@ -43,6 +43,10 @@ struct MainWindow : MainWindowT<MainWindow>
     void Settings_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
     void CloseSettings_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
     void Logo_Click(Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::RoutedEventArgs const &);
+    fire_and_forget PrivacyEmail_Click(Windows::Foundation::IInspectable const &,
+                                       Microsoft::UI::Xaml::RoutedEventArgs const &);
+    void CopyContactEmail_Click(Windows::Foundation::IInspectable const &,
+                                Microsoft::UI::Xaml::RoutedEventArgs const &);
     fire_and_forget SettingsHelp_Click(Windows::Foundation::IInspectable const &,
                                        Microsoft::UI::Xaml::RoutedEventArgs const &);
     void CloseSettingsHelp_Click(Windows::Foundation::IInspectable const &,
@@ -83,6 +87,7 @@ struct MainWindow : MainWindowT<MainWindow>
     void PropertyChanged(event_token const &token);
 
   private:
+    void showContactFeedback(const wchar_t *resourceKey, Microsoft::UI::Xaml::Controls::InfoBarSeverity severity);
     void navigateToShellPage(const winrt::hstring &destination);
     bool tryNavigateBack();
     bool tryNavigateForward();

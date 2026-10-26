@@ -66,7 +66,7 @@ Hadden Industries cannot retrieve files kept only on your device. If you email u
 
 [info@haddenindustries.com](mailto:info@haddenindustries.com)
 
-The email link opens a draft in your chosen mail app. It sends nothing and adds no attachments.
+Open a draft in your chosen mail app, or copy the address into webmail. If no mail app is available, use Copy email address. The app sends nothing and adds no attachments.
 
 [Hadden Industries privacy policy (opens browser)](https://haddenindustries.com/legal.html#privacy-policy)
 

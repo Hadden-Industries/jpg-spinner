@@ -21,9 +21,10 @@ namespace JpgSpinner.Presentation
         UnsupportedSourceSkipped = 4,
         ProcessingFailed = 5,
         CancelledBeforeTransformation = 6,
-        CancelledBeforeCommit = 7
+        CancelledBeforeCommit = 7,
+        OriginalReplacedWithoutRetainedBackup = 8
     };
-    enum OutputDisposition { CreateCorrectedCopy = 0, ReplaceOriginalWithVerifiedBackup = 1 };
+    enum OutputDisposition { CreateCorrectedCopy = 0, ReplaceOriginalWithVerifiedBackup = 1, ReplaceOriginalWithoutRetainedBackup = 2 };
     enum TraversalScope { SelectedFolderOnly = 0, SelectedFolderAndDescendants = 1 };
     enum EdgeHandlingPolicy { RequirePerfectCoefficientTransform = 0, TrimPartialMinimumCodedUnits = 1 };
     enum OutputScanOrganization { PreserveSource = 0, SequentialDct = 1, ProgressiveDct = 2 };

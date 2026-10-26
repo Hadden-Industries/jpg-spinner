@@ -119,6 +119,9 @@ hstring ImageProcessingRowViewModel::OutcomeDescription() const
     case ImageProcessingRowOutcome::OriginalReplacedWithVerifiedBackup:
         key = L"ImageProcessingOutcome_OriginalReplacedWithVerifiedBackup";
         break;
+    case ImageProcessingRowOutcome::OriginalReplacedWithoutRetainedBackup:
+        key = L"ImageProcessingOutcome_OriginalReplacedWithoutRetainedBackup";
+        break;
     case ImageProcessingRowOutcome::NoOrientationNormalizationRequired:
         key = L"ImageProcessingOutcome_NoOrientationNormalizationRequired";
         break;
@@ -160,6 +163,9 @@ void ImageProcessingRowViewModel::applyResult(const jpg_spinner::batch_processin
         break;
     case NativeOutcome::OriginalReplacedWithVerifiedBackup:
         outcome_ = ImageProcessingRowOutcome::OriginalReplacedWithVerifiedBackup;
+        break;
+    case NativeOutcome::OriginalReplacedWithoutRetainedBackup:
+        outcome_ = ImageProcessingRowOutcome::OriginalReplacedWithoutRetainedBackup;
         break;
     case NativeOutcome::NoOrientationNormalizationRequired:
         outcome_ = ImageProcessingRowOutcome::NoOrientationNormalizationRequired;

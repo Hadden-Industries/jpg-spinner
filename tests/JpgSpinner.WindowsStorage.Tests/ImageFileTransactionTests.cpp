@@ -1155,6 +1155,33 @@ TEST_CASE("replacement retains the exact nested source backup before committing 
     CHECK(terminal->state == storage::internal::ImageFileTransactionState::OwnedStagingArtifactsCleaned);
 }
 
+TEST_CASE("unbacked replacement commits verified bytes without creating a backup",
+          "[storage][transaction][replace-without-backup]")
+{
+    TransactionTestApartment apartment;
+    TransactionFixture fixture;
+    auto request = fixture.requestFor(fixture.createSource("nested/camera.jpg"));
+    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup;
+    const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
+        request, *fixture.output.valueIfPresent());
+    REQUIRE(result.valueIfPresent());
+    CHECK(readBytes(fixture.directory.directoryPath() / "nested/camera.jpg") ==
+          std::vector<std::byte>(fixture.output.valueIfPresent()->encodedBytes().begin(),
+                                 fixture.output.valueIfPresent()->encodedBytes().end()));
+    CHECK_FALSE(std::filesystem::exists(fixture.directory.directoryPath() / "JPG Spinner Backups"));
+    fixture.requireNoStages();
+    const auto transactions = fixture.journalStore.GetFoldersAsync().get();
+    REQUIRE(transactions.Size() == 1);
+    const winrt::guid identifier{std::wstring_view{transactions.GetAt(0).Name()}};
+    const auto terminal =
+        storage::internal::ImageFileTransactionJournal{transactions.GetAt(0), identifier}.readLatest();
+    REQUIRE(terminal);
+    CHECK(terminal->generation == 5);
+    CHECK(terminal->state == storage::internal::ImageFileTransactionState::OwnedStagingArtifactsCleaned);
+    CHECK(terminal->backupPath.empty());
+    CHECK(terminal->backupIdentity.empty());
+}
+
 TEST_CASE("a native backup failure never changes the original or reports commit",
           "[storage][transaction][replace][backup-fault]")
 {
@@ -1344,14 +1371,15 @@ TEST_CASE("cancellation while hashing a retained backup is cancellation before c
 }
 
 TEST_CASE("uncertain native replacement and postcommit allocation failure require persisted recovery",
-          "[storage][transaction][replace][commit-uncertainty]")
+          "[storage][transaction][replace][commit-uncertainty][replace-without-backup]")
 {
     TransactionTestApartment apartment;
     const auto afterNativeReplacement = GENERATE(true, false);
     TransactionFixture fixture;
     const auto source = fixture.createSource("camera.jpg");
     auto request = fixture.requestFor(source);
-    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    request.outputDisposition = GENERATE(domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
+                                         domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup);
     struct InterruptedCommit final : storage::internal::FileTransactionOperations
     {
         bool afterNativeReplacement;
@@ -1387,14 +1415,16 @@ TEST_CASE("uncertain native replacement and postcommit allocation failure requir
                                           fixture.output.valueIfPresent()->encodedBytes().end()};
     CHECK(readBytes(fixture.directory.directoryPath() / "camera.jpg") == expected);
     unsigned backups{};
-    for (const auto &item :
-         std::filesystem::recursive_directory_iterator(fixture.directory.directoryPath() / "JPG Spinner Backups"))
-        if (item.is_regular_file())
-        {
-            ++backups;
-            CHECK(readBytes(item.path()) == fixture.sourceBytes);
-        }
-    CHECK(backups == 1);
+    const auto backupRoot = fixture.directory.directoryPath() / "JPG Spinner Backups";
+    if (std::filesystem::exists(backupRoot))
+        for (const auto &item : std::filesystem::recursive_directory_iterator(backupRoot))
+            if (item.is_regular_file())
+            {
+                ++backups;
+                CHECK(readBytes(item.path()) == fixture.sourceBytes);
+            }
+    CHECK(backups ==
+          (request.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup ? 1U : 0U));
     // A fresh public engine must recover from native files alone, not fault-seam
     // counters, the old batch object, or an earlier return value.
     storage::WindowsStorageImageFileTransactionEngine restarted{fixture.root, fixture.journalStore};
@@ -1407,7 +1437,7 @@ TEST_CASE("uncertain native replacement and postcommit allocation failure requir
 }
 
 TEST_CASE("failed replacement requires unchanged original proof before abandonment",
-          "[storage][transaction][replace][commit-uncertainty][abandonment-proof]")
+          "[storage][transaction][replace][commit-uncertainty][abandonment-proof][replace-without-backup]")
 {
     TransactionTestApartment apartment;
     enum class OriginalAfterFailure
@@ -1421,7 +1451,8 @@ TEST_CASE("failed replacement requires unchanged original proof before abandonme
                                       OriginalAfterFailure::Renamed, OriginalAfterFailure::SameBytesDifferentIdentity);
     TransactionFixture fixture;
     auto request = fixture.requestFor(fixture.createSource("camera.jpg"));
-    request.outputDisposition = domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup;
+    request.outputDisposition = GENERATE(domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup,
+                                         domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup);
     struct FailedReplacement final : storage::internal::FileTransactionOperations
     {
         const OriginalAfterFailure observation;
@@ -1468,7 +1499,10 @@ TEST_CASE("failed replacement requires unchanged original proof before abandonme
     else
     {
         CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::RecoveryConflict);
-        CHECK(persisted->state == storage::internal::ImageFileTransactionState::VerifiedBackupCreated);
+        CHECK(persisted->state ==
+              (request.outputDisposition == domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup
+                   ? storage::internal::ImageFileTransactionState::VerifiedBackupCreated
+                   : storage::internal::ImageFileTransactionState::StagedOutputHashVerified));
         REQUIRE(std::filesystem::is_regular_file(operations.stagePath));
         const std::vector<std::byte> expectedStage{fixture.output.valueIfPresent()->encodedBytes().begin(),
                                                    fixture.output.valueIfPresent()->encodedBytes().end()};
@@ -1476,10 +1510,11 @@ TEST_CASE("failed replacement requires unchanged original proof before abandonme
     }
     // Every refusal retains the independently verified backup, even when the
     // source's current bytes or identity no longer explain a safe no-commit result.
-    for (const auto &item :
-         std::filesystem::recursive_directory_iterator(fixture.directory.directoryPath() / "JPG Spinner Backups"))
-        if (item.is_regular_file())
-            CHECK(readBytes(item.path()) == fixture.sourceBytes);
+    const auto backupRoot = fixture.directory.directoryPath() / "JPG Spinner Backups";
+    if (std::filesystem::exists(backupRoot))
+        for (const auto &item : std::filesystem::recursive_directory_iterator(backupRoot))
+            if (item.is_regular_file())
+                CHECK(readBytes(item.path()) == fixture.sourceBytes);
 }
 
 TEST_CASE("another engine cannot recover or replace a live transaction's closed stage",
@@ -1544,16 +1579,17 @@ TEST_CASE("another engine cannot recover or replace a live transaction's closed 
     CHECK(recoveredAfterExit.valueIfPresent()->recoveredTransactions.empty());
 }
 
-TEST_CASE("only the two authorized output dispositions admit a transaction",
+TEST_CASE("only the three authorized output dispositions admit a transaction",
           "[storage][transaction][closed-dispositions]")
 {
     static_assert(static_cast<int>(domain::OutputDisposition::CreateCorrectedCopy) == 0);
     static_assert(static_cast<int>(domain::OutputDisposition::ReplaceOriginalWithVerifiedBackup) == 1);
+    static_assert(static_cast<int>(domain::OutputDisposition::ReplaceOriginalWithoutRetainedBackup) == 2);
     TransactionTestApartment apartment;
     TransactionFixture fixture;
     const auto source = fixture.createSource("camera.jpg");
     auto request = fixture.requestFor(source);
-    request.outputDisposition = static_cast<domain::OutputDisposition>(GENERATE(-1, 2, 3, 2147483647));
+    request.outputDisposition = static_cast<domain::OutputDisposition>(GENERATE(-1, 3, 4, 2147483647));
     const auto result = storage::WindowsStorageImageFileTransactionEngine{fixture.root, fixture.journalStore}.execute(
         request, *fixture.output.valueIfPresent());
     REQUIRE(result.errorIfPresent());

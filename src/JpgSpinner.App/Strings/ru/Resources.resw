@@ -505,7 +505,7 @@
         <value>Результат</value>
     </data>
     <data name="Shell_EdgeHandling.Header" xml:space="preserve">
-        <value>Поворот</value>
+        <value>Обрезка краёв</value>
     </data>
     <data name="Shell_ScanOrganization.Header" xml:space="preserve">
         <value>Кодирование JPEG</value>
@@ -614,7 +614,7 @@
         <value>Замена требует отображения места проверенной резервной копии перед обработкой.</value>
     </data>
     <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-        <value>Неполные блоки кодирования JPEG</value>
+        <value>Обрезка краёв</value>
     </data>
     <data name="Shell_EdgeHandling.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
         <value>Обрезка необратимо удаляет указанное количество пикселей на краях оригинала и требует явного согласия.</value>
@@ -800,7 +800,7 @@
         <value>Выберите, следует ли включать фотографии из вложенных папок.</value>
     </data>
     <data name="Shell_OutputSettingsDescription.Text" xml:space="preserve">
-        <value>Создание исправленных копий сохраняет оригиналы. Для замены оригиналов необходимы проверенные резервные копии и предварительная проверка.</value>
+        <value>Создавайте исправленные копии, чтобы сохранить оригиналы. Также можно заменять оригиналы с проверенной резервной копией или без неё. Без резервной копии приложение не сможет восстановить исходные данные. Проверьте предложенные изменения перед обработкой.</value>
     </data>
     <data name="Shell_EdgeSettingsDescription.Text" xml:space="preserve">
         <value>Для некоторых поворотов требуется удалить пиксели с края изображения. Сохраняйте все края, пропуская такие файлы, или разрешите обрезку с подтверждением точных размеров при проверке.</value>
@@ -824,7 +824,7 @@
         <value>Изменить папку</value>
     </data>
     <data name="Shell_CropHelpLink.Content" xml:space="preserve">
-        <value>Почему при повороте может потребоваться обрезка?</value>
+        <value>Зачем обрезать края?</value>
     </data>
     <data name="Shell_ProgressiveHelpLink.Content" xml:space="preserve">
         <value>Что такое прогрессивный JPEG?</value>
@@ -839,7 +839,7 @@
         <value>Назад к параметрам</value>
     </data>
     <data name="Shell_CropHelpHeading.Text" xml:space="preserve">
-        <value>Поворот и обрезка краёв</value>
+        <value>Обрезка краёв</value>
     </data>
     <data name="Shell_CropHelpIntroduction.Text" xml:space="preserve">
         <value>JPEG хранит детали изображения в блоках. В зависимости от представления цвета блоки объединяются в более крупные единицы кодирования. Правый или нижний край может содержать неполную единицу, если размеры изображения не совпадают с этой сеткой.</value>
@@ -1022,6 +1022,27 @@
         <value>Написать Hadden Industries (откроется почтовое приложение)</value>
     </data>
     <data name="Shell_PrivacyEmailDisclosure.Text" xml:space="preserve">
-        <value>Ссылка открывает черновик в выбранном почтовом приложении. Она ничего не отправляет и не добавляет вложений.</value>
+        <value>Откройте черновик в почтовом приложении или скопируйте адрес в веб-почту. Если почтового приложения нет, нажмите «Скопировать адрес электронной почты». Приложение ничего не отправляет и не добавляет вложений.</value>
+    </data>
+    <data name="Shell_ReplaceOriginals.Content" xml:space="preserve">
+        <value>Заменять оригиналы</value>
+    </data>
+    <data name="Shell_OutputSummaryNoBackup" xml:space="preserve">
+        <value>Замена оригиналов без резервной копии</value>
+    </data>
+    <data name="ImageProcessingOutcome_OriginalReplacedWithoutRetainedBackup" xml:space="preserve">
+        <value>Оригинал заменён; резервной копии нет</value>
+    </data>
+    <data name="Shell_CopyContactEmail.Content" xml:space="preserve">
+        <value>Скопировать адрес электронной почты</value>
+    </data>
+    <data name="Shell_EmailUnavailable" xml:space="preserve">
+        <value>Не удалось открыть почтовое приложение. Скопируйте адрес электронной почты и вставьте его в удобный вам почтовый сервис.</value>
+    </data>
+    <data name="Shell_EmailCopied" xml:space="preserve">
+        <value>Адрес скопирован. Вставьте его в удобный вам почтовый сервис.</value>
+    </data>
+    <data name="Shell_EmailCopyFailed" xml:space="preserve">
+        <value>Буфер обмена недоступен. Введите адрес выше в удобном вам почтовом сервисе.</value>
     </data>
 </root>

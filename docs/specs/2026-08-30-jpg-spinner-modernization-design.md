@@ -17,24 +17,24 @@ Every production behavior will be developed test-first. The required cycle is RE
 
 ### 1.1 Current repository evidence
 
-| Concern | Repository evidence | Consequence |
-|---|---|---|
-| Retired application model | `JPG Spinner/JPG Spinner.vcxproj` targets Windows SDK 10.0.16299.0 and PlatformToolset v141; the application uses UWP and C++/CX | UWP receives maintenance support but is no longer the actively developed native Windows application platform |
-| Obsolete codec | `JPG Spinner/jversion.h` identifies IJG JPEG 9a from 2014; codec implementation files are copied into the application | Security, correctness, SIMD, toolchain, and maintenance improvements from the active codec are absent |
-| Unsupported instrumentation | `JPG Spinner/packages.config` pins `ApplicationInsights-CPP` 1.0.0-Beta and `pch.cpp` contains an instrumentation key | The application ships an abandoned beta dependency and a repository-visible secret-like identifier |
-| Monolithic behavior | `Scenario_AfterPick.xaml.cpp` combines presentation, traversal, storage, JPEG transformation, metadata work, and telemetry in more than 1,600 lines | Correctness-critical behavior cannot be isolated, tested, fuzzed, or replaced safely |
-| Architecture-specific gap | Store bundles cover x86, x64, and ARM32 but not ARM64 | The package does not match current Windows hardware distribution |
-| No engineering safety net | There are no tests, automated builds, dependency lock, security analysis workflow, architecture documentation, or release checks | A toolchain or codec migration cannot be validated confidently |
+| Concern                     | Repository evidence                                                                                                                                 | Consequence                                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Retired application model   | `JPG Spinner/JPG Spinner.vcxproj` targets Windows SDK 10.0.16299.0 and PlatformToolset v141; the application uses UWP and C++/CX                    | UWP receives maintenance support but is no longer the actively developed native Windows application platform |
+| Obsolete codec              | `JPG Spinner/jversion.h` identifies IJG JPEG 9a from 2014; codec implementation files are copied into the application                               | Security, correctness, SIMD, toolchain, and maintenance improvements from the active codec are absent        |
+| Unsupported instrumentation | `JPG Spinner/packages.config` pins `ApplicationInsights-CPP` 1.0.0-Beta and `pch.cpp` contains an instrumentation key                               | The application ships an abandoned beta dependency and a repository-visible secret-like identifier           |
+| Monolithic behavior         | `Scenario_AfterPick.xaml.cpp` combines presentation, traversal, storage, JPEG transformation, metadata work, and telemetry in more than 1,600 lines | Correctness-critical behavior cannot be isolated, tested, fuzzed, or replaced safely                         |
+| Architecture-specific gap   | Store bundles cover x86, x64, and ARM32 but not ARM64                                                                                               | The package does not match current Windows hardware distribution                                             |
+| No engineering safety net   | There are no tests, automated builds, dependency lock, security analysis workflow, architecture documentation, or release checks                    | A toolchain or codec migration cannot be validated confidently                                               |
 
 Microsoft identifies WinUI 3 and the Windows App SDK as the successor path for UWP desktop applications, and its migration guidance explicitly supports migration through a new packaged project. See [Migrate from UWP to the Windows App SDK](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/migrate-to-windows-app-sdk-ovw) and [UWP migration guidance](https://learn.microsoft.com/en-us/windows/apps/develop/ai-assisted/migrate/uwp-to-winui).
 
 ### 1.2 Options considered
 
-| Option | Advantages | Fundamental problems | Decision |
-|---|---|---|---|
-| Retarget the existing UWP/C++/CX project and replace only JPEG | Small initial diff | Retains the inactive application model, C++/CX, monolithic structure, and fragile test seams; postpones the expensive migration without reducing its risk | Rejected |
-| Build an unpackaged or full-trust WinUI 3 application | Simple access to unrestricted Win32 APIs | Broadens authority unnecessarily, loses the intended AppContainer boundary, complicates Store continuity, and violates least privilege for a local image utility | Rejected |
-| Build a clean packaged WinUI 3/C++/WinRT replacement with the same Store identity | Current platform, AppContainer isolation, normal Store updates, separable native core, ARM64, deterministic testing | Requires an explicit behavioral specification and a parallel build until cutover | Selected |
+| Option                                                                            | Advantages                                                                                                          | Fundamental problems                                                                                                                                             | Decision |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Retarget the existing UWP/C++/CX project and replace only JPEG                    | Small initial diff                                                                                                  | Retains the inactive application model, C++/CX, monolithic structure, and fragile test seams; postpones the expensive migration without reducing its risk        | Rejected |
+| Build an unpackaged or full-trust WinUI 3 application                             | Simple access to unrestricted Win32 APIs                                                                            | Broadens authority unnecessarily, loses the intended AppContainer boundary, complicates Store continuity, and violates least privilege for a local image utility | Rejected |
+| Build a clean packaged WinUI 3/C++/WinRT replacement with the same Store identity | Current platform, AppContainer isolation, normal Store updates, separable native core, ARM64, deterministic testing | Requires an explicit behavioral specification and a parallel build until cutover                                                                                 | Selected |
 
 The selected option follows the [single-project MSIX guidance](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/single-project-msix) and the [MSIX AppContainer model](https://learn.microsoft.com/en-us/windows/msix/msix-container). The package application declaration will use `uap10:TrustLevel="appContainer"` and `uap10:RuntimeBehavior="packagedClassicApp"`.
 
@@ -44,7 +44,7 @@ The selected option follows the [single-project MSIX guidance](https://learn.mic
 
 - Correctly normalize all eight Exif orientation states with lossless JPEG DCT-coefficient transformations when the source coding process supports them.
 - Preserve image fidelity and non-derived metadata unless a field must change to describe the transformed image truthfully.
-- Make destructive output impossible without an explicit replacement choice and a verified backup.
+- Make destructive output impossible without an explicit replacement choice and a reviewed, hash-verified staged output. Retain a verified backup when that output policy is selected.
 - Preserve the existing Store identity and support update installation from the actually published legacy baseline to 2.0.0.0. The [native Store observation](../implementation/2026-10-17-published-store-baseline.md) confirms application 1.1.2.0 and distinct bundle 2015.616.2316.3521; the earlier 1.1.3.0 assumption was not a verified published baseline. Qualify additional supported published variants if discovered.
 - Support x86, x64, and ARM64 on Windows 10 version 22H2 build 19045 or later.
 - Keep file processing inside AppContainer and request access only through user-selected files or folders.
@@ -61,7 +61,7 @@ The selected option follows the [single-project MSIX guidance](https://learn.mic
 - No multi-picture JPEG/MPO mutation. MPF-bearing files are detected and rejected because transformation can invalidate embedded offsets.
 - No pixel-domain fallback for a transformation that cannot be performed losslessly. The application reports why the source is unsupported.
 - No parallel transformation queue until representative benchmarks demonstrate a user benefit within explicit memory bounds.
-- No automatic replacement without a backup and no hidden edge trimming.
+- No automatic replacement without the explicit output choice, and no hidden edge trimming.
 
 ### 2.3 Constraints
 
@@ -77,23 +77,23 @@ The selected option follows the [single-project MSIX guidance](https://learn.mic
 
 Versions below are the latest stable releases verified on 2026-08-30. Experimental and preview releases are intentionally excluded even when their numeric version is newer.
 
-| Tool or package | Required baseline | Rationale and authority |
-|---|---:|---|
-| Visual Studio | Visual Studio 2026, MSVC 14.51, PlatformToolset v145, with the exact servicing tool directory pinned through `VCToolsVersion` after qualification | Current stable native toolchain; `PlatformToolset` selects the v145 family but does not freeze a particular 14.51 servicing installation. See [upgrading C++ projects to Visual Studio 2026](https://devblogs.microsoft.com/cppblog/upgrading-c-projects-to-visual-studio-2026/) and [MSVC 14.51 availability](https://devblogs.microsoft.com/cppblog/msvc-version-1451-available/) |
-| C++ language mode | C++20 with `/std:c++20` and `/permissive-` | C++23 remains a preview switch in this toolchain; production must not depend on preview language behavior. See [MSVC C++23 support](https://devblogs.microsoft.com/cppblog/c23-support-in-msvc-build-tools-14-51/) |
-| Windows App SDK | 2.5.1 | Latest stable Windows App SDK as of the design date; see [Windows App SDK downloads](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads) |
-| Windows SDK Build Tools | 10.0.28000.2705 | Latest stable SDK build-tools package as of the design date; see [Windows SDK downloads](https://learn.microsoft.com/en-us/windows/apps/windows-sdk/downloads) |
-| C++/WinRT | Microsoft.Windows.CppWinRT 3.0.260818.1 | Latest stable NuGet release as of the design date |
-| SBOM generator | Syft SDK 1.54.1; SPDX Workgroup Tools 2.0.7; official SPDX 3.0.1 schema; exact pins in `eng/sbom-tools.json` | User-approved native-backend qualification passed retained payload/hash/package/overlay fixtures and official schema/semantic validation on 2026-10-15. Microsoft SBOM Tool 4.1.5 failed this contract and is not repaired with a JSON shim. See [Syft's public SDK](https://github.com/anchore/syft/tree/v1.54.1/syft) and [SPDX Workgroup tools](https://github.com/spdx/tools-java/releases/tag/v2.0.7). Full release integration and exact transitive rights/security qualification remain pending. |
-| JPEG codec | libjpeg-turbo 3.2.0, vcpkg port revision 1 | Active codec with public TurboJPEG transform API and current SIMD/security maintenance; see [libjpeg-turbo releases](https://github.com/libjpeg-turbo/libjpeg-turbo/releases) |
-| Metadata library | Exiv2 0.28.9 with XMP support | Current supported metadata implementation with 2026 security fixes; see [Exiv2 releases](https://github.com/Exiv2/exiv2/releases) and [Exiv2 security advisories](https://github.com/Exiv2/exiv2/security) |
-| Native tests | Catch2 3.16.0 | Current vcpkg test-framework version at the pinned baseline |
-| vcpkg baseline | `c748cb44f2a435fcf015c35225c9d5545fe0021c` | Immutable registry state refreshed on 2026-10-03 before Task 6; historical logs preserve earlier qualification versions |
-| Application package version | 2.0.0.0 | Major product migration; greater main-package version than the observed 1.1.2.0, not proof of bundle ordering or upgrade success |
-| Bundle manifest version | 2026.2.0.0 | Fixed owning-project `AppxBundleManifestVersion`, independent of application version and above the published 2015.616.2316.3521 bundle. [Native packaging/inspection qualification](../implementation/2026-10-17-independent-bundle-version.md) passes; trusted update/restore remains pending |
-| Minimum Windows version | 10.0.19045.0 | Windows 10 22H2 plus maintained Windows 11 versions; no technical dependency on an older build |
-| Target and tested maximum | 10.0.28000.0 | Current SDK contract and manifest `MaxVersionTested` |
-| Architectures | x86, x64, ARM64 | x86/x64 retain upgrade compatibility; ARM64 replaces obsolete ARM32 |
+| Tool or package             |                                                                                                                                 Required baseline | Rationale and authority                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Visual Studio               | Visual Studio 2026, MSVC 14.51, PlatformToolset v145, with the exact servicing tool directory pinned through `VCToolsVersion` after qualification | Current stable native toolchain; `PlatformToolset` selects the v145 family but does not freeze a particular 14.51 servicing installation. See [upgrading C++ projects to Visual Studio 2026](https://devblogs.microsoft.com/cppblog/upgrading-c-projects-to-visual-studio-2026/) and [MSVC 14.51 availability](https://devblogs.microsoft.com/cppblog/msvc-version-1451-available/)                                                                                                                     |
+| C++ language mode           |                                                                                                        C++20 with `/std:c++20` and `/permissive-` | C++23 remains a preview switch in this toolchain; production must not depend on preview language behavior. See [MSVC C++23 support](https://devblogs.microsoft.com/cppblog/c23-support-in-msvc-build-tools-14-51/)                                                                                                                                                                                                                                                                                      |
+| Windows App SDK             |                                                                                                                                             2.5.1 | Latest stable Windows App SDK as of the design date; see [Windows App SDK downloads](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads)                                                                                                                                                                                                                                                                                                                                          |
+| Windows SDK Build Tools     |                                                                                                                                   10.0.28000.2705 | Latest stable SDK build-tools package as of the design date; see [Windows SDK downloads](https://learn.microsoft.com/en-us/windows/apps/windows-sdk/downloads)                                                                                                                                                                                                                                                                                                                                          |
+| C++/WinRT                   |                                                                                                           Microsoft.Windows.CppWinRT 3.0.260818.1 | Latest stable NuGet release as of the design date                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| SBOM generator              |                                      Syft SDK 1.54.1; SPDX Workgroup Tools 2.0.7; official SPDX 3.0.1 schema; exact pins in `eng/sbom-tools.json` | User-approved native-backend qualification passed retained payload/hash/package/overlay fixtures and official schema/semantic validation on 2026-10-15. Microsoft SBOM Tool 4.1.5 failed this contract and is not repaired with a JSON shim. See [Syft's public SDK](https://github.com/anchore/syft/tree/v1.54.1/syft) and [SPDX Workgroup tools](https://github.com/spdx/tools-java/releases/tag/v2.0.7). Full release integration and exact transitive rights/security qualification remain pending. |
+| JPEG codec                  |                                                                                                        libjpeg-turbo 3.2.0, vcpkg port revision 1 | Active codec with public TurboJPEG transform API and current SIMD/security maintenance; see [libjpeg-turbo releases](https://github.com/libjpeg-turbo/libjpeg-turbo/releases)                                                                                                                                                                                                                                                                                                                           |
+| Metadata library            |                                                                                                                     Exiv2 0.28.9 with XMP support | Current supported metadata implementation with 2026 security fixes; see [Exiv2 releases](https://github.com/Exiv2/exiv2/releases) and [Exiv2 security advisories](https://github.com/Exiv2/exiv2/security)                                                                                                                                                                                                                                                                                              |
+| Native tests                |                                                                                                                                     Catch2 3.16.0 | Current vcpkg test-framework version at the pinned baseline                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| vcpkg baseline              |                                                                                                        `c748cb44f2a435fcf015c35225c9d5545fe0021c` | Immutable registry state refreshed on 2026-10-03 before Task 6; historical logs preserve earlier qualification versions                                                                                                                                                                                                                                                                                                                                                                                 |
+| Application package version |                                                                                                                                           2.0.0.0 | Major product migration; greater main-package version than the observed 1.1.2.0, not proof of bundle ordering or upgrade success                                                                                                                                                                                                                                                                                                                                                                        |
+| Bundle manifest version     |                                                                                                                                        2026.2.0.0 | Fixed owning-project `AppxBundleManifestVersion`, independent of application version and above the published 2015.616.2316.3521 bundle. [Native packaging/inspection qualification](../implementation/2026-10-17-independent-bundle-version.md) passes; trusted update/restore remains pending                                                                                                                                                                                                          |
+| Minimum Windows version     |                                                                                                                                      10.0.19045.0 | Windows 10 22H2 plus maintained Windows 11 versions; no technical dependency on an older build                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Target and tested maximum   |                                                                                                                                      10.0.28000.0 | Current SDK contract and manifest `MaxVersionTested`                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Architectures               |                                                                                                                                   x86, x64, ARM64 | x86/x64 retain upgrade compatibility; ARM64 replaces obsolete ARM32                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 The app must compile with a dynamic Universal CRT and statically linked vcpkg libraries using custom `x86-windows-static-md`, `x64-windows-static-md`, and `arm64-windows-static-md` triplets. This avoids separately packaged codec DLLs while retaining the platform-serviced CRT.
 
@@ -152,15 +152,15 @@ namespace jpg_spinner::domain
 The required canonicalization mapping is exact:
 
 | Exif value | Stored orientation name | DCT-coefficient transform | Output orientation |
-|---:|---|---|---:|
-| 1 | `TopLeft` | `None` | 1 |
-| 2 | `TopRight` | `FlipHorizontal` | 1 |
-| 3 | `BottomRight` | `Rotate180` | 1 |
-| 4 | `BottomLeft` | `FlipVertical` | 1 |
-| 5 | `LeftTop` | `Transpose` | 1 |
-| 6 | `RightTop` | `Rotate90Clockwise` | 1 |
-| 7 | `RightBottom` | `Transverse` | 1 |
-| 8 | `LeftBottom` | `Rotate270Clockwise` | 1 |
+| ---------: | ----------------------- | ------------------------- | -----------------: |
+|          1 | `TopLeft`               | `None`                    |                  1 |
+|          2 | `TopRight`              | `FlipHorizontal`          |                  1 |
+|          3 | `BottomRight`           | `Rotate180`               |                  1 |
+|          4 | `BottomLeft`            | `FlipVertical`            |                  1 |
+|          5 | `LeftTop`               | `Transpose`               |                  1 |
+|          6 | `RightTop`              | `Rotate90Clockwise`       |                  1 |
+|          7 | `RightBottom`           | `Transverse`              |                  1 |
+|          8 | `LeftBottom`            | `Rotate270Clockwise`      |                  1 |
 
 The test corpus must distinguish transpose from transverse. Square, symmetric, or single-color fixtures cannot prove this mapping and are forbidden for orientation tests.
 
@@ -222,25 +222,25 @@ The storage and codec abstractions are capability interfaces at deliberate seams
 
 ### 5.2 Modules
 
-| Module | Owns | Must not own |
-|---|---|---|
-| `JpgSpinner.Domain` | Value types, orientation mapping, transform planning, error taxonomy, resource policies | WinRT handles, UI strings, file I/O, codec calls |
-| `JpgSpinner.JpegTransformation` | Bounds-checked marker inventory, lossless transform, metadata reconciliation, output validation | File replacement, folder traversal, XAML state |
-| `JpgSpinner.WindowsStorage` | Source revision hashing, staging, verified backup, journaled replacement, and deterministic recovery from observable states | JPEG interpretation, localized messages, undocumented power-failure guarantees |
-| `JpgSpinner.BatchProcessing` | Enumeration policy, sequential orchestration, cancellation boundaries, progress, summaries | Dialogs, concrete XAML controls, raw codec details |
-| `JpgSpinner.App` | Folder picker, review experience, options, localized errors, accessibility, dependency composition | JPEG parsing, transaction state machines, business invariants |
+| Module                          | Owns                                                                                                                        | Must not own                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `JpgSpinner.Domain`             | Value types, orientation mapping, transform planning, error taxonomy, resource policies                                     | WinRT handles, UI strings, file I/O, codec calls                               |
+| `JpgSpinner.JpegTransformation` | Bounds-checked marker inventory, lossless transform, metadata reconciliation, output validation                             | File replacement, folder traversal, XAML state                                 |
+| `JpgSpinner.WindowsStorage`     | Source revision hashing, staging, verified backup, journaled replacement, and deterministic recovery from observable states | JPEG interpretation, localized messages, undocumented power-failure guarantees |
+| `JpgSpinner.BatchProcessing`    | Enumeration policy, sequential orchestration, cancellation boundaries, progress, summaries                                  | Dialogs, concrete XAML controls, raw codec details                             |
+| `JpgSpinner.App`                | Folder picker, review experience, options, localized errors, accessibility, dependency composition                          | JPEG parsing, transaction state machines, business invariants                  |
 
 ### 5.3 Interface depth and seam discipline
 
 Each module must hide more policy and mechanism than its callers learn. The deletion test is applied during review: deleting a module must force its complexity back into several callers; if deletion merely removes a pass-through, merge that shallow module into its caller.
 
-| Module | External interface | Complexity hidden from callers | Adapter/test rule |
-|---|---|---|---|
-| `JpgSpinner.Domain` | Immutable values plus pure orientation/planning functions | Exif geometry, checked dimension math, MCU policy, exhaustive errors/findings | In-process; no adapter or hypothetical seam |
-| `JpegImageAnalyzer` within JPEG Transformation | One `analyze` operation | Marker scan, Exif/XMP precedence, coding-process support, resource policy, transform planning | Concrete deep module; tests use real deterministic JPEGs |
-| `JpegTransformationEngine` | One `createValidatedOutput` operation | TurboJPEG lifetime/parameters, coefficient transform, marker copy, metadata reconciliation, independent scan/full decode, metadata/ICC invariants, output digest, native-error translation | `LibJpegTurboTransformationEngine` production adapter plus deterministic batch-test adapter |
-| `ImageFileTransactionEngine` | `execute` and `recoverIncompleteTransactions` | stage naming/ownership, handle lifetime, staged-byte hash verification, source recheck, destination uniqueness, backup, journal, replacement, recovery | `WindowsStorageImageFileTransactionEngine` production adapter plus deterministic batch-test adapter; fault operations remain an internal seam |
-| `BatchProcessingCoordinator` | `analyzeBatch` and `processReviewedBatch` | safe traversal, stable ordering, progress accounting, one-at-a-time execution, cancellation, summary completeness | In-process module; module tests use real analyzer and deterministic engine/transaction adapters |
+| Module                                         | External interface                                        | Complexity hidden from callers                                                                                                                                                             | Adapter/test rule                                                                                                                             |
+| ---------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JpgSpinner.Domain`                            | Immutable values plus pure orientation/planning functions | Exif geometry, checked dimension math, MCU policy, exhaustive errors/findings                                                                                                              | In-process; no adapter or hypothetical seam                                                                                                   |
+| `JpegImageAnalyzer` within JPEG Transformation | One `analyze` operation                                   | Marker scan, Exif/XMP precedence, coding-process support, resource policy, transform planning                                                                                              | Concrete deep module; tests use real deterministic JPEGs                                                                                      |
+| `JpegTransformationEngine`                     | One `createValidatedOutput` operation                     | TurboJPEG lifetime/parameters, coefficient transform, marker copy, metadata reconciliation, independent scan/full decode, metadata/ICC invariants, output digest, native-error translation | `LibJpegTurboTransformationEngine` production adapter plus deterministic batch-test adapter                                                   |
+| `ImageFileTransactionEngine`                   | `execute` and `recoverIncompleteTransactions`             | stage naming/ownership, handle lifetime, staged-byte hash verification, source recheck, destination uniqueness, backup, journal, replacement, recovery                                     | `WindowsStorageImageFileTransactionEngine` production adapter plus deterministic batch-test adapter; fault operations remain an internal seam |
+| `BatchProcessingCoordinator`                   | `analyzeBatch` and `processReviewedBatch`                 | safe traversal, stable ordering, progress accounting, one-at-a-time execution, cancellation, summary completeness                                                                          | In-process module; module tests use real analyzer and deterministic engine/transaction adapters                                               |
 
 `JpegSegmentScanner`, `LibJpegTurboCoefficientTransformer`, `MetadataReconciler`, `JpegOutputValidator`, codec RAII handles, `RecoverableImageFileTransaction`, journal serialization, and fault-operation controls are internal seams. They are not exposed merely to make tests easy. Security-focused tests and fuzzers may exercise an internal seam from within its owning module, but application callers cannot depend on it. Tests of externally observable behavior cross the same module interface as production callers.
 
@@ -257,6 +257,7 @@ Each module must hide more policy and mechanism than its callers learn. The dele
 `WindowsStorageImageFileTransactionEngine` identifies the native API mechanism.
 AppContainer is the separately required process deployment/security environment,
 not an isolation property conferred by `StorageFile` or by the adapter's name.
+
 - Names such as `Manager`, `Helper`, `Utils`, `Data`, `Info`, `Item`, `Mode`, and `Handler` are prohibited unless that word is the precise domain term. Examples of correct replacements are `JpegSegmentScanner`, `SourceFileRevisionCalculator`, `BatchProcessingCoordinator`, and `ImageProcessingError`.
 - Boolean names state a predicate: `isPerfectTransformAvailable`, `hasEmbeddedIccProfile`, `wasSourceModified`.
 - Units appear in names for primitive quantities: `encodedFileLengthBytes`, `elapsedMilliseconds`, `maximumPixelCount`.
@@ -426,6 +427,7 @@ enum class OutputDisposition
 {
     CreateCorrectedCopy,
     ReplaceOriginalWithVerifiedBackup,
+    ReplaceOriginalWithoutRetainedBackup,
 };
 
 enum class TraversalScope
@@ -437,7 +439,7 @@ enum class TraversalScope
 
 `CreateCorrectedCopy` is the default. It writes to `JPG Spinner Output/<batch-directory>/<relative-source-path>`. The batch directory name is a UTC timestamp followed by the first eight hexadecimal characters of a generated UUID; the underlying `BatchIdentifier` retains the full UUID.
 
-Replacement is available only as `ReplaceOriginalWithVerifiedBackup`. Its backup path is `JPG Spinner Backups/<batch-directory>/<relative-source-path>`. There is no replace-without-backup state in the domain model or UI. A unique batch root prevents overwrite collisions. Recursive traversal excludes the exact app-owned output and backup roots after resolving their storage identity; string-prefix checks are insufficient.
+The 2026-10-27 user-requested output amendment adds `ReplaceOriginalWithoutRetainedBackup`, shown as **Replace originals**, alongside `ReplaceOriginalWithVerifiedBackup`. The former creates no backup and cannot restore the original bytes after a successful replacement; Settings and the pre-processing summary disclose that consequence. The default remains corrected copies. Both replacement choices retain source-revision checks, staged-byte validation, native Storage replacement, identity-bound journaling and conservative recovery. The backup mode additionally verifies and retains `JPG Spinner Backups/<batch-directory>/<relative-source-path>` before replacement. A unique batch root prevents overwrite collisions. Recursive traversal excludes the exact app-owned output and backup roots after resolving their storage identity; string-prefix checks are insufficient.
 
 ### 9.2 Source revision
 
@@ -448,7 +450,7 @@ Replacement is available only as `ReplaceOriginalWithVerifiedBackup`. Its backup
 - Create a unique staging file named `.jpg-spinner-staged-<transaction-guid>.jpg` beside the final destination. Copy output stages inside its unique batch destination tree; replacement output stages beside the original so `MoveAndReplaceAsync` remains on the same volume. A non-destructive copy therefore does not require a temporary write beside each source file.
 - Write the immutable `ValidatedJpegOutput` bytes, request the strongest supported flush, close every handle, hash the staged file through a new read handle, and require that hash to equal the validator-recorded SHA-256. A successful WinRT flush is not described as a physical-media durability guarantee.
 - For copy output, move the hash-verified stage to its unique batch destination.
-- For replacement, create the backup first, close it, hash it, and require its hash to equal the captured source hash.
+- For replacement **with a retained backup**, create the backup first, close it, hash it, and require its hash to equal the captured source hash. The explicitly selected no-backup mode skips this step; it does not create and then delete a backup.
 - Persist and close the next journal snapshot before requesting the replacement boundary.
 - Request replacement through `StorageFile.MoveAndReplaceAsync`, whose documented contract is move-and-replace behavior, not guaranteed power-fail atomicity or durable-media commitment. After any interruption, determine the observable outcome from source, stage, output, backup, and journal hashes rather than assuming whether the API completed. A Win32 alternative may replace this call only after an AppContainer capability prototype and the same fault-injection suite prove a stronger useful contract; `ReplaceFileW` is not assumed to provide an unsupported write-through guarantee.
 - Never delete a verified backup automatically.
@@ -473,16 +475,16 @@ enum class ImageFileTransactionState
 
 Every transition is idempotent and written as an immutable generation rather than replacing an existing journal file. The writer creates a uniquely named pending file, requests flush, closes it, reopens and validates its complete JSON, then publishes it under a never-before-used monotonically numbered filename. Recovery ignores incomplete pending files and selects the highest complete generation whose predecessor and artifact hashes are consistent; earlier valid generations remain until a verified terminal state. This protocol avoids making correctness depend on undocumented atomic journal replacement. A generation stores schema version, generation number, transaction ID, source token or path identity, output destination, source revision, staged-output hash, backup identity, output disposition, and state. Logs redact path components by default; the journal retains the minimum path identity required for recovery inside local app data.
 
-The allowed paths are explicit. Copy transactions use `TransactionInitialized → StagedOutputWritten → StagedOutputHashVerified → OutputCommitted → OwnedStagingArtifactsCleaned`. Replacement transactions insert `VerifiedBackupCreated` between hash verification and commit. No other transition or backward transition is legal.
+The allowed paths are explicit. Copy and no-backup replacement transactions use `TransactionInitialized → StagedOutputWritten → StagedOutputHashVerified → OutputCommitted → OwnedStagingArtifactsCleaned`. Replacement with a retained backup inserts `VerifiedBackupCreated` between hash verification and commit. The persisted disposition distinguishes a corrected-copy destination from replacement at the source path. Source and stage identities and hashes are required when reconciling either replacement mode; no-backup recovery never invents a backup or promises restoration of pre-commit bytes. A proved refusal can terminate through `TransactionAbandonedBeforeCommit`; ambiguous outcomes remain conflicts. No other transition or backward transition is legal.
 
 On startup, incomplete journals are recovered by comparing hashes:
 
-| Observed original state | Recovery decision |
-|---|---|
-| Original hash equals captured source hash | Original was not replaced; remove only the owned stage when safe, keep any backup, and finish without changing the original |
-| Original hash equals validated transformed hash | Commit succeeded; record `OutputCommitted`, remove only the owned stage when safe, and retain the backup |
-| Original missing but a hash-verified stage and verified backup exist | Leave both, report `RecoveryConflict`, and give the user precise locations; do not guess |
-| Original hash equals neither known hash | Leave original, stage, and backup untouched; report `RecoveryConflict` |
+| Observed original state                                              | Recovery decision                                                                                                           |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Original hash equals captured source hash                            | Original was not replaced; remove only the owned stage when safe, keep any backup, and finish without changing the original |
+| Original hash equals validated transformed hash                      | Commit succeeded; record `OutputCommitted`, remove only the owned stage when safe, and retain the backup                    |
+| Original missing but a hash-verified stage and verified backup exist | Leave both, report `RecoveryConflict`, and give the user precise locations; do not guess                                    |
+| Original hash equals neither known hash                              | Leave original, stage, and backup untouched; report `RecoveryConflict`                                                      |
 
 The rollback invariant is: the application may delete its own uncommitted stage, but never deletes a source or verified backup as rollback.
 
@@ -586,7 +588,7 @@ The single-window flow has six semantic states: source selection, analysis, revi
 - Analysis shows indeterminate progress only before the candidate count is known and exposes cancellation.
 - Review lists each source’s orientation, intended transform, output dimensions, perfect-transform eligibility, and unsupported reason. Advanced scan organization and edge handling are explicitly labeled.
 - Results show completed, skipped, failed, and cancelled entries with a safe recovery instruction where relevant.
-- Replacement requires selecting `ReplaceOriginalWithVerifiedBackup`; the UI displays the backup root before execution.
+- Replacement requires an explicit output choice. With `ReplaceOriginalWithVerifiedBackup`, the UI displays the backup root before execution; with `ReplaceOriginalWithoutRetainedBackup`, the review summary explicitly says that no backup will be retained.
 
 Every actionable control receives a programmatic name, role, state, and keyboard access. Logical focus follows visual order; focus is restored meaningfully after dialogs. Status is announced through an appropriate live region without repeated noise. The UI supports keyboard-only use, Narrator, high contrast, 200% text scaling, 400% effective zoom scenarios, and no information encoded only by color. Automated checks are followed by Microsoft’s recommended [accessibility release testing](https://learn.microsoft.com/en-us/windows/apps/design/accessibility/accessibility-testing).
 
@@ -630,16 +632,16 @@ A user-visible local diagnostic log contains application version, architecture, 
 
 ### 15.1 Test pyramid
 
-| Layer | Primary proof |
-|---|---|
-| Domain unit tests | Exact eight-orientation table, dimension swaps, edge policies, error mapping, stable batch ordering |
-| Codec module tests | Coefficient digests, scan organization, marker inventory, metadata preservation, full-decode validation |
-| Storage module tests | Real temporary files plus fault injection at every journal boundary, hash-based recovery, source-change detection |
-| Batch tests | Cancellation boundaries, progress accounting, app-owned-root exclusion, per-file outcome completeness |
-| Presentation tests | Hosted headless tests for view-model transitions, resources, projected metadata, and accessibility contracts; interactive-lane UI Automation for the real control tree and focus behavior |
-| Package tests | Manifest schema, identity equality, AppContainer trust, architecture bundles, upgrade installation |
-| Security tests | Fuzzing, AddressSanitizer, static analysis, CodeQL, malformed corpus, resource-limit boundaries |
-| Manual release checks | Narrator, keyboard-only, high contrast, text scaling, physical ARM64, Store update path, and storage-interruption simulations on qualified filesystems/providers |
+| Layer                 | Primary proof                                                                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain unit tests     | Exact eight-orientation table, dimension swaps, edge policies, error mapping, stable batch ordering                                                                                       |
+| Codec module tests    | Coefficient digests, scan organization, marker inventory, metadata preservation, full-decode validation                                                                                   |
+| Storage module tests  | Real temporary files plus fault injection at every journal boundary, hash-based recovery, source-change detection                                                                         |
+| Batch tests           | Cancellation boundaries, progress accounting, app-owned-root exclusion, per-file outcome completeness                                                                                     |
+| Presentation tests    | Hosted headless tests for view-model transitions, resources, projected metadata, and accessibility contracts; interactive-lane UI Automation for the real control tree and focus behavior |
+| Package tests         | Manifest schema, identity equality, AppContainer trust, architecture bundles, upgrade installation                                                                                        |
+| Security tests        | Fuzzing, AddressSanitizer, static analysis, CodeQL, malformed corpus, resource-limit boundaries                                                                                           |
+| Manual release checks | Narrator, keyboard-only, high contrast, text scaling, physical ARM64, Store update path, and storage-interruption simulations on qualified filesystems/providers                          |
 
 ### 15.2 Fixture rules
 
@@ -704,18 +706,18 @@ JPG Spinner 2.0 is releasable only when all conditions hold:
 
 ## 19. Decision log
 
-| Decision | Reason |
-|---|---|
-| WinUI 3 packaged single-project MSIX | Current Microsoft desktop UI path with Store continuity and the smallest packaging topology |
-| AppContainer rather than medium integrity | Least privilege is sufficient for user-selected image processing |
-| C++20 rather than preview C++23 | Stable, supported compiler contract is more important than newer syntax |
-| Public TurboJPEG API rather than private libjpeg transforms | Stable supported surface and no copied internal code |
-| Exiv2 rather than a custom TIFF/XMP parser | Metadata parsing is an untrusted-input security problem with mature standards complexity |
-| Default create-copy output | Source preservation is safer than replacement |
-| Mandatory verified backup for replacement | A transformation utility must retain validated recovery evidence across every supported and fault-injected interruption; physical storage-device survival is outside the software guarantee |
-| Reject imperfect transform by default | “Lossless” cannot silently discard edge pixels |
-| Remove stale thumbnail rather than regenerate it | Honest metadata without introducing a lossy thumbnail encoder or new quality policy |
-| Reject MPO/MPF in 2.0 | Offset-bearing multi-image metadata needs a separately designed transaction and validator |
-| Sequential transformations | Predictable memory, cancellation, and transaction behavior outweigh unproven throughput gains |
-| Partner Center health plus local diagnostics | Adequate operational visibility without a custom telemetry channel |
-| Parallel clean rewrite with hard cutover | Tests preserve behavior; shims would preserve obsolete architecture and multiply paths |
+| Decision                                                    | Reason                                                                                                                                                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WinUI 3 packaged single-project MSIX                        | Current Microsoft desktop UI path with Store continuity and the smallest packaging topology                                                                                                 |
+| AppContainer rather than medium integrity                   | Least privilege is sufficient for user-selected image processing                                                                                                                            |
+| C++20 rather than preview C++23                             | Stable, supported compiler contract is more important than newer syntax                                                                                                                     |
+| Public TurboJPEG API rather than private libjpeg transforms | Stable supported surface and no copied internal code                                                                                                                                        |
+| Exiv2 rather than a custom TIFF/XMP parser                  | Metadata parsing is an untrusted-input security problem with mature standards complexity                                                                                                    |
+| Default create-copy output                                  | Source preservation is safer than replacement                                                                                                                                               |
+| Mandatory verified backup for replacement                   | A transformation utility must retain validated recovery evidence across every supported and fault-injected interruption; physical storage-device survival is outside the software guarantee |
+| Reject imperfect transform by default                       | “Lossless” cannot silently discard edge pixels                                                                                                                                              |
+| Remove stale thumbnail rather than regenerate it            | Honest metadata without introducing a lossy thumbnail encoder or new quality policy                                                                                                         |
+| Reject MPO/MPF in 2.0                                       | Offset-bearing multi-image metadata needs a separately designed transaction and validator                                                                                                   |
+| Sequential transformations                                  | Predictable memory, cancellation, and transaction behavior outweigh unproven throughput gains                                                                                               |
+| Partner Center health plus local diagnostics                | Adequate operational visibility without a custom telemetry channel                                                                                                                          |
+| Parallel clean rewrite with hard cutover                    | Tests preserve behavior; shims would preserve obsolete architecture and multiply paths                                                                                                      |
