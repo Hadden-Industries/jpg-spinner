@@ -52,4 +52,8 @@ $brand = $workspace.SelectSingleNode('ui:Grid[@x:Name="BrandSidebar"]', $ns)
 if ($null -eq $brand -or $workspace.ParentNode.HasAttribute('Visibility')) {
     throw 'The shared brand frame must remain mounted throughout folder work.'
 }
+$content = $shell.SelectSingleNode('//*[@x:Name="WorkflowContent"]', $ns)
+if ($content.GetAttribute('Background') -cne '{ThemeResource SolidBackgroundFillColorBaseBrush}') {
+    throw 'Workflow text needs a native opaque reading surface above the purple artwork.'
+}
 Write-Output 'PASS: selectable help, native header input, responsive support cards, contact fallback and output choices.'

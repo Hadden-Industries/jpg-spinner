@@ -179,7 +179,9 @@
                             <ContentControl Margin="0,96,0,0" Opacity="0.02" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw" ContentTemplate="{StaticResource JpgSpinnerLogoTemplate}" Content="logo" IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                         </Grid>
                         <UserControl IsTabStop="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" IsEnabled="{x:Bind IsWorkflowInteractionEnabled, Mode=OneWay}" Visibility="{x:Bind WorkflowRegionVisibility, Mode=OneWay}" Grid.Column="1" Grid.RowSpan="2" x:Name="WorkflowPanel" Margin="24">
-                            <Grid x:Name="WorkflowContent" Padding="20" RowSpacing="12" Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <!-- Keep reading surfaces opaque over the purple artwork;
+                                 translucent material belongs to navigation chrome. -->
+                            <Grid x:Name="WorkflowContent" Padding="20" RowSpacing="12" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" CornerRadius="12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
