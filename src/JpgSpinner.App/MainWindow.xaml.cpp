@@ -346,9 +346,10 @@ fire_and_forget MainWindow::PrivacyEmail_Click(Windows::Foundation::IInspectable
     PrivacyContactFeedback().IsOpen(false);
     try
     {
-        // Query avoids Windows' acquire-an-app prompt when no mail handler is
-        // installed. Still check launch completion: associations can change
-        // between query and activation. Copying remains an explicit user action.
+        // Query detects available handlers, not a configured default. Windows
+        // may still show its chooser; keep Copy email address independently
+        // available even when chooser activation itself reports success. Also
+        // check launch completion: associations can change after the query.
         const auto support =
             co_await Windows::System::Launcher::QueryUriSupportAsync(uri, Windows::System::LaunchQuerySupportType::Uri);
         if (support == Windows::System::LaunchQuerySupportStatus::Available &&

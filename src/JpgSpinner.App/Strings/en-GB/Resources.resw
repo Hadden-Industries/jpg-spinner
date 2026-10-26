@@ -935,7 +935,7 @@
         <value>Forward</value>
     </data>
     <data name="Shell_PrivacyScope.Text" xml:space="preserve">
-        <value>JPG Spinner 2.0 · Hadden Industries Ltd. Updated 26 October 2026. Earlier app versions may behave differently.</value>
+        <value>JPG Spinner 2.0 · Hadden Industries Ltd. Updated 27 October 2026. Earlier app versions may behave differently.</value>
     </data>
     <data name="Shell_PrivacySummary.Text" xml:space="preserve">
         <value>JPG Spinner processes photos on this device. It has no upload service, adverts, accounts or custom network tracking. You decide whether to share diagnostic logs.</value>
@@ -989,7 +989,7 @@
         <value>Cloud folders can still sync through their provider. Windows and Microsoft Store may collect diagnostics under their own settings and policies.</value>
     </data>
     <data name="Shell_PrivacyProcessingSafety.Text" xml:space="preserve">
-        <value>Analyzing photos does not alter them. After you review the proposed work, the app creates corrected copies or replaces originals through the verified-backup workflow. Hadden Industries receives neither photos nor metadata from the app.</value>
+        <value>Analyzing photos does not alter them. After you review the proposed work, the app creates corrected copies or replaces originals according to your Output choice. Replacement can retain a verified backup or proceed without one; without a backup, the app cannot restore the original bytes. Hadden Industries receives neither photos nor metadata from the app.</value>
     </data>
     <data name="Shell_PrivacyOperationalData.Text" xml:space="preserve">
         <value>Photos, corrected copies, verified backups and recovery journals are separate from diagnostic logs. The diagnostic cleanup limit does not apply to them. Backups do not expire automatically.</value>

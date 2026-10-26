@@ -2,7 +2,7 @@
 
 # Privacy for your photos
 
-JPG Spinner 2.0 · Hadden Industries Ltd. Updated 26 October 2026. Earlier app versions may behave differently.
+JPG Spinner 2.0 · Hadden Industries Ltd. Updated 27 October 2026. Earlier app versions may behave differently.
 
 JPG Spinner processes photos on this device. It has no upload service, adverts, accounts or custom network tracking. You decide whether to share diagnostic logs.
 
@@ -18,7 +18,7 @@ Cloud folders can still sync through their provider. Windows and Microsoft Store
 
 The app reads the folder you choose and uses photos and their metadata to find images that need rotating. Metadata can include camera details, location and other personal information.
 
-Analyzing photos does not alter them. After you review the proposed work, the app creates corrected copies or replaces originals through the verified-backup workflow. Hadden Industries receives neither photos nor metadata from the app.
+Analyzing photos does not alter them. After you review the proposed work, the app creates corrected copies or replaces originals according to your Output choice. Replacement can retain a verified backup or proceed without one; without a backup, the app cannot restore the original bytes. Hadden Industries receives neither photos nor metadata from the app.
 
 ## What stays on this device?
 
