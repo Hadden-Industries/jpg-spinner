@@ -68,6 +68,9 @@ namespace JpgSpinner
     {
         get;
     };
+    String OutputDispositionDescription{ get; };
+    Boolean HasNoPlannedCorrections{ get; };
+    Microsoft.UI.Xaml.Visibility StartupRecoveryProgressVisibility{ get; };
     String MaximumConcurrentImageCountText
     {
         get;

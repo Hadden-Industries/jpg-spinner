@@ -40,6 +40,9 @@ struct MainWindow : MainWindowT<MainWindow>
     winrt::hstring MaximumConcurrentImageCountText();
     Microsoft::UI::Xaml::Visibility CustomMemoryBudgetVisibility();
     winrt::hstring ProcessingSettingsSummary();
+    winrt::hstring OutputDispositionDescription();
+    bool HasNoPlannedCorrections() const;
+    Microsoft::UI::Xaml::Visibility StartupRecoveryProgressVisibility() const;
     Microsoft::UI::Xaml::Visibility LandingRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility WorkflowRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility StartupRecoverySummaryVisibility() const;
@@ -69,8 +72,8 @@ struct MainWindow : MainWindowT<MainWindow>
     Microsoft::UI::Xaml::Visibility OperationProgressVisibility() const;
     fire_and_forget SourcePicker_Click(Windows::Foundation::IInspectable const &,
                                        Microsoft::UI::Xaml::RoutedEventArgs const &);
-    fire_and_forget Analyze_Click(Windows::Foundation::IInspectable const &,
-                                  Microsoft::UI::Xaml::RoutedEventArgs const &);
+    fire_and_forget RetryAnalysis_Click(Windows::Foundation::IInspectable const &,
+                                        Microsoft::UI::Xaml::RoutedEventArgs const &);
     fire_and_forget StartProcessing_Click(Windows::Foundation::IInspectable const &,
                                           Microsoft::UI::Xaml::RoutedEventArgs const &);
     fire_and_forget RetryRecovery_Click(Windows::Foundation::IInspectable const &,
@@ -110,6 +113,9 @@ struct MainWindow : MainWindowT<MainWindow>
     void setViewModel(Presentation::MainWindowViewModel const &viewModel);
     void notifyShellState();
     Windows::Foundation::IAsyncAction selectPickedSourceAsync(Windows::Storage::StorageFolder selectedFolder);
+    Windows::Foundation::IAsyncAction analyzeSelectedSourceAsync();
+    fire_and_forget analyzeOnWorkflowEntryAsync();
+    void finishPickerInteraction();
     void synchronizeProcessingOptionControls();
     /// Native app-local preferences are defaults, never trimming consent or an
     /// instruction to mutate a previously analyzed plan without new analysis.
@@ -145,6 +151,9 @@ struct MainWindow : MainWindowT<MainWindow>
     bool operationEventActive_{};
     bool updatingProcessingOptionControls_{};
     bool processingPreferencesReady_{};
+    // Source selection and preference changes request one read-only check.
+    // Cancellation consumes that request, so navigation alone cannot restart it.
+    bool automaticAnalysisPending_{};
     bool progressiveExamplesLoaded_{};
     bool startupRecoveryPending_{true};
     bool startupRecoveryStarted_{};

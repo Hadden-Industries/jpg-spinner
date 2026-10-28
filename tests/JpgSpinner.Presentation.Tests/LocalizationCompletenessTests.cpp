@@ -194,7 +194,7 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
         L"Shell_ResultsHeading/Text",
         L"Shell_RecoveryRequiredHeading/Text",
         L"Shell_SourcePicker/Content",
-        L"Shell_Analyze/Content",
+        L"Shell_RetryAnalysis/Content",
         L"Shell_TraversalScope/Header",
         L"Shell_OutputDisposition/Header",
         L"Shell_EdgeHandling/Header",
@@ -211,7 +211,17 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
         L"Shell_ReviewInstruction/Text",
         L"Shell_RecursiveExclusionNotice/Text",
         L"Shell_BackupDestinationLabel/Text",
-        L"Shell_TrimConsent/Content",
+        L"ImageReview_ApproveTrimming",
+        L"ImageReview_TrimmingApproved",
+        L"ImageReview_NoCorrectionPlanned",
+        L"ImageReview_NeedsAttention",
+        L"ImageReview_FlipHorizontal",
+        L"ImageReview_FlipVertical",
+        L"ImageReview_Rotate180",
+        L"ImageReview_Rotate90Clockwise",
+        L"ImageReview_Rotate90Counterclockwise",
+        L"ImageReview_MirrorThenRotate90Clockwise",
+        L"ImageReview_MirrorThenRotate90Counterclockwise",
         L"Shell_DiscardedRightEdgeLabel/Text",
         L"Shell_DiscardedBottomEdgeLabel/Text",
         L"Shell_StartProcessing/Content",
@@ -223,7 +233,18 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
         L"Shell_CompletedRowsLabel/Text",
         L"Shell_FailedFilesLabel/Text",
         L"Shell_CancelledFilesLabel/Text",
-        L"Shell_InitialInstruction/Text",
+        L"Shell_SourceSelectionDescription/Text",
+        L"Shell_AnalysisDescription/Text",
+        L"Shell_ReviewDescription/Text",
+        L"Shell_ProcessingDescription/Text",
+        L"Shell_ResultsDescription/Text",
+        L"Shell_RecoveryDescription/Text",
+        L"Shell_SelectedFolderLabel/Text",
+        L"Shell_OutputSummaryHeading/Text",
+        L"Shell_ProcessingOptionsSummary/Header",
+        L"Shell_EdgeTrimmingNotice/Title",
+        L"Shell_NoPlannedCorrections/Title",
+        L"Shell_NoPlannedCorrections/Message",
         L"Shell_StartupRecoveryProgress/[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name",
         L"Shell_StartupRecoveryError/Title",
         L"StartupRecovery_PreservationNotice",
@@ -244,9 +265,9 @@ TEST_CASE("Every shell label has its own native resource candidate in every supp
     // Attached-property namespace dots remain inside the qualified segment;
     // this is the native MakePRI resource shape, not a home-grown URI parser.
     for (const auto *control :
-         {L"SourcePicker", L"Analyze", L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization",
-          L"StartProcessing", L"CancelOperation", L"RetryRecovery", L"RestoreRecoverySource", L"ExportDiagnostics",
-          L"ReturnToSourceSelection", L"TrimConsent", L"DiscoveryObservations"})
+         {L"SourcePicker", L"RetryAnalysis", L"TraversalScope", L"OutputDisposition", L"EdgeHandling",
+          L"ScanOrganization", L"StartProcessing", L"CancelOperation", L"RetryRecovery", L"RestoreRecoverySource",
+          L"ExportDiagnostics", L"ReturnToSourceSelection", L"TrimConsent", L"DiscoveryObservations"})
         for (const auto *property : {L"Name", L"HelpText"})
         {
             const auto key = std::wstring{L"Shell_"} + control +
@@ -300,7 +321,7 @@ TEST_CASE("Every top-level access key has its own native PRI candidate in each s
     const auto language = GENERATE(L"en-US", L"en-GB", L"ru");
     context.QualifierValues().Insert(L"Language", language);
     for (const auto *control :
-         {L"SourcePicker", L"Analyze", L"StartProcessing", L"CancelOperation", L"ReturnToSourceSelection",
+         {L"SourcePicker", L"RetryAnalysis", L"StartProcessing", L"CancelOperation", L"ReturnToSourceSelection",
           L"RetryRecovery", L"RestoreRecoverySource", L"ExportDiagnostics", L"TraversalScope", L"OutputDisposition",
           L"EdgeHandling", L"ScanOrganization"})
     {

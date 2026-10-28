@@ -413,12 +413,15 @@ TEST_CASE("Review exposes exact trim extents and requires explicit per-row ackno
         // Independent fixture geometry: 31x19, 8x8 iMCU, horizontal mirror.
         REQUIRE(row.DiscardedSourceRightEdgeWidthInPixels() == 7);
         REQUIRE(row.DiscardedSourceBottomEdgeHeightInPixels() == 0);
+        REQUIRE(row.HasEdgeTrimming());
+        const auto beforeAcknowledgment = row.EdgeTrimmingAcknowledgmentDescription();
         REQUIRE_FALSE(row.IsEdgeTrimmingAcknowledged());
         CHECK(row.RequiresEdgeTrimmingAcknowledgment());
         REQUIRE_FALSE(model.CanBeginProcessing());
         model.AcknowledgeEdgeTrimming(0);
         REQUIRE(row.IsEdgeTrimmingAcknowledged());
         CHECK_FALSE(row.RequiresEdgeTrimmingAcknowledgment());
+        CHECK(row.EdgeTrimmingAcknowledgmentDescription() != beforeAcknowledgment);
         REQUIRE(model.CanBeginProcessing());
         // XAML ItemsControl consumes the inspectable collection protocol, not
         // merely the strongly typed native view used by coordinator tests.
@@ -438,6 +441,58 @@ TEST_CASE("Review exposes exact trim extents and requires explicit per-row ackno
                               winrt::JpgSpinner::Presentation::ImageProcessingRowViewModel>>());
         model.ReturnToSourceSelection();
         REQUIRE_THROWS_AS(model.AcknowledgeEdgeTrimming(0), winrt::hresult_illegal_method_call);
+    });
+}
+
+TEST_CASE("Photo review distinguishes plans from outcomes and hides irrelevant trimming controls",
+          "[presentation][view-model][row-review]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    // Independently enumerate EXIF orientations; the UI must not describe a
+    // pending plan as a completed save or confuse reflection with rotation.
+    const auto orientation = GENERATE(std::uint16_t{1}, std::uint16_t{2}, std::uint16_t{3}, std::uint16_t{4},
+                                      std::uint16_t{5}, std::uint16_t{6}, std::uint16_t{7}, std::uint16_t{8});
+    constexpr const wchar_t *expectedKeys[]{L"ImageReview_NoCorrectionPlanned",
+                                            L"ImageReview_FlipHorizontal",
+                                            L"ImageReview_Rotate180",
+                                            L"ImageReview_FlipVertical",
+                                            L"ImageReview_MirrorThenRotate90Counterclockwise",
+                                            L"ImageReview_Rotate90Clockwise",
+                                            L"ImageReview_MirrorThenRotate90Clockwise",
+                                            L"ImageReview_Rotate90Counterclockwise"};
+    auto &dispatcher = presentationDispatcher();
+    auto source = std::make_shared<EncodedImageSource>(orientation);
+    auto collection = std::make_shared<ImageCollection>();
+    collection->candidates = {{L"photo.jpg", source}};
+    jpg_spinner::batch_processing::BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        implementation->selectSource(request, L"selected", L"");
+        analysis = implementation->AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto row = implementation->Rows().GetAt(0).as<presentation::ImageProcessingRowViewModel>();
+        using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+        ResourceManager resources{ResourceLoader::GetDefaultResourceFilePath()};
+        const auto expected = resources.MainResourceMap()
+                                  .GetSubtree(L"Resources")
+                                  .GetValue(expectedKeys[orientation - 1], resources.CreateResourceContext())
+                                  .ValueAsString();
+        CHECK(row.Outcome() == presentation::ImageProcessingRowOutcome::Pending);
+        CHECK(std::wstring_view{row.StatusDescription()}.starts_with(std::wstring_view{expected}));
+        CHECK(row.StatusDescription() != row.OutcomeDescription());
+        // Identity and transpose need no edge loss even for the partial-block
+        // 31x19 fixture. Every other nonidentity orientation needs trimming.
+        CHECK(row.HasEdgeTrimming() == (orientation != 1 && orientation != 5));
+        CHECK(row.RequiresEdgeTrimmingAcknowledgment() == row.HasEdgeTrimming());
+        if (!row.HasEdgeTrimming())
+            REQUIRE_THROWS_AS(implementation->AcknowledgeEdgeTrimming(0), winrt::hresult_illegal_method_call);
+        CHECK(source->commits == 0);
+        CHECK(source->captures == 1);
     });
 }
 

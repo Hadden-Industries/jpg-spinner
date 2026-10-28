@@ -31,6 +31,7 @@ jobs:
                   ./scripts/tests/Test-ShellNavigationContract.ps1
                   ./scripts/tests/Test-ShellNavigationPresentation.ps1
                   ./scripts/tests/Test-LandingAndSettingsContract.ps1
+                  ./scripts/tests/Test-FolderReviewPresentation.ps1
                   ./scripts/tests/Test-AppThemeResources.ps1
                   ./scripts/tests/Test-AppPrivacyNotice.ps1
                   ./scripts/tests/Test-SettingsInteractionContract.ps1

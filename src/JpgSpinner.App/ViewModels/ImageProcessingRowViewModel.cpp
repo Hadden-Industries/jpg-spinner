@@ -26,6 +26,8 @@ ImageProcessingRowViewModel::ImageProcessingRowViewModel(
             jpg_spinner::presentation::loadImageProcessingErrorText(analysis.error->code, resources_, resourceContext_);
     if (analysis.jpegAnalysis)
     {
+        plannedTransform_ = analysis.jpegAnalysis->transformPlan.transform;
+        plannedOutputDimensions_ = analysis.jpegAnalysis->transformPlan.outputDimensions;
         auto const &discarded = analysis.jpegAnalysis->transformPlan.discardedSourceEdgePixels;
         discardedSourceRightEdgeWidthInPixels_ = discarded.rightEdgeWidth.pixels;
         discardedSourceBottomEdgeHeightInPixels_ = discarded.bottomEdgeHeight.pixels;
@@ -72,14 +74,71 @@ hstring ImageProcessingRowViewModel::DiscardedSourceBottomEdgeHeightInPixelsText
 bool ImageProcessingRowViewModel::RequiresEdgeTrimmingAcknowledgment() const
 {
     requireDispatcherThread();
-    return isEligibleForProcessing_ && !isEdgeTrimmingAcknowledged_ &&
+    return HasEdgeTrimming() && !isEdgeTrimmingAcknowledged_;
+}
+bool ImageProcessingRowViewModel::HasEdgeTrimming() const
+{
+    requireDispatcherThread();
+    return isEligibleForProcessing_ &&
            (discardedSourceRightEdgeWidthInPixels_ != 0 || discardedSourceBottomEdgeHeightInPixels_ != 0);
+}
+hstring ImageProcessingRowViewModel::EdgeTrimmingAcknowledgmentDescription() const
+{
+    requireDispatcherThread();
+    return resources_
+        .GetValue(isEdgeTrimmingAcknowledged_ ? L"ImageReview_TrimmingApproved" : L"ImageReview_ApproveTrimming",
+                  resourceContext_)
+        .ValueAsString();
+}
+hstring ImageProcessingRowViewModel::StatusDescription() const
+{
+    requireDispatcherThread();
+    // A plan is not a success claim. Until the batch publishes its actual
+    // per-file result, report only the immutable analysis fact.
+    if (outcome_ != ImageProcessingRowOutcome::Pending)
+        return OutcomeDescription();
+    if (HasError() || !isEligibleForProcessing_)
+        return resources_
+            .GetValue(HasError() ? L"ImageReview_NeedsAttention" : L"ImageReview_NoCorrectionPlanned", resourceContext_)
+            .ValueAsString();
+    const wchar_t *key{};
+    using enum jpg_spinner::domain::LosslessTransform;
+    switch (plannedTransform_)
+    {
+    case FlipHorizontal:
+        key = L"ImageReview_FlipHorizontal";
+        break;
+    case FlipVertical:
+        key = L"ImageReview_FlipVertical";
+        break;
+    case Rotate180:
+        key = L"ImageReview_Rotate180";
+        break;
+    case Rotate90Clockwise:
+        key = L"ImageReview_Rotate90Clockwise";
+        break;
+    case Rotate270Clockwise:
+        key = L"ImageReview_Rotate90Counterclockwise";
+        break;
+    case Transpose:
+        key = L"ImageReview_MirrorThenRotate90Counterclockwise";
+        break;
+    case Transverse:
+        key = L"ImageReview_MirrorThenRotate90Clockwise";
+        break;
+    default:
+        throw hresult_invalid_argument();
+    }
+    // These are exact planner output dimensions, not an image decode or a
+    // fabricated preview. Pixel counts use the user's native number formatting.
+    return resources_.GetValue(key, resourceContext_).ValueAsString() + L" · " +
+           jpg_spinner::presentation::formatUnsignedInteger(plannedOutputDimensions_.width.pixels) + L" × " +
+           jpg_spinner::presentation::formatUnsignedInteger(plannedOutputDimensions_.height.pixels) + L" px";
 }
 void ImageProcessingRowViewModel::acknowledgeEdgeTrimming()
 {
     requireDispatcherThread();
-    if (!isEligibleForProcessing_ ||
-        (discardedSourceRightEdgeWidthInPixels_ == 0 && discardedSourceBottomEdgeHeightInPixels_ == 0))
+    if (!HasEdgeTrimming())
         throw hresult_illegal_method_call();
     if (!isEdgeTrimmingAcknowledged_)
     {
@@ -87,6 +146,8 @@ void ImageProcessingRowViewModel::acknowledgeEdgeTrimming()
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{L"IsEdgeTrimmingAcknowledged"});
         propertyChanged_(*this,
                          Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{L"RequiresEdgeTrimmingAcknowledgment"});
+        propertyChanged_(*this,
+                         Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{L"EdgeTrimmingAcknowledgmentDescription"});
     }
 }
 Presentation::ImageProcessingRowOutcome ImageProcessingRowViewModel::Outcome() const
@@ -189,7 +250,7 @@ void ImageProcessingRowViewModel::applyResult(const jpg_spinner::batch_processin
     // Publish a coherent terminal observation before notifying any binding.
     propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{L"Outcome"});
     for (auto const *property :
-         {L"OutcomeDescription", L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy", L"HasError"})
+         {L"OutcomeDescription", L"StatusDescription", L"ErrorTitle", L"ErrorExplanation", L"ErrorRemedy", L"HasError"})
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{property});
 }
 event_token ImageProcessingRowViewModel::PropertyChanged(

@@ -83,7 +83,8 @@ MainWindow::MainWindow()
     processingPreferencesReady_ = true;
     // Compose each view once, then let Frame own page history. Basic string
     // parameters follow Microsoft's recommendation and cannot retain another
-    // window/model through the journal. Navigation never starts image work.
+    // window/model through the journal. Returning to a dirty selected folder
+    // resumes read-only analysis, never image transformation or saving.
     // https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.frame.navigate
     ShellViews().Children().Clear();
     ShellFrame().Navigated([weak = get_weak()](const Windows::Foundation::IInspectable &,
@@ -107,6 +108,8 @@ MainWindow::MainWindow()
             const auto page = window->ShellFrame().Content().as<Microsoft::UI::Xaml::Controls::Page>();
             page.Tag(arguments.Parameter());
             page.Content(content);
+            if (destination == L"Workflow")
+                window->analyzeOnWorkflowEntryAsync();
         }
     });
     // VirtualKey defines these browser/navigation keys, but WinUI's XAML
@@ -463,15 +466,8 @@ hstring MainWindow::ProcessingSettingsSummary()
         {
             if (!summary.empty())
                 summary += L" · ";
-            if (control == OutputDispositionControl() && control.SelectedIndex() == 2)
-            {
-                using namespace Microsoft::Windows::ApplicationModel::Resources;
-                ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
-                summary += manager.MainResourceMap()
-                               .GetSubtree(L"Resources")
-                               .GetValue(L"Shell_OutputSummaryNoBackup", manager.CreateResourceContext())
-                               .ValueAsString();
-            }
+            if (control == OutputDispositionControl())
+                summary += OutputDispositionDescription();
             else
                 summary += unbox_value<hstring>(selected.Content());
         }
@@ -498,6 +494,33 @@ hstring MainWindow::ProcessingSettingsSummary()
         summary += L" MiB"; // IEC unit symbol is language-independent.
     }
     return hstring{summary};
+}
+hstring MainWindow::OutputDispositionDescription()
+{
+    const auto control = OutputDispositionControl();
+    if (!control)
+        return {};
+    if (control.SelectedIndex() == 2)
+    {
+        using namespace Microsoft::Windows::ApplicationModel::Resources;
+        ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+        return manager.MainResourceMap()
+            .GetSubtree(L"Resources")
+            .GetValue(L"Shell_OutputSummaryNoBackup", manager.CreateResourceContext())
+            .ValueAsString();
+    }
+    const auto selected = control.SelectedItem().try_as<Microsoft::UI::Xaml::Controls::RadioButton>();
+    return selected ? unbox_value<hstring>(selected.Content()) : hstring{};
+}
+bool MainWindow::HasNoPlannedCorrections() const
+{
+    return viewModel_ && viewModel_.State() == Presentation::ImageProcessingExperienceState::Review &&
+           viewModel_.EligibleFileCount() == 0;
+}
+Microsoft::UI::Xaml::Visibility MainWindow::StartupRecoveryProgressVisibility() const
+{
+    return IsStartupRecoveryPending() ? Microsoft::UI::Xaml::Visibility::Visible
+                                      : Microsoft::UI::Xaml::Visibility::Collapsed;
 }
 std::uint32_t MainWindow::selectedMaximumConcurrentImageCount()
 {
@@ -633,10 +656,13 @@ void MainWindow::notifyShellState()
                                  L"LandingRegionVisibility",
                                  L"WorkflowRegionVisibility",
                                  L"StartupRecoverySummaryVisibility",
+                                 L"StartupRecoveryProgressVisibility",
                                  L"CanEditProcessingSettings",
                                  L"ProcessingSettingsSummary",
                                  L"MaximumConcurrentImageCountText",
-                                 L"CustomMemoryBudgetVisibility"})
+                                 L"CustomMemoryBudgetVisibility",
+                                 L"OutputDispositionDescription",
+                                 L"HasNoPlannedCorrections"})
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{property});
     closeAfterWorkSettles();
 }
@@ -802,6 +828,9 @@ Windows::Foundation::IAsyncAction MainWindow::selectPickedSourceAsync(Windows::S
     transactionEngine_ = composition->transactionEngine;
     transactionStartRequested_ = false;
     setViewModel(model.as<Presentation::MainWindowViewModel>());
+    // The caller releases its picker gate before the one pending read-only
+    // check starts. Settings changes are coalesced until workspace entry.
+    automaticAnalysisPending_ = true;
 }
 fire_and_forget MainWindow::SourcePicker_Click(Windows::Foundation::IInspectable const &,
                                                Microsoft::UI::Xaml::RoutedEventArgs const &)
@@ -834,8 +863,13 @@ fire_and_forget MainWindow::SourcePicker_Click(Windows::Foundation::IInspectable
     {
         showIntegrationError();
     }
+    finishPickerInteraction();
+}
+void MainWindow::finishPickerInteraction()
+{
     pickerActive_ = false;
     notifyShellState();
+    analyzeOnWorkflowEntryAsync();
 }
 void MainWindow::synchronizeProcessingOptionControls()
 {
@@ -1033,6 +1067,7 @@ Windows::Foundation::IAsyncAction MainWindow::applyProcessingPreferencesAsync()
             co_await selectPickedSourceAsync(selectedSourceFolder_);
         }
         applyProcessingOptions(viewModel_, selections);
+        automaticAnalysisPending_ = viewModel_.CanAnalyzeSelectedSource();
         saveProcessingPreferences(selections);
         synchronizeProcessingOptionControls();
     }
@@ -1041,16 +1076,33 @@ Windows::Foundation::IAsyncAction MainWindow::applyProcessingPreferencesAsync()
         synchronizeProcessingOptionControls();
         showIntegrationError();
     }
-    pickerActive_ = false;
-    notifyShellState();
+    finishPickerInteraction();
 }
-fire_and_forget MainWindow::Analyze_Click(Windows::Foundation::IInspectable const &,
-                                          Microsoft::UI::Xaml::RoutedEventArgs const &)
+fire_and_forget MainWindow::RetryAnalysis_Click(Windows::Foundation::IInspectable const &,
+                                                Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    auto lifetime = get_strong();
+    co_await analyzeSelectedSourceAsync();
+}
+fire_and_forget MainWindow::analyzeOnWorkflowEntryAsync()
+{
+    // Initial navigation can occur in the constructor before a source exists.
+    // Avoid acquiring/starting an asynchronous operation in that case.
+    if (!automaticAnalysisPending_ || !viewModel_ || !viewModel_.CanAnalyzeSelectedSource())
+        co_return;
+    auto lifetime = get_strong();
+    co_await analyzeSelectedSourceAsync();
+}
+Windows::Foundation::IAsyncAction MainWindow::analyzeSelectedSourceAsync()
 {
     auto lifetime = get_strong();
     if (closeAdmission_.closeRequested() || pickerActive_ || operationEventActive_ || !viewModel_ ||
         !viewModel_.CanAnalyzeSelectedSource())
         co_return;
+    const auto page = ShellFrame().Content().try_as<Microsoft::UI::Xaml::Controls::Page>();
+    if (!page || unbox_value_or<hstring>(page.Tag(), L"") != L"Workflow")
+        co_return; // Coalesce preference edits; navigation back starts one analysis.
+    automaticAnalysisPending_ = false;
     operationEventActive_ = true;
     notifyShellState();
     try
@@ -1161,8 +1213,7 @@ fire_and_forget MainWindow::RetryRecovery_Click(Windows::Foundation::IInspectabl
         showIntegrationError();
     }
     operationEventActive_ = false;
-    pickerActive_ = false;
-    notifyShellState();
+    finishPickerInteraction();
 }
 fire_and_forget MainWindow::RestoreRecoverySource_Click(Windows::Foundation::IInspectable const &,
                                                         Microsoft::UI::Xaml::RoutedEventArgs const &)
@@ -1200,8 +1251,7 @@ fire_and_forget MainWindow::RestoreRecoverySource_Click(Windows::Foundation::IIn
     {
         showIntegrationError();
     }
-    pickerActive_ = false;
-    notifyShellState();
+    finishPickerInteraction();
 }
 fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspectable const &sender,
                                                     Microsoft::UI::Xaml::RoutedEventArgs const &)
@@ -1260,8 +1310,7 @@ fire_and_forget MainWindow::ExportDiagnostics_Click(Windows::Foundation::IInspec
     co_await wil::resume_foreground(queue);
     if (exportFailed)
         diagnosticLogError_ = true;
-    pickerActive_ = false;
-    notifyShellState();
+    finishPickerInteraction();
     // Focus only the still-loaded, enabled initiator of this interaction, and
     // never pass Unfocused to Focus (the WinUI contract forbids it). Native
     // Focus may set only logical focus when another app owns the foreground;
@@ -1289,13 +1338,13 @@ fire_and_forget MainWindow::ReturnToSourceSelection_Click(Windows::Foundation::I
             co_await selectPickedSourceAsync(selectedSourceFolder_);
         else
             viewModel_.ReturnToSourceSelection();
+        automaticAnalysisPending_ = viewModel_.CanAnalyzeSelectedSource();
     }
     catch (...)
     {
         showIntegrationError();
     }
-    pickerActive_ = false;
-    notifyShellState();
+    finishPickerInteraction();
 }
 void MainWindow::CancelOperation_Click(Windows::Foundation::IInspectable const &,
                                        Microsoft::UI::Xaml::RoutedEventArgs const &)

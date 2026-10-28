@@ -26,6 +26,9 @@ struct ImageProcessingRowViewModel : ImageProcessingRowViewModelT<ImageProcessin
     hstring DiscardedSourceRightEdgeWidthInPixelsText() const;
     hstring DiscardedSourceBottomEdgeHeightInPixelsText() const;
     bool IsEdgeTrimmingAcknowledged() const;
+    bool HasEdgeTrimming() const;
+    hstring EdgeTrimmingAcknowledgmentDescription() const;
+    hstring StatusDescription() const;
     /// A one-time consent affordance only for an eligible row that discards
     /// pixels. The owning model still enforces Review state before accepting it.
     bool RequiresEdgeTrimmingAcknowledgment() const;
@@ -49,6 +52,8 @@ struct ImageProcessingRowViewModel : ImageProcessingRowViewModelT<ImageProcessin
     Microsoft::UI::Dispatching::DispatcherQueue dispatcherQueue_;
     hstring displayName_;
     bool isEligibleForProcessing_;
+    jpg_spinner::domain::LosslessTransform plannedTransform_{jpg_spinner::domain::LosslessTransform::None};
+    jpg_spinner::domain::ImageDimensions plannedOutputDimensions_{};
     std::uint64_t discardedSourceRightEdgeWidthInPixels_{};
     std::uint64_t discardedSourceBottomEdgeHeightInPixels_{};
     bool isEdgeTrimmingAcknowledged_{};

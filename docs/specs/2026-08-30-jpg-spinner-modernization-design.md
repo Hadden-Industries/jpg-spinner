@@ -590,9 +590,9 @@ An absent orientation tag has the same display semantics as `TopLeft`; it produc
 
 The single-window flow has six semantic states: source selection, analysis, review, processing, results, and recovery required. It does not recreate the old scenario/flyout structure.
 
-- The source-selection state explains local-only processing and offers folder selection.
+- The source-selection state explains local-only processing and offers folder selection. A successful folder grant immediately starts read-only analysis; a separate Analyze confirmation is unnecessary. Cancellation consumes that request. Settings edits invalidate the prior review and coalesce into one fresh analysis when returning to the workspace; navigating alone never restarts a cancelled check.
 - Analysis shows indeterminate progress only before the candidate count is known and exposes cancellation.
-- Review lists each source’s orientation, intended transform, output dimensions, perfect-transform eligibility, and unsupported reason. Advanced scan organization and edge handling are explicitly labeled.
+- Review describes the intended transform and exact output dimensions without implying a completed save. Unsupported reasons remain visible. Exact source-edge loss and per-photo trimming consent appear only when an eligible plan actually removes pixels. Applying corrections remains an explicit action, disabled until the current review's required consent is complete. Advanced scan organization and edge handling live in Settings; the review summarizes the effective choices and output destination.
 - Results show completed, skipped, failed, and cancelled entries with a safe recovery instruction where relevant.
 - Replacement requires an explicit output choice. With `ReplaceOriginalWithVerifiedBackup`, the UI displays the backup root before execution; with `ReplaceOriginalWithoutRetainedBackup`, the review summary explicitly says that no backup will be retained.
 
@@ -603,6 +603,16 @@ Existing `en-US`, `en-GB`, and `ru` resources are migrated. Resource keys use st
 The C++/WinRT application declares `App` and `MainWindow` runtime classes in `App.idl` and `MainWindow.idl`; other projected presentation types live in focused IDL files. Every public projected member follows WinRT PascalCase conventions, including `CanSelectSourceFolder`, `CanBeginProcessing`, `CanCancelCurrentOperation`, and `CanReturnToSourceSelection`. Native implementation helpers remain camelCase. `x:Bind` compilation and WinMD inspection are executable contract checks for these names.
 
 ### 12.1 Fluent visual system and responsive layout
+
+The folder workspace stays within the branded landing shell: an orange identity panel and purple artwork frame the right-hand workspace. One native, virtualized `ListView` owns review scrolling; its header contains the selected folder, stage, destination and correction count, while its footer contains discovery details. Compact photo rows show a native photo symbol, selectable filename and concise planned work or actual outcome. A single primary action applies corrections; progress and Stop appear only during work. Retry is a recovery affordance after a stopped or failed analysis, rather than another confirmation on the successful path.
+
+```text
+Regular: [Brand] [Folder / stage | Count + destination | Photo rows | Apply / Stop]
+Compact: [Brand header]
+         [Folder / stage | Stacked summary cards | Photo rows | Wrapping actions]
+```
+
+This follows Apple's guidance to [show content promptly while loading](https://developer.apple.com/design/human-interface-guidelines/loading) and [integrate status feedback into the interface](https://developer.apple.com/design/human-interface-guidelines/feedback), translated into native Windows controls. Reuse the existing theme tokens rather than adding another palette: orange text/surface contrast is 7.41:1 in light mode and 10.15:1 in dark mode; violet is 9.66:1 and 10.30:1 respectively. High contrast uses system colors. Glass remains in native window chrome; reading surfaces stay opaque.
 
 The application uses first-party WinUI controls and theme resources instead of recreating Windows chrome. The primary long-lived window uses `MicaBackdrop`; WinUI supplies the solid-color fallback on Windows 10, high contrast, disabled transparency, battery saver, and unsupported hardware. An integrated WinUI title bar contains only app identity and window-level commands. `InfoBar` communicates non-modal information, warnings, and errors; it replaces custom colored status strips. Content cards use Windows layer/card theme brushes, and the system light/dark theme remains authoritative. These choices follow Microsoft’s current [modern WinUI 3 application structure](https://learn.microsoft.com/en-us/windows/apps/develop/ui/windows-app-sdk-app-structure) and [Mica guidance](https://learn.microsoft.com/en-us/windows/apps/design/style/mica).
 

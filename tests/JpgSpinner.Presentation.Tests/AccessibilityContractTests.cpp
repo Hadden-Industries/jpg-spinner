@@ -113,7 +113,7 @@ TEST_CASE("Top-level commands and choices have collision-free localized native a
         resourceValues(jpg_spinner::test_support::loadPresentationSourceContract(std::wstring{locale} + L".resw"));
     std::vector<std::wstring> keys;
     for (const auto *control :
-         {L"SourcePicker", L"Analyze", L"StartProcessing", L"CancelOperation", L"ReturnToSourceSelection",
+         {L"SourcePicker", L"RetryAnalysis", L"StartProcessing", L"CancelOperation", L"ReturnToSourceSelection",
           L"RetryRecovery", L"RestoreRecoverySource", L"ExportDiagnostics", L"TraversalScope", L"OutputDisposition",
           L"EdgeHandling", L"ScanOrganization"})
     {
@@ -128,14 +128,14 @@ TEST_CASE("Top-level commands and choices have collision-free localized native a
     }
 }
 
-TEST_CASE("Policy declaration order follows row-major visual workflow without tab overrides",
+TEST_CASE("Policy declaration order follows the Settings reading order without tab overrides",
           "[presentation][accessibility][focus-order]")
 {
     jpg_spinner::test_support::ensurePresentationTestApartment();
     const auto document = jpg_spinner::test_support::loadPresentationSourceContract(L"MainWindow.xaml");
-    const auto choices = document.GetElementsByTagName(L"ComboBox");
+    const auto choices = document.GetElementsByTagName(L"RadioButtons");
     REQUIRE(choices.Size() == 4);
-    constexpr const wchar_t *order[]{L"TraversalScope", L"EdgeHandling", L"OutputDisposition", L"ScanOrganization"};
+    constexpr const wchar_t *order[]{L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization"};
     for (std::uint32_t index = 0; index != choices.Size(); ++index)
     {
         const auto attributes = choices.GetAt(index).Attributes();

@@ -58,9 +58,13 @@ namespace JpgSpinner.Presentation
         String DiscardedSourceRightEdgeWidthInPixelsText{ get; };
         String DiscardedSourceBottomEdgeHeightInPixelsText{ get; };
         Boolean IsEdgeTrimmingAcknowledged{ get; };
+        Boolean HasEdgeTrimming{ get; };
+        String EdgeTrimmingAcknowledgmentDescription{ get; };
         Boolean RequiresEdgeTrimmingAcknowledgment{ get; };
         ImageProcessingRowOutcome Outcome{ get; };
         String OutcomeDescription{ get; };
+        // A review fact until execution supplies an actual terminal outcome.
+        String StatusDescription{ get; };
         Boolean HasError{ get; };
         String ErrorTitle{ get; };
         String ErrorExplanation{ get; };

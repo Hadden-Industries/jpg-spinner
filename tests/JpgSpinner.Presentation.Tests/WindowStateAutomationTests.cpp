@@ -195,14 +195,11 @@ wil::com_ptr<IUIAutomationElement> waitForEnabledControl(IUIAutomation2 *automat
 }
 
 /// Select an authored option by its localized public label through native UIA.
-/// This exercises the ComboBox event path instead of assigning model options.
+/// This exercises the native RadioButtons event path instead of assigning model options.
 void selectLocalizedOption(IUIAutomation2 *automation, IUIAutomationElement *window, const wchar_t *identifier,
                            const winrt::hstring &name)
 {
     const auto control = waitForEnabledControl(automation, window, identifier);
-    wil::com_ptr<IUIAutomationExpandCollapsePattern> expansion;
-    THROW_IF_FAILED(control->GetCurrentPatternAs(UIA_ExpandCollapsePatternId, IID_PPV_ARGS(expansion.put())));
-    THROW_IF_FAILED(expansion->Expand());
     wil::unique_variant expected;
     expected.vt = VT_BSTR;
     expected.bstrVal = SysAllocString(name.c_str());
@@ -210,12 +207,11 @@ void selectLocalizedOption(IUIAutomation2 *automation, IUIAutomationElement *win
     wil::com_ptr<IUIAutomationCondition> condition;
     THROW_IF_FAILED(automation->CreatePropertyCondition(UIA_NamePropertyId, expected, condition.put()));
     wil::com_ptr<IUIAutomationElement> option;
-    THROW_IF_FAILED(window->FindFirst(TreeScope_Descendants, condition.get(), option.put()));
+    THROW_IF_FAILED(control->FindFirst(TreeScope_Descendants, condition.get(), option.put()));
     REQUIRE(option);
     wil::com_ptr<IUIAutomationSelectionItemPattern> selection;
     THROW_IF_FAILED(option->GetCurrentPatternAs(UIA_SelectionItemPatternId, IID_PPV_ARGS(selection.put())));
     THROW_IF_FAILED(selection->Select());
-    THROW_IF_FAILED(expansion->Collapse());
 }
 
 /// Scrolls only the caller's verified native viewport, returning whether the
@@ -255,7 +251,7 @@ bool scrollControlFullyIntoViewport(IUIAutomationElement *control, IUIAutomation
     return false;
 }
 
-TEST_CASE("The minimum viewport keeps source and policy controls reachable through native scrolling",
+TEST_CASE("The minimum viewport keeps settings reachable through native scrolling",
           "[presentation][automation][reachability][ui-automation]")
 {
     REQUIRE(AreDpiAwarenessContextsEqual(GetThreadDpiAwarenessContext(), DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2));
@@ -266,32 +262,34 @@ TEST_CASE("The minimum viewport keeps source and policy controls reachable throu
     REQUIRE(length < executablePath.size());
     const auto applicationDirectory =
         std::filesystem::path{executablePath.data()}.parent_path().parent_path() / L"JpgSpinner.App";
-    jpg_spinner::test_support::withIsolatedShellWindow(
-        applicationDirectory, [](IUIAutomation2 *automation, IUIAutomationElement *window) {
-            UIA_HWND nativeWindow{};
-            THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
-            const auto dpi = GetDpiForWindow(reinterpret_cast<HWND>(nativeWindow));
-            REQUIRE(dpi != 0);
-            wil::com_ptr<IUIAutomationTransformPattern> transform;
-            THROW_IF_FAILED(window->GetCurrentPatternAs(UIA_TransformPatternId, IID_PPV_ARGS(transform.put())));
-            THROW_IF_FAILED(
-                transform->Resize(MulDiv(360, static_cast<int>(dpi), 96), MulDiv(480, static_cast<int>(dpi), 96)));
-            const auto viewport = findControl(automation, window, L"WorkflowContextViewport");
-            REQUIRE(viewport);
-            wil::com_ptr<IUIAutomationScrollPattern> scrolling;
-            THROW_IF_FAILED(viewport->GetCurrentPatternAs(UIA_ScrollPatternId, IID_PPV_ARGS(scrolling.put())));
-            for (const auto automationId :
-                 {L"SourceFolderPicker", L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization"})
-            {
-                INFO("Minimum-height reachability: " << winrt::to_string(automationId));
-                const auto control = findControl(automation, window, automationId);
-                REQUIRE(control);
-                // Observe actual clipping after native scrolling, not merely a
-                // control's presence in the accessibility tree. The initial
-                // disabled policy controls still need readable, reachable text.
-                CHECK(scrollControlFullyIntoViewport(control.get(), viewport.get(), scrolling.get()));
-            }
-        });
+    jpg_spinner::test_support::withIsolatedShellWindow(applicationDirectory, [](IUIAutomation2 *automation,
+                                                                                IUIAutomationElement *window) {
+        REQUIRE(waitForEnabledControl(automation, window, L"SourceFolderPicker"));
+        const auto settings = waitForEnabledControl(automation, window, L"OpenSettings");
+        invokeControl(settings.get());
+        UIA_HWND nativeWindow{};
+        THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
+        const auto dpi = GetDpiForWindow(reinterpret_cast<HWND>(nativeWindow));
+        REQUIRE(dpi != 0);
+        wil::com_ptr<IUIAutomationTransformPattern> transform;
+        THROW_IF_FAILED(window->GetCurrentPatternAs(UIA_TransformPatternId, IID_PPV_ARGS(transform.put())));
+        THROW_IF_FAILED(
+            transform->Resize(MulDiv(360, static_cast<int>(dpi), 96), MulDiv(480, static_cast<int>(dpi), 96)));
+        const auto viewport = findControl(automation, window, L"SettingsViewport");
+        REQUIRE(viewport);
+        wil::com_ptr<IUIAutomationScrollPattern> scrolling;
+        THROW_IF_FAILED(viewport->GetCurrentPatternAs(UIA_ScrollPatternId, IID_PPV_ARGS(scrolling.put())));
+        for (const auto automationId : {L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization"})
+        {
+            INFO("Minimum-height reachability: " << winrt::to_string(automationId));
+            const auto control = findControl(automation, window, automationId);
+            REQUIRE(control);
+            // Observe actual clipping after native scrolling, not merely a
+            // control's presence in the accessibility tree. The initial
+            // policy groups must remain readable and reachable.
+            CHECK(scrollControlFullyIntoViewport(control.get(), viewport.get(), scrolling.get()));
+        }
+    });
 }
 
 /// Independent initial-state contract: before a real folder grant only the
@@ -320,7 +318,7 @@ void requireControl(IUIAutomation2 *automation, IUIAutomationElement *window, co
     CHECK((help && SysStringLen(help.get()) != 0));
 }
 
-/// Query the native selection provider even while initial controls are disabled.
+/// Query the native RadioButtons selection provider on the Settings page.
 /// Compare against the independently selected localized resource, not a guessed
 /// enum ordinal, control position, or hard-coded OS display language.
 void requireDefaultSelection(IUIAutomation2 *automation, IUIAutomationElement *window, const wchar_t *automationId,
@@ -338,6 +336,9 @@ void requireDefaultSelection(IUIAutomation2 *automation, IUIAutomationElement *w
     REQUIRE(count == 1);
     wil::com_ptr<IUIAutomationElement> item;
     THROW_IF_FAILED(selected->GetElement(0, item.put()));
+    CONTROLTYPEID type{};
+    THROW_IF_FAILED(item->get_CurrentControlType(&type));
+    CHECK(type == UIA_RadioButtonControlTypeId);
     wil::unique_bstr name;
     THROW_IF_FAILED(item->get_CurrentName(name.put()));
     CHECK(std::wstring_view{name.get(), SysStringLen(name.get())} ==
@@ -420,16 +421,17 @@ TEST_CASE("The isolated shell starts with only source selection available",
         // recovery. Assert initial content only once the real selection gate
         // is usable; keep every accessibility/default-state assertion intact.
         REQUIRE(waitForEnabledControl(automation, window, L"SourceFolderPicker"));
-        const auto heading = findControl(automation, window, L"SourceSelectionRegion");
-        REQUIRE(heading);
-        BOOL isOffscreen{};
-        THROW_IF_FAILED(heading->get_CurrentIsOffscreen(&isOffscreen));
-        CHECK_FALSE(isOffscreen);
         requireControl(automation, window, L"SourceFolderPicker", UIA_ButtonControlTypeId, true);
+        CHECK_FALSE(findControl(automation, window, L"AnalyzeSelectedSource"));
+        CHECK_FALSE(findControl(automation, window, L"StartProcessing"));
+        CHECK_FALSE(findControl(automation, window, L"CancelOperation"));
+        const auto settings = waitForEnabledControl(automation, window, L"OpenSettings");
+        invokeControl(settings.get());
         for (const auto automationId : {L"TraversalScope", L"OutputDisposition", L"EdgeHandling", L"ScanOrganization"})
-            requireControl(automation, window, automationId, UIA_ComboBoxControlTypeId, false);
-        for (const auto automationId : {L"AnalyzeSelectedSource", L"StartProcessing", L"CancelOperation"})
-            requireControl(automation, window, automationId, UIA_ButtonControlTypeId, false);
+        {
+            const auto group = waitForEnabledControl(automation, window, automationId);
+            REQUIRE(group);
+        }
         using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
         ResourceManager resources{ResourceLoader::GetDefaultResourceFilePath()};
         const auto text = resources.MainResourceMap().GetSubtree(L"Resources");
@@ -441,7 +443,10 @@ TEST_CASE("The isolated shell starts with only source selection available",
             {L"ScanOrganization", L"Shell_PreserveSourceScans/Content"}};
         for (const auto &[automationId, resource] : defaults)
             requireDefaultSelection(automation, window, automationId, text.GetValue(resource, context).ValueAsString());
-        // This test deliberately does not invoke Start/Analyze or supply a
+        const auto back = findControl(automation, window, L"CloseSettings");
+        REQUIRE(back);
+        invokeControl(back.get());
+        // This test deliberately does not apply corrections or supply a
         // path through a production test hook. Actual grants require the
         // HWND-owned picker and a separately qualified keyboard workflow.
     });
@@ -624,7 +629,7 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
           "[presentation][automation][folder-review][native-picker][operator-assisted][ui-automation]")
 {
     // Native UIA opens/focuses the actual picker; real keyboard input supplies
-    // only the owned folder. It then drives Analyze without a production hook.
+    // only the owned folder. Selection itself starts the read-only analysis.
     // This mixed-input case does not claim an entirely keyboard-only workflow.
     // The same independent review and unchanged-source oracle is preserved.
     jpg_spinner::test_support::requireApprovedInteractiveLane();
@@ -657,8 +662,7 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
         REQUIRE(picker);
         THROW_IF_FAILED(picker->SetFocus()); // Establish the keyboard scenario's initial focus, not a folder grant.
         awaitKeyboardSourceFolderGrant(automation, window, selected);
-        const auto analyze = waitForEnabledControl(automation, window, L"AnalyzeSelectedSource");
-        invokeControl(analyze.get());
+        CHECK_FALSE(findControl(automation, window, L"AnalyzeSelectedSource"));
         const auto deadline =
             std::chrono::steady_clock::now() + jpg_spinner::test_support::qualification_timing::uiReviewPreparation;
         UIA_HWND nativeWindow{};
@@ -681,7 +685,7 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
             if (!reviewVisible)
                 std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
         } while (!reviewVisible && std::chrono::steady_clock::now() < deadline);
-        INFO("The native picker and Analyze must reach the observable review; no folder test hook is supplied.");
+        INFO("The native picker must reach review automatically; no Analyze command or folder test hook is supplied.");
         REQUIRE(reviewVisible);
         const auto count = findControl(automation, window, L"EligibleFileCount");
         REQUIRE(count);
@@ -803,20 +807,27 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
         REQUIRE(canResize);
         THROW_IF_FAILED(transform->Resize(MulDiv(1100, static_cast<int>(windowDpi), 96),
                                           MulDiv(800, static_cast<int>(windowDpi), 96)));
-        const auto picker = findControl(automation, window, L"SourceFolderPicker");
-        REQUIRE(picker);
-        THROW_IF_FAILED(picker->SetFocus());
-        awaitKeyboardSourceFolderGrant(automation, window, selected);
         using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
         ResourceManager resources{ResourceLoader::GetDefaultResourceFilePath()};
         const auto text = resources.MainResourceMap().GetSubtree(L"Resources");
         const auto context = resources.CreateResourceContext();
+        const auto settings = waitForEnabledControl(automation, window, L"OpenSettings");
+        invokeControl(settings.get());
         selectLocalizedOption(automation, window, L"OutputDisposition",
                               text.GetValue(L"Shell_ReplaceWithVerifiedBackup/Content", context).ValueAsString());
         selectLocalizedOption(automation, window, L"EdgeHandling",
                               text.GetValue(L"Shell_TrimPartialMinimumCodedUnits/Content", context).ValueAsString());
-        const auto analyze = waitForEnabledControl(automation, window, L"AnalyzeSelectedSource");
-        invokeControl(analyze.get());
+        requireDefaultSelection(automation, window, L"OutputDisposition",
+                                text.GetValue(L"Shell_ReplaceWithVerifiedBackup/Content", context).ValueAsString());
+        requireDefaultSelection(automation, window, L"EdgeHandling",
+                                text.GetValue(L"Shell_TrimPartialMinimumCodedUnits/Content", context).ValueAsString());
+        const auto back = findControl(automation, window, L"CloseSettings");
+        REQUIRE(back);
+        invokeControl(back.get());
+        const auto picker = waitForEnabledControl(automation, window, L"SourceFolderPicker");
+        THROW_IF_FAILED(picker->SetFocus());
+        awaitKeyboardSourceFolderGrant(automation, window, selected);
+        CHECK_FALSE(findControl(automation, window, L"AnalyzeSelectedSource"));
         UIA_HWND nativeWindow{};
         THROW_IF_FAILED(window->get_CurrentNativeWindowHandle(&nativeWindow));
         const auto analysisDeadline =
@@ -838,10 +849,6 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
                 std::this_thread::sleep_for(jpg_spinner::test_support::qualification_timing::uiAsyncPollInterval);
         } while (!reviewVisible && std::chrono::steady_clock::now() < analysisDeadline);
         REQUIRE(reviewVisible);
-        requireDefaultSelection(automation, window, L"OutputDisposition",
-                                text.GetValue(L"Shell_ReplaceWithVerifiedBackup/Content", context).ValueAsString());
-        requireDefaultSelection(automation, window, L"EdgeHandling",
-                                text.GetValue(L"Shell_TrimPartialMinimumCodedUnits/Content", context).ValueAsString());
         for (const auto &[automationId, expected] :
              {std::pair{L"EligibleFileCount", L"1"}, std::pair{L"DiscardedRightEdgePixels", L"7"},
               std::pair{L"DiscardedBottomEdgePixels", L"0"}})
@@ -860,7 +867,7 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
         wil::unique_bstr backupName;
         THROW_IF_FAILED(backup->get_CurrentName(backupName.put()));
         const std::wstring backupPath{backupName.get(), SysStringLen(backupName.get())};
-        const auto viewport = findControl(automation, window, L"WorkflowContextViewport");
+        const auto viewport = findControl(automation, window, L"ProcessingRows");
         REQUIRE(viewport);
         RECT viewportBounds{};
         RECT backupBounds{};
@@ -873,7 +880,7 @@ TEST_CASE("Replacement trimming review keeps its backup readable and requires ex
         wil::unique_variant instructionName;
         instructionName.vt = VT_BSTR;
         instructionName.bstrVal =
-            SysAllocString(text.GetValue(L"Shell_ReviewInstruction/Text", context).ValueAsString().c_str());
+            SysAllocString(text.GetValue(L"Shell_ReviewDescription/Text", context).ValueAsString().c_str());
         THROW_IF_NULL_ALLOC(instructionName.bstrVal);
         wil::com_ptr<IUIAutomationCondition> instructionCondition;
         THROW_IF_FAILED(
