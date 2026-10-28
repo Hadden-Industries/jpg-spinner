@@ -687,6 +687,22 @@ TEST_CASE("A real picked folder reaches a non-destructive eligible review",
         } while (!reviewVisible && std::chrono::steady_clock::now() < deadline);
         INFO("The native picker must reach review automatically; no Analyze command or folder test hook is supplied.");
         REQUIRE(reviewVisible);
+        // Settings has never been loaded in this process. The review must
+        // still describe the configured destination instead of depending on a
+        // lazily created RadioButtons.SelectedItem provider.
+        const auto destination = findControl(automation, window, L"OutputDispositionSummary");
+        REQUIRE(destination);
+        wil::unique_bstr destinationName;
+        THROW_IF_FAILED(destination->get_CurrentName(destinationName.put()));
+        using namespace winrt::Microsoft::Windows::ApplicationModel::Resources;
+        ResourceManager resources{ResourceLoader::GetDefaultResourceFilePath()};
+        const auto expectedDestination =
+            resources.MainResourceMap()
+                .GetSubtree(L"Resources")
+                .GetValue(L"Shell_CreateCorrectedCopy/Content", resources.CreateResourceContext())
+                .ValueAsString();
+        CHECK(std::wstring_view{destinationName.get(), SysStringLen(destinationName.get())} ==
+              std::wstring_view{expectedDestination});
         const auto count = findControl(automation, window, L"EligibleFileCount");
         REQUIRE(count);
         wil::unique_bstr value;

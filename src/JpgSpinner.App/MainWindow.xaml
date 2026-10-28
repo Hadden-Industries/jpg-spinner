@@ -255,20 +255,24 @@
                                                 </StackPanel>
                                                 <Button x:Name="ChangeSourceFolderButton" x:Uid="Shell_ChangeSourceFolder" Grid.Column="1" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind CanPickSourceFolder, Mode=OneWay}" Click="SourcePicker_Click" AutomationProperties.AutomationId="ChangeSourceFolder" />
                                             </Grid>
-                                            <ProgressRing x:Uid="Shell_StartupRecoveryProgress" IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Visibility="{x:Bind StartupRecoveryProgressVisibility, Mode=OneWay}" Width="32" Height="32" AutomationProperties.AutomationId="StartupRecoveryProgress" />
-                                            <InfoBar x:Uid="Shell_StartupRecoveryError" Severity="Error" IsClosable="False" Message="{x:Bind StartupRecoveryErrorMessage, Mode=OneWay}" IsOpen="{x:Bind HasStartupRecoveryError, Mode=OneWay}" AutomationProperties.AutomationId="StartupRecoveryError" AutomationProperties.LiveSetting="Assertive" />
-                                            <Button x:Uid="Shell_RestoreRecoverySource" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind CanRestoreStartupSourceAccess, Mode=OneWay}" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}" Click="RestoreRecoverySource_Click" AutomationProperties.AutomationId="RestoreRecoverySource" />
-                                            <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind StartupRecoverySummaryVisibility, Mode=OneWay}">
-                                                <TextBlock x:Uid="Shell_StartupRecoveredCount" TextWrapping="Wrap" />
-                                                <TextBlock Text="{x:Bind StartupRecoveredTransactionCount, Mode=OneWay}" AutomationProperties.AutomationId="StartupRecoveredTransactionCount" />
-                                            </StackPanel>
-                                            <InfoBar x:Name="IntegrationErrorBar" Severity="Error" IsOpen="False" IsClosable="True" AutomationProperties.AutomationId="IntegrationError" AutomationProperties.LiveSetting="Assertive" />
-                                            <InfoBar Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}" Title="{x:Bind ViewModel.ErrorTitle, Mode=OneWay}" AutomationProperties.AutomationId="WorkflowError" AutomationProperties.LiveSetting="Assertive">
-                                                <StackPanel Spacing="4">
-                                                    <TextBlock Text="{x:Bind ViewModel.ErrorExplanation, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
-                                                    <TextBlock Text="{x:Bind ViewModel.ErrorRemedy, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                            <!-- Closed native InfoBars have zero content height but
+                                                 remain in layout. Group them without item spacing. -->
+                                            <StackPanel>
+                                                <ProgressRing x:Uid="Shell_StartupRecoveryProgress" IsActive="{x:Bind IsStartupRecoveryPending, Mode=OneWay}" Visibility="{x:Bind StartupRecoveryProgressVisibility, Mode=OneWay}" Width="32" Height="32" AutomationProperties.AutomationId="StartupRecoveryProgress" />
+                                                <InfoBar x:Uid="Shell_StartupRecoveryError" Severity="Error" IsClosable="False" Message="{x:Bind StartupRecoveryErrorMessage, Mode=OneWay}" IsOpen="{x:Bind HasStartupRecoveryError, Mode=OneWay}" AutomationProperties.AutomationId="StartupRecoveryError" AutomationProperties.LiveSetting="Assertive" />
+                                                <Button x:Uid="Shell_RestoreRecoverySource" ContentTemplate="{StaticResource WrappingTextContentTemplate}" IsEnabled="{x:Bind CanRestoreStartupSourceAccess, Mode=OneWay}" Visibility="{x:Bind RecoveryRequiredRegionVisibility, Mode=OneWay}" Click="RestoreRecoverySource_Click" AutomationProperties.AutomationId="RestoreRecoverySource" />
+                                                <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind StartupRecoverySummaryVisibility, Mode=OneWay}">
+                                                    <TextBlock x:Uid="Shell_StartupRecoveredCount" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{x:Bind StartupRecoveredTransactionCount, Mode=OneWay}" AutomationProperties.AutomationId="StartupRecoveredTransactionCount" />
                                                 </StackPanel>
-                                            </InfoBar>
+                                                <InfoBar x:Name="IntegrationErrorBar" Severity="Error" IsOpen="False" IsClosable="True" AutomationProperties.AutomationId="IntegrationError" AutomationProperties.LiveSetting="Assertive" />
+                                                <InfoBar Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}" Title="{x:Bind ViewModel.ErrorTitle, Mode=OneWay}" AutomationProperties.AutomationId="WorkflowError" AutomationProperties.LiveSetting="Assertive">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="{x:Bind ViewModel.ErrorExplanation, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                                        <TextBlock Text="{x:Bind ViewModel.ErrorRemedy, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                                    </StackPanel>
+                                                </InfoBar>
+                                            </StackPanel>
                                             <Grid x:Name="ReviewFactsPanel" ColumnSpacing="12" RowSpacing="12" Visibility="{x:Bind ProcessingRowsRegionVisibility, Mode=OneWay}">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
@@ -287,7 +291,7 @@
                                                 <Border x:Name="OutputSummaryCard" Grid.Column="1" Style="{StaticResource ContentCardBorderStyle}" Padding="16">
                                                     <StackPanel Spacing="8">
                                                         <TextBlock x:Uid="Shell_OutputSummaryHeading" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                                        <TextBlock Text="{x:Bind OutputDispositionDescription, Mode=OneWay}" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{x:Bind OutputDispositionDescription, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" AutomationProperties.AutomationId="OutputDispositionSummary" />
                                                         <StackPanel x:Name="BackupDestinationPanel" Visibility="{x:Bind BackupDestinationVisibility, Mode=OneWay}" Spacing="4">
                                                             <TextBlock x:Uid="Shell_BackupDestinationLabel" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" />
                                                             <TextBlock Text="{x:Bind ViewModel.BackupRootDisplayPath, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" AutomationProperties.AutomationId="BackupDestination" />

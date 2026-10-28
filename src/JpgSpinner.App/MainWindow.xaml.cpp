@@ -462,14 +462,13 @@ hstring MainWindow::ProcessingSettingsSummary()
     for (const auto &control :
          {TraversalScopeControl(), OutputDispositionControl(), EdgeHandlingControl(), ScanOrganizationControl()})
     {
-        if (const auto selected = control.SelectedItem().try_as<Microsoft::UI::Xaml::Controls::RadioButton>())
+        const auto caption = control == OutputDispositionControl() ? OutputDispositionDescription()
+                                                                   : selectedProcessingOptionCaption(control);
+        if (!caption.empty())
         {
             if (!summary.empty())
                 summary += L" · ";
-            if (control == OutputDispositionControl())
-                summary += OutputDispositionDescription();
-            else
-                summary += unbox_value<hstring>(selected.Content());
+            summary += caption;
         }
     }
     using namespace Microsoft::Windows::ApplicationModel::Resources;
@@ -509,8 +508,18 @@ hstring MainWindow::OutputDispositionDescription()
             .GetValue(L"Shell_OutputSummaryNoBackup", manager.CreateResourceContext())
             .ValueAsString();
     }
-    const auto selected = control.SelectedItem().try_as<Microsoft::UI::Xaml::Controls::RadioButton>();
-    return selected ? unbox_value<hstring>(selected.Content()) : hstring{};
+    return selectedProcessingOptionCaption(control);
+}
+hstring MainWindow::selectedProcessingOptionCaption(const Microsoft::UI::Xaml::Controls::RadioButtons &control)
+{
+    // Settings is created once but may never have been loaded into the Frame.
+    // Its configured index and authored items already exist; SelectedItem is
+    // deferred by the native selection provider until that page is loaded.
+    if (!control || control.SelectedIndex() < 0 ||
+        static_cast<std::uint32_t>(control.SelectedIndex()) >= control.Items().Size())
+        return {}; // Initial compiled bindings can precede control creation.
+    return unbox_value<hstring>(
+        control.Items().GetAt(control.SelectedIndex()).as<Microsoft::UI::Xaml::Controls::RadioButton>().Content());
 }
 bool MainWindow::HasNoPlannedCorrections() const
 {

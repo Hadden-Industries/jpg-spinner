@@ -126,6 +126,7 @@ struct MainWindow : MainWindowT<MainWindow>
     std::optional<std::uint64_t> selectedProcessingMemoryBudgetBytes();
     Windows::Foundation::IAsyncAction applyProcessingPreferencesAsync();
     std::array<int, 4> processingOptionSelections();
+    static hstring selectedProcessingOptionCaption(const Microsoft::UI::Xaml::Controls::RadioButtons &control);
     void applyProcessingOptions(const Presentation::MainWindowViewModel &model, const std::array<int, 4> &selections);
     void showIntegrationError();
     void retainSelectedSourceForTransaction();
