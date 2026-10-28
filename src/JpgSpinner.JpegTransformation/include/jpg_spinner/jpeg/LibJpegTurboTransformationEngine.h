@@ -16,11 +16,16 @@ class LibJpegTurboTransformationEngine final : public JpegTransformationEngine
         : resourceLimits_(resourceLimits)
     {
     }
+    [[nodiscard]] std::uint64_t estimatedWorkingMemoryBytes(
+        std::uint64_t encodedSourceLengthBytes,
+        const jpg_spinner::domain::JpegImageAnalysis &analysis) const noexcept override;
     [[nodiscard]] jpg_spinner::domain::ImageProcessingResult<jpg_spinner::domain::ValidatedJpegOutput>
     createValidatedOutput(std::vector<std::byte> source, jpg_spinner::domain::JpegImageAnalysis approvedAnalysis,
                           std::stop_token cancellation = {}) const override;
 
   private:
+    [[nodiscard]] std::uint64_t outputBufferCapacityBytes(
+        const jpg_spinner::domain::ImageDimensions &dimensions) const noexcept;
     const jpg_spinner::domain::JpegResourceLimits resourceLimits_;
 };
 } // namespace jpg_spinner::jpeg

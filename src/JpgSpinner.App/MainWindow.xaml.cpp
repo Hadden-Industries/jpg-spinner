@@ -25,6 +25,8 @@
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 #include <winrt/Windows.System.h>
 #include <cstring>
+#include <cmath>
+#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <microsoft.ui.xaml.window.h>
 #include <shobjidl_core.h>
 #include <roapi.h>
@@ -52,6 +54,7 @@ namespace
 constexpr std::array maximumProcessingOptionSelectionIndices{1, 2, 1, 2};
 constexpr std::array<std::wstring_view, 4> processingPreferenceSelectionKeys{
     L"TraversalScopeSelection", L"OutputDispositionSelection", L"EdgeHandlingSelection", L"ScanOrganizationSelection"};
+constexpr std::wstring_view parallelImagePreferenceKey = L"MaximumConcurrentImageCount";
 bool areValidProcessingOptionSelections(const std::array<int, 4> &selections)
 {
     for (std::size_t index = 0; index < selections.size(); ++index)
@@ -63,6 +66,9 @@ bool areValidProcessingOptionSelections(const std::array<int, 4> &selections)
 MainWindow::MainWindow()
 {
     InitializeComponent();
+    using jpg_spinner::batch_processing::BatchExecutionLimits;
+    MaximumConcurrentImagesControl().Maximum(BatchExecutionLimits::deviceConcurrentImageLimit());
+    MaximumConcurrentImagesControl().Value(BatchExecutionLimits::recommended().maximumConcurrentImageCount);
     loadProcessingPreferences();
     processingPreferencesReady_ = true;
     // Compose each view once, then let Frame own page history. Basic string
@@ -460,7 +466,29 @@ hstring MainWindow::ProcessingSettingsSummary()
                 summary += unbox_value<hstring>(selected.Content());
         }
     }
+    using namespace Microsoft::Windows::ApplicationModel::Resources;
+    ResourceManager manager{ResourceLoader::GetDefaultResourceFilePath()};
+    summary += L" · ";
+    summary += manager.MainResourceMap()
+                   .GetSubtree(L"Resources")
+                   .GetValue(L"Shell_ParallelPhotosSummary", manager.CreateResourceContext())
+                   .ValueAsString();
+    summary += MaximumConcurrentImageCountText();
     return hstring{summary};
+}
+std::uint32_t MainWindow::selectedMaximumConcurrentImageCount()
+{
+    const auto control = MaximumConcurrentImagesControl();
+    if (!control)
+        return 1; // Initial compiled bindings may precede the native control.
+    const auto value = control.Value();
+    if (!std::isfinite(value) || value < 1 || value > control.Maximum() || std::floor(value) != value)
+        throw hresult_invalid_argument();
+    return static_cast<std::uint32_t>(value);
+}
+hstring MainWindow::MaximumConcurrentImageCountText()
+{
+    return jpg_spinner::presentation::formatUnsignedInteger(selectedMaximumConcurrentImageCount());
 }
 Microsoft::UI::Xaml::Visibility MainWindow::regionVisibility(Presentation::ImageProcessingExperienceState state) const
 {
@@ -566,7 +594,8 @@ void MainWindow::notifyShellState()
                                  L"WorkflowRegionVisibility",
                                  L"StartupRecoverySummaryVisibility",
                                  L"CanEditProcessingSettings",
-                                 L"ProcessingSettingsSummary"})
+                                 L"ProcessingSettingsSummary",
+                                 L"MaximumConcurrentImageCountText"})
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{property});
     closeAfterWorkSettles();
 }
@@ -772,6 +801,7 @@ void MainWindow::synchronizeProcessingOptionControls()
     if (!viewModel_)
         return;
     updatingProcessingOptionControls_ = true;
+    MaximumConcurrentImagesControl().Value(viewModel_.MaximumConcurrentImageCount());
     // Indices are local control positions, never native enum wire values.
     TraversalScopeControl().SelectedIndex(
         viewModel_.TraversalScope() == Presentation::TraversalScope::SelectedFolderOnly ? 0 : 1);
@@ -805,7 +835,7 @@ std::array<int, 4> MainWindow::processingOptionSelections()
             EdgeHandlingControl().SelectedIndex(), ScanOrganizationControl().SelectedIndex()};
 }
 void MainWindow::applyProcessingOptions(const Presentation::MainWindowViewModel &model,
-                                        const std::array<int, 4> &selections) const
+                                        const std::array<int, 4> &selections)
 {
     const auto [traversal, disposition, edge, scans] = selections;
     if (!areValidProcessingOptionSelections(selections))
@@ -821,6 +851,7 @@ void MainWindow::applyProcessingOptions(const Presentation::MainWindowViewModel 
                   : Presentation::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits,
         scans == 0 ? ScanOrganization::PreserveSource
                    : (scans == 1 ? ScanOrganization::SequentialDct : ScanOrganization::ProgressiveDct));
+    model.SetMaximumConcurrentImageCount(selectedMaximumConcurrentImageCount());
 }
 void MainWindow::loadProcessingPreferences()
 {
@@ -844,6 +875,12 @@ void MainWindow::loadProcessingPreferences()
         OutputDispositionControl().SelectedIndex(selections[1]);
         EdgeHandlingControl().SelectedIndex(selections[2]);
         ScanOrganizationControl().SelectedIndex(selections[3]);
+        const auto parallel = unbox_value_or<std::uint32_t>(stored.TryLookup(hstring{parallelImagePreferenceKey}),
+                                                            selectedMaximumConcurrentImageCount());
+        if (parallel >= 1 &&
+            parallel <= jpg_spinner::batch_processing::BatchExecutionLimits::maximumSupportedConcurrentImageCount)
+            MaximumConcurrentImagesControl().Value(
+                (std::min)(static_cast<double>(parallel), MaximumConcurrentImagesControl().Maximum()));
     }
     catch (const hresult_error &)
     {
@@ -857,6 +894,7 @@ void MainWindow::saveProcessingPreferences(const std::array<int, 4> &selections)
         preferences.Insert(hstring{processingPreferenceSelectionKeys[index]}, box_value(selections[index]));
     try
     {
+        preferences.Insert(hstring{parallelImagePreferenceKey}, box_value(selectedMaximumConcurrentImageCount()));
         Windows::Storage::ApplicationData::Current().LocalSettings().Values().Insert(L"ImageProcessingPreferences.v1",
                                                                                      preferences);
         SettingsSaveErrorBar().IsOpen(false);
@@ -870,6 +908,18 @@ void MainWindow::saveProcessingPreferences(const std::array<int, 4> &selections)
 }
 fire_and_forget MainWindow::ProcessingOptions_SelectionChanged(
     Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const &)
+{
+    auto lifetime = get_strong();
+    co_await applyProcessingPreferencesAsync();
+}
+fire_and_forget MainWindow::MaximumConcurrentImages_ValueChanged(
+    Windows::Foundation::IInspectable const &,
+    Microsoft::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const &)
+{
+    auto lifetime = get_strong();
+    co_await applyProcessingPreferencesAsync();
+}
+Windows::Foundation::IAsyncAction MainWindow::applyProcessingPreferencesAsync()
 {
     auto lifetime = get_strong();
     // XAML initialization can raise this before every named control exists.

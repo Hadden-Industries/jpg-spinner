@@ -68,6 +68,10 @@ namespace JpgSpinner
     {
         get;
     };
+    String MaximumConcurrentImageCountText
+    {
+        get;
+    };
     Microsoft.UI.Xaml.Visibility LandingRegionVisibility
     {
         get;

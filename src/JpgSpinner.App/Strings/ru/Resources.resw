@@ -1045,4 +1045,19 @@
     <data name="Shell_EmailCopyFailed" xml:space="preserve">
         <value>Буфер обмена недоступен. Введите адрес выше в удобном вам почтовом сервисе.</value>
     </data>
+    <data name="Shell_ParallelPhotosDescription.Text" xml:space="preserve">
+        <value>Выберите, сколько фотографий можно обрабатывать одновременно. Более высокие значения задействуют больше ядер процессора и памяти. Крупные фотографии могут обрабатываться по одной; сохранение всегда выполняется по одному файлу.</value>
+    </data>
+    <data name="Shell_ParallelPhotos.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Максимальное число фотографий для одновременной обработки</value>
+    </data>
+    <data name="Shell_ParallelPhotosSummary" xml:space="preserve">
+        <value>Лимит параллельной обработки: </value>
+    </data>
+    <data name="Shell_ParallelPhotos.Header" xml:space="preserve">
+        <value>Параллельная обработка</value>
+    </data>
+    <data name="Shell_PerformanceHeading.Text" xml:space="preserve">
+        <value>Производительность</value>
+    </data>
 </root>

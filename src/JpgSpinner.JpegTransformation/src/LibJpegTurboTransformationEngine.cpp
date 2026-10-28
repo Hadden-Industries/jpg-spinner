@@ -4,6 +4,8 @@
 #include "internal/JpegSegmentScanner.h"
 #include "internal/LibJpegTurboCoefficientTransformer.h"
 #include "internal/MetadataReconciler.h"
+#include "internal/TurboJpegResourceLimits.h"
+#include <array>
 #include <algorithm>
 #include <limits>
 #include <new>
@@ -12,6 +14,41 @@
 namespace jpg_spinner::jpeg
 {
 using namespace jpg_spinner::domain;
+std::uint64_t LibJpegTurboTransformationEngine::outputBufferCapacityBytes(
+    const ImageDimensions &dimensions) const noexcept
+{
+    if (dimensions.width.pixels > std::numeric_limits<int>::max() ||
+        dimensions.height.pixels > std::numeric_limits<int>::max())
+        return 0;
+    const auto bound = tj3JPEGBufSize(static_cast<int>(dimensions.width.pixels),
+                                      static_cast<int>(dimensions.height.pixels), TJSAMP_444);
+    return std::min<std::uint64_t>(bound, resourceLimits_.maximumEncodedFileLengthBytes);
+}
+std::uint64_t LibJpegTurboTransformationEngine::estimatedWorkingMemoryBytes(
+    const std::uint64_t encodedSourceLengthBytes, const JpegImageAnalysis &analysis) const noexcept
+{
+    constexpr auto unknown = std::numeric_limits<std::uint64_t>::max();
+    // Reuse the same native output bound and intermediate-memory policy as the
+    // actual transform. Allow overlapping source/output buffers and metadata
+    // representations conservatively, without claiming to measure total RAM.
+    const auto output = outputBufferCapacityBytes(analysis.transformPlan.outputDimensions);
+    if (output == 0)
+        return unknown;
+    const auto metadata = std::min(encodedSourceLengthBytes, resourceLimits_.maximumMetadataLengthBytes);
+    const auto intermediate =
+        static_cast<std::uint64_t>(
+            internal::TurboJpegResourceLimits::production().maximumIntermediateBufferMemoryMebibytes) *
+        1024 * 1024;
+    std::uint64_t estimate{};
+    for (const auto bytes : std::array{encodedSourceLengthBytes, encodedSourceLengthBytes, output, output, intermediate,
+                                       metadata, metadata, metadata, metadata})
+    {
+        if (bytes > unknown - estimate)
+            return unknown; // Unknown/oversized estimates admit only exclusive work.
+        estimate += bytes;
+    }
+    return estimate;
+}
 ImageProcessingResult<ValidatedJpegOutput> LibJpegTurboTransformationEngine::createValidatedOutput(
     std::vector<std::byte> source, JpegImageAnalysis approvedAnalysis, std::stop_token cancellation) const
 {
@@ -56,9 +93,7 @@ ImageProcessingResult<ValidatedJpegOutput> LibJpegTurboTransformationEngine::cre
             // The native upper-bound API owns this sizing rule. 4:4:4 is the
             // conservative bound across allowed sampling arrangements. Limit the
             // allocation independently of the native codec working-memory budget.
-            const auto bound = tj3JPEGBufSize(static_cast<int>(plan.outputDimensions.width.pixels),
-                                              static_cast<int>(plan.outputDimensions.height.pixels), TJSAMP_444);
-            const auto capacity = std::min<std::uint64_t>(bound, resourceLimits_.maximumEncodedFileLengthBytes);
+            const auto capacity = outputBufferCapacityBytes(plan.outputDimensions);
             if (capacity == 0 || capacity > std::numeric_limits<std::size_t>::max())
                 return Result::failure({ImageProcessingErrorCode::EncodedFileTooLarge, stage});
             std::vector<std::byte> codecOutput(static_cast<std::size_t>(capacity));

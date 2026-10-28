@@ -1,8 +1,15 @@
 #include "DeterministicJpegTransformationEngine.h"
+#include <jpg_spinner/jpeg/LibJpegTurboTransformationEngine.h>
 #include <stdexcept>
 
 namespace jpg_spinner::test_support
 {
+std::uint64_t DeterministicJpegTransformationEngine::estimatedWorkingMemoryBytes(
+    const std::uint64_t encodedSourceLengthBytes, const jpg_spinner::domain::JpegImageAnalysis &analysis) const noexcept
+{
+    return jpg_spinner::jpeg::LibJpegTurboTransformationEngine{}.estimatedWorkingMemoryBytes(encodedSourceLengthBytes,
+                                                                                             analysis);
+}
 using namespace jpg_spinner::domain;
 DeterministicJpegTransformationEngine::DeterministicJpegTransformationEngine(OutputFactory outputFactory)
     : outputFactory_(std::move(outputFactory))

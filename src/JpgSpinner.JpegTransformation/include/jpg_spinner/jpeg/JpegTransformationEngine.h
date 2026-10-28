@@ -17,6 +17,11 @@ class JpegTransformationEngine
 {
   public:
     virtual ~JpegTransformationEngine() = default;
+    /// Conservative scheduling estimate for overlapping operations, not a hard
+    /// process-memory guarantee. Implementations must support concurrent calls.
+    [[nodiscard]] virtual std::uint64_t estimatedWorkingMemoryBytes(
+        std::uint64_t encodedSourceLengthBytes,
+        const jpg_spinner::domain::JpegImageAnalysis &analysis) const noexcept = 0;
     [[nodiscard]] virtual jpg_spinner::domain::ImageProcessingResult<jpg_spinner::domain::ValidatedJpegOutput>
     createValidatedOutput(std::vector<std::byte> source, jpg_spinner::domain::JpegImageAnalysis approvedAnalysis,
                           std::stop_token cancellation = {}) const = 0;

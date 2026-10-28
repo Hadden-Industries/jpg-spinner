@@ -14,6 +14,9 @@
 #include <chrono>
 #include <iostream>
 #include <locale>
+#include <condition_variable>
+#include <algorithm>
+#include <limits>
 
 namespace
 {
@@ -107,6 +110,193 @@ class RecordedImageCollection final : public domain::ImageSourceCollection
     }
 };
 } // namespace
+
+TEST_CASE("configured photo workers overlap transforms while preserving stable outcomes and serialized commits",
+          "[batch][parallel]")
+{
+    const auto bytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+        test_support::JpegChromaSubsampling::ycbcr444, 3);
+    const auto collection = std::make_shared<RecordedImageCollection>();
+    std::atomic<unsigned> committing{};
+    std::atomic<unsigned> maximumCommits{};
+    for (unsigned index = 0; index < 4; ++index)
+    {
+        auto source = std::make_shared<RecordedImageSource>(bytes);
+        source->commitOperation = [&](auto const &, auto, auto) {
+            const auto active = ++committing;
+            auto maximum = maximumCommits.load();
+            while (maximum < active && !maximumCommits.compare_exchange_weak(maximum, active))
+            {
+            }
+            --committing;
+            return domain::ImageProcessingResult<domain::CommittedImageSource>::success({L"observed.jpg"});
+        };
+        collection->candidates.push_back({std::to_wstring(index) + L".jpg", source});
+    }
+    std::mutex gateMutex;
+    std::condition_variable gate;
+    unsigned arrived{};
+    const auto engine = std::make_shared<test_support::DeterministicJpegTransformationEngine>(
+        [&](auto source, auto analysis, auto cancellation) {
+            {
+                std::unique_lock lock{gateMutex};
+                ++arrived;
+                gate.notify_all();
+                // A bounded rendezvous makes the serial implementation fail
+                // without deadlocking the test runner. No speed threshold is used.
+                gate.wait_for(lock, std::chrono::seconds{2}, [&] { return arrived >= 2; });
+            }
+            return jpeg::LibJpegTurboTransformationEngine{}.createValidatedOutput(std::move(source),
+                                                                                  std::move(analysis), cancellation);
+        });
+    const BatchProcessingCoordinator coordinator{engine};
+    BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    request.executionLimits.maximumConcurrentImageCount = 2;
+    const bool memoryAllowsOverlap = GENERATE(false, true);
+    if (!memoryAllowsOverlap)
+        request.executionLimits.estimatedWorkingMemoryBudgetBytes = 1;
+    auto analysis = coordinator.analyze(request);
+    REQUIRE(analysis.valueIfPresent());
+    std::vector<std::uint64_t> completedObservations;
+    const auto result = coordinator.execute(std::move(*analysis.valueIfPresent()), {}, [&](auto const &progress) {
+        // The observer is serialized, but may run on a worker. Catch assertions
+        // belong on the joined test thread, not inside native worker callbacks.
+        completedObservations.push_back(progress.completed);
+    });
+    REQUIRE(result.valueIfPresent());
+    CHECK(engine->maximumConcurrentCalls() == (memoryAllowsOverlap ? 2U : 1U));
+    CHECK(std::is_sorted(completedObservations.begin(), completedObservations.end()));
+    CHECK(maximumCommits == 1);
+    CHECK(result.valueIfPresent()->finalProgress.completed == 4);
+    for (unsigned index = 0; index < 4; ++index)
+    {
+        CHECK(result.valueIfPresent()->fileResults[index].relativePath == std::to_wstring(index) + L".jpg");
+        CHECK(result.valueIfPresent()->fileResults[index].outcome == BatchFileOutcome::CorrectedCopyCreated);
+    }
+}
+
+TEST_CASE("invalid parallel scheduling limits refuse discovery", "[batch][parallel]")
+{
+    const auto collection = std::make_shared<RecordedImageCollection>();
+    BatchProcessingRequest request{collection};
+    const auto invalid = GENERATE(0, 1, 2);
+    if (invalid == 0)
+        request.executionLimits.maximumConcurrentImageCount = 0;
+    if (invalid == 1)
+        request.executionLimits.maximumConcurrentImageCount =
+            BatchExecutionLimits::maximumSupportedConcurrentImageCount + 1;
+    if (invalid == 2)
+        request.executionLimits.estimatedWorkingMemoryBudgetBytes = 0;
+    const BatchProcessingCoordinator coordinator{std::make_shared<jpeg::LibJpegTurboTransformationEngine>()};
+    const auto result = coordinator.analyze(request);
+    REQUIRE(result.errorIfPresent());
+    CHECK(result.errorIfPresent()->code == domain::ImageProcessingErrorCode::InvalidBatchProcessingRequest);
+    CHECK(collection->discoveries == 0);
+}
+
+TEST_CASE("parallel cancellation joins admitted workers and preserves one terminal row per file", "[batch][parallel]")
+{
+    const auto bytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+        test_support::JpegChromaSubsampling::ycbcr444, 3);
+    const auto collection = std::make_shared<RecordedImageCollection>();
+    std::vector<std::shared_ptr<RecordedImageSource>> sources;
+    for (unsigned index = 0; index < 6; ++index)
+    {
+        sources.push_back(std::make_shared<RecordedImageSource>(bytes));
+        collection->candidates.push_back({std::to_wstring(index) + L".jpg", sources.back()});
+    }
+    std::mutex gateMutex;
+    std::condition_variable_any gate;
+    unsigned entered{};
+    const auto engine =
+        std::make_shared<test_support::DeterministicJpegTransformationEngine>([&](auto, auto, auto cancellation) {
+            std::unique_lock lock{gateMutex};
+            ++entered;
+            gate.notify_all();
+            gate.wait(lock, cancellation, [] { return false; });
+            return domain::ImageProcessingResult<domain::ValidatedJpegOutput>::failure(
+                {domain::ImageProcessingErrorCode::Cancelled,
+                 domain::ImageProcessingStage::CoefficientTransformation,
+                 {},
+                 domain::CoefficientTransformationExecutionState::NotStarted});
+        });
+    const BatchProcessingCoordinator coordinator{engine};
+    BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    request.executionLimits.maximumConcurrentImageCount = 2;
+    auto analyzed = coordinator.analyze(request);
+    REQUIRE(analyzed.valueIfPresent());
+    std::stop_source cancellation;
+    auto running = std::async(std::launch::async, [&] {
+        return coordinator.execute(std::move(*analyzed.valueIfPresent()), cancellation.get_token());
+    });
+    bool bothEntered;
+    {
+        std::unique_lock lock{gateMutex};
+        bothEntered = gate.wait_for(lock, std::chrono::seconds{2}, [&] { return entered == 2; });
+    }
+    cancellation.request_stop(); // Always release the test-owned rendezvous.
+    const auto result = running.get();
+    REQUIRE(bothEntered);
+    REQUIRE(result.valueIfPresent());
+    CHECK(result.valueIfPresent()->fileResults.size() == 6);
+    CHECK(result.valueIfPresent()->finalProgress.cancelled == 6);
+    CHECK(result.valueIfPresent()->finalProgress.completed == 6);
+    for (const auto &source : sources)
+        CHECK(source->commits == 0);
+}
+
+TEST_CASE("a parallel recovery conflict closes all later commit admissions", "[batch][parallel]")
+{
+    const auto bytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+        test_support::JpegChromaSubsampling::ycbcr444, 3);
+    const auto collection = std::make_shared<RecordedImageCollection>();
+    std::atomic<unsigned> commits{};
+    for (unsigned index = 0; index < 6; ++index)
+    {
+        const auto source = std::make_shared<RecordedImageSource>(bytes);
+        source->commitOperation = [&](auto const &, auto, auto) {
+            ++commits;
+            return domain::ImageProcessingResult<domain::CommittedImageSource>::failure(
+                {domain::ImageProcessingErrorCode::RecoveryConflict,
+                 domain::ImageProcessingStage::TransactionRecovery});
+        };
+        collection->candidates.push_back({std::to_wstring(index) + L".jpg", source});
+    }
+    const BatchProcessingCoordinator coordinator{std::make_shared<jpeg::LibJpegTurboTransformationEngine>()};
+    BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    request.executionLimits.maximumConcurrentImageCount = 3;
+    auto analysis = coordinator.analyze(request);
+    REQUIRE(analysis.valueIfPresent());
+    const auto result = coordinator.execute(std::move(*analysis.valueIfPresent()));
+    REQUIRE(result.valueIfPresent());
+    CHECK(commits == 1);
+    CHECK(result.valueIfPresent()->transactionIntegrityUncertain);
+    CHECK(result.valueIfPresent()->finalProgress.completed == 6);
+    for (const auto &file : result.valueIfPresent()->fileResults)
+        CHECK(file.outcome != BatchFileOutcome::CorrectedCopyCreated);
+}
+
+TEST_CASE("native memory estimates fail conservatively on arithmetic overflow", "[batch][parallel]")
+{
+    const auto source =
+        std::make_shared<RecordedImageSource>(test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+            test_support::JpegChromaSubsampling::ycbcr444, 3));
+    const auto collection = std::make_shared<RecordedImageCollection>();
+    collection->candidates = {{L"source.jpg", source}};
+    const auto engine = std::make_shared<jpeg::LibJpegTurboTransformationEngine>();
+    const BatchProcessingCoordinator coordinator{engine};
+    BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    const auto analysis = coordinator.analyze(request);
+    REQUIRE(analysis.valueIfPresent());
+    const auto &file = analysis.valueIfPresent()->files().front();
+    REQUIRE(file.jpegAnalysis);
+    CHECK(engine->estimatedWorkingMemoryBytes(std::numeric_limits<std::uint64_t>::max(), *file.jpegAnalysis) ==
+          std::numeric_limits<std::uint64_t>::max());
+}
 
 TEST_CASE("Batch analysis preserves original Unicode names in ordinal relative-path order",
           "[batch][discovery][ordering]")

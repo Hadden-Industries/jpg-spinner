@@ -1045,4 +1045,19 @@
     <data name="Shell_EmailCopyFailed" xml:space="preserve">
         <value>The clipboard is unavailable. Enter the address shown above in your preferred email service.</value>
     </data>
+    <data name="Shell_ParallelPhotosDescription.Text" xml:space="preserve">
+        <value>Choose how many photos can be processed at once. Higher limits use more processor cores and memory. Large photos may run alone; saving remains one file at a time.</value>
+    </data>
+    <data name="Shell_ParallelPhotos.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+        <value>Maximum photos to process at once</value>
+    </data>
+    <data name="Shell_ParallelPhotosSummary" xml:space="preserve">
+        <value>Parallel photo limit: </value>
+    </data>
+    <data name="Shell_ParallelPhotos.Header" xml:space="preserve">
+        <value>Parallel photos</value>
+    </data>
+    <data name="Shell_PerformanceHeading.Text" xml:space="preserve">
+        <value>Performance</value>
+    </data>
 </root>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BatchIdentifier.h"
+#include "BatchExecutionLimits.h"
 #include <jpg_spinner/domain/ImageSourceCollection.h>
 #include <jpg_spinner/domain/EdgeHandlingPolicy.h>
 #include <jpg_spinner/domain/OutputScanOrganization.h>
@@ -26,5 +27,6 @@ struct BatchProcessingRequest final
     /// labels refer to one batch; abbreviated labels never establish ownership.
     BatchIdentifier identifier{
         BatchIdentifier::create(std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()))};
+    BatchExecutionLimits executionLimits{};
 };
 } // namespace jpg_spinner::batch_processing

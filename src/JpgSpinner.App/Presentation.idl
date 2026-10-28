@@ -103,6 +103,7 @@ namespace JpgSpinner.Presentation
         TraversalScope TraversalScope{ get; };
         EdgeHandlingPolicy EdgeHandlingPolicy{ get; };
         OutputScanOrganization OutputScanOrganization{ get; };
+        UInt32 MaximumConcurrentImageCount{ get; };
         String ErrorTitle{ get; };
         String ErrorExplanation{ get; };
         String ErrorRemedy{ get; };
@@ -112,6 +113,7 @@ namespace JpgSpinner.Presentation
         void SetProcessingOptions(OutputDisposition disposition, TraversalScope traversal,
                                   EdgeHandlingPolicy edgeHandling, OutputScanOrganization scanOrganization);
         void AcknowledgeEdgeTrimming(UInt32 rowIndex);
+        void SetMaximumConcurrentImageCount(UInt32 maximumConcurrentImageCount);
         Windows.Foundation.IAsyncAction AnalyzeAsync();
         Windows.Foundation.IAsyncAction BeginProcessingAsync();
         Windows.Foundation.IAsyncAction RecoverAsync();

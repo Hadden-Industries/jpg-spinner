@@ -4,6 +4,7 @@
 #include <winrt/JpgSpinner.Presentation.h>
 #include <winrt/Microsoft.UI.Xaml.Data.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Microsoft.UI.Xaml.Input.h>
 #include <winrt/Windows.Storage.h>
 #include <jpg_spinner/batch/BatchProcessingCoordinator.h>
@@ -36,6 +37,7 @@ struct MainWindow : MainWindowT<MainWindow>
     bool HasDiagnosticLogError() const;
     winrt::hstring StartupRecoveredTransactionCount() const;
     bool CanEditProcessingSettings() const;
+    winrt::hstring MaximumConcurrentImageCountText();
     winrt::hstring ProcessingSettingsSummary();
     Microsoft::UI::Xaml::Visibility LandingRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility WorkflowRegionVisibility() const;
@@ -83,6 +85,9 @@ struct MainWindow : MainWindowT<MainWindow>
                            Microsoft::UI::Xaml::RoutedEventArgs const &);
     fire_and_forget ProcessingOptions_SelectionChanged(
         Windows::Foundation::IInspectable const &, Microsoft::UI::Xaml::Controls::SelectionChangedEventArgs const &);
+    fire_and_forget MaximumConcurrentImages_ValueChanged(
+        Windows::Foundation::IInspectable const &,
+        Microsoft::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const &);
     event_token PropertyChanged(Microsoft::UI::Xaml::Data::PropertyChangedEventHandler const &handler);
     void PropertyChanged(event_token const &token);
 
@@ -105,9 +110,10 @@ struct MainWindow : MainWindowT<MainWindow>
     void loadProcessingPreferences();
     Windows::Foundation::IAsyncAction loadProgressiveExamplesAsync();
     void saveProcessingPreferences(const std::array<int, 4> &selections);
+    std::uint32_t selectedMaximumConcurrentImageCount();
+    Windows::Foundation::IAsyncAction applyProcessingPreferencesAsync();
     std::array<int, 4> processingOptionSelections();
-    void applyProcessingOptions(const Presentation::MainWindowViewModel &model,
-                                const std::array<int, 4> &selections) const;
+    void applyProcessingOptions(const Presentation::MainWindowViewModel &model, const std::array<int, 4> &selections);
     void showIntegrationError();
     void retainSelectedSourceForTransaction();
     void releaseReconciledSourceAccess();

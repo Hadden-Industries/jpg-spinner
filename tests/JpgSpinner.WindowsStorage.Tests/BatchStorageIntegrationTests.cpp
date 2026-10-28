@@ -50,6 +50,59 @@ std::vector<std::byte> readImage(const std::filesystem::path &path)
 }
 } // namespace
 
+TEST_CASE("Parallel JPEG workers share native Storage transactions without changing originals",
+          "[storage][batch][parallel-storage]")
+{
+    using namespace jpg_spinner;
+    using namespace batch_processing;
+    using namespace winrt::Windows::Storage;
+    const BatchStorageApartment apartment;
+    const test_support::TemporaryDirectory fixture{std::filesystem::temp_directory_path() /
+                                                   L"jpg-spinner-parallel-storage"};
+    const auto input = fixture.directoryPath() / L"input";
+    REQUIRE(std::filesystem::create_directory(input));
+    const auto bytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+        test_support::JpegChromaSubsampling::ycbcr444, 3);
+    for (unsigned index = 0; index < 4; ++index)
+        writeImage(input / (std::to_wstring(index) + L".jpg"), bytes);
+    const auto selected = StorageFolder::GetFolderFromPathAsync(input.wstring()).get();
+    const auto owner = StorageFolder::GetFolderFromPathAsync(fixture.directoryPath().wstring()).get();
+    const auto journal = owner.CreateFolderAsync(L"journal").get();
+    BatchProcessingRequest request;
+    const auto transactions = std::make_shared<storage::WindowsStorageImageFileTransactionEngine>(
+        selected, journal, std::bit_cast<winrt::guid>(request.identifier.fullIdentity()),
+        request.identifier.creationTime());
+    request.sourceCollection = std::make_shared<storage::WindowsStorageImageSourceCollection>(selected, transactions);
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    request.executionLimits.maximumConcurrentImageCount = 2;
+    const BatchProcessingCoordinator coordinator{std::make_shared<jpeg::LibJpegTurboTransformationEngine>()};
+    auto analyzed = coordinator.analyze(request);
+    REQUIRE(analyzed.valueIfPresent());
+    REQUIRE(analyzed.valueIfPresent()->files().size() == 4);
+    const auto expected = jpeg::LibJpegTurboTransformationEngine{}.createValidatedOutput(
+        bytes, *analyzed.valueIfPresent()->files().front().jpegAnalysis);
+    REQUIRE(expected.valueIfPresent());
+    const std::vector<std::byte> expectedBytes{expected.valueIfPresent()->encodedBytes().begin(),
+                                               expected.valueIfPresent()->encodedBytes().end()};
+    const auto summary = coordinator.execute(std::move(*analyzed.valueIfPresent()));
+    REQUIRE(summary.valueIfPresent());
+    CHECK_FALSE(summary.valueIfPresent()->transactionIntegrityUncertain);
+    CHECK(summary.valueIfPresent()->finalProgress.completed == 4);
+    CHECK(summary.valueIfPresent()->finalProgress.failed == 0);
+    for (unsigned index = 0; index < 4; ++index)
+    {
+        const auto name = std::to_wstring(index) + L".jpg";
+        REQUIRE(summary.valueIfPresent()->fileResults[index].outcome == BatchFileOutcome::CorrectedCopyCreated);
+        CHECK(readImage(input / name) == bytes);
+        const auto output =
+            input / L"JPG Spinner Output" / summary.valueIfPresent()->identifier.displayDirectoryName() / name;
+        CHECK(readImage(output) == expectedBytes);
+    }
+    const auto recovered = transactions->recoverIncompleteTransactions();
+    REQUIRE(recovered.valueIfPresent());
+    CHECK(recovered.valueIfPresent()->recoveredTransactions.empty());
+}
+
 TEST_CASE("A source without orientation metadata creates neither an output nor a backup",
           "[storage][batch][integration][no-orientation]")
 {

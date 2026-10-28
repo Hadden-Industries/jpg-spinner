@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BatchIdentifier.h"
+#include "BatchExecutionLimits.h"
 #include <jpg_spinner/domain/ImageSourceCollection.h>
 #include <jpg_spinner/domain/JpegImageAnalysis.h>
 #include <jpg_spinner/domain/JpegResourceLimits.h>
@@ -24,8 +25,8 @@ struct BatchFileAnalysis final
 
 /// Coordinator-produced review artifact, not a user approval or output proof.
 /// Move-only transfer into execute prevents accidental reuse of a reviewed batch.
-/// Public access is read-only. The single encoded buffer is released after each
-/// analysis; execution recaptures and checks the reviewed revision before native work.
+/// Public access is read-only. Analysis releases its encoded buffer after each
+/// file; bounded execution recaptures and checks each reviewed revision before work.
 class AnalyzedImageBatch final
 {
   public:
@@ -53,16 +54,18 @@ class AnalyzedImageBatch final
   private:
     friend class BatchProcessingCoordinator;
     AnalyzedImageBatch(BatchIdentifier identifier, domain::OutputDisposition disposition,
-                       domain::JpegResourceLimits limits, std::vector<BatchFileAnalysis> files,
-                       std::vector<domain::ImageSourceDiscoveryIssue> issues, bool complete, std::size_t analyzedCount)
+                       domain::JpegResourceLimits limits, BatchExecutionLimits executionLimits,
+                       std::vector<BatchFileAnalysis> files, std::vector<domain::ImageSourceDiscoveryIssue> issues,
+                       bool complete, std::size_t analyzedCount)
         : identifier_(std::move(identifier)), disposition_(disposition), resourceLimits_(limits),
-          files_(std::move(files)), issues_(std::move(issues)), discoveryComplete_(complete),
-          analyzedCount_(analyzedCount)
+          executionLimits_(executionLimits), files_(std::move(files)), issues_(std::move(issues)),
+          discoveryComplete_(complete), analyzedCount_(analyzedCount)
     {
     }
     BatchIdentifier identifier_;
     domain::OutputDisposition disposition_;
     domain::JpegResourceLimits resourceLimits_;
+    BatchExecutionLimits executionLimits_;
     std::vector<BatchFileAnalysis> files_;
     std::vector<domain::ImageSourceDiscoveryIssue> issues_;
     bool discoveryComplete_;

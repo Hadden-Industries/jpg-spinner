@@ -20,6 +20,9 @@ class DeterministicJpegTransformationEngine final : public jpg_spinner::jpeg::Jp
         std::function<jpg_spinner::domain::ImageProcessingResult<jpg_spinner::domain::ValidatedJpegOutput>(
             std::vector<std::byte>, jpg_spinner::domain::JpegImageAnalysis, std::stop_token)>;
     explicit DeterministicJpegTransformationEngine(OutputFactory outputFactory);
+    [[nodiscard]] std::uint64_t estimatedWorkingMemoryBytes(
+        std::uint64_t encodedSourceLengthBytes,
+        const jpg_spinner::domain::JpegImageAnalysis &analysis) const noexcept override;
     [[nodiscard]] jpg_spinner::domain::ImageProcessingResult<jpg_spinner::domain::ValidatedJpegOutput>
     createValidatedOutput(std::vector<std::byte> source, jpg_spinner::domain::JpegImageAnalysis approvedAnalysis,
                           std::stop_token cancellation = {}) const override;

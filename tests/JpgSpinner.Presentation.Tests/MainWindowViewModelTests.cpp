@@ -46,6 +46,10 @@ namespace storage = jpg_spinner::storage;
 class RefusingTransformationEngine final : public jpg_spinner::jpeg::JpegTransformationEngine
 {
   public:
+    std::uint64_t estimatedWorkingMemoryBytes(std::uint64_t, const domain::JpegImageAnalysis &) const noexcept override
+    {
+        return 1;
+    }
     domain::ImageProcessingResult<domain::ValidatedJpegOutput> createValidatedOutput(std::vector<std::byte>,
                                                                                      domain::JpegImageAnalysis,
                                                                                      std::stop_token) const override
@@ -1133,6 +1137,53 @@ TEST_CASE("Processing options reject unknown projected values without discarding
             CHECK(model.EdgeHandlingPolicy() == presentation::EdgeHandlingPolicy::RequirePerfectCoefficientTransform);
             CHECK(model.OutputScanOrganization() == presentation::OutputScanOrganization::PreserveSource);
         }
+    });
+}
+
+TEST_CASE("Parallel photo limits are validated and bound to a fresh review",
+          "[presentation][view-model][parallel-options]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    auto &dispatcher = presentationDispatcher();
+    const auto collection = std::make_shared<ImageCollection>();
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        CHECK_THROWS_AS(model.SetMaximumConcurrentImageCount(2), winrt::hresult_illegal_method_call);
+        implementation->selectSource({collection}, L"Granted folder label", L"Backup label");
+        CHECK(model.MaximumConcurrentImageCount() == 1);
+        analysis = model.AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        REQUIRE(model.State() == presentation::ImageProcessingExperienceState::Review);
+        model.SetMaximumConcurrentImageCount(1);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::Review);
+        for (const auto invalid :
+             {0U, jpg_spinner::batch_processing::BatchExecutionLimits::maximumSupportedConcurrentImageCount + 1})
+        {
+            CHECK_THROWS_AS(model.SetMaximumConcurrentImageCount(invalid), winrt::hresult_invalid_argument);
+            CHECK(model.State() == presentation::ImageProcessingExperienceState::Review);
+            CHECK(model.MaximumConcurrentImageCount() == 1);
+        }
+        model.SetMaximumConcurrentImageCount(2);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::SourceSelection);
+        CHECK(model.MaximumConcurrentImageCount() == 2);
+        CHECK(model.SourceFolderDisplayName() == L"Granted folder label");
+        CHECK(model.BackupRootDisplayPath() == L"Backup label");
+        CHECK(collection->discoveryCalls == 1); // A preference edit performs no source I/O.
+        CHECK_FALSE(model.CanBeginProcessing());
+        analysis = model.AnalyzeAsync();
+        CHECK_THROWS_AS(model.SetMaximumConcurrentImageCount(3), winrt::hresult_illegal_method_call);
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        CHECK(collection->discoveryCalls == 2);
+        CHECK(implementation->MaximumConcurrentImageCount() == 2);
+        CHECK(implementation->State() == presentation::ImageProcessingExperienceState::Review);
     });
 }
 

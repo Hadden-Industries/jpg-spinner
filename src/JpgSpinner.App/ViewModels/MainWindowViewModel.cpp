@@ -144,6 +144,26 @@ Presentation::OutputDisposition MainWindowViewModel::OutputDisposition() const
         throw hresult_invalid_argument();
     }
 }
+std::uint32_t MainWindowViewModel::MaximumConcurrentImageCount() const
+{
+    requireDispatcherThread();
+    return selectedRequest_ ? selectedRequest_->executionLimits.maximumConcurrentImageCount : 1;
+}
+void MainWindowViewModel::SetMaximumConcurrentImageCount(const std::uint32_t maximumConcurrentImageCount)
+{
+    requireDispatcherThread();
+    if (!CanSelectSourceFolder() || !selectedRequest_)
+        throw hresult_illegal_method_call();
+    if (maximumConcurrentImageCount == 0 ||
+        maximumConcurrentImageCount >
+            jpg_spinner::batch_processing::BatchExecutionLimits::maximumSupportedConcurrentImageCount)
+        throw hresult_invalid_argument();
+    if (maximumConcurrentImageCount == selectedRequest_->executionLimits.maximumConcurrentImageCount)
+        return;
+    auto request = *selectedRequest_;
+    request.executionLimits.maximumConcurrentImageCount = maximumConcurrentImageCount;
+    selectSource(std::move(request), sourceFolderDisplayName_, backupRootDisplayPath_);
+}
 Presentation::TraversalScope MainWindowViewModel::TraversalScope() const
 {
     requireDispatcherThread();
@@ -324,8 +344,8 @@ void MainWindowViewModel::selectSource(jpg_spinner::batch_processing::BatchProce
     notify(L"Rows");
     selectedRequest_.emplace(std::move(request));
     projectDiscoveryIssues({});
-    for (auto const *property :
-         {L"OutputDisposition", L"TraversalScope", L"EdgeHandlingPolicy", L"OutputScanOrganization"})
+    for (auto const *property : {L"OutputDisposition", L"TraversalScope", L"EdgeHandlingPolicy",
+                                 L"OutputScanOrganization", L"MaximumConcurrentImageCount"})
         notify(property);
     clearError();
     sourceFolderDisplayName_ = std::move(sourceFolderDisplayName);

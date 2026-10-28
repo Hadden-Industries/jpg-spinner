@@ -7,6 +7,13 @@
 #include <limits>
 #include <numeric>
 #include <stdexcept>
+#include <condition_variable>
+#include <latch>
+#include <thread>
+#include <atomic>
+#include <wrl/wrappers/corewrappers.h>
+
+#pragma comment(lib, "runtimeobject.lib")
 
 namespace jpg_spinner::batch_processing
 {
@@ -98,7 +105,10 @@ domain::ImageProcessingResult<AnalyzedImageBatch> BatchProcessingCoordinator::an
     try
     {
         const auto production = domain::JpegResourceLimits::production();
-        if (!request.sourceCollection ||
+        if (!request.sourceCollection || request.executionLimits.maximumConcurrentImageCount == 0 ||
+            request.executionLimits.maximumConcurrentImageCount >
+                BatchExecutionLimits::maximumSupportedConcurrentImageCount ||
+            request.executionLimits.estimatedWorkingMemoryBudgetBytes == 0 ||
             (request.traversalScope != domain::TraversalScope::SelectedFolderOnly &&
              request.traversalScope != domain::TraversalScope::SelectedFolderAndDescendants) ||
             (request.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy &&
@@ -194,9 +204,9 @@ domain::ImageProcessingResult<AnalyzedImageBatch> BatchProcessingCoordinator::an
             files.push_back(std::move(file));
             reportProgress(progress, observer);
         }
-        return Result::success(AnalyzedImageBatch{request.identifier, request.outputDisposition, request.resourceLimits,
-                                                  std::move(files), std::move(discovery.issues),
-                                                  progress.discoveryComplete, progress.analyzed});
+        return Result::success(AnalyzedImageBatch{
+            request.identifier, request.outputDisposition, request.resourceLimits, request.executionLimits,
+            std::move(files), std::move(discovery.issues), progress.discoveryComplete, progress.analyzed});
     }
     catch (const std::bad_alloc &)
     {
@@ -245,11 +255,40 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
             {WorkingMemoryAllocationFailed, domain::ImageProcessingStage::CoefficientTransformation});
     }
     reportProgress(progress, observer);
+    std::mutex stateMutex;
+    std::mutex commitMutex;
+    std::condition_variable_any memoryAvailable;
+    const auto memoryBudget = std::min(reviewedBatch.executionLimits_.estimatedWorkingMemoryBudgetBytes,
+                                       BatchExecutionLimits::recommendedWorkingMemoryBudgetBytes());
+    std::uint64_t reservedMemoryBytes{};
+    std::stop_source workerCancellation;
+    const auto workerToken = workerCancellation.get_token();
+    std::stop_callback cancellationCallback{cancellation, [&] { workerCancellation.request_stop(); }};
     std::optional<domain::ImageProcessingError> integrityFailure;
-    for (std::size_t index = 0; index < reviewedBatch.files_.size(); ++index)
-    {
+    const auto observedIntegrityFailure = [&] {
+        const std::lock_guard guard{stateMutex};
+        return integrityFailure;
+    };
+    const auto processFileAt = [&](const std::size_t index) {
         const auto &file = reviewedBatch.files_[index];
         auto &terminal = summary.fileResults[index];
+        struct MemoryReservation final
+        {
+            std::mutex &mutex;
+            std::condition_variable_any &available;
+            std::uint64_t &reserved;
+            std::uint64_t bytes{};
+            ~MemoryReservation()
+            {
+                if (bytes == 0)
+                    return;
+                {
+                    const std::lock_guard guard{mutex};
+                    reserved -= bytes;
+                }
+                available.notify_all();
+            }
+        } reservation{stateMutex, memoryAvailable, reservedMemoryBytes};
         const auto recordError = [&](const domain::ImageProcessingError &error, const bool transformationEntered) {
             terminal.error.emplace(error);
             terminal.outcome = error.code == Cancelled
@@ -257,17 +296,21 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
                                    : (isUnsupportedSource(error.code) ? UnsupportedSourceSkipped : ProcessingFailed);
             if (error.code == RecoveryConflict)
             {
-                // Ambiguous transaction integrity is qualitatively different
-                // from a failed image. Preserve its reason and stop all later I/O.
-                if (!integrityFailure)
-                    integrityFailure.emplace(error);
-                summary.transactionIntegrityUncertain = true;
+                {
+                    const std::lock_guard guard{stateMutex};
+                    if (!integrityFailure)
+                        integrityFailure.emplace(error);
+                    summary.transactionIntegrityUncertain = true;
+                }
+                // Stop pending work and commits; an already admitted native
+                // save must still finish and report its actual result.
+                workerCancellation.request_stop();
             }
         };
         const auto processFile = [&] {
-            if (integrityFailure)
+            if (const auto conflict = observedIntegrityFailure())
             {
-                recordError(*integrityFailure, false);
+                recordError(*conflict, false);
                 return;
             }
             if (file.error)
@@ -275,7 +318,7 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
                 recordError(*file.error, false);
                 return;
             }
-            if (cancellation.stop_requested() || !reviewedBatch.discoveryComplete_)
+            if (workerToken.stop_requested() || !reviewedBatch.discoveryComplete_)
             {
                 recordError({Cancelled, domain::ImageProcessingStage::SourceRevisionCapture}, false);
                 return;
@@ -285,8 +328,32 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
                 terminal.outcome = NoOrientationNormalizationRequired;
                 return;
             }
+            {
+                const auto budget = memoryBudget;
+                const auto charge = std::min(
+                    budget,
+                    std::max<std::uint64_t>(1, transformationEngine_->estimatedWorkingMemoryBytes(
+                                                   file.sourceRevision->encodedLengthBytes, *file.jpegAnalysis)));
+                std::unique_lock guard{stateMutex};
+                // Capping the charge at the whole budget admits an oversized
+                // image exclusively. Existing per-image codec bounds remain
+                // authoritative; this estimate is not an absolute RAM quota.
+                if (!memoryAvailable.wait(guard, workerToken, [&] { return charge <= budget - reservedMemoryBytes; }))
+                {
+                    const auto conflict = integrityFailure;
+                    guard.unlock();
+                    recordError(conflict
+                                    ? *conflict
+                                    : domain::ImageProcessingError{Cancelled,
+                                                                   domain::ImageProcessingStage::SourceRevisionCapture},
+                                false);
+                    return;
+                }
+                reservedMemoryBytes += charge;
+                reservation.bytes = charge;
+            }
             auto captured =
-                file.source->capture(reviewedBatch.resourceLimits_.maximumEncodedFileLengthBytes, cancellation);
+                file.source->capture(reviewedBatch.resourceLimits_.maximumEncodedFileLengthBytes, workerToken);
             if (const auto captureError = captured.errorIfPresent())
             {
                 recordError(*captureError, false);
@@ -299,13 +366,13 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
                             false);
                 return;
             }
-            if (cancellation.stop_requested())
+            if (workerToken.stop_requested())
             {
                 recordError({Cancelled, domain::ImageProcessingStage::CoefficientTransformation}, false);
                 return;
             }
             auto output = transformationEngine_->createValidatedOutput(std::move(source.encodedBytes),
-                                                                       *file.jpegAnalysis, cancellation);
+                                                                       *file.jpegAnalysis, workerToken);
             if (const auto transformError = output.errorIfPresent())
             {
                 const auto executionState =
@@ -318,13 +385,28 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
                 recordError(*transformError, transformationStarted);
                 return;
             }
-            if (cancellation.stop_requested())
+            if (workerToken.stop_requested())
+            {
+                recordError({Cancelled, domain::ImageProcessingStage::OutputValidation}, true);
+                return;
+            }
+            // One admission boundary serializes saves and their journal effects.
+            // Never hold stateMutex while acquiring this mutex. A published
+            // integrity conflict prohibits all later admissions, while a native
+            // save already inside this boundary retains its completion semantics.
+            const std::lock_guard commitGuard{commitMutex};
+            if (const auto conflict = observedIntegrityFailure())
+            {
+                recordError(*conflict, true);
+                return;
+            }
+            if (workerToken.stop_requested())
             {
                 recordError({Cancelled, domain::ImageProcessingStage::OutputValidation}, true);
                 return;
             }
             const auto committed = file.source->commit(*file.sourceRevision, *output.valueIfPresent(),
-                                                       reviewedBatch.disposition_, cancellation);
+                                                       reviewedBatch.disposition_, workerToken);
             if (const auto commitError = committed.errorIfPresent())
             {
                 recordError(*commitError, true);
@@ -348,6 +430,7 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
             recordError({WorkingMemoryAllocationFailed, domain::ImageProcessingStage::CoefficientTransformation},
                         false);
         }
+        const std::lock_guard progressGuard{stateMutex};
         ++progress.completed;
         switch (terminal.outcome)
         {
@@ -368,7 +451,95 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
             break;
         }
         reportProgress(progress, observer);
+    };
+    const auto workerCount =
+        std::min<std::size_t>(reviewedBatch.executionLimits_.maximumConcurrentImageCount, reviewedBatch.files_.size());
+    if (workerCount == 0)
+        return Result::success(std::move(summary));
+    if (workerCount == 1)
+    {
+        // Retain the serial caller/apartment contract and avoid constructing
+        // a pool when the user requests one image or the batch has only one.
+        for (std::size_t index = 0; index < reviewedBatch.files_.size(); ++index)
+            processFileAt(index);
+        return Result::success(std::move(summary));
     }
+    std::latch workersReady{static_cast<std::ptrdiff_t>(workerCount)};
+    std::latch startWorkers{1};
+    std::atomic<HRESULT> initializationResult{S_OK};
+    bool abortStartup{}; // Published before startWorkers releases its waiters.
+    std::size_t nextIndex{};
+    std::exception_ptr workerFailure;
+    std::vector<std::jthread> workers;
+    try
+    {
+        workers.reserve(workerCount);
+        for (std::size_t worker = 0; worker < workerCount; ++worker)
+            workers.emplace_back([&] {
+                // Every native worker owns and balances its MTA initialization;
+                // no UI apartment is captured or blocked by a codec operation.
+                Microsoft::WRL::Wrappers::RoInitializeWrapper apartment{RO_INIT_MULTITHREADED};
+                const HRESULT initialized = apartment;
+                if (FAILED(initialized))
+                    initializationResult.store(initialized);
+                workersReady.count_down();
+                startWorkers.wait();
+                if (abortStartup)
+                    return;
+                try
+                {
+                    for (;;)
+                    {
+                        std::size_t index;
+                        {
+                            const std::lock_guard guard{stateMutex};
+                            if (nextIndex == reviewedBatch.files_.size())
+                                break;
+                            index = nextIndex++;
+                        }
+                        processFileAt(index);
+                    }
+                }
+                catch (...)
+                {
+                    {
+                        const std::lock_guard guard{stateMutex};
+                        if (!workerFailure)
+                            workerFailure = std::current_exception();
+                    }
+                    workerCancellation.request_stop();
+                }
+            });
+    }
+    catch (const std::system_error &error)
+    {
+        abortStartup = true;
+        startWorkers.count_down();
+        workers.clear(); // Join before returning; no source work was admitted.
+        return Result::failure({CoefficientTransformationFailed,
+                                domain::ImageProcessingStage::CoefficientTransformation, error.code(),
+                                domain::CoefficientTransformationExecutionState::NotStarted});
+    }
+    catch (const std::bad_alloc &)
+    {
+        abortStartup = true;
+        startWorkers.count_down();
+        workers.clear();
+        return Result::failure(
+            {WorkingMemoryAllocationFailed, domain::ImageProcessingStage::CoefficientTransformation});
+    }
+    workersReady.wait();
+    abortStartup = FAILED(initializationResult.load());
+    startWorkers.count_down();
+    for (auto &worker : workers)
+        worker.join();
+    if (abortStartup)
+        return Result::failure({CoefficientTransformationFailed,
+                                domain::ImageProcessingStage::CoefficientTransformation,
+                                domain::WindowsHResult{initializationResult.load()},
+                                domain::CoefficientTransformationExecutionState::NotStarted});
+    if (workerFailure)
+        std::rethrow_exception(workerFailure); // Caller must reconcile any earlier admitted native commits.
     return Result::success(std::move(summary));
 }
 } // namespace jpg_spinner::batch_processing

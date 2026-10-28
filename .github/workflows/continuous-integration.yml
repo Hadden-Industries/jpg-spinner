@@ -34,6 +34,7 @@ jobs:
                   ./scripts/tests/Test-AppThemeResources.ps1
                   ./scripts/tests/Test-AppPrivacyNotice.ps1
                   ./scripts/tests/Test-SettingsInteractionContract.ps1
+                  ./scripts/tests/Test-ParallelProcessingSettingsContract.ps1
                   ./scripts/Test-DocumentationPolicy.ps1
                   ./scripts/Test-GitHubWorkflowPolicy.ps1 -ToolsDirectory $tools
                   ./scripts/tests/Test-QualificationPolicy.ps1 -ToolsDirectory $tools -OwnedOutputRoot $env:RUNNER_TEMP

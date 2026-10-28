@@ -14,6 +14,7 @@ SelectedFolderBatchComposition composeSelectedFolderBatch(
     if (!selectedSourceFolder || !applicationJournalStore)
         throw winrt::hresult_invalid_argument();
     batch_processing::BatchProcessingRequest request;
+    request.executionLimits = batch_processing::BatchExecutionLimits::recommended();
     const auto transactions = std::make_shared<storage::WindowsStorageImageFileTransactionEngine>(
         selectedSourceFolder, std::move(applicationJournalStore),
         std::bit_cast<winrt::guid>(request.identifier.fullIdentity()), request.identifier.creationTime());

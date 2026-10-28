@@ -70,6 +70,8 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     Presentation::TraversalScope TraversalScope() const;
     Presentation::EdgeHandlingPolicy EdgeHandlingPolicy() const;
     Presentation::OutputScanOrganization OutputScanOrganization() const;
+    std::uint32_t MaximumConcurrentImageCount() const;
+    void SetMaximumConcurrentImageCount(std::uint32_t maximumConcurrentImageCount);
     hstring ErrorTitle() const;
     hstring ErrorExplanation() const;
     hstring ErrorRemedy() const;

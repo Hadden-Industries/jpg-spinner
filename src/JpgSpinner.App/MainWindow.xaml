@@ -519,6 +519,23 @@
                                         </StackPanel>
                                     </Border>
                                 </Grid>
+                                <Border Style="{StaticResource ContentCardBorderStyle}">
+                                    <StackPanel Spacing="12">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Style="{StaticResource SectionIconBadgeStyle}">
+                                                <SymbolIcon Symbol="Pictures" Foreground="{ThemeResource JpgSpinnerVioletTextBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                            </Border>
+                                            <TextBlock x:Uid="Shell_PerformanceHeading" Grid.Column="1" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <Slider x:Name="MaximumConcurrentImagesControl" x:Uid="Shell_ParallelPhotos" Minimum="1" Value="1" TickFrequency="1" SmallChange="1" StepFrequency="1" SnapsTo="StepValues" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" ValueChanged="MaximumConcurrentImages_ValueChanged" AutomationProperties.AutomationId="MaximumConcurrentImages" />
+                                        <TextBlock Text="{x:Bind MaximumConcurrentImageCountText, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.AutomationId="SelectedMaximumConcurrentImageCount" />
+                                        <TextBlock x:Uid="Shell_ParallelPhotosDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                    </StackPanel>
+                                </Border>
                                 <InfoBar x:Name="SettingsSaveErrorBar" x:Uid="Shell_SettingsSaveError" Severity="Warning" IsOpen="False" IsClosable="True" />
                                 <UserControl IsTabStop="False" HorizontalContentAlignment="Stretch">
                                     <Grid x:Name="SettingsSupportCards" ColumnSpacing="20" RowSpacing="20">
