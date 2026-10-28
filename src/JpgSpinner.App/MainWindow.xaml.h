@@ -38,6 +38,7 @@ struct MainWindow : MainWindowT<MainWindow>
     winrt::hstring StartupRecoveredTransactionCount() const;
     bool CanEditProcessingSettings() const;
     winrt::hstring MaximumConcurrentImageCountText();
+    Microsoft::UI::Xaml::Visibility CustomMemoryBudgetVisibility();
     winrt::hstring ProcessingSettingsSummary();
     Microsoft::UI::Xaml::Visibility LandingRegionVisibility() const;
     Microsoft::UI::Xaml::Visibility WorkflowRegionVisibility() const;
@@ -88,6 +89,11 @@ struct MainWindow : MainWindowT<MainWindow>
     fire_and_forget MaximumConcurrentImages_ValueChanged(
         Windows::Foundation::IInspectable const &,
         Microsoft::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const &);
+    fire_and_forget AutomaticMemoryBudget_Toggled(Windows::Foundation::IInspectable const &,
+                                                  Microsoft::UI::Xaml::RoutedEventArgs const &);
+    fire_and_forget ProcessingMemoryBudget_ValueChanged(
+        Microsoft::UI::Xaml::Controls::NumberBox const &sender,
+        Microsoft::UI::Xaml::Controls::NumberBoxValueChangedEventArgs const &arguments);
     event_token PropertyChanged(Microsoft::UI::Xaml::Data::PropertyChangedEventHandler const &handler);
     void PropertyChanged(event_token const &token);
 
@@ -111,6 +117,7 @@ struct MainWindow : MainWindowT<MainWindow>
     Windows::Foundation::IAsyncAction loadProgressiveExamplesAsync();
     void saveProcessingPreferences(const std::array<int, 4> &selections);
     std::uint32_t selectedMaximumConcurrentImageCount();
+    std::optional<std::uint64_t> selectedProcessingMemoryBudgetBytes();
     Windows::Foundation::IAsyncAction applyProcessingPreferencesAsync();
     std::array<int, 4> processingOptionSelections();
     void applyProcessingOptions(const Presentation::MainWindowViewModel &model, const std::array<int, 4> &selections);

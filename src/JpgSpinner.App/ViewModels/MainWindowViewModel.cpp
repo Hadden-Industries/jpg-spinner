@@ -164,6 +164,28 @@ void MainWindowViewModel::SetMaximumConcurrentImageCount(const std::uint32_t max
     request.executionLimits.maximumConcurrentImageCount = maximumConcurrentImageCount;
     selectSource(std::move(request), sourceFolderDisplayName_, backupRootDisplayPath_);
 }
+Windows::Foundation::IReference<std::uint64_t> MainWindowViewModel::ProcessingMemoryBudgetBytes() const
+{
+    requireDispatcherThread();
+    const auto budget =
+        selectedRequest_ ? selectedRequest_->executionLimits.estimatedWorkingMemoryBudgetBytes : std::nullopt;
+    return budget ? box_value(*budget).as<Windows::Foundation::IReference<std::uint64_t>>() : nullptr;
+}
+void MainWindowViewModel::SetProcessingMemoryBudget(
+    Windows::Foundation::IReference<std::uint64_t> const &processingMemoryBudgetBytes)
+{
+    requireDispatcherThread();
+    if (!CanSelectSourceFolder() || !selectedRequest_)
+        throw hresult_illegal_method_call();
+    const auto budget = processingMemoryBudgetBytes ? std::optional{processingMemoryBudgetBytes.Value()} : std::nullopt;
+    if (budget && *budget == 0)
+        throw hresult_invalid_argument();
+    if (budget == selectedRequest_->executionLimits.estimatedWorkingMemoryBudgetBytes)
+        return;
+    auto request = *selectedRequest_;
+    request.executionLimits.estimatedWorkingMemoryBudgetBytes = budget;
+    selectSource(std::move(request), sourceFolderDisplayName_, backupRootDisplayPath_);
+}
 Presentation::TraversalScope MainWindowViewModel::TraversalScope() const
 {
     requireDispatcherThread();
@@ -344,8 +366,9 @@ void MainWindowViewModel::selectSource(jpg_spinner::batch_processing::BatchProce
     notify(L"Rows");
     selectedRequest_.emplace(std::move(request));
     projectDiscoveryIssues({});
-    for (auto const *property : {L"OutputDisposition", L"TraversalScope", L"EdgeHandlingPolicy",
-                                 L"OutputScanOrganization", L"MaximumConcurrentImageCount"})
+    for (auto const *property :
+         {L"OutputDisposition", L"TraversalScope", L"EdgeHandlingPolicy", L"OutputScanOrganization",
+          L"MaximumConcurrentImageCount", L"ProcessingMemoryBudgetBytes"})
         notify(property);
     clearError();
     sourceFolderDisplayName_ = std::move(sourceFolderDisplayName);

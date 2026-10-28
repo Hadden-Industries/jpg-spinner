@@ -534,6 +534,13 @@
                                         <Slider x:Name="MaximumConcurrentImagesControl" x:Uid="Shell_ParallelPhotos" Minimum="1" Value="1" TickFrequency="1" SmallChange="1" StepFrequency="1" SnapsTo="StepValues" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" ValueChanged="MaximumConcurrentImages_ValueChanged" AutomationProperties.AutomationId="MaximumConcurrentImages" />
                                         <TextBlock Text="{x:Bind MaximumConcurrentImageCountText, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" AutomationProperties.AutomationId="SelectedMaximumConcurrentImageCount" />
                                         <TextBlock x:Uid="Shell_ParallelPhotosDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                        <Expander x:Uid="Shell_MemoryBudget" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                            <StackPanel Spacing="12">
+                                                <ToggleSwitch x:Name="AutomaticMemoryBudgetControl" x:Uid="Shell_AutomaticMemoryBudget" IsOn="True" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" Toggled="AutomaticMemoryBudget_Toggled" AutomationProperties.AutomationId="AutomaticMemoryBudget" />
+                                                <NumberBox x:Name="ProcessingMemoryBudgetControl" x:Uid="Shell_ProcessingMemoryBudget" Minimum="1" Value="2048" SmallChange="256" LargeChange="1024" SpinButtonPlacementMode="Inline" IsEnabled="{x:Bind CanEditProcessingSettings, Mode=OneWay}" Visibility="{x:Bind CustomMemoryBudgetVisibility, Mode=OneWay}" ValueChanged="ProcessingMemoryBudget_ValueChanged" AutomationProperties.AutomationId="ProcessingMemoryBudgetMebibytes" />
+                                                <TextBlock x:Uid="Shell_MemoryBudgetDescription" Style="{StaticResource SettingsDescriptionTextStyle}" />
+                                            </StackPanel>
+                                        </Expander>
                                     </StackPanel>
                                 </Border>
                                 <InfoBar x:Name="SettingsSaveErrorBar" x:Uid="Shell_SettingsSaveError" Severity="Warning" IsOpen="False" IsClosable="True" />

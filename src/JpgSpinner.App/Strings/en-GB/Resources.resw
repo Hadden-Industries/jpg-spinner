@@ -1060,4 +1060,22 @@
     <data name="Shell_PerformanceHeading.Text" xml:space="preserve">
         <value>Performance</value>
     </data>
+    <data name="Shell_AutomaticMemoryBudget.Header" xml:space="preserve">
+        <value>Manage automatically</value>
+    </data>
+    <data name="Shell_MemoryBudget.Header" xml:space="preserve">
+        <value>Memory budget (advanced)</value>
+    </data>
+    <data name="Shell_MemoryBudgetAutomaticSummary" xml:space="preserve">
+        <value>Automatic memory budget</value>
+    </data>
+    <data name="Shell_MemoryBudgetCustomSummary" xml:space="preserve">
+        <value>Processing memory budget: </value>
+    </data>
+    <data name="Shell_MemoryBudgetDescription.Text" xml:space="preserve">
+        <value>Automatic adapts to available memory while your batch runs. A custom budget limits estimated memory for photos processed together. One large photo and the app itself can use more than this budget.</value>
+    </data>
+    <data name="Shell_ProcessingMemoryBudget.Header" xml:space="preserve">
+        <value>Processing budget (MiB)</value>
+    </data>
 </root>

@@ -195,6 +195,96 @@ TEST_CASE("invalid parallel scheduling limits refuse discovery", "[batch][parall
     CHECK(collection->discoveries == 0);
 }
 
+TEST_CASE("Image admission reacts to decreasing and recovering memory headroom during a batch",
+          "[batch][parallel][adaptive-memory]")
+{
+    const auto bytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+        test_support::JpegChromaSubsampling::ycbcr444, 3);
+    const auto collection = std::make_shared<RecordedImageCollection>();
+    for (unsigned index = 0; index < 4; ++index)
+        collection->candidates.push_back(
+            {std::to_wstring(index) + L".jpg", std::make_shared<RecordedImageSource>(bytes)});
+    const bool recovering = GENERATE(false, true);
+    constexpr auto generousBudget = 2ULL * 1024 * 1024 * 1024;
+    std::atomic<unsigned> samples{};
+    std::mutex gateMutex;
+    std::condition_variable gate;
+    unsigned entered{};
+    const auto engine = std::make_shared<test_support::DeterministicJpegTransformationEngine>(
+        [&](auto source, auto analysis, auto cancellation) {
+            {
+                std::unique_lock lock{gateMutex};
+                ++entered;
+                gate.notify_all();
+                // Recovery should admit another worker without waiting for the
+                // first JPEG to finish. The timeout releases the old scheduler.
+                gate.wait_for(lock, std::chrono::seconds{2}, [&] { return entered >= 2; });
+            }
+            return jpeg::LibJpegTurboTransformationEngine{}.createValidatedOutput(std::move(source),
+                                                                                  std::move(analysis), cancellation);
+        });
+    const BatchProcessingCoordinator coordinator{engine, [&] {
+                                                     const auto sample = ++samples;
+                                                     // The first admission fits, but later samples can fall below
+                                                     // memory already reserved. Subtracting without checking would
+                                                     // underflow.
+                                                     return (recovering == (sample > 1)) ? std::uint64_t{generousBudget}
+                                                                                         : std::uint64_t{1};
+                                                 }};
+    BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    request.executionLimits.maximumConcurrentImageCount = 2;
+    auto analyzed = coordinator.analyze(request);
+    REQUIRE(analyzed.valueIfPresent());
+    const auto result = coordinator.execute(std::move(*analyzed.valueIfPresent()));
+    REQUIRE(result.valueIfPresent());
+    CHECK(engine->maximumConcurrentCalls() == (recovering ? 2U : 1U));
+    CHECK(samples >= 4);
+    CHECK(result.valueIfPresent()->finalProgress.completed == 4);
+    CHECK(result.valueIfPresent()->finalProgress.failed == 0);
+}
+
+TEST_CASE("A large image retains its full reservation when automatic headroom recovers",
+          "[batch][parallel][adaptive-memory]")
+{
+    const auto bytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(
+        test_support::JpegChromaSubsampling::ycbcr444, 3);
+    const auto collection = std::make_shared<RecordedImageCollection>();
+    for (unsigned index = 0; index < 4; ++index)
+        collection->candidates.push_back(
+            {std::to_wstring(index) + L".jpg", std::make_shared<RecordedImageSource>(bytes)});
+    std::mutex gateMutex;
+    std::condition_variable gate;
+    unsigned entered{};
+    const auto engine = std::make_shared<test_support::DeterministicJpegTransformationEngine>(
+        [&](auto source, auto analysis, auto cancellation) {
+            {
+                std::unique_lock lock{gateMutex};
+                ++entered;
+                gate.notify_all();
+                gate.wait_for(lock, std::chrono::seconds{2}, [&] { return entered >= 3; });
+            }
+            return jpeg::LibJpegTurboTransformationEngine{}.createValidatedOutput(std::move(source),
+                                                                                  std::move(analysis), cancellation);
+        });
+    std::atomic<unsigned> samples{};
+    std::uint64_t recoveredBudget{};
+    const BatchProcessingCoordinator coordinator{engine,
+                                                 [&] { return ++samples == 1 ? std::uint64_t{1} : recoveredBudget; }};
+    BatchProcessingRequest request{collection};
+    request.edgeHandlingPolicy = domain::EdgeHandlingPolicy::TrimPartialMinimumCodedUnits;
+    request.executionLimits.maximumConcurrentImageCount = 3;
+    auto analyzed = coordinator.analyze(request);
+    REQUIRE(analyzed.valueIfPresent());
+    const auto estimate =
+        engine->estimatedWorkingMemoryBytes(bytes.size(), *analyzed.valueIfPresent()->files().front().jpegAnalysis);
+    recoveredBudget = 2 * estimate + 1;
+    const auto result = coordinator.execute(std::move(*analyzed.valueIfPresent()));
+    REQUIRE(result.valueIfPresent());
+    CHECK(engine->maximumConcurrentCalls() == 2);
+    CHECK(result.valueIfPresent()->finalProgress.failed == 0);
+}
+
 TEST_CASE("parallel cancellation joins admitted workers and preserves one terminal row per file", "[batch][parallel]")
 {
     const auto bytes = test_support::DeterministicJpegFixtureFactory::createEncodedJpeg(

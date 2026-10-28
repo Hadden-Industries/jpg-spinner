@@ -89,11 +89,15 @@ bool isUnsupportedSource(const domain::ImageProcessingErrorCode code) noexcept
 } // namespace
 
 BatchProcessingCoordinator::BatchProcessingCoordinator(
-    std::shared_ptr<const jpeg::JpegTransformationEngine> transformationEngine)
-    : transformationEngine_(std::move(transformationEngine))
+    std::shared_ptr<const jpeg::JpegTransformationEngine> transformationEngine,
+    WorkingMemoryBudgetProvider workingMemoryBudgetProvider)
+    : transformationEngine_(std::move(transformationEngine)),
+      workingMemoryBudgetProvider_(std::move(workingMemoryBudgetProvider))
 {
     if (!transformationEngine_)
         throw std::invalid_argument("A JPEG transformation engine is required.");
+    if (!workingMemoryBudgetProvider_)
+        throw std::invalid_argument("A working-memory budget provider is required.");
 }
 
 domain::ImageProcessingResult<AnalyzedImageBatch> BatchProcessingCoordinator::analyze(
@@ -108,7 +112,8 @@ domain::ImageProcessingResult<AnalyzedImageBatch> BatchProcessingCoordinator::an
         if (!request.sourceCollection || request.executionLimits.maximumConcurrentImageCount == 0 ||
             request.executionLimits.maximumConcurrentImageCount >
                 BatchExecutionLimits::maximumSupportedConcurrentImageCount ||
-            request.executionLimits.estimatedWorkingMemoryBudgetBytes == 0 ||
+            (request.executionLimits.estimatedWorkingMemoryBudgetBytes &&
+             *request.executionLimits.estimatedWorkingMemoryBudgetBytes == 0) ||
             (request.traversalScope != domain::TraversalScope::SelectedFolderOnly &&
              request.traversalScope != domain::TraversalScope::SelectedFolderAndDescendants) ||
             (request.outputDisposition != domain::OutputDisposition::CreateCorrectedCopy &&
@@ -258,8 +263,6 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
     std::mutex stateMutex;
     std::mutex commitMutex;
     std::condition_variable_any memoryAvailable;
-    const auto memoryBudget = std::min(reviewedBatch.executionLimits_.estimatedWorkingMemoryBudgetBytes,
-                                       BatchExecutionLimits::recommendedWorkingMemoryBudgetBytes());
     std::uint64_t reservedMemoryBytes{};
     std::stop_source workerCancellation;
     const auto workerToken = workerCancellation.get_token();
@@ -329,16 +332,24 @@ domain::ImageProcessingResult<BatchProcessingSummary> BatchProcessingCoordinator
                 return;
             }
             {
-                const auto budget = memoryBudget;
-                const auto charge = std::min(
-                    budget,
+                const auto charge =
                     std::max<std::uint64_t>(1, transformationEngine_->estimatedWorkingMemoryBytes(
-                                                   file.sourceRevision->encodedLengthBytes, *file.jpegAnalysis)));
+                                                   file.sourceRevision->encodedLengthBytes, *file.jpegAnalysis));
                 std::unique_lock guard{stateMutex};
-                // Capping the charge at the whole budget admits an oversized
-                // image exclusively. Existing per-image codec bounds remain
-                // authoritative; this estimate is not an absolute RAM quota.
-                if (!memoryAvailable.wait(guard, workerToken, [&] { return charge <= budget - reservedMemoryBytes; }))
+                // Sample volatile Windows headroom before every admission and
+                // after each completion wakeup; never interrupt admitted work.
+                // Retain the FULL reservation for an oversized image so later
+                // recovery cannot treat its still-active memory as almost free.
+                // An image can run alone above this estimated scheduling budget;
+                // hard per-image JPEG limits remain independently authoritative.
+                if (!memoryAvailable.wait(guard, workerToken, [&] {
+                        const auto budget = std::max<std::uint64_t>(
+                            1, std::min(reviewedBatch.executionLimits_.estimatedWorkingMemoryBudgetBytes.value_or(
+                                            std::numeric_limits<std::uint64_t>::max()),
+                                        workingMemoryBudgetProvider_()));
+                        return reservedMemoryBytes == 0 ||
+                               (reservedMemoryBytes <= budget && charge <= budget - reservedMemoryBytes);
+                    }))
                 {
                     const auto conflict = integrityFailure;
                     guard.unlock();

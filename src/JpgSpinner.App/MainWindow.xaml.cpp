@@ -25,7 +25,8 @@
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 #include <winrt/Windows.System.h>
 #include <cstring>
-#include <cmath>
+#include <limits>
+#include <algorithm>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <microsoft.ui.xaml.window.h>
 #include <shobjidl_core.h>
@@ -55,12 +56,18 @@ constexpr std::array maximumProcessingOptionSelectionIndices{1, 2, 1, 2};
 constexpr std::array<std::wstring_view, 4> processingPreferenceSelectionKeys{
     L"TraversalScopeSelection", L"OutputDispositionSelection", L"EdgeHandlingSelection", L"ScanOrganizationSelection"};
 constexpr std::wstring_view parallelImagePreferenceKey = L"MaximumConcurrentImageCount";
+constexpr std::wstring_view automaticMemoryPreferenceKey = L"AutomaticProcessingMemoryBudget";
+constexpr std::wstring_view customMemoryPreferenceKey = L"ProcessingMemoryBudgetMebibytes";
 bool areValidProcessingOptionSelections(const std::array<int, 4> &selections)
 {
     for (std::size_t index = 0; index < selections.size(); ++index)
         if (selections[index] < 0 || selections[index] > maximumProcessingOptionSelectionIndices[index])
             return false;
     return true;
+}
+bool isPositiveWholeNumberWithin(const double value, const double maximum)
+{
+    return std::isfinite(value) && value >= 1 && value <= maximum && std::floor(value) == value;
 }
 } // namespace
 MainWindow::MainWindow()
@@ -69,6 +76,9 @@ MainWindow::MainWindow()
     using jpg_spinner::batch_processing::BatchExecutionLimits;
     MaximumConcurrentImagesControl().Maximum(BatchExecutionLimits::deviceConcurrentImageLimit());
     MaximumConcurrentImagesControl().Value(BatchExecutionLimits::recommended().maximumConcurrentImageCount);
+    // This is the range of an exactly representable whole-MiB preference, not a
+    // claim that the app can allocate it. Live system headroom always wins.
+    ProcessingMemoryBudgetControl().Maximum((std::numeric_limits<std::uint32_t>::max)());
     loadProcessingPreferences();
     processingPreferencesReady_ = true;
     // Compose each view once, then let Frame own page history. Basic string
@@ -474,6 +484,19 @@ hstring MainWindow::ProcessingSettingsSummary()
                    .GetValue(L"Shell_ParallelPhotosSummary", manager.CreateResourceContext())
                    .ValueAsString();
     summary += MaximumConcurrentImageCountText();
+    summary += L" · ";
+    const auto memoryBudget = selectedProcessingMemoryBudgetBytes();
+    summary += manager.MainResourceMap()
+                   .GetSubtree(L"Resources")
+                   .GetValue(memoryBudget ? L"Shell_MemoryBudgetCustomSummary" : L"Shell_MemoryBudgetAutomaticSummary",
+                             manager.CreateResourceContext())
+                   .ValueAsString();
+    if (memoryBudget)
+    {
+        summary += jpg_spinner::presentation::formatUnsignedInteger(
+            *memoryBudget / jpg_spinner::batch_processing::BatchExecutionLimits::bytesPerMebibyte);
+        summary += L" MiB"; // IEC unit symbol is language-independent.
+    }
     return hstring{summary};
 }
 std::uint32_t MainWindow::selectedMaximumConcurrentImageCount()
@@ -482,13 +505,30 @@ std::uint32_t MainWindow::selectedMaximumConcurrentImageCount()
     if (!control)
         return 1; // Initial compiled bindings may precede the native control.
     const auto value = control.Value();
-    if (!std::isfinite(value) || value < 1 || value > control.Maximum() || std::floor(value) != value)
+    if (!isPositiveWholeNumberWithin(value, control.Maximum()))
         throw hresult_invalid_argument();
     return static_cast<std::uint32_t>(value);
 }
 hstring MainWindow::MaximumConcurrentImageCountText()
 {
     return jpg_spinner::presentation::formatUnsignedInteger(selectedMaximumConcurrentImageCount());
+}
+Microsoft::UI::Xaml::Visibility MainWindow::CustomMemoryBudgetVisibility()
+{
+    const auto automatic = AutomaticMemoryBudgetControl();
+    return automatic && !automatic.IsOn() ? Microsoft::UI::Xaml::Visibility::Visible
+                                          : Microsoft::UI::Xaml::Visibility::Collapsed;
+}
+std::optional<std::uint64_t> MainWindow::selectedProcessingMemoryBudgetBytes()
+{
+    const auto automatic = AutomaticMemoryBudgetControl();
+    if (!automatic || automatic.IsOn())
+        return std::nullopt;
+    const auto control = ProcessingMemoryBudgetControl();
+    const auto value = control.Value();
+    if (!isPositiveWholeNumberWithin(value, control.Maximum()))
+        throw hresult_invalid_argument();
+    return static_cast<std::uint64_t>(value) * jpg_spinner::batch_processing::BatchExecutionLimits::bytesPerMebibyte;
 }
 Microsoft::UI::Xaml::Visibility MainWindow::regionVisibility(Presentation::ImageProcessingExperienceState state) const
 {
@@ -595,7 +635,8 @@ void MainWindow::notifyShellState()
                                  L"StartupRecoverySummaryVisibility",
                                  L"CanEditProcessingSettings",
                                  L"ProcessingSettingsSummary",
-                                 L"MaximumConcurrentImageCountText"})
+                                 L"MaximumConcurrentImageCountText",
+                                 L"CustomMemoryBudgetVisibility"})
         propertyChanged_(*this, Microsoft::UI::Xaml::Data::PropertyChangedEventArgs{property});
     closeAfterWorkSettles();
 }
@@ -802,6 +843,11 @@ void MainWindow::synchronizeProcessingOptionControls()
         return;
     updatingProcessingOptionControls_ = true;
     MaximumConcurrentImagesControl().Value(viewModel_.MaximumConcurrentImageCount());
+    const auto memoryBudget = viewModel_.ProcessingMemoryBudgetBytes();
+    AutomaticMemoryBudgetControl().IsOn(!memoryBudget);
+    if (memoryBudget)
+        ProcessingMemoryBudgetControl().Value(static_cast<double>(memoryBudget.Value()) /
+                                              jpg_spinner::batch_processing::BatchExecutionLimits::bytesPerMebibyte);
     // Indices are local control positions, never native enum wire values.
     TraversalScopeControl().SelectedIndex(
         viewModel_.TraversalScope() == Presentation::TraversalScope::SelectedFolderOnly ? 0 : 1);
@@ -841,6 +887,7 @@ void MainWindow::applyProcessingOptions(const Presentation::MainWindowViewModel 
     if (!areValidProcessingOptionSelections(selections))
         throw hresult_invalid_argument();
     using ScanOrganization = Presentation::OutputScanOrganization;
+    const auto memoryBudget = selectedProcessingMemoryBudgetBytes(); // Validate before any review mutation.
     model.SetProcessingOptions(
         disposition == 0 ? Presentation::OutputDisposition::CreateCorrectedCopy
                          : (disposition == 1 ? Presentation::OutputDisposition::ReplaceOriginalWithVerifiedBackup
@@ -852,6 +899,8 @@ void MainWindow::applyProcessingOptions(const Presentation::MainWindowViewModel 
         scans == 0 ? ScanOrganization::PreserveSource
                    : (scans == 1 ? ScanOrganization::SequentialDct : ScanOrganization::ProgressiveDct));
     model.SetMaximumConcurrentImageCount(selectedMaximumConcurrentImageCount());
+    model.SetProcessingMemoryBudget(
+        memoryBudget ? box_value(*memoryBudget).as<Windows::Foundation::IReference<std::uint64_t>>() : nullptr);
 }
 void MainWindow::loadProcessingPreferences()
 {
@@ -881,6 +930,14 @@ void MainWindow::loadProcessingPreferences()
             parallel <= jpg_spinner::batch_processing::BatchExecutionLimits::maximumSupportedConcurrentImageCount)
             MaximumConcurrentImagesControl().Value(
                 (std::min)(static_cast<double>(parallel), MaximumConcurrentImagesControl().Maximum()));
+        const auto custom = unbox_value_or<double>(stored.TryLookup(hstring{customMemoryPreferenceKey}),
+                                                   ProcessingMemoryBudgetControl().Value());
+        if (isPositiveWholeNumberWithin(custom, ProcessingMemoryBudgetControl().Maximum()))
+        {
+            ProcessingMemoryBudgetControl().Value(custom);
+            AutomaticMemoryBudgetControl().IsOn(
+                unbox_value_or<bool>(stored.TryLookup(hstring{automaticMemoryPreferenceKey}), true));
+        }
     }
     catch (const hresult_error &)
     {
@@ -895,6 +952,8 @@ void MainWindow::saveProcessingPreferences(const std::array<int, 4> &selections)
     try
     {
         preferences.Insert(hstring{parallelImagePreferenceKey}, box_value(selectedMaximumConcurrentImageCount()));
+        preferences.Insert(hstring{automaticMemoryPreferenceKey}, box_value(AutomaticMemoryBudgetControl().IsOn()));
+        preferences.Insert(hstring{customMemoryPreferenceKey}, box_value(ProcessingMemoryBudgetControl().Value()));
         Windows::Storage::ApplicationData::Current().LocalSettings().Values().Insert(L"ImageProcessingPreferences.v1",
                                                                                      preferences);
         SettingsSaveErrorBar().IsOpen(false);
@@ -917,6 +976,34 @@ fire_and_forget MainWindow::MaximumConcurrentImages_ValueChanged(
     Microsoft::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const &)
 {
     auto lifetime = get_strong();
+    co_await applyProcessingPreferencesAsync();
+}
+fire_and_forget MainWindow::AutomaticMemoryBudget_Toggled(Windows::Foundation::IInspectable const &,
+                                                          Microsoft::UI::Xaml::RoutedEventArgs const &)
+{
+    auto lifetime = get_strong();
+    co_await applyProcessingPreferencesAsync();
+}
+fire_and_forget MainWindow::ProcessingMemoryBudget_ValueChanged(
+    Microsoft::UI::Xaml::Controls::NumberBox const &sender,
+    Microsoft::UI::Xaml::Controls::NumberBoxValueChangedEventArgs const &arguments)
+{
+    auto lifetime = get_strong();
+    if (!processingPreferencesReady_ || updatingProcessingOptionControls_ || !CanEditProcessingSettings())
+        co_return;
+    // Native NumberBox evaluates on Enter, focus loss or its spin buttons.
+    // Keep the preference in whole MiB and restore an empty edit's last value;
+    // neither a transient NaN nor a fractional edit reaches a reviewed batch.
+    const auto entered = arguments.NewValue();
+    auto accepted = std::isfinite(entered) ? std::clamp(std::round(entered), sender.Minimum(), sender.Maximum())
+                                           : arguments.OldValue();
+    if (!std::isfinite(accepted))
+        accepted = sender.Minimum();
+    if (entered != accepted)
+    {
+        sender.Value(accepted);
+        co_return; // The resulting valid native ValueChanged applies the choice.
+    }
     co_await applyProcessingPreferencesAsync();
 }
 Windows::Foundation::IAsyncAction MainWindow::applyProcessingPreferencesAsync()

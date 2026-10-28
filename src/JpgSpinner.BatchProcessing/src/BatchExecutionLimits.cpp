@@ -23,6 +23,6 @@ std::uint64_t BatchExecutionLimits::recommendedWorkingMemoryBudgetBytes() noexce
 }
 BatchExecutionLimits BatchExecutionLimits::recommended() noexcept
 {
-    return {std::min(4U, deviceConcurrentImageLimit()), recommendedWorkingMemoryBudgetBytes()};
+    return {std::min(4U, deviceConcurrentImageLimit()), std::nullopt};
 }
 } // namespace jpg_spinner::batch_processing

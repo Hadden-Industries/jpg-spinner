@@ -1187,6 +1187,56 @@ TEST_CASE("Parallel photo limits are validated and bound to a fresh review",
     });
 }
 
+TEST_CASE("Automatic and custom memory budgets invalidate review only when their policy changes",
+          "[presentation][view-model][memory-options]")
+{
+    namespace presentation = winrt::JpgSpinner::Presentation;
+    auto &dispatcher = presentationDispatcher();
+    const auto collection = std::make_shared<ImageCollection>();
+    winrt::com_ptr<presentation::implementation::MainWindowViewModel> implementation;
+    winrt::Windows::Foundation::IAsyncAction analysis{nullptr};
+    const auto budget =
+        winrt::box_value(std::uint64_t{1024} * jpg_spinner::batch_processing::BatchExecutionLimits::bytesPerMebibyte)
+            .as<winrt::Windows::Foundation::IReference<std::uint64_t>>();
+    dispatcher.invoke([&] {
+        implementation = dispatcher.createModel();
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        CHECK_THROWS_AS(model.SetProcessingMemoryBudget(budget), winrt::hresult_illegal_method_call);
+        implementation->selectSource({collection}, L"Granted folder label", L"Backup label");
+        CHECK_FALSE(model.ProcessingMemoryBudgetBytes());
+        analysis = model.AnalyzeAsync();
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        model.SetProcessingMemoryBudget(nullptr);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::Review);
+        CHECK_THROWS_AS(
+            model.SetProcessingMemoryBudget(
+                winrt::box_value(std::uint64_t{0}).as<winrt::Windows::Foundation::IReference<std::uint64_t>>()),
+            winrt::hresult_invalid_argument);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::Review);
+        model.SetProcessingMemoryBudget(budget);
+        REQUIRE(model.ProcessingMemoryBudgetBytes());
+        CHECK(model.ProcessingMemoryBudgetBytes().Value() == budget.Value());
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::SourceSelection);
+        CHECK(collection->discoveryCalls == 1);
+        CHECK(model.SourceFolderDisplayName() == L"Granted folder label");
+        analysis = model.AnalyzeAsync();
+        CHECK_THROWS_AS(model.SetProcessingMemoryBudget(nullptr), winrt::hresult_illegal_method_call);
+    });
+    analysis.get();
+    dispatcher.invoke([&] {
+        auto model = implementation.as<presentation::MainWindowViewModel>();
+        model.SetProcessingMemoryBudget(budget);
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::Review);
+        model.SetProcessingMemoryBudget(nullptr);
+        CHECK_FALSE(model.ProcessingMemoryBudgetBytes());
+        CHECK(model.State() == presentation::ImageProcessingExperienceState::SourceSelection);
+        CHECK(collection->discoveryCalls == 2);
+    });
+}
+
 TEST_CASE("Changing scan policy discards trimming consent and requires a newly acknowledged review",
           "[presentation][view-model][processing-options][review-safety]")
 {

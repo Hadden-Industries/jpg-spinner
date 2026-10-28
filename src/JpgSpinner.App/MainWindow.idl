@@ -72,6 +72,7 @@ namespace JpgSpinner
     {
         get;
     };
+    Microsoft.UI.Xaml.Visibility CustomMemoryBudgetVisibility{ get; };
     Microsoft.UI.Xaml.Visibility LandingRegionVisibility
     {
         get;

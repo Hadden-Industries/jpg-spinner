@@ -104,6 +104,8 @@ namespace JpgSpinner.Presentation
         EdgeHandlingPolicy EdgeHandlingPolicy{ get; };
         OutputScanOrganization OutputScanOrganization{ get; };
         UInt32 MaximumConcurrentImageCount{ get; };
+        // Null selects Automatic; a custom value constrains estimated admission.
+        Windows.Foundation.IReference<UInt64> ProcessingMemoryBudgetBytes{ get; };
         String ErrorTitle{ get; };
         String ErrorExplanation{ get; };
         String ErrorRemedy{ get; };
@@ -114,6 +116,7 @@ namespace JpgSpinner.Presentation
                                   EdgeHandlingPolicy edgeHandling, OutputScanOrganization scanOrganization);
         void AcknowledgeEdgeTrimming(UInt32 rowIndex);
         void SetMaximumConcurrentImageCount(UInt32 maximumConcurrentImageCount);
+        void SetProcessingMemoryBudget(Windows.Foundation.IReference<UInt64> processingMemoryBudgetBytes);
         Windows.Foundation.IAsyncAction AnalyzeAsync();
         Windows.Foundation.IAsyncAction BeginProcessingAsync();
         Windows.Foundation.IAsyncAction RecoverAsync();

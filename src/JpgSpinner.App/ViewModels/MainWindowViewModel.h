@@ -71,6 +71,8 @@ struct MainWindowViewModel : MainWindowViewModelT<MainWindowViewModel, winrt::no
     Presentation::EdgeHandlingPolicy EdgeHandlingPolicy() const;
     Presentation::OutputScanOrganization OutputScanOrganization() const;
     std::uint32_t MaximumConcurrentImageCount() const;
+    Windows::Foundation::IReference<std::uint64_t> ProcessingMemoryBudgetBytes() const;
+    void SetProcessingMemoryBudget(Windows::Foundation::IReference<std::uint64_t> const &processingMemoryBudgetBytes);
     void SetMaximumConcurrentImageCount(std::uint32_t maximumConcurrentImageCount);
     hstring ErrorTitle() const;
     hstring ErrorExplanation() const;

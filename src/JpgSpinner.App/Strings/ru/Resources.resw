@@ -1060,4 +1060,22 @@
     <data name="Shell_PerformanceHeading.Text" xml:space="preserve">
         <value>Производительность</value>
     </data>
+    <data name="Shell_AutomaticMemoryBudget.Header" xml:space="preserve">
+        <value>Управлять автоматически</value>
+    </data>
+    <data name="Shell_MemoryBudget.Header" xml:space="preserve">
+        <value>Бюджет памяти (дополнительно)</value>
+    </data>
+    <data name="Shell_MemoryBudgetAutomaticSummary" xml:space="preserve">
+        <value>Автоматический бюджет памяти</value>
+    </data>
+    <data name="Shell_MemoryBudgetCustomSummary" xml:space="preserve">
+        <value>Бюджет памяти для обработки: </value>
+    </data>
+    <data name="Shell_MemoryBudgetDescription.Text" xml:space="preserve">
+        <value>Автоматический режим учитывает доступную память во время обработки. Заданный бюджет ограничивает расчётную память для одновременно обрабатываемых фотографий. Одна большая фотография и само приложение могут использовать больше памяти.</value>
+    </data>
+    <data name="Shell_ProcessingMemoryBudget.Header" xml:space="preserve">
+        <value>Бюджет обработки (МиБ)</value>
+    </data>
 </root>

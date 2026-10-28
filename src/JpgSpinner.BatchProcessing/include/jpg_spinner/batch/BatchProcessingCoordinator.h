@@ -6,6 +6,7 @@
 #include "BatchProcessingSummary.h"
 #include <jpg_spinner/jpeg/JpegTransformationEngine.h>
 #include <mutex>
+#include <functional>
 
 namespace jpg_spinner::batch_processing
 {
@@ -18,7 +19,12 @@ namespace jpg_spinner::batch_processing
 class BatchProcessingCoordinator final
 {
   public:
-    explicit BatchProcessingCoordinator(std::shared_ptr<const jpeg::JpegTransformationEngine> transformationEngine);
+    /// The provider samples current system headroom, independently of the user's
+    /// optional processing budget. Calls are serialized by this coordinator.
+    using WorkingMemoryBudgetProvider = std::function<std::uint64_t()>;
+    explicit BatchProcessingCoordinator(std::shared_ptr<const jpeg::JpegTransformationEngine> transformationEngine,
+                                        WorkingMemoryBudgetProvider workingMemoryBudgetProvider =
+                                            BatchExecutionLimits::recommendedWorkingMemoryBudgetBytes);
     [[nodiscard]] domain::ImageProcessingResult<AnalyzedImageBatch> analyze(
         const BatchProcessingRequest &request, std::stop_token cancellation = {},
         const BatchProcessingProgressObserver &observer = {}) const;
@@ -32,6 +38,7 @@ class BatchProcessingCoordinator final
 
   private:
     std::shared_ptr<const jpeg::JpegTransformationEngine> transformationEngine_;
+    WorkingMemoryBudgetProvider workingMemoryBudgetProvider_;
     mutable std::mutex operationMutex_;
 };
 } // namespace jpg_spinner::batch_processing
