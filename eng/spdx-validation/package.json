@@ -2,6 +2,7 @@
   "name": "jpg-spinner-spdx-schema-validation",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "npm@12.2.2",
   "description": "Build-tool-only validation of the unchanged official SPDX 3.0.1 schema",
   "license": "GPL-3.0-only",
   "dependencies": {

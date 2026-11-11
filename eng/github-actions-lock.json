@@ -8,6 +8,7 @@
         "actions/attest": { "version": "4.2.2", "commit": "1e69f48acb82d1966a394da916b4c1698aa569d6" },
         "actions/setup-go": { "version": "7.0.0", "commit": "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e" },
         "actions/setup-java": { "version": "6.1.0", "commit": "b843ebf9b913146b38da2eaa7aeddf76074ae1ad" },
+        "actions/setup-node": { "version": "7.1.0", "commit": "949feb2413d6458794dcd2491c4babbbce0c15c1" },
         "github/codeql-action": { "version": "4.39.1", "commit": "9b3254085494b55a0f7c4c2b3d2d52cc712ce370" }
     }
 }

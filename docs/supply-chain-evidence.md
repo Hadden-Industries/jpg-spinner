@@ -97,6 +97,12 @@ npm ci --prefix $schemaValidatorToolsDirectory --ignore-scripts --no-audit --no-
 if ($LASTEXITCODE -ne 0) { throw 'Native locked validator restore failed.' }
 ```
 
+The [Store workflow](../.github/workflows/store-package.yml) selects the exact Node reference.
+It installs and verifies the npm `packageManager` from [the validator manifest](../eng/spdx-validation/package.json).
+This manifest owns the exact CI npm version.
+For local verification, pass a Node/npm pair supported by the locked validator.
+The repository declares no separate local npm floor.
+
 `$schemaValidatorToolsDirectory` must already identify that explicit staged
 directory; this example does not choose a disk location or grant acquisition
 authority. Do not install globally, restore inside the payload, or resolve a

@@ -78,6 +78,23 @@ jobs:
                   New-Item -ItemType Directory -Path $storeWorkingDirectoryPath | Out-Null
                   "STORE_WORKING_ROOT=$storeWorkingDirectoryPath" >> $env:GITHUB_ENV
                   ./scripts/Invoke-IndependentPackageBuildComparison.ps1 -SourceCommit $env:GITHUB_SHA -WorkingDirectory (Join-Path $storeWorkingDirectoryPath builds) -OutputDirectory (Join-Path $storeWorkingDirectoryPath evidence)
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              with:
+                  node-version: "26.13.0"
+                  package-manager-cache: false
+            - name: Set up the pinned npm version
+              run: |
+                  $selector = node -p "require(process.argv[1]).packageManager" (Join-Path $env:GITHUB_WORKSPACE 'eng/spdx-validation/package.json')
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  if ($selector -cnotmatch '^npm@\d+\.\d+\.\d+$') { throw 'Expected an exact npm packageManager in eng/spdx-validation/package.json' }
+                  $nodeDirectory = Split-Path -Parent (node -p 'process.execPath')
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  npm install --global --prefix "$nodeDirectory" "$selector" --ignore-scripts --no-audit --no-fund
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  $npmCli = Join-Path $nodeDirectory node_modules/npm/bin/npm-cli.js
+                  $actual = node "$npmCli" --version
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  if ("npm@$actual" -cne $selector) { throw "Expected $selector, got npm@$actual" }
             - name: Restore the reviewed native evidence tools
               run: |
                   Import-Module ./scripts/JsonObjectMemberValidation.psm1
