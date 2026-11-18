@@ -2,9 +2,12 @@
 
 # Privacy for your photos
 
-JPG Spinner 2.0 · Hadden Industries Ltd. Updated 27 October 2026. Earlier app versions may behave differently.
+JPG Spinner 2.0 · Hadden Industries Ltd. Updated 27 October 2026.
+Earlier app versions may behave differently.
 
-JPG Spinner processes photos on this device. It has no upload service, adverts, accounts or custom network tracking. You decide whether to share diagnostic logs.
+JPG Spinner processes photos on this device.
+It has no upload service, adverts, accounts or custom network tracking.
+You decide whether to share diagnostic logs.
 
 Photos are processed on this device
 
@@ -12,61 +15,93 @@ No app upload service
 
 Share logs only when you choose
 
-Cloud folders can still sync through their provider. Windows and Microsoft Store may collect diagnostics under their own settings and policies.
+Cloud folders can still sync through their provider.
+Windows and Microsoft Store may collect diagnostics under their own settings and policies.
 
 ## What does the app read?
 
-The app reads the folder you choose and uses photos and their metadata to find images that need rotating. Metadata can include camera details, location and other personal information.
+The app reads the folder you choose and uses photos and their metadata to find images that need rotating.
+Metadata can include camera details, location and other personal information.
 
-Analyzing photos does not alter them. After you review the proposed work, the app creates corrected copies or replaces originals according to your Output choice. Replacement can retain a verified backup or proceed without one; without a backup, the app cannot restore the original bytes. Hadden Industries receives neither photos nor metadata from the app.
+Analyzing photos does not alter them.
+After you review the proposed work, the app creates corrected copies or replaces originals according to your Output choice.
+Replacement can retain a verified backup or proceed without one; without a backup, the app cannot restore the original bytes.
+Hadden Industries receives neither photos nor metadata from the app.
 
 ## What stays on this device?
 
-Preferences and retained Windows folder-access permissions are stored under this app's local identity. Recovery journals store file identities, paths and transaction facts so interrupted work can be reconciled.
+Preferences and retained Windows folder-access permissions are stored under this app's local identity.
+Recovery journals store file identities, paths and transaction facts so interrupted work can be reconciled.
 
-Photos, corrected copies, verified backups and recovery journals are separate from diagnostic logs. The diagnostic cleanup limit does not apply to them. Backups do not expire automatically.
+Photos, corrected copies, verified backups and recovery journals are separate from diagnostic logs.
+The diagnostic cleanup limit does not apply to them.
+Backups do not expire automatically.
 
-Choose the source folder and options, then review the proposed work before starting. Change app options in Settings and permissions in Windows Settings. Manage photos, exports and backups in their chosen folders.
+Choose the source folder and options, then review the proposed work before starting.
+Change app options in Settings and permissions in Windows Settings.
+Manage photos, exports and backups in their chosen folders.
 
-Keep backups and recovery data until interrupted work is reconciled and you no longer need recovery. Deleting them can prevent recovery. Resetting or uninstalling the app does not delete copies or exports in other folders.
+Keep backups and recovery data until interrupted work is reconciled and you no longer need recovery.
+Deleting them can prevent recovery.
+Resetting or uninstalling the app does not delete copies or exports in other folders.
 
 ## What gets logged?
 
-Local logs can record UTC time, app version and architecture, a random operation ID, processing stage, error code, elapsed time and resource limits. The ID connects records from one operation; it is not a stable device identifier. Missing optional values are recorded as null.
+Local logs can record UTC time, app version and architecture, a random operation ID, processing stage, error code, elapsed time and resource limits.
+The ID connects records from one operation; it is not a stable device identifier.
+Missing optional values are recorded as null.
 
 Logs use UTF-8 JSON Lines (.jsonl) files in the app-local LocalDiagnostics folder.
 
-Logs exclude filenames, paths, photos, thumbnails, Exif/XMP/IPTC metadata, GPS coordinates, arbitrary native exception messages, network endpoints and stable device identifiers. Windows crash reports are separate.
+Logs exclude filenames, paths, photos, thumbnails, Exif/XMP/IPTC metadata, GPS coordinates, arbitrary native exception messages, network endpoints and stable device identifiers.
+Windows crash reports are separate.
 
 Logs are limited by size and file count, without a fixed number of days: at most 256 KiB in total, 64 retained record files and 4,096 bytes per record.
 
-A reserved pending record counts toward the storage budget and is never exported. The empty writer-lease file is not a record. Cleanup removes only recognized, validated diagnostic records.
+A reserved pending record counts toward the storage budget and is never exported.
+The empty writer-lease file is not a record.
+Cleanup removes only recognized, validated diagnostic records.
 
-Unknown, corrupt or unsupported files are left alone. If the app cannot validate a file, logging or export stops instead of deleting or sharing it. Photo processing can continue even when logging fails.
+Unknown, corrupt or unsupported files are left alone.
+If the app cannot validate a file, logging or export stops instead of deleting or sharing it.
+Photo processing can continue even when logging fails.
 
 ## What if I share a log?
 
-Export local diagnostics opens a Windows file picker so you can choose where to save a size-limited, revalidated snapshot of sanitized records. It does not export arbitrary files from the log folder. Nothing is sent automatically.
+Export local diagnostics opens a Windows file picker so you can choose where to save a size-limited, revalidated snapshot of sanitized records.
+It does not export arbitrary files from the log folder.
+Nothing is sent automatically.
 
-Review the export before sharing it: times, outcomes and resource limits may still be sensitive. You decide who receives it and when to delete it.
+Review the export before sharing it: times, outcomes and resource limits may still be sensitive.
+You decide who receives it and when to delete it.
 
-An error or cancellation may leave a partial file at the destination. Export is not guaranteed to be atomic.
+An error or cancellation may leave a partial file at the destination.
+Export is not guaranteed to be atomic.
 
 ## What about cloud folders and websites?
 
-The app declares no network capability and adds no custom upload transport. A cloud provider can still download or sync selected source, output or export folders, including photos or diagnostic exports.
+The app declares no network capability and adds no custom upload transport.
+A cloud provider can still download or sync selected source, output or export folders, including photos or diagnostic exports.
 
-Windows and Microsoft Store can handle crash reporting, installation information and other diagnostics under their policies and your Windows choices. Those services are separate from the app's local logs.
+Windows and Microsoft Store can handle crash reporting, installation information and other diagnostics under their policies and your Windows choices.
+Those services are separate from the app's local logs.
 
-This notice works offline. Website links open your browser. A website receives ordinary connection information, such as your IP address, and may use cookies under its own policy. No photos or diagnostic exports are attached to these links.
+This notice works offline.
+Website links open your browser.
+A website receives ordinary connection information, such as your IP address, and may use cookies under its own policy.
+No photos or diagnostic exports are attached to these links.
 
 ## Questions? Get in touch
 
-Hadden Industries cannot retrieve files kept only on your device. If you email us or choose to share an export, your correspondence and anything you include are handled under the publisher's separate privacy policy. Share journals, photos or personal details only if you intend to do so.
+Hadden Industries cannot retrieve files kept only on your device.
+If you email us or choose to share an export, your correspondence and anything you include are handled under the publisher's separate privacy policy.
+Share journals, photos or personal details only if you intend to do so.
 
 [info@haddenindustries.com](mailto:info@haddenindustries.com)
 
-Open a draft in your chosen mail app, or copy the address into webmail. If no mail app is available, use Copy email address. The app sends nothing and adds no attachments.
+Open a draft in your chosen mail app, or copy the address into webmail.
+If no mail app is available, use Copy email address.
+The app sends nothing and adds no attachments.
 
 [Hadden Industries privacy policy (opens browser)](https://haddenindustries.com/legal.html#privacy-policy)
 

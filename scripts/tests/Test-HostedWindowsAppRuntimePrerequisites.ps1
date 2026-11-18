@@ -21,11 +21,11 @@ $context = @{Executable = (Get-Process -Id $PID).Path; WorkingDirectory = $root;
     EnvironmentValues = @{GITHUB_ACTIONS = 'false'; RUNNER_ENVIRONMENT = ''; RUNNER_OS = '' }; TimeoutSeconds = (Get-QualificationTimeout -Category nestedPrerequisiteProbe)
 }
 $installerCases = @(@(
-        @{architecture = 'x64'; path = $X64InstallerPath; sha256 = '931a421e8dc3e6e67724806cb67fecdbb88dfe323f0170842eb4a4b4b149f1e2' },
-        @{architecture = 'x86'; path = $X86InstallerPath; sha256 = '76dbd7c272cee0bf18f0b7228255b353d669cd55dc530209c45646f47acb89d4' }
+        @{architecture = 'x64'; path = $X64InstallerPath; sha256 = 'ed1ac8aa9497473389a288017c7fc352c382ba8df6c08f36ddb5815bff283b2a' },
+        @{architecture = 'x86'; path = $X86InstallerPath; sha256 = 'f934a33e530281fe63e5ea21473668f8cbaea03a3f680c8ede9b701a23fae61f' }
     ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_.path) })
 if (-not [string]::IsNullOrWhiteSpace($Arm64InstallerPath)) {
-    $installerCases += @{architecture = 'ARM64'; path = $Arm64InstallerPath; sha256 = 'd5e4d34547eb4e31c64bf1532415b3019c0d92b750e72eb18d3d95bd00feacbb' }
+    $installerCases += @{architecture = 'ARM64'; path = $Arm64InstallerPath; sha256 = 'a29130adb909c4ca340a30bd184cd96e216797eddf8faa90e16da0be8f74bf00' }
 }
 if ($installerCases.Count -eq 0) { throw 'Supply at least one actual Microsoft runtime installer.' }
 $referenceInstallerPath = $installerCases[0].path
@@ -36,8 +36,8 @@ foreach ($case in $installerCases) {
         ))
     $identity = ConvertFrom-JsonWithUniqueObjectMembers -JsonText ([IO.File]::ReadAllText((Join-Path $output 'runtime-installer-identity.json'))) `
         -RequiredRootValueKind Object -SourceDescription 'Qualified Microsoft runtime installer' -AsHashtable
-    if ($identity.windowsAppSdkPackageVersion -cne '2.5.1' -or $identity.architecture -cne $case.architecture -or
-        $identity.sha256 -cne $case.sha256 -or $identity.fileVersion -cne '2.5' -or $identity.signatureStatus -cne 'Valid') {
+    if ($identity.windowsAppSdkPackageVersion -cne '2.7.0' -or $identity.architecture -cne $case.architecture -or
+        $identity.sha256 -cne $case.sha256 -or $identity.fileVersion -cne '2.7' -or $identity.signatureStatus -cne 'Valid') {
         throw 'Actual Microsoft runtime installer does not match its independently measured release identity.'
     }
     if ([IO.File]::Exists((Join-Path $output 'installer-exit-code.txt'))) { throw 'WhatIf reached runtime installation.' }
@@ -51,8 +51,8 @@ $project = Join-Path $repository 'Directory.Packages.props'
 [void][IO.Directory]::CreateDirectory((Join-Path $repository 'eng'))
 Copy-Item -LiteralPath (Join-Path $root 'eng/toolchain-lock.json') -Destination (Join-Path $repository 'eng/toolchain-lock.json')
 foreach ($case in @(
-        @{name = 'different-sdk'; versions = @('2.5.0') },
-        @{name = 'duplicate-sdk'; versions = @('2.5.1', '2.5.1') }
+        @{name = 'different-sdk'; versions = @('2.6.5') },
+        @{name = 'duplicate-sdk'; versions = @('2.7.0', '2.7.0') }
     )) {
     $document = [xml]'<Project><ItemGroup /></Project>'
     foreach ($version in $case.versions) {

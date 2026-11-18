@@ -198,10 +198,10 @@ function Get-UniquePackageReferenceMetadataValue {
 }
 
 $expectedCentralPackageVersions = [ordered]@{
-    'Microsoft.WindowsAppSDK' = '2.5.1'
+    'Microsoft.WindowsAppSDK' = '2.7.0'
     'Microsoft.Windows.CppWinRT' = '3.0.260818.1'
     'Microsoft.Windows.ImplementationLibrary' = '1.0.260126.7'
-    'Microsoft.Windows.SDK.BuildTools' = '10.0.28000.2705'
+    'Microsoft.Windows.SDK.BuildTools' = '10.0.28000.2957'
 }
 $expectedProjectPackageReferences = [ordered]@{
     'src/JpgSpinner.App/JpgSpinner.App.vcxproj' = @(
@@ -498,6 +498,6 @@ finally {
 }
 
 Write-Output (
-    'NuGet resolution verified for Win32, x64, and ARM64: Windows App SDK 2.5.1, ' +
-    'C++/WinRT 3.0.260818.1, and Windows SDK BuildTools 10.0.28000.2705.'
+    'NuGet resolution verified for Win32, x64, and ARM64: Windows App SDK 2.7.0, ' +
+    'C++/WinRT 3.0.260818.1, and Windows SDK BuildTools 10.0.28000.2957.'
 )

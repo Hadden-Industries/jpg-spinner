@@ -1,17 +1,17 @@
 {
     "schemaVersion": 1,
     "vcpkgExporter": {
-        "version": "2026-09-26",
-        "sourceCommit": "51bf87ca6e9bf3e622d84ff323bd202ab1ca0c0b",
-        "executableUrl": "https://github.com/microsoft/vcpkg-tool/releases/download/2026-09-26/vcpkg.exe",
-        "executableSha256": "2a4ae1467b9e797964c60c919d057b9e5dc1ec03f4b9632c1150026db25201f2",
-        "bundleUrl": "https://github.com/microsoft/vcpkg-tool/releases/download/2026-09-26/vcpkg-standalone-bundle.tar.gz",
-        "bundleSha256": "6b2e89e0770df4c2debfdcb9ff3b7e434d06c4963aa9327b06983865800db747"
+        "version": "2026-10-29",
+        "sourceCommit": "139f2e53438b1529e178f6295bc563f4e0de734f",
+        "executableUrl": "https://github.com/microsoft/vcpkg-tool/releases/download/2026-10-29/vcpkg.exe",
+        "executableSha256": "191ee64b0887af80aad3eff6c5e888ab733d3ef2182885ed4747b4574c201834",
+        "bundleUrl": "https://github.com/microsoft/vcpkg-tool/releases/download/2026-10-29/vcpkg-standalone-bundle.tar.gz",
+        "bundleSha256": "3e128d4e44dfb0400bfef92d00e259a7095db2a2ca218e0c483145aa16e41b62"
     },
     "syftSdk": {
         "module": "github.com/anchore/syft",
-        "version": "v1.55.0",
-        "moduleSum": "h1:IeBZJrF/g75ba3k0ITQ8v4NCVGiGsWU3Wa1P/eSAFa0="
+        "version": "v1.57.2",
+        "moduleSum": "h1:Vm+22QHzQfwy9WBlWeGOWBSByH6dt6SEjxrfOvQZsfM="
     },
     "spdxSchema": {
         "version": "3.0.1",

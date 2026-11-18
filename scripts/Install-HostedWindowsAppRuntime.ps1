@@ -50,25 +50,25 @@ $json = Invoke-ArtifactToolProcess @context -Executable $dotnet -LogName sdk-pac
 )
 $selection = ConvertFrom-JsonWithUniqueObjectMembers -JsonText $json -RequiredRootValueKind Object -SourceDescription 'Native Windows App SDK package selection' -AsHashtable
 $sdkPackages = @($selection.Items.PackageVersion | Where-Object { $_.Identity -ceq 'Microsoft.WindowsAppSDK' })
-$windowsAppSdkPackageVersion = '2.5.1'
+$windowsAppSdkPackageVersion = '2.7.0'
 if ($sdkPackages.Count -ne 1 -or $sdkPackages[0].Version -cne $windowsAppSdkPackageVersion) {
     throw 'Runtime installer pins do not match the unique adopted Microsoft.WindowsAppSDK package version.'
 }
 # These immutable Microsoft download endpoints are the measured targets of the
-# official 2.5.1 release links. Hashes bind the exact associated native binaries;
-# their PE FileVersion is 2.5, distinct from the SDK package version 2.5.1.
+# official 2.7.0 release links. Hashes bind the exact associated native binaries;
+# their PE FileVersion is 2.7, distinct from the SDK package version 2.7.0.
 $pins = @{
     x64   = @{
-        uri    = 'https://download.microsoft.com/download/de664922-b046-432f-bb2a-54aec3c5f1f6/WindowsAppRuntimeInstall-x64.exe'
-        sha256 = '931a421e8dc3e6e67724806cb67fecdbb88dfe323f0170842eb4a4b4b149f1e2'
+        uri    = 'https://download.microsoft.com/download/b79f2091-5e42-4955-91b2-44d1b3f2f845/WindowsAppRuntimeInstall-x64.exe'
+        sha256 = 'ed1ac8aa9497473389a288017c7fc352c382ba8df6c08f36ddb5815bff283b2a'
     }
     x86   = @{
-        uri    = 'https://download.microsoft.com/download/652efa1f-ce5b-4ce9-8bfe-5a08e96145f4/WindowsAppRuntimeInstall-x86.exe'
-        sha256 = '76dbd7c272cee0bf18f0b7228255b353d669cd55dc530209c45646f47acb89d4'
+        uri    = 'https://download.microsoft.com/download/cb7bc847-fb0e-4831-a904-16ac769bddb5/WindowsAppRuntimeInstall-x86.exe'
+        sha256 = 'f934a33e530281fe63e5ea21473668f8cbaea03a3f680c8ede9b701a23fae61f'
     }
     ARM64 = @{
-        uri    = 'https://download.microsoft.com/download/83fdef97-1ca8-491d-80f3-a94b5adc5b1c/WindowsAppRuntimeInstall-arm64.exe'
-        sha256 = 'd5e4d34547eb4e31c64bf1532415b3019c0d92b750e72eb18d3d95bd00feacbb'
+        uri    = 'https://download.microsoft.com/download/3fed4c2e-aaba-42a4-ba38-90a62e99b9a2/WindowsAppRuntimeInstall-arm64.exe'
+        sha256 = 'a29130adb909c4ca340a30bd184cd96e216797eddf8faa90e16da0be8f74bf00'
     }
 }
 $pin = $pins[$Architecture]

@@ -151,7 +151,7 @@ foreach ($path in $WorkflowPaths) {
             if ($uses -cnotmatch '^(?<action>[A-Za-z0-9_./-]+)@(?<commit>[a-f0-9]{40})$') { throw 'Step must reference an approved immutable action commit.' }
             $actionName = $Matches.action
             $commit = $Matches.commit
-            $ownerAction = if ($actionName -cin @('github/codeql-action/init', 'github/codeql-action/analyze')) { 'github/codeql-action' } else { $actionName }
+            $ownerAction = if ($actionName -cin @('github/codeql-action/init', 'github/codeql-action/analyze', 'github/codeql-action/upload-sarif')) { 'github/codeql-action' } else { $actionName }
             if (-not $pins.actions.ContainsKey($ownerAction) -or $pins.actions[$ownerAction].commit -cne $commit) { throw 'Step differs from the approved immutable action commit.' }
             if (-not $comments.Contains("$($usesNode.End.Line):v$($pins.actions[$ownerAction].version)")) { throw 'Step lacks its exact native action version comment.' }
             $arguments = Get-WorkflowProperty $step 'with'

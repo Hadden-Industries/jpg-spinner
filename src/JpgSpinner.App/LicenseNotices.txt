@@ -26,7 +26,7 @@ notices are retained conservatively, not as a claim that their entire packages
 are redistributed here or that the app implements those features. Identical
 notice payloads shared by multiple Windows App SDK packages are stored once.
 
-Microsoft.Windows.SDK.BuildTools 10.0.28000.2705 supplies an external terms URL,
+Microsoft.Windows.SDK.BuildTools 10.0.28000.2957 supplies an external terms URL,
 https://aka.ms/WinSDKLicenseURL, rather than an embedded licence file. Its exact
 applicable terms remain unresolved; another Microsoft package's licence does
 not resolve them. Final binary contribution, complete notice sufficiency,

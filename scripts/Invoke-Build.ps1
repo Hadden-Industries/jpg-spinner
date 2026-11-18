@@ -17,7 +17,9 @@ param(
 
     # Select the native application project for packaging without building test
     # hosts into that graph; normal builds retain the whole modern solution.
-    [ValidateSet('ModernSolution', 'PackagedApplication')]
+    # NativeDependencies runs only vcpkg's own manifest-install target with the
+    # same properties, so a later traced build compiles first-party code only.
+    [ValidateSet('ModernSolution', 'PackagedApplication', 'NativeDependencies')]
     [string]$BuildEntryPoint = 'ModernSolution',
 
     # Requests an unsigned package from the native single-project MSIX targets.
@@ -62,6 +64,9 @@ if (-not [string]::IsNullOrEmpty($UnsignedPackageOutputDirectory)) {
 
 $buildEntryPointRelativePath =
     if ($BuildEntryPoint -eq 'PackagedApplication') { 'src/JpgSpinner.App/JpgSpinner.App.vcxproj' }
+    # Every modern project shares one manifest, triplet and installed tree; any
+    # one of them selects vcpkg's supported target and its MSBuild stamp file.
+    elseif ($BuildEntryPoint -eq 'NativeDependencies') { 'src/JpgSpinner.JpegTransformation/JpgSpinner.JpegTransformation.vcxproj' }
     else { 'JpgSpinner.sln' }
 $buildEntryPointPath = Join-Path $repositoryRoot $buildEntryPointRelativePath
 if (-not (Test-Path -LiteralPath $buildEntryPointPath -PathType Leaf)) {
@@ -129,6 +134,10 @@ foreach ($argument in @(
     [void]$startInfo.ArgumentList.Add($argument)
 }
 
+if ($BuildEntryPoint -eq 'NativeDependencies') {
+    [void]$startInfo.ArgumentList.Add('-target:VcpkgInstallManifestDependencies')
+}
+
 if ($null -ne $packageOutputPath) {
     # Public single-project MSIX properties, not private targets or a hand-built
     # ZIP. Preserve project-owned toolchain/framework settings. This invocation
@@ -189,6 +198,9 @@ try {
 finally {
     $process.Dispose()
 }
+
+# Installing native dependencies produces no application image to inspect.
+if ($BuildEntryPoint -ceq 'NativeDependencies') { exit $buildExitCode }
 
 # Inspect the produced release image rather than accepting an option-shaped
 # string in project XML. This also catches a later per-project LINK override.

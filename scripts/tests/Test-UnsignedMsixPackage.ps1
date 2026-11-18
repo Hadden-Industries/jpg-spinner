@@ -37,7 +37,7 @@ if ($identity.GetAttribute('ProcessorArchitecture') -cne $Architecture.ToLowerIn
     throw 'Actual package architecture differs from the requested native build.'
 }
 $framework = $manifest.SelectNodes('/p:Package/p:Dependencies/p:PackageDependency[@Name="Microsoft.WindowsAppRuntime.2"]', $namespaces)
-if ($framework.Count -ne 1 -or [version]$framework.Item(0).GetAttribute('MinVersion') -ne [version]'2.5.1.0') {
+if ($framework.Count -ne 1 -or [version]$framework.Item(0).GetAttribute('MinVersion') -ne [version]'2.7.0.0') {
     throw 'Actual package must retain its qualified native Windows App Runtime framework dependency.'
 }
 if (Test-Path -LiteralPath (Join-Path $extraction 'AppxSignature.p7x')) {

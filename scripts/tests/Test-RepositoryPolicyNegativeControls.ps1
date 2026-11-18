@@ -137,9 +137,9 @@ try {
     # The native allocator repair is a distinct local packaging revision, not
     # the registry's unpatched zlib. Its exact selected authority stays closed.
     $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json
-    ($manifest.overrides | Where-Object name -CEQ 'zlib').version = '1.3.2#2'
+    ($manifest.overrides | Where-Object name -CEQ 'zlib').version = '1.4'
     $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $fixtureVcpkgManifestPath
-    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'zlib' must pin exact version '1.3.2#3'"
+    Assert-RejectedMutation -ExpectedDiagnostics "vcpkg override 'zlib' must pin exact version '1.4#1'"
     Copy-Item -LiteralPath (Join-Path $repositoryRoot 'vcpkg.json') -Destination $fixtureVcpkgManifestPath -Force
 
     $manifest = Get-Content -LiteralPath $fixtureVcpkgManifestPath -Raw | ConvertFrom-Json

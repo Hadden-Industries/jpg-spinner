@@ -18,13 +18,13 @@ $result=& (Join-Path $repositoryRoot 'scripts/New-JpgSpinnerBuildComponentEviden
 $contract=Get-Content -LiteralPath $result.ComponentContractPath -Raw | ConvertFrom-Json -AsHashtable
 $nuget=@($contract.requiredPackages | Where-Object {-not $_.Contains('packageUrl')})
 $expected=@(
-    'Microsoft.Web.WebView2@1.0.3719.77','Microsoft.Windows.AI.MachineLearning@2.1.74'
+    'Microsoft.Web.WebView2@1.0.3719.77','Microsoft.Windows.AI.MachineLearning@2.5.96'
     'Microsoft.Windows.CppWinRT@3.0.260818.1','Microsoft.Windows.ImplementationLibrary@1.0.260126.7'
-    'Microsoft.Windows.SDK.BuildTools.MSIX@1.7.251221100','Microsoft.Windows.SDK.BuildTools@10.0.28000.2705'
-    'Microsoft.WindowsAppSDK.AI@2.5.5','Microsoft.WindowsAppSDK.Base@2.0.4','Microsoft.WindowsAppSDK.DWrite@2.1.0'
-    'Microsoft.WindowsAppSDK.Foundation@2.3.12','Microsoft.WindowsAppSDK.InteractiveExperiences@2.1.9'
-    'Microsoft.WindowsAppSDK.ML@2.1.94','Microsoft.WindowsAppSDK.Runtime@2.5.1','Microsoft.WindowsAppSDK.Search@2.5.5'
-    'Microsoft.WindowsAppSDK.Widgets@2.0.5','Microsoft.WindowsAppSDK.WinUI@2.3.9','Microsoft.WindowsAppSDK@2.5.1'
+    'Microsoft.Windows.SDK.BuildTools.MSIX@1.7.251221100','Microsoft.Windows.SDK.BuildTools@10.0.28000.2957'
+    'Microsoft.WindowsAppSDK.AI@2.7.0','Microsoft.WindowsAppSDK.Base@2.7.0','Microsoft.WindowsAppSDK.DWrite@2.7.0'
+    'Microsoft.WindowsAppSDK.Foundation@2.7.0','Microsoft.WindowsAppSDK.InteractiveExperiences@2.7.0'
+    'Microsoft.WindowsAppSDK.ML@2.7.0','Microsoft.WindowsAppSDK.Runtime@2.7.0','Microsoft.WindowsAppSDK.Search@2.7.0'
+    'Microsoft.WindowsAppSDK.Widgets@2.7.0','Microsoft.WindowsAppSDK.WinUI@2.7.0','Microsoft.WindowsAppSDK@2.7.0'
 )
 $actual=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 foreach ($identity in $nuget) {

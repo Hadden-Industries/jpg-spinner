@@ -55,7 +55,7 @@ $retainedNoticeHashes = [ordered]@{
     'docs/licenses/nuget/Microsoft.Windows.SDK.BuildTools.MSIX.LICENSE.txt'             ='A7A5C7E7FF998558983D6ACA2702117C328AEB0C6404D298CB275F5623C6FD13'
     'docs/licenses/nuget/Microsoft.WindowsAppSDK.LICENSE.txt'                           ='5B11E6347756E40FE0274BC08C97F89201B94F0D50181A09A00F1F4740840501'
     'docs/licenses/nuget/Microsoft.WindowsAppSDK.NOTICE.txt'                            ='572B43D41DEA717DAE7DC5DE69ACB20A74DF025E8F5A3C0AA6F7BCA02615E23C'
-    'docs/licenses/nuget/Microsoft.WindowsAppSDK.ML.LICENSE.txt'                        ='656AAB74C15AA9F9964BCDCC993EB2755CBDB4822D5E0E3BC61D2E281897F758'
+    'docs/licenses/nuget/Microsoft.WindowsAppSDK.ML.LICENSE.txt'                        ='E668E3CA605878AAE4201AF330D3447D1DCD4303EA3F18AA108249416C4C4419'
     'docs/licenses/nuget/Microsoft.WindowsAppSDK.WinUI.NOTICE.txt'                      ='E25393C0D340A1821827B093FA4DBBFCCCD8FEB7BF769E7FA773E3955CD5314B'
     'docs/licenses/nuget/Microsoft.WindowsAppSDK.WinUI.Tools.NOTICE.txt'                ='4A9321FD173EBF4E8BBC79130794D4C3FE233ACCCBF7DB8765E0ADDB8FBFB8CA'
 }
