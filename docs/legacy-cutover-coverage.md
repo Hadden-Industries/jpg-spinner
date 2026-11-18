@@ -1,12 +1,10 @@
 # Legacy cutover: outcome coverage and remaining proof
 
-Status: **source retired; release qualification remains open**. The maintained
-implementation is the modern solution. The exact historical solution/tree has
-been removed under
-[Task 19's approved sequencing](plans/2026-08-30-jpg-spinner-modernization.md#task-19-cut-over-in-one-auditable-change-and-delete-the-legacy-implementation).
-The signed baseline is retained in Git history. A test declaration is not an
-execution result; retained development runs do not qualify a different release
-candidate.
+Status: **source retired; release qualification remains open**.
+The maintained implementation is the modern solution.
+The exact historical solution/tree has been removed under [Task 19's approved sequencing](plans/2026-08-30-jpg-spinner-modernization.md#task-19-cut-over-in-one-auditable-change-and-delete-the-legacy-implementation).
+The signed baseline is retained in Git history.
+A test declaration is not an execution result; retained development runs do not qualify a different release candidate.
 
 ## Preserved user outcomes
 
@@ -41,36 +39,18 @@ Read the named cases in the linked files when selecting a bounded regression.
 
 ## Candidate-bound cutover evidence
 
-For the selected immutable pre-cutover candidate, retain full test-selection
-results, native binlogs, JUnit reports, ASan, static analysis and package/manifest
-validation before deletion. The owner's approved 2026-10-24 sequencing amendment
-moves only the actual trusted same-identity Store-upgrade smoke to the
-pre-public-release gate. Retirement must still wait for every other pre-cutover
-technical check, including the actual picker acceptance scenarios. Preserve the
-signed Git baseline and installed Store app; no test package may masquerade as a
-trusted upgrade. Microsoft documents the
-[unsigned/signed identity restriction](https://learn.microsoft.com/windows/msix/package/unsigned-package)
-and the supported [package-flight boundary](https://learn.microsoft.com/windows/apps/publish/package-flights).
-The [installed Store observation](implementation/2026-10-17-published-store-baseline.md)
-identifies main version 1.1.2.0 and distinct bundle version 2015.616.2316.3521;
-neither identity matching nor baseline installation is an upgrade pass. Record the
-operator, command, architecture, environment and raw report locator; do not turn
-this mapping into a blanket passed checklist. The
-[release register](release-qualification.md) records the outstanding device,
-upgrade, accessibility, privacy, legal and credential-owner obligations.
+For the selected immutable pre-cutover candidate, retain full test-selection results, native binlogs, JUnit reports, ASan, static analysis and package/manifest validation before deletion. The owner's approved 2026-10-24 sequencing amendment moves only the actual trusted same-identity Store-upgrade smoke to the pre-public-release gate. Retirement must still wait for every other pre-cutover technical check, including the actual picker acceptance scenarios. Preserve the signed Git baseline and installed Store app; no test package may masquerade as a trusted upgrade. Microsoft documents the [unsigned/signed identity restriction](https://learn.microsoft.com/windows/msix/package/unsigned-package) and the supported [package-flight boundary](https://learn.microsoft.com/windows/apps/publish/package-flights).
+The [installed Store observation](implementation/2026-10-17-published-store-baseline.md) identifies main version 1.1.2.0 and distinct bundle version 2015.616.2316.3521; neither identity matching nor baseline installation is an upgrade pass.
+Record the operator, command, architecture, environment and raw report locator; do not turn this mapping into a blanket passed checklist.
+The [release register](release-qualification.md) records the outstanding device, upgrade, accessibility, privacy, legal and credential-owner obligations.
 
-The [resumed picker acceptance](implementation/2026-10-24-cutover-preparation.md#resumed-picker-acceptance-2026-10-24)
-now supplies an actual passing result for both application-review scenarios on
-the retained native candidate: two JUnit cases, suite counter 124, no failures,
-errors or skips, and unchanged synthetic source bytes. This clears that input
-lane gap without promoting the earlier timeout to success. The full cutover,
-post-deletion verification and release gates remain separate.
+The [resumed picker acceptance](implementation/2026-10-24-cutover-preparation.md#resumed-picker-acceptance-2026-10-24) now supplies an actual passing result for both application-review scenarios on the retained native candidate: two JUnit cases, suite counter 124, no failures, errors or skips, and unchanged synthetic source bytes.
+This clears that input lane gap without promoting the earlier timeout to success.
+The full cutover, post-deletion verification and release gates remain separate.
 
-The maintained repository policy now invokes the retirement gate. Its retained
-pre-deletion RED names only the old solution and tree. The exact 143 tracked
-legacy files are removed; the modern solution already contained only maintained
-projects and needed no artificial solution rewrite. Historical design
-descriptions remain as history, not runnable legacy paths. Deliberate post-cutover
-CodeQL evidence must reconcile the five existing alerts and their original
-analysis category before claiming GitHub closure. Nothing here authorizes a
-remote run, alert dismissal, signing, installation, Store submission or release.
+The maintained repository policy now invokes the retirement gate.
+Its retained pre-deletion RED names only the old solution and tree.
+The exact 143 tracked legacy files are removed; the modern solution already contained only maintained projects and needed no artificial solution rewrite.
+Historical design descriptions remain as history, not runnable legacy paths.
+Deliberate post-cutover CodeQL evidence must reconcile the five existing alerts and their original analysis category before claiming GitHub closure.
+Nothing here authorizes a remote run, alert dismissal, signing, installation, Store submission or release.

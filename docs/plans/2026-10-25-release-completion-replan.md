@@ -1,27 +1,23 @@
 # JPG Spinner 2.0 release completion replan
 
-Status: execution order accepted by the owner's instruction to proceed, 2026-10-25. This addendum organizes the
-[approved modernization plan](2026-08-30-jpg-spinner-modernization.md); its
-product requirements and approved amendments remain authoritative. It grants
-no Store submission, signing, installation, remote dispatch or alert dismissal.
-The accepted R2 execution remains active. No new implementation is required
-merely to satisfy workflow bookkeeping.
+Status: execution order accepted by the owner's instruction to proceed, 2026-10-25.
+This addendum organizes the [approved modernization plan](2026-08-30-jpg-spinner-modernization.md); its product requirements and approved amendments remain authoritative.
+It grants no Store submission, signing, installation, remote dispatch or alert dismissal.
+The accepted R2 execution remains active.
+No new implementation is required merely to satisfy workflow bookkeeping.
 
 ## Outcome and distinct finish lines
 
-The objective is one qualified JPG Spinner 2.0.0 candidate, followed by an
-explicit decision to distribute it. Three outcomes need separate evidence:
+The objective is one qualified JPG Spinner 2.0.0 candidate, followed by an explicit decision to distribute it.
+Three outcomes need separate evidence:
 
-1. **Implementation checkpoint:** maintained source, focused regression proof,
-   signed commits and an honest inventory of remaining work.
-2. **Qualified release candidate:** one frozen source identity, exact packages
-   and required technical, device, accessibility, upgrade and legal evidence.
-3. **Published release:** deliberate authorization, Microsoft certification and
-   the approved staged rollout with observed results.
+1. **Implementation checkpoint:** maintained source, focused regression proof, signed commits and an honest inventory of remaining work.
+2. **Qualified release candidate:** one frozen source identity, exact packages and required technical, device, accessibility, upgrade and legal evidence.
+3. **Published release:** deliberate authorization, Microsoft certification and the approved staged rollout with observed results.
 
-Successful source publication or CI advances the first outcome. It does not
-complete the other two. The protected Store preparation workflow still needs
-its actual hosted qualification; there is no authorized automatic submission.
+Successful source publication or CI advances the first outcome.
+It does not complete the other two.
+The protected Store preparation workflow still needs its actual hosted qualification; there is no authorized automatic submission.
 
 ## Baseline when drafted
 
@@ -36,41 +32,30 @@ its actual hosted qualification; there is no authorized automatic submission.
 | Source publication                           | Remote `main` is `435b87b3`; local signed documentation checkpoint is `76191e8d`.                                                                                                                                                                         | A future push needs its actual scoped authority. No automatic CI trigger is introduced.                                                                                                                                                             |
 | Resources                                    | Required ordinary-QA and CodeQL originals are independently retained. Ordinary-QA cloud artifact count is zero.                                                                                                                                           | Existing local cleanup holds remain under [HISEW #197](https://github.com/Hadden-Industries/software-engineering-workflow/issues/197#issuecomment-6395313372). Preserve blocked directories; do not work around native admission.                   |
 
-The current package log's unused `NEON_INTRINSICS` CMake option warning also
-has a subsequent [source-backed classification](../implementation/2026-10-25-qualified-tooling-refresh.md#evidence-and-next-work):
-it is an obsolete upstream-port configure input, outside the compiler-warning
-condition. Preserve the successful run and original warning; add no overlay,
-authority change or suppression.
+The current package log's unused `NEON_INTRINSICS` CMake option warning also has a subsequent [source-backed classification](../implementation/2026-10-25-qualified-tooling-refresh.md#evidence-and-next-work): it is an obsolete upstream-port configure input, outside the compiler-warning condition.
+Preserve the successful run and original warning; add no overlay, authority change or suppression.
 
 ## Why the approach became reactive
 
-Subsequent execution closes the [freshness repair](../implementation/2026-10-25-release-tool-freshness.md)
-and [qualified tooling adoption](../implementation/2026-10-25-qualified-tooling-refresh.md)
-in signed checkpoints `f722cc9858e2` and `057fc66cda92`. The
-[supplied-result dispositions](../implementation/2026-10-25-codeql-result-dispositions.md)
-cover all 34 inputs without another scan or automatic GitHub mutation. The
-[prerequisite register](../release-prerequisites.md) records actual resource
-availability. The subsequently approved single-maintainer amendment resolves
-the original protected-environment absence. The baseline
-above remains historical; do not use it as a competing current work queue.
+Subsequent execution closes the [freshness repair](../implementation/2026-10-25-release-tool-freshness.md) and [qualified tooling adoption](../implementation/2026-10-25-qualified-tooling-refresh.md) in signed checkpoints `f722cc9858e2` and `057fc66cda92`.
+The [supplied-result dispositions](../implementation/2026-10-25-codeql-result-dispositions.md) cover all 34 inputs without another scan or automatic GitHub mutation.
+The [prerequisite register](../release-prerequisites.md) records actual resource availability.
+The subsequently approved single-maintainer amendment resolves the original protected-environment absence.
+The baseline above remains historical; do not use it as a competing current work queue.
 
 The work lacked a single candidate boundary and a visible critical path.
-New tooling releases, fixture defects, old alert configurations and HISEW
-cleanup failures repeatedly entered the same queue as product qualification.
-We also delayed establishing whether device, human and credentialed release
-requirements could be completed. More builds cannot establish those facts.
+New tooling releases, fixture defects, old alert configurations and HISEW cleanup failures repeatedly entered the same queue as product qualification.
+We also delayed establishing whether device, human and credentialed release requirements could be completed.
+More builds cannot establish those facts.
 
-The correction is a small number of bounded workstreams, with explicit exit
-conditions and a single integration owner. The executing engineer owns source
-integration and evidence consolidation; the maintainer owns consequential
-product/resource decisions and release authorization. No implementation
-delegation, external review or additional security scan is introduced.
+The correction is a small number of bounded workstreams, with explicit exit conditions and a single integration owner.
+The executing engineer owns source integration and evidence consolidation; the maintainer owns consequential product/resource decisions and release authorization.
+No implementation delegation, external review or additional security scan is introduced.
 
 ## Ordered work and exit conditions
 
-The original plan uses numbered tasks rather than a REQ/AC/QA/DEC identifier
-scheme. This traceability table references those existing acceptance clauses
-and actual owner decisions; it asserts no invented pre-existing identifiers.
+The original plan uses numbered tasks rather than a REQ/AC/QA/DEC identifier scheme.
+This traceability table references those existing acceptance clauses and actual owner decisions; it asserts no invented pre-existing identifiers.
 The slice labels below identify sequencing only.
 
 | Slice                                                   | Existing acceptance / decision                                                                              | Work and falsifiable exit condition                                                                                                                                                                                                                                                                                                                                                                                                                              | Owner / release and cleanup implication                                                                                                                                                                                                                                                                                      |
@@ -94,95 +79,68 @@ flowchart TD
     G --> H[Authorize public release and staged rollout]
 ```
 
-The two incoming tracks are semantically independent workstreams, not permission
-for concurrent source writers or subagents. A shared gate register and one
-integration owner coordinate them.
+The two incoming tracks are semantically independent workstreams, not permission for concurrent source writers or subagents.
+A shared gate register and one integration owner coordinate them.
 
 ## Execution controls
 
-The owner's 2026-10-25 single-developer amendment allows required environment
-self-review. The agreed maintainer account is the required reviewer; an
-independent person is not a prerequisite for this approval gate. Preserve
-explicit approval, native Boolean typing, the trusted manual producer and exact
-source/ref checks. The [self-review checkpoint](../implementation/2026-10-25-maintainer-self-review.md)
-records live Store configuration separately from source publication, workflow
-execution and the remaining device/human/legal/flight requirements.
+The owner's 2026-10-25 single-developer amendment allows required environment self-review.
+The agreed maintainer account is the required reviewer; an independent person is not a prerequisite for this approval gate.
+Preserve explicit approval, native Boolean typing, the trusted manual producer and exact source/ref checks. The [self-review checkpoint](../implementation/2026-10-25-maintainer-self-review.md) records live Store configuration separately from source publication, workflow execution and the remaining device/human/legal/flight requirements.
 
-The owner's 2026-10-25 [device amendment](../implementation/2026-10-25-native-arm64-qualification.md)
-accepts native Windows ARM64 VMs and makes live physical-device testing optional
-and nonblocking. SLICE-003 therefore requires an available native ARM64 VM lane,
-not physical hardware. Its prebuilt headless tests join existing manual CI;
-interactive/package/upgrade evidence remains distinct and may use qualified
-desktop/VM lanes. Historical compile-only observations above are unchanged.
+The owner's 2026-10-25 [device amendment](../implementation/2026-10-25-native-arm64-qualification.md) accepts native Windows ARM64 VMs and makes live physical-device testing optional and nonblocking.
+SLICE-003 therefore requires an available native ARM64 VM lane, not physical hardware.
+Its prebuilt headless tests join existing manual CI; interactive/package/upgrade evidence remains distinct and may use qualified desktop/VM lanes.
+Historical compile-only observations above are unchanged.
 
-SLICE-003's human accessibility/localization and licensing/corresponding-source
-roles are now assigned to the maintainer in the
-[canonical acceptance record](../release-prerequisites.md#maintainer-owned-acceptance).
-Engineering prepares the exact candidate and technical/source-delivery inputs;
-the maintainer performs and records those two acceptances. Ownership is resolved,
-execution/sign-off remains pending, and other OS/credential/flight prerequisites
-retain their separate status. Do not repeat builds to substitute for human
-acceptance or treat the assignment as release authorization.
+SLICE-003's human accessibility/localization and licensing/corresponding-source roles are now assigned to the maintainer in the [canonical acceptance record](../release-prerequisites.md#maintainer-owned-acceptance).
+Engineering prepares the exact candidate and technical/source-delivery inputs; the maintainer performs and records those two acceptances. Ownership is resolved, execution/sign-off remains pending, and other OS/credential/flight prerequisites retain their separate status.
+Do not repeat builds to substitute for human acceptance or treat the assignment as release authorization.
 
-- **One decision log and gate register.** Use this sequence and
-  [release qualification](../release-qualification.md). Historical implementation
-  records remain evidence, not competing to-do lists. Record a blocker once
-  with its next actor and cheapest discriminating check.
-- **Version policy at defined boundaries.** Audit when consolidating the
-  candidate and at the plan's release decision point. Record the audit date and
-  authoritative metadata. Do not launch another full matrix while versions
-  are still being changed. If an actionable stable update invalidates the
-  approved latest-version contract, reopen the candidate explicitly; this
-  document does not waive that contract.
-- **Evidence reuse with an impact assessment.** A documentation commit does
-  not erase a native test result; a changed runtime/dependency input may
-  invalidate it. Keep source identities precise and do not label an older run
-  as a run on the current commit. Never rerun software for HISEW bookkeeping.
-- **Bounded investigation.** Before an experiment, state the question, expected
-  observation and budget. Retain a failed attempt. After two unsuccessful
-  implementation approaches to the same blocker, reassess its premise and
-  native capability instead of extending an unbounded retry chain. This is
-  not permission to abandon a requirement or ignore a real failure.
-- **Proportionate testing and reviews.** Focused TDD while changing code; full
-  verification for the final consolidated candidate. Desktop use is limited
-  to required bounded final acceptance under current user authorization.
-  Preserve the ban on external/security reviews; the approved native CodeQL
-  run is completed and its authority consumed. Future reviews or dispatches
-  need the applicable actual authorization.
-- **Native capabilities and precise names.** Keep package, parser, JSON/XML,
-  command-line and Storage semantics with their supported native consumers.
+- **One decision log and gate register.**
+  Use this sequence and [release qualification](../release-qualification.md).
+  Historical implementation records remain evidence, not competing to-do lists.
+  Record a blocker once with its next actor and cheapest discriminating check.
+- **Version policy at defined boundaries.**
+  Audit when consolidating the candidate and at the plan's release decision point.
+  Record the audit date and authoritative metadata.
+  Do not launch another full matrix while versions are still being changed.
+  If an actionable stable update invalidates the approved latest-version contract, reopen the candidate explicitly; this document does not waive that contract.
+- **Evidence reuse with an impact assessment.**
+  A documentation commit does not erase a native test result; a changed runtime/dependency input may invalidate it.
+  Keep source identities precise and do not label an older run as a run on the current commit.
+  Never rerun software for HISEW bookkeeping.
+- **Bounded investigation.**
+  Before an experiment, state the question, expected observation and budget.
+  Retain a failed attempt.
+  After two unsuccessful implementation approaches to the same blocker, reassess its premise and native capability instead of extending an unbounded retry chain.
+  This is not permission to abandon a requirement or ignore a real failure.
+- **Proportionate testing and reviews.**
+  Focused TDD while changing code; full verification for the final consolidated candidate.
+  Desktop use is limited to required bounded final acceptance under current user authorization.
+  Preserve the ban on external/security reviews; the approved native CodeQL run is completed and its authority consumed.
+  Future reviews or dispatches need the applicable actual authorization.
+- **Native capabilities and precise names.**
+  Keep package, parser, JSON/XML, command-line and Storage semantics with their supported native consumers.
   No compatibility shim or library fork is introduced as a release shortcut.
-  Canonical policy variables are shared; historical observations retain their
-  original versions and are not rewritten to look current.
-- **One current candidate archive.** Apply the owner's
-  [approved replacement-retention rule](../release-candidate-retention.md):
-  retain the latest successfully archived candidate until its complete successor
-  is verified, then retire its predecessor's owned unpublished archive. A failed
-  attempt leaves the existing candidate available. Temporary staging overlap,
-  published releases and independently required evidence retain their explicit
-  boundaries; elapsed time alone does not expire the current candidate.
-- **Resources at each slice boundary.** Retain required original evidence,
-  release actual consumers and invoke native HISEW disposition. Preserve
-  blocked directories with their next actor/checkpoint. HISEW repair proceeds
-  in its backlog; it does not create another product build or broad review.
+  Canonical policy variables are shared; historical observations retain their original versions and are not rewritten to look current.
+- **One current candidate archive.**
+  Apply the owner's [approved replacement-retention rule](../release-candidate-retention.md): retain the latest successfully archived candidate until its complete successor is verified, then retire its predecessor's owned unpublished archive.
+  A failed attempt leaves the existing candidate available.
+  Temporary staging overlap, published releases and independently required evidence retain their explicit boundaries; elapsed time alone does not expire the current candidate.
+- **Resources at each slice boundary.**
+  Retain required original evidence, release actual consumers and invoke native HISEW disposition.
+  Preserve blocked directories with their next actor/checkpoint.
+  HISEW repair proceeds in its backlog; it does not create another product build or broad review.
 
 ## Replanning triggers and recovery
 
-Reopen this sequence for a confirmed integrity defect, an unsupported required
-platform/provider, inability to obtain a trusted upgrade candidate, a material
-license/Store-terms conflict, a failed native dependency qualification or a
-required resource/owner that cannot be provided. Escalate the specific decision
-after source/specification/native-capability research; do not silently change
-support, safety, latest-version or evidence guarantees.
+Reopen this sequence for a confirmed integrity defect, an unsupported required platform/provider, inability to obtain a trusted upgrade candidate, a material license/Store-terms conflict, a failed native dependency qualification or a required resource/owner that cannot be provided. Escalate the specific decision after source/specification/native-capability research; do not silently change support, safety, latest-version or evidence guarantees.
 
-Before public release, preserve originals, backups, immutable journals and
-conflicting outcomes according to the product's recovery contract. Abort
-rollout on any source/backup/recovery integrity report. The credentialed owner
-owns Store rollout/withdrawal; do not assume a lower-version reinstall is a
-valid rollback. Keep the last known artifact and evidence, and choose a supported
-forward fix or restore path from the actual deployment state.
+Before public release, preserve originals, backups, immutable journals and conflicting outcomes according to the product's recovery contract.
+Abort rollout on any source/backup/recovery integrity report.
+The credentialed owner owns Store rollout/withdrawal; do not assume a lower-version reinstall is a valid rollback.
+Keep the last known artifact and evidence, and choose a supported forward fix or restore path from the actual deployment state.
 
-The next action after those engineering checkpoints is to establish SLICE-003's
-actual operators and lanes, prepare any deliberate administrative dispositions,
-then freeze one candidate. A further complete release build is not the next
-action while those prerequisites remain unavailable.
+The next action after those engineering checkpoints is to establish SLICE-003's actual operators and lanes, prepare any deliberate administrative dispositions, then freeze one candidate.
+A further complete release build is not the next action while those prerequisites remain unavailable.
